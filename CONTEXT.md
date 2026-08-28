@@ -481,6 +481,87 @@ Two points to revisit rather than assume:
    deserves a deliberate decision about what belongs in this file versus a
    delivery-team-only document.
 
+## Phase 0 security audit, 2026-08-28
+
+An adversarial review of the database, the auth service, and the running
+application. Every probe ran against the live project; anything needing extra
+rows created them inside a transaction that was rolled back, and the live counts
+were re-checked afterwards.
+
+### Held under attack
+
+| Attempt | Result |
+|---|---|
+| Admin moves a user into another organisation | Blocked |
+| Admin creates a profile inside another organisation | Blocked |
+| Admin renames another organisation | Blocked (0 rows) |
+| Mentor reads another mentor's assigned students | Blocked, sees only self |
+| Student reads a peer student in the same organisation | Blocked, sees only self |
+| Student self-promotes, creates profiles, self-assigns a mentor, self-grants access, deletes the admin | All blocked |
+| Signup via magic link, OTP, anonymous, or phone | All refused with `signup_disabled` |
+| Email enumeration through password reset | Identical responses for known and unknown addresses |
+| Calling the `private` helpers over the Data API | 404, schema not exposed |
+| Reading the API schema | Refused, requires a secret key |
+| Anonymous table reads | Refused at grant level, before RLS |
+| Unauthenticated requests to `/admin`, `/mentor`, `/student`, `/dashboard` | All redirect to `/login` |
+
+The magic-link result is the one worth noting: disabling password signup while
+leaving OTP open is a common miss, and every path is closed here.
+
+### Fixed
+
+**Admin could lock the organisation out of all admin access.** Verified live: the
+sole admin could set their own `role` to 'student' or `status` to 'disabled',
+leaving zero active admins and no in-application recovery.
+`profiles_delete_admin` already blocked self-deletion, so the case had been
+considered for DELETE and missed on UPDATE. Fixed by a constraint trigger in
+`20260828122059`, which still permits a handover once a second admin exists.
+
+**A user could authenticate and be sent back to sign-in with no explanation.**
+Reachable in the gap between an admin creating an account and its profile
+existing, and also by any disabled user. Correct credentials looped straight back
+to the form, so it would have arrived as an unreproducible support report.
+Anonymous and orphaned sessions are now distinct; the orphaned case ends the
+session and says why.
+
+**No HTTP security headers.** The sign-in page was embeddable in a frame on any
+site. Added `frame-ancestors`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`,
+and a `Permissions-Policy` denying camera and microphone.
+
+**`profiles.email` could drift from the Auth address.** Now derived from
+`auth.users` on every write.
+
+**Route protection depended on every page remembering its guard.** Middleware now
+requires a session outside an explicit public list. Role checks stay in the page
+guards; this is the floor beneath them.
+
+### Rate limits raised, and why
+
+Measured rather than assumed: sign-in throttled with HTTP 429 after **36**
+consecutive attempts from one IP. `sign_in_sign_ups` is counted per five minutes
+per IP address.
+
+Clause 3.1 fixes capacity at 100 users active at once. CAT candidates commonly sit
+a scheduled mock together at a coaching centre, where every student shares one
+public IP, so at the default of 30 the thirty first student is refused sign-in to
+their own test and it looks like an outage.
+
+`sign_in_sign_ups` raised 30 to 150 and `token_refresh` 150 to 300. The trade is
+weaker per-IP brute-force resistance, accepted because public signup is closed,
+passwords require eight or more characters with mixed case and digits, and sign-in
+gives no oracle distinguishing an unknown address from a wrong password.
+**This one is a judgement call and is worth a second opinion.**
+
+`email_sent` stays at 2 per hour: Supabase's built-in sender caps it regardless.
+It must be raised together with custom SMTP or bulk student creation under clause
+2.1 will stall partway through a class.
+
+### Known and accepted
+
+`getSessionState` throws if the profile query fails, which surfaces as the generic
+error boundary. Failing closed and loudly is the right behaviour for an unexpected
+database error; the generic page is a presentation gap, not an access one.
+
 ## Findings and risks to preserve
 
 | Severity | Finding | Required mitigation |
@@ -539,6 +620,16 @@ Two points to revisit rather than assume:
 | 2026-08-28 | GitHub CI, first runs | **Pass**, both green: `verify` on the PR and on the merge commit to `main`. Confirms the Windows-authored tree builds on Linux; no filename case collisions |
 | 2026-08-28 | Branch protection on `main` | **Active**, verified through the public rules API: restrict deletions, block force pushes, require a pull request (approvals 0, conversation resolution on), and require the `verify` status check with branches up to date |
 | 2026-08-28 | Phase 0 work merged | PR #1 merged to `main` as `abea31e`; 71 files tracked; `.env.local` absent from all history; typecheck, lint, tests, and build all pass on `main` |
+| 2026-08-28 | Security audit, attack attempts | 12 attack classes attempted against the live project; all refused. Full matrix recorded above |
+| 2026-08-28 | Admin lockout fix | Pass: sole admin can no longer demote or disable themselves (`23001`); a handover with a second admin still succeeds and leaves 1 active admin |
+| 2026-08-28 | Email drift fix | Pass: an admin write of a different address is accepted and silently corrected back to the Auth address |
+| 2026-08-28 | Security headers | Pass: `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` all present on the running app |
+| 2026-08-28 | Sign-in dead end fix | Pass: `/login?error=no_profile` renders the explanation; unknown values render nothing, and a crafted value reaches only Next.js's JSON-escaped router state, never the page |
+| 2026-08-28 | Middleware session gate | Pass: `/`, `/admin`, `/mentor`, `/student`, `/dashboard` all redirect anonymous callers to `/login`; `/login` still reachable |
+| 2026-08-28 | Rate limit measurement | Sign-in throttled at 36 consecutive attempts from one IP (HTTP 429). Raised to 150; `token_refresh` to 300 |
+| 2026-08-28 | Migration applied via CLI | `20260828122059` applied with `npm run db:migrate` against the linked project, resolving the earlier MCP deviation |
+| 2026-08-28 | pgTAP suite 002 | Authored and its 9 assertions verified against the live schema in a rolled-back transaction. `supabase test db` still unrun; Docker remains unavailable |
+| 2026-08-28 | Generated types after migration | Unchanged: the migration adds triggers and functions only, no tables or columns |
 | 2026-08-28 | Explorer cleanup verification | Parent-workspace VS Code settings parse as valid JSON; repository `.vscode` clutter removed; `npm run typecheck` and `npm run lint` pass after cleanup |
 
 ## Next recommended action
