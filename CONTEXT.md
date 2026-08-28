@@ -384,9 +384,6 @@ Also done since:
 
 Outstanding:
 
-- **Nothing is committed.** All Phase 0 work exists only as untracked files in the
-  working tree, so there is currently no backup and Cospire cannot see progress
-  despite holding read access to the repository throughout the build.
 - Repeat the three sign-ins on a deployed URL. The exit gate is defined against a
   live URL, and the application currently runs only on the developer's machine.
 - Configure custom SMTP before bulk student creation, with credentials as
@@ -409,8 +406,8 @@ Outstanding, requiring other access:
   still never been executed.
 - Deploy to Vercel Pro.
 - ~~Apply GitHub branch protection~~ done 2026-08-28; the ruleset is active and verified.
-- Move the working tree onto a branch and PR before committing. Nothing has been
-  committed; `main` must not receive direct commits.
+- ~~Move the working tree onto a branch and PR~~ done. PRs #1-#3 merged; branch
+  protection is active and enforces the flow.
 
 ### Later phases
 
@@ -562,6 +559,35 @@ It must be raised together with custom SMTP or bulk student creation under claus
 error boundary. Failing closed and loudly is the right behaviour for an unexpected
 database error; the generic page is a presentation gap, not an access one.
 
+## Advisor findings after the audit fixes
+
+The security advisor returns two WARN items. Neither is a defect in this
+repository and neither is fixable here.
+
+**Leaked password protection is disabled.** Supabase can reject passwords known
+to appear in breaches by checking HaveIBeenPwned. Worth enabling. It is
+**available on the Pro plan and above**, so it cannot be turned on while the
+project is on Free. This is a fourth reason to upgrade, alongside backups,
+Storage capacity and project pausing in the operating manual §4.6. Enable it in
+the same session as the upgrade.
+
+**Insufficient MFA options.** TOTP is disabled. This is a product decision rather
+than a defect: nothing in Annexure A asks for MFA, and requiring it of a hundred
+students adds friction to every mock. Enabling it for admins alone is the
+sensible middle, and it is a scope conversation rather than a fix.
+
+## Local build gotcha, Windows
+
+Running `npm run build` while `next start` is still serving produces a corrupt
+`.next/server/middleware.js`, and every route then answers 500 with `EvalError:
+Code generation from strings disallowed for this context`. The build itself
+reports success, so this is invisible until a request is made.
+
+It is a Windows file-locking artifact, not a code defect: stop the server, delete
+`.next`, and rebuild. Vercel always builds clean, so it cannot occur there.
+Recorded because the symptom points convincingly at the middleware and wastes
+time otherwise.
+
 ## Findings and risks to preserve
 
 | Severity | Finding | Required mitigation |
@@ -630,24 +656,36 @@ database error; the generic page is a presentation gap, not an access one.
 | 2026-08-28 | Migration applied via CLI | `20260828122059` applied with `npm run db:migrate` against the linked project, resolving the earlier MCP deviation |
 | 2026-08-28 | pgTAP suite 002 | Authored and its 9 assertions verified against the live schema in a rolled-back transaction. `supabase test db` still unrun; Docker remains unavailable |
 | 2026-08-28 | Generated types after migration | Unchanged: the migration adds triggers and functions only, no tables or columns |
+| 2026-08-28 | All Phase 0 PRs merged | PRs #1, #2, #3 merged to `main`; five CI runs, all green; only `main` remains; local matches `origin/main` with a clean tree |
+| 2026-08-28 | Migrations, repo vs live | Pass: `20260828093807`, `20260828102907`, `20260828122059` all present on both sides |
+| 2026-08-28 | Auth config, repo vs live | Pass: zero differing lines |
+| 2026-08-28 | Final smoke test on merged `main` | Pass after a clean rebuild: `/login` 200, `/admin` and `/dashboard` 307, all five security headers present, no runtime errors |
+| 2026-08-28 | Security advisor, post-fix | Two WARN items, both plan or scope decisions rather than defects; recorded above |
 | 2026-08-28 | Explorer cleanup verification | Parent-workspace VS Code settings parse as valid JSON; repository `.vscode` clutter removed; `npm run typecheck` and `npm run lint` pass after cleanup |
 
 ## Next recommended action
 
-1. **Run the app locally** with `npm run dev` and sign in as each of the three
-   users in turn. Confirm the admin reaches `/admin`, the mentor `/mentor`, the
-   student `/student`, that none can open another role's URL, and that sign-out
-   works. This is the only remaining item of the Phase 0 exit gate.
-2. Move this working tree onto a branch and open a PR. Nothing is committed yet and
-   `main` must not receive direct commits.
-3. Deploy to Vercel Pro, then replace `site_url` in `supabase/config.toml` with the
-   deployed URL, add it to `additional_redirect_urls`, run `supabase config push`,
-   and repeat the three sign-ins against the live URL.
-4. Configure custom SMTP and raise `[auth.rate_limit] email_sent` before building
-   bulk student creation.
-5. Run the pgTAP suite on a Docker-enabled machine.
-6. Apply GitHub branch protection once the CI check exists.
+Phase 0 is complete except for the live URL, which is blocked on Vercel access
+expected 2026-08-29.
 
-Phase 0 is **not** complete until step 1 passes. Everything the database and auth
-layers can guarantee has been verified; what remains is proving the application
-layer routes each role correctly.
+When the Vercel account is available:
+
+1. Create the project against `Two19Labs/Cospire` and set the four environment
+   variables from `.env.example`. `DATABASE_URL` and `SUPABASE_SECRET_KEY` are
+   server-only and must never carry a `NEXT_PUBLIC_` prefix.
+2. Deploy, then replace `site_url` in `supabase/config.toml` with the deployed
+   URL, add it to `additional_redirect_urls`, and run `supabase config push`.
+   Until this is done, password-reset emails point at localhost.
+3. Sign in as all three roles on the deployed URL, confirm each reaches only its
+   own shell and can sign out. That closes the Phase 0 exit gate.
+
+Then, before feature work:
+
+4. Upgrade to Supabase Pro and enable leaked password protection in the same
+   session.
+5. Configure custom SMTP and raise `[auth.rate_limit] email_sent` together, ahead
+   of bulk student creation.
+6. Run the pgTAP suites on a Docker-enabled machine. Neither has ever executed.
+
+Phase 1 can begin in parallel worktrees once the exit gate closes. The foundation,
+the access model and the workflow are all verified.
