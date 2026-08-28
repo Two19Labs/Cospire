@@ -72,6 +72,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Decision | Confirmed state |
 |---|---|
+| Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan. To be made private once the project completes. See the note below |
 | Application URL during build | Local only (`http://127.0.0.1:3000`). Confirmed by the client-side owner on 2026-08-28. A Vercel URL replaces it later; see the must-change note below |
 | Prerequisite gating | None in V1; every curriculum item is open |
 | Proctoring violation | Warn and log; never auto-submit |
@@ -407,7 +408,7 @@ Outstanding, requiring other access:
   23-assertion pgTAP suite at `supabase/tests/001_foundation_rls.test.sql` has
   still never been executed.
 - Deploy to Vercel Pro.
-- Apply GitHub branch protection once the CI check exists.
+- ~~Apply GitHub branch protection~~ done 2026-08-28; the ruleset is active and verified.
 - Move the working tree onto a branch and PR before committing. Nothing has been
   committed; `main` must not receive direct commits.
 
@@ -447,6 +448,38 @@ Remaining client-owned items:
 
 These do not invalidate the completed local scaffold or standalone migration
 verification. They do block the live Phase 0 exit gate.
+
+## Repository visibility
+
+`Two19Labs/Cospire` is **public** during the build. This was a deliberate choice by
+the repository owner on 2026-08-28: branch protection and rulesets are free on
+public repositories but require a paid plan on private ones, and the owner judged
+the exposure acceptable for a low-traffic repository. It is to be made private
+once the project completes.
+
+What this exposes, recorded so the decision can be reviewed on its facts:
+
+- No credentials. No keys, passwords, or connection strings are in any commit, and
+  `.env.local` has never been committed. Verified before the first push and again
+  afterwards.
+- The Supabase project reference. Low severity: it appears in every API URL the
+  browser calls once the application ships, and is not a credential. Access is
+  protected by RLS and by `anon` holding no grants, both verified against the live
+  API.
+- The full schema and every RLS policy. The access model does not depend on
+  secrecy, but publishing it does hand a reader a map of what to probe.
+- **This file's commercial commentary.** The findings table below carries candid
+  internal assessment of the agreement and delivery risk. It is the highest-value
+  content here for anyone outside the delivery team.
+
+Two points to revisit rather than assume:
+
+1. Whether the signed agreement permits publishing the Client's codebase. This was
+   not confirmed before the repository was made public.
+2. Cospire holds read access to this repository throughout the build, so the
+   commercial commentary is readable by the Client regardless of visibility. That
+   deserves a deliberate decision about what belongs in this file versus a
+   delivery-team-only document.
 
 ## Findings and risks to preserve
 
@@ -503,6 +536,9 @@ verification. They do block the live Phase 0 exit gate.
 | 2026-08-28 | Three live role sign-ins | **Pass**, confirmed by the project owner: admin, mentor, and student each signed in and reached their own role shell. Local only (`http://localhost:3000`); not yet repeated on a deployed URL |
 | 2026-08-28 | Login page fixes | Pass: typecheck, lint, 9 tests, and production build all pass after removing the invalid `"use server"` export, dropping the sign-in `minLength`, and adding readable action error handling |
 | 2026-08-28 | Test isolation | Pass: all scenario data rolled back; live counts remain 1 org, 3 active profiles, 0 assignments, 0 grants |
+| 2026-08-28 | GitHub CI, first runs | **Pass**, both green: `verify` on the PR and on the merge commit to `main`. Confirms the Windows-authored tree builds on Linux; no filename case collisions |
+| 2026-08-28 | Branch protection on `main` | **Active**, verified through the public rules API: restrict deletions, block force pushes, require a pull request (approvals 0, conversation resolution on), and require the `verify` status check with branches up to date |
+| 2026-08-28 | Phase 0 work merged | PR #1 merged to `main` as `abea31e`; 71 files tracked; `.env.local` absent from all history; typecheck, lint, tests, and build all pass on `main` |
 | 2026-08-28 | Explorer cleanup verification | Parent-workspace VS Code settings parse as valid JSON; repository `.vscode` clutter removed; `npm run typecheck` and `npm run lint` pass after cleanup |
 
 ## Next recommended action
