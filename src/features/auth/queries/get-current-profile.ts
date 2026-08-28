@@ -4,16 +4,29 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { isAppRole, type Profile } from "../types";
 
-export async function getCurrentProfile(): Promise<Profile | null> {
+// Anonymous and "signed in but has no active profile" are deliberately distinct.
+// Collapsing them sends a successfully authenticated user back to the sign-in
+// screen with no explanation, where signing in again repeats the loop: the
+// credentials are correct every time, so nothing tells them what is wrong. That
+// state is reachable whenever an Auth user exists without an active profile,
+// which is exactly the gap between an admin creating the account and the profile
+// row existing, and is also what a disabled user hits.
+export type SessionState =
+  | { status: "anonymous" }
+  | { status: "orphaned"; userId: string }
+  | { status: "active"; profile: Profile };
+
+export async function getSessionState(): Promise<SessionState> {
   const supabase = await createServerSupabaseClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
 
-  if (claimsError || !claimsData?.claims?.sub) return null;
+  const userId = claimsData?.claims?.sub;
+  if (claimsError || typeof userId !== "string") return { status: "anonymous" };
 
   const { data, error } = await supabase
     .from("profiles")
     .select("id, org_id, role, name, email")
-    .eq("id", claimsData.claims.sub)
+    .eq("id", userId)
     .eq("status", "active")
     .maybeSingle();
 
@@ -21,7 +34,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     throw new Error(`Unable to load the signed-in profile: ${error.message}`);
   }
 
-  if (!data) return null;
+  if (!data) return { status: "orphaned", userId };
 
   const row = data as Record<string, unknown>;
   if (
@@ -35,10 +48,13 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   }
 
   return {
-    email: row.email,
-    id: row.id,
-    name: row.name,
-    orgId: row.org_id,
-    role: row.role,
+    status: "active",
+    profile: {
+      email: row.email,
+      id: row.id,
+      name: row.name,
+      orgId: row.org_id,
+      role: row.role,
+    },
   };
 }

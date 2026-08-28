@@ -195,15 +195,34 @@ password_requirements = "lower_upper_letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
+# Left at the default deliberately: Supabase's built-in sender caps this
+# regardless of the value here. Raise it at the same time custom SMTP is
+# configured, or bulk student creation under clause 2.1 stalls partway through a
+# class and leaves half the accounts uninvited.
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
 anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
-token_refresh = 150
+# A three hour mock refreshes every student's hourly token in step with everyone
+# who started at the same time, so this is sized for a full cohort behind one IP.
+token_refresh = 300
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-sign_in_sign_ups = 30
+# Raised from the default 30 after the Phase 0 audit measured throttling at 36
+# consecutive attempts from one address.
+#
+# Clause 3.1 fixes capacity at 100 users active at once, including simultaneous
+# mock attempts, and CAT candidates commonly sit a scheduled mock together at a
+# coaching centre where every student shares one public IP. At 30 the thirty
+# first student is refused sign-in to their own test for reasons unrelated to
+# the application, and it looks exactly like an outage.
+#
+# The trade is weaker per-IP brute-force resistance. Accepted because public
+# signup is closed, passwords need eight or more characters with mixed case and
+# digits, and sign-in responses do not distinguish an unknown address from a
+# wrong password, so extra attempts yield no oracle.
+sign_in_sign_ups = 150
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
