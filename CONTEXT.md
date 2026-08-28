@@ -408,7 +408,7 @@ Outstanding, requiring other access:
   23-assertion pgTAP suite at `supabase/tests/001_foundation_rls.test.sql` has
   still never been executed.
 - Deploy to Vercel Pro.
-- Apply GitHub branch protection once the CI check exists.
+- ~~Apply GitHub branch protection~~ done 2026-08-28; the ruleset is active and verified.
 - Move the working tree onto a branch and PR before committing. Nothing has been
   committed; `main` must not receive direct commits.
 
@@ -536,6 +536,9 @@ Two points to revisit rather than assume:
 | 2026-08-28 | Three live role sign-ins | **Pass**, confirmed by the project owner: admin, mentor, and student each signed in and reached their own role shell. Local only (`http://localhost:3000`); not yet repeated on a deployed URL |
 | 2026-08-28 | Login page fixes | Pass: typecheck, lint, 9 tests, and production build all pass after removing the invalid `"use server"` export, dropping the sign-in `minLength`, and adding readable action error handling |
 | 2026-08-28 | Test isolation | Pass: all scenario data rolled back; live counts remain 1 org, 3 active profiles, 0 assignments, 0 grants |
+| 2026-08-28 | GitHub CI, first runs | **Pass**, both green: `verify` on the PR and on the merge commit to `main`. Confirms the Windows-authored tree builds on Linux; no filename case collisions |
+| 2026-08-28 | Branch protection on `main` | **Active**, verified through the public rules API: restrict deletions, block force pushes, require a pull request (approvals 0, conversation resolution on), and require the `verify` status check with branches up to date |
+| 2026-08-28 | Phase 0 work merged | PR #1 merged to `main` as `abea31e`; 71 files tracked; `.env.local` absent from all history; typecheck, lint, tests, and build all pass on `main` |
 | 2026-08-28 | Explorer cleanup verification | Parent-workspace VS Code settings parse as valid JSON; repository `.vscode` clutter removed; `npm run typecheck` and `npm run lint` pass after cleanup |
 
 ## Next recommended action
