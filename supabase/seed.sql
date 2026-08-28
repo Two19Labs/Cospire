@@ -1,0 +1,2 @@
+-- Phase 0 intentionally keeps seed data inside the foundation migration so the
+-- same baseline is applied both locally and when pasted into the hosted SQL editor.
