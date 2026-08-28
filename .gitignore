@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next
+/out
+
+# production
+/build
+
+# local environment and secrets
+.env
+.env.*
+!.env.example
+
+# local Supabase state
+/supabase/.branches
+/supabase/.temp
+
+# testing
+/coverage
+
+# logs and editor files
+*.log
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
