@@ -1,6 +1,10 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-08-28 (Asia/Calcutta)
+Last updated: 2026-08-29 (Asia/Calcutta)
+
+**Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
+signed in on the deployed URL and reached their own role shell. Remaining items
+are plan upgrades and later-phase prerequisites, listed under Pending.
 
 ## Purpose and authority
 
@@ -559,6 +563,69 @@ It must be raised together with custom SMTP or bulk student creation under claus
 error boundary. Failing closed and loudly is the right behaviour for an unexpected
 database error; the generic page is a presentation gap, not an access one.
 
+## Phase 0 exit gate: closed 2026-08-29
+
+Deployed to Vercel at `https://cospire-roan.vercel.app` from `main`. `site_url`
+and the redirect allow-list were repointed from the local placeholder to that URL
+before testing.
+
+All three roles signed in on the deployed URL within minutes of each other and
+reached their own role shell, confirmed against `auth.users.last_sign_in_at`.
+
+Final state verified the same day:
+
+| Check | Result |
+|---|---|
+| Live `/login` | 200, renders the sign-in form |
+| Live `/admin` while anonymous | 307 to `/login` |
+| Security headers on the deployed site | 5 of 5, plus HSTS from Vercel |
+| Migrations, repo vs live | 3, all matching |
+| Auth config, repo vs live | 0 differing lines |
+| Working tree | `main`, clean, synced |
+
+## GitHub exposure audit, 2026-08-29
+
+The repository is public by the owner's decision, so it was audited as an
+attacker would read it.
+
+Clean:
+
+- Every blob in every commit scanned for credential patterns. Nothing found; the
+  only match is the literal `your-project-ref:password` placeholder in
+  `.env.example`.
+- Zero Actions secrets, Dependabot secrets, Actions variables, deploy keys and
+  webhooks. There is nothing stored in GitHub to steal.
+- One collaborator, `Two19Labs`, admin.
+- CI uses the `pull_request` trigger rather than `pull_request_target`, so a fork's
+  code never runs with repository permissions. `permissions: contents: read`, no
+  secrets referenced, workflow token read-only and unable to approve reviews.
+- Repository knowledge grants nothing. Reading every table name, policy and private
+  function name from the repo, then calling them with the publishable key: all four
+  tables return 401, every helper returns 404, storage is empty, and the auth admin
+  endpoint returns 401.
+
+### Open finding: CODEOWNERS is inert
+
+`.github/CODEOWNERS` names `@manthan` and `@aditya`. Both are real GitHub accounts
+belonging to other people, and neither has access to this repository. GitHub
+silently ignores CODEOWNERS entries for users who cannot access the repo, with no
+warning.
+
+So the review requirement on `/supabase/migrations/**` does not exist. It is not
+dangerous today, since neither account has access and the file alone grants
+nothing, but it is documentation that describes a control which is not in place.
+
+The owner's account is `Two19Labs`. Fixing it needs the second engineer's real
+GitHub handle before the `/src/features/**` line can be corrected.
+
+### Minor hardening, not blocking
+
+- Actions are referenced by tag rather than commit SHA. Low risk with official
+  GitHub actions; worth pinning before handover.
+- Anyone can open a pull request that consumes Actions minutes. GitHub's default
+  approval requirement for first-time contributors covers this; worth confirming
+  it is enabled.
+
 ## Advisor findings after the audit fixes
 
 The security advisor returns two WARN items. Neither is a defect in this
@@ -665,27 +732,22 @@ time otherwise.
 
 ## Next recommended action
 
-Phase 0 is complete except for the live URL, which is blocked on Vercel access
-expected 2026-08-29.
+Phase 0 is closed. Nothing below blocks starting Phase 1.
 
-When the Vercel account is available:
+Carry into Phase 1:
 
-1. Create the project against `Two19Labs/Cospire` and set the four environment
-   variables from `.env.example`. `DATABASE_URL` and `SUPABASE_SECRET_KEY` are
-   server-only and must never carry a `NEXT_PUBLIC_` prefix.
-2. Deploy, then replace `site_url` in `supabase/config.toml` with the deployed
-   URL, add it to `additional_redirect_urls`, and run `supabase config push`.
-   Until this is done, password-reset emails point at localhost.
-3. Sign in as all three roles on the deployed URL, confirm each reaches only its
-   own shell and can sign out. That closes the Phase 0 exit gate.
+1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Until then the
+   migration review requirement is documentation only.
+2. **Vercel Hobby to Pro.** Hobby does not permit commercial use. The owner has
+   chosen to build on Hobby and upgrade later; it must happen before the Client is
+   told this is their platform. Clause 3.8 puts the account in Cospire's name.
+3. **Supabase Free to Pro**, before ARS uploads and restore testing. Also unlocks
+   leaked-password protection.
+4. **Custom SMTP**, raising `[auth.rate_limit] email_sent` at the same time,
+   before bulk student creation.
+5. **Run the pgTAP suites** on a Docker-enabled machine. Neither has ever executed;
+   both were verified by hand against the live schema instead.
+6. **Replace `site_url`** if a custom domain replaces the `vercel.app` address.
 
-Then, before feature work:
-
-4. Upgrade to Supabase Pro and enable leaked password protection in the same
-   session.
-5. Configure custom SMTP and raise `[auth.rate_limit] email_sent` together, ahead
-   of bulk student creation.
-6. Run the pgTAP suites on a Docker-enabled machine. Neither has ever executed.
-
-Phase 1 can begin in parallel worktrees once the exit gate closes. The foundation,
-the access model and the workflow are all verified.
+Phase 1 work can begin in parallel worktrees. The foundation, the access model,
+the deployment pipeline and the review workflow are all verified end to end.
