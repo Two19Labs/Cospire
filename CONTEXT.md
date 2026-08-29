@@ -169,7 +169,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   Supabase URL and publishable key. `DATABASE_URL` and `SUPABASE_SECRET_KEY` are
   deliberately left blank
 - Workflow/docs: `.github/**`, `scripts/wt-new.sh`, `scripts/wt-done.sh`,
-  `docs/branch-protection.md`, `docs/supabase-phase-0-runbook.md`
+  `docs/branch-protection.md`, `docs/supabase-phase-0-runbook.md`,
+  `docs/implementation-plan.md`
 - Agent handoff: `AGENTS.md`, repository `CLAUDE.md`, and this file
 - Navigation: local parent-workspace `C:\Cospire\.vscode\settings.json` hides
   generated/dependency folders and visually nests required root metadata under
@@ -751,3 +752,9 @@ Carry into Phase 1:
 
 Phase 1 work can begin in parallel worktrees. The foundation, the access model,
 the deployment pipeline and the review workflow are all verified end to end.
+
+The route through the remaining five weeks is in `docs/implementation-plan.md`,
+sequenced against the signed delivery plan. Week 2 is the admin console and the
+document library, and its acceptance test is the client's own sentence: an admin
+creates a student, grants them a document, that student reads it, and another
+student is correctly refused.
