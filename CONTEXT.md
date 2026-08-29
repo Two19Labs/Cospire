@@ -753,8 +753,11 @@ Carry into Phase 1:
 Phase 1 work can begin in parallel worktrees. The foundation, the access model,
 the deployment pipeline and the review workflow are all verified end to end.
 
-The route through the remaining five weeks is in `docs/implementation-plan.md`,
-sequenced against the signed delivery plan. Week 2 is the admin console and the
-document library, and its acceptance test is the client's own sentence: an admin
-creates a student, grants them a document, that student reads it, and another
-student is correctly refused.
+The route through the rest of the build is in `docs/implementation-plan.md`,
+split into six phases, one per contracted week, each with a single demonstrable
+exit gate taken from the signed delivery plan.
+
+**Phase 0 is complete. Phase 1 is next:** the admin console and the document
+library. Its exit gate is the client's own sentence, an admin creates a student,
+grants them a document, that student reads it, and another student is correctly
+refused.
