@@ -86,6 +86,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Mobile mocks | Phone attempts are permanently unproctored; mock can disallow phones |
 | Timing | Server-authoritative, including sectional timing |
 | Schema workflow | Append-only migrations; no live schema writes through MCP |
+| Migration safety | Expand and contract. A migration must never break the currently deployed code, because Vercel deploys on merge while migrations are applied by hand |
 | Supabase plans | Free during build, Pro before handover/ARS and restore testing |
 | Application hosting | Vercel Pro; Hobby is not used for the commercial application |
 
@@ -101,6 +102,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 - No media bytes pass through the application server.
 - Heavy operations must be asynchronous, idempotent, and auditable.
 - Every committed migration must be sufficient to recreate the database.
+- Migrations are additive and must not break the code already deployed. Drops
+  and renames happen in a later release, once nothing reads the old thing. See
+  `docs/implementation-plan.md`.
 - `src/shared/db/types.ts` is generated from the database and never hand-edited.
 
 ## Current repository state

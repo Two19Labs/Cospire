@@ -355,6 +355,65 @@ From the delivery plan, so the client experience matches what was sold.
 
 ---
 
+## Migrations must be safe against the currently deployed code
+
+**Code deploys itself. The database does not.** Vercel ships on merge to `main`
+within a minute. Migrations are applied by a person running `npm run db:migrate`.
+Nothing links the two, and CI never touches the database.
+
+So there is always a window where the running code and the schema disagree, and
+during a rollout it is worse than a window: Vercel serves the old bundle and the
+new one at the same time, so a student mid-attempt may be on either.
+
+The rule that removes the problem rather than automating around it:
+
+> **A migration must never break the code that is currently deployed.**
+
+This is expand and contract, and the cleanup still happens. It simply does not
+happen in the same release as the code change.
+
+| Step | What | Release |
+|---|---|---|
+| Expand | Add the new column or table, nullable or with a default | 1 |
+| Migrate | Backfill, write to both, then switch reads to the new one | 1 to 2 |
+| Contract | Drop the old column or table | 3, once nothing reads it |
+
+### In practice
+
+- **Add, do not change.** New tables, new columns, new policies.
+- **Never drop or rename in the same release as the code that stops using it.** A
+  rename is: add the new column, backfill, write to both, switch reads, drop later.
+- **New columns are nullable or defaulted.** A `NOT NULL` column with no default
+  breaks every insert the deployed code is still making.
+- **Tighten in a later migration.** Add nullable, backfill, then set `NOT NULL`
+  once the data is clean and the code is deployed.
+- **Unique constraints fail on existing duplicates.** Check before adding one.
+- **Apply the migration before merging the pull request that needs it.** Belt and
+  braces: if the rule above is followed, order stops mattering, but this removes
+  the window entirely.
+
+### Two that will bite in later phases
+
+- **`CREATE INDEX` locks writes on a large table.** The fix is
+  `CREATE INDEX CONCURRENTLY`, which **cannot run inside a transaction**, and the
+  CLI wraps each migration in one. It needs its own migration file with the
+  transaction disabled. Relevant from Phase 3 onward, once `questions` is large.
+- **A type change rewrites the table and takes a lock.** Treat it as expand and
+  contract, never as an `alter column type`.
+
+### Why this survives handover
+
+Today the deployed code is known. After handover it will not be, and Cospire's
+team will have less context than the people who wrote it. Under this rule the
+worst outcome of a careless migration is an unused column rather than an outage.
+
+It also keeps clause 3.9 literally true: append-only, additive migrations mean the
+history recreates the database. Editing history to tidy up quietly breaks that.
+
+The operating manual §5.6 already requires additive migrations, because every
+worktree shares one database and a dropped column breaks another agent with no
+merge conflict to warn anyone. This is the same rule with a second reason.
+
 ## Definition of done, every phase
 
 On top of the checklist in operating manual §6:
@@ -362,6 +421,8 @@ On top of the checklist in operating manual §6:
 - Typecheck, lint, tests and build pass, and CI is green on the pull request.
 - RLS policies exist for any new table, covering INSERT and UPDATE as well as
   SELECT, written in the migration that creates the table.
+- **The migration is safe against the currently deployed code**, per the rule
+  above, and was applied before the pull request was merged.
 - Storage policies exist for any new bucket, in the same migration.
 - No `service_role` or secret key referenced in client code, and none in the built
   client bundle.
