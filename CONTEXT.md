@@ -22,41 +22,66 @@ It is not a substitute for the governing documents. Use this order of authority:
 If this file conflicts with a higher-authority document, correct this file rather
 than silently following it.
 
-## Mandatory context protocol
+## The context rule - non-negotiable, every agent, every session
 
-Every agent or new chat must do all of the following.
+This file is the single source of truth for the state of this project. It is what
+lets a new chat, a new agent or a new engineer pick this up without anyone
+explaining it to them. Keeping it true is part of the work, not admin bolted on at
+the end.
 
-### At the start of work
+The same rule is in `AGENTS.md` and `CLAUDE.md`, so it binds whichever entry point
+you arrive through.
 
-1. Read this entire file before planning or editing.
-2. Read the applicable repository instructions and governing source documents.
-3. Inspect `git status`, the current branch, recent commits, and relevant files.
-4. Add or update an entry in **Active work** before making material changes.
-5. Check active entries and avoid editing another worker's owned files without
-   explicit coordination.
+**Before planning or editing anything**
 
-### During work
+1. Read this file in full. Not skimmed, not searched for a keyword.
+2. Add your entry to **Active work** - branch, scope, the files you will own -
+   before your first material change, so a parallel agent can see the collision
+   coming.
+3. Inspect `git status`, the current branch, recent commits, and the relevant
+   files. Do not trust this file over what the repository actually says; where
+   they disagree, the repository is right and this file gets corrected.
 
-- Update this file when a material decision, discovery, blocker, scope
-  clarification, migration, dependency, or external-service assumption changes.
-- Record facts, file paths, commands, and verification results. Do not record
-  speculation as fact.
-- Never place passwords, API keys, access tokens, student data, private content,
-  or other secrets in this file.
-- Keep this file current and concise. Replace stale state instead of accumulating
-  an unbounded diary.
+**While working**
 
-### Before handoff or ending a turn
+4. Update it the moment something material changes: a decision, a discovery, a
+   blocker, a migration, a new dependency, an assumption about an external
+   service. Write it when you learn it, not at the end when you have forgotten why
+   it mattered.
+5. Do not edit files another agent has claimed under **Active work** without
+   coordinating first.
 
-1. Move finished items from **Active work** to **Completed**.
-2. Record files changed and checks run, including failures.
-3. Update **Pending**, **Blockers**, and **Next recommended action**.
-4. Leave incomplete work explicitly marked; never imply completion from partial
-   scaffolding.
-5. Commit the context update with the work it describes when commits are in scope.
+**Before ending any turn, handing off, or going quiet**
 
-In a feature worktree, update the worktree's copy of this file. The integrating
-reviewer consolidates concurrent context changes when branches merge.
+6. Move finished items out of **Active work** into **Completed**.
+7. Record what you verified and how, **including what failed**. Never record an
+   assumption as a fact, and never record "should work" as "works". A green build
+   is not evidence a feature works.
+8. Update **Pending**, the blockers, and **Next recommended action**.
+9. **Replace stale statements. Do not append a correction beneath them.** A file
+   that contradicts itself is worse than one that is merely out of date, because
+   the reader cannot tell which half is true. Replace stale state rather than
+   accumulating an unbounded diary.
+10. Leave incomplete work explicitly marked as incomplete. Never imply completion
+    from partial scaffolding.
+
+**The test that decides whether you are finished**
+
+> A new session that reads only this file must be able to continue the work
+> without asking a single question.
+
+If that is not true, this file is not finished and neither are you. Check it by
+reading your own entry as if you had never seen this project.
+
+**Never** put secrets, credentials, tokens, connection strings, student data or
+anyone's personal data in this file.
+
+This rule is not waived by being in a hurry, by the change being small, or by the
+work being unfinished. An unfinished task recorded honestly is useful. An
+unfinished task recorded as complete is worse than no record at all.
+
+In a feature worktree, update that worktree's copy. The integrating reviewer
+consolidates concurrent context changes when branches merge.
 
 ## Product summary
 
