@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-08-29 (Asia/Calcutta)
+Last updated: 2026-08-31 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell. Remaining items
@@ -105,21 +105,43 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`
-- Branch: `main`, tracking `origin/main`
-- Baseline commit: `d8b5172` (`Initial commit`, 2026-08-24)
-- The Phase 0 implementation exists in the working tree but is currently
-  untracked. Nothing was committed because direct commits to `main` are forbidden
-  and no commit/branch operation was requested.
-- Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, Free plan) is confirmed
-  and reachable through a project-scoped MCP connection. The database portion of
-  Phase 0 is applied; Auth/dashboard configuration is not.
-- Docker/Podman is unavailable on this machine, confirmed again on 2026-08-28.
-  `db:reset`, `db:lint`, and `db:test` therefore cannot run here. A standalone
-  PostgreSQL 17 test cluster was used earlier to exercise the migration, then removed.
-- The Supabase CLI is installed (2.116.0) but not logged in and not linked, and no
-  database password is held locally, so `db:migrate` and `gen types --linked` are
-  unavailable to an agent in this session.
+- Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
+  clean working tree.
+- **All Phase 0 work is committed and merged.** Pull requests #1 to #8 are merged;
+  `main` is the only branch. Nothing is left untracked.
+- `main` is protected by an active ruleset: pull request required, `verify` status
+  check required, branches must be up to date, force pushes and deletions blocked.
+  Required approvals are deliberately `0` while the team is one person, since
+  GitHub does not permit self-approval.
+- The repository is **public**, by the owner's decision, to be made private after
+  the project. See Repository visibility below.
+- Deployed on **Vercel** at `https://cospire-roan.vercel.app`, auto-deploying from
+  `main`, with a preview deployment per pull request. Currently on the **Hobby**
+  plan, which does not permit commercial use; the owner has chosen to build on it
+  and upgrade before handover.
+- Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
+  and auth configuration are both applied and in sync with this repository: three
+  migrations present on both sides, and `supabase config push` reports zero
+  differing lines.
+
+### Tooling available to an agent in this repository
+
+| Tool | State | Use it for |
+|---|---|---|
+| Supabase CLI | Logged in and **linked** | `npm run db:migrate` for migrations, `supabase config push` for auth settings, `npm run db:types` |
+| GitHub CLI (`gh`) | Installed, authenticated as `Two19Labs` | Creating pull requests, watching CI, merging |
+| Supabase MCP | Available, **read-only by policy** | Inspecting tables, advisors, logs. Never DDL; see operating manual §4.5 |
+| Docker | **Unavailable** | `db:reset`, `db:lint` and `db:test` cannot run here |
+
+Two operational notes that cost time to rediscover:
+
+- **`gh` must be run from PowerShell, not Git Bash.** Its token lives in the
+  Windows keyring, which the Git Bash environment cannot read, so `gh auth status`
+  reports logged out there while working correctly in PowerShell. `gh.exe` sits at
+  `%ProgramFiles%\GitHub CLI\gh.exe`.
+- **Migrations go through the CLI**, now that the project is linked. The MCP
+  server is for reading. Phase 0 applied two migrations through MCP out of
+  necessity and reconciled the history afterwards; that route is no longer needed.
 
 ## Completed
 
@@ -152,17 +174,22 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Hosted database work for Phase 0 is complete. Everything still open needs Supabase dashboard access, which no agent in this session holds. | 2026-08-28 |
+| None | - | - | - | Phase 0 closed and merged. No work in progress. Phase 1 is unclaimed and unblocked. | 2026-08-31 |
 
-## Files added or changed in Phase 0
+An agent picking up Phase 1 should claim it here first, naming the branch and the
+files it will own, before editing anything.
+
+## What Phase 0 added
 
 - Foundation/config: `package.json`, `package-lock.json`, `.env.example`,
   `.gitignore`, `.nvmrc`, Next.js/TypeScript/ESLint/Vitest config, `README.md`
 - Application: `src/app/**`, `src/features/auth/**`, Admin/Mentor/Student shells,
   placeholder feature directories, `src/shared/ui/**`, `src/shared/db/**`
-- Database: `supabase/config.toml`, foundation migration, seed file, pgTAP tests,
-  manual profile bootstrap SQL, and
-  `supabase/migrations/20260828102907_restrict_rls_auto_enable_execute.sql`
+- Database: `supabase/config.toml`, seed file, manual profile bootstrap SQL, two
+  pgTAP suites, and three migrations:
+  `20260828093807_foundation_identity_access`,
+  `20260828102907_restrict_rls_auto_enable_execute`, and
+  `20260828122059_protect_last_admin_and_sync_profile_email`
 - Generated: `src/shared/db/types.ts`, generated from the live hosted schema and
   never hand-edited
 - Local only, gitignored, never committed: `.env.local`, holding the browser-safe
@@ -365,91 +392,69 @@ lock the organisation out of its only admin access.
 
 ## Pending
 
-### Phase 0 live exit gate
+The full route is in `docs/implementation-plan.md`: six phases, one per contracted
+week, each with a demonstrable exit gate. Only what is open is listed here.
 
-Done:
+### Phase 1, next and unblocked
 
-- Foundation migration applied to hosted Supabase and verified structurally.
-- Security advisor cleared; performance advisor findings assessed and documented.
-- `src/shared/db/types.ts` generated from the live schema.
-- `.env.local` created with the browser-safe Supabase URL and publishable key.
-- Typecheck, lint, tests, and production build pass.
+Admin console and documents. Exit gate, in the client's own words: *an admin
+creating a student, granting them a document, and that student reading it while
+another student is correctly refused.*
 
-Also done since:
+Nothing blocks starting. Custom SMTP gates **only** bulk student creation; the
+admin console, single-user creation, mentor assignment, access granting, the
+document library and the protected viewer all proceed without it.
 
-- Supabase CLI logged in and linked; auth settings now applied from
-  `supabase/config.toml` via `supabase config push`, not the dashboard.
-- Public signup disabled, password policy enforced, email login verified working.
+### Carried over from Phase 0
 
-- Three Auth users created and bootstrapped into profiles, one active per role.
-- Full RLS matrix verified against the hosted database, reads and writes.
+None of these block Phase 1.
 
-- Three local sign-ins confirmed working by the project owner: each role reaches
-  its own shell.
+| Item | Why it matters | Needs |
+|---|---|---|
+| **CODEOWNERS is inert** | It names two accounts that cannot access the repository, so GitHub ignores it and the review requirement on `/supabase/migrations/**` does not actually exist | The second engineer's real GitHub handle. The owner's account is `Two19Labs` |
+| **Vercel on Hobby** | Hobby forbids commercial use | Upgrade before the Client is told the platform is theirs. Clause 3.8 puts the account in Cospire's name |
+| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Upgrade before ARS uploads and restore testing. Clause 8.3 budgets for it |
+| **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
+| **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
+| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover |
+| **`site_url` points at a `vercel.app` address** | It goes into password-reset emails | Replace if a custom domain is added, then `supabase config push` |
 
-Outstanding:
+### Pulled forward from later phases
 
-- Repeat the three sign-ins on a deployed URL. The exit gate is defined against a
-  live URL, and the application currently runs only on the developer's machine.
-- Configure custom SMTP before bulk student creation, with credentials as
-  `env(...)` references.
-- Replace the local `site_url` with the Vercel URL before any real user exists.
-- Set `DATABASE_URL` (transaction pooler) and `SUPABASE_SECRET_KEY` locally and in
-  Vercel. Both are server-only and are deliberately blank in `.env.local`.
+Recorded in the implementation plan, repeated here because they are easy to lose.
 
-Outstanding, requiring the three Auth users to exist first:
-
-- The Admin, Mentor, Student, disabled-user, and cross-organisation RLS matrix
-  against the hosted database.
-- Three live sign-ins on a deployed URL, each reaching only its own role shell and
-  signing out.
-
-Outstanding, requiring other access:
-
-- Run `db:reset`, `db:lint`, and `db:test` on a Docker-enabled machine. The
-  23-assertion pgTAP suite at `supabase/tests/001_foundation_rls.test.sql` has
-  still never been executed.
-- Deploy to Vercel Pro.
-- ~~Apply GitHub branch protection~~ done 2026-08-28; the ruleset is active and verified.
-- ~~Move the working tree onto a branch and PR~~ done. PRs #1-#3 merged; branch
-  protection is active and enforces the flow.
-
-### Later phases
-
-- Admin console and bulk user creation
-- Document library and protected viewer
-- Video library and curriculum builder
-- Question bank and import pipeline
-- Test engine and analytics
-- ARS engine
-- Migration, load/security testing, deployment, restore testing, and handover
+1. **Run one of Cospire's real documents through the importer during Phase 1 or 2.**
+   The delivery plan commits to the first fortnight. It needs no finished UI, and
+   poor accuracy on their older material is a conversation to have with four weeks
+   left rather than one.
+2. **Decide how historical attempts are protected from live question and mock
+   edits, before Phase 4 starts.** Recorded as critical below.
+3. **Supabase Pro and a tested restore, before Phase 5 starts.** The deliverable is
+   a restore tested, not enabled, and database backups exclude Storage objects.
 
 ## External blockers and client-owned steps
 
-Precise missing authorisation, so it can be granted rather than guessed at:
+Every blocker recorded during Phase 0 is resolved: Supabase dashboard access, the
+CLI link, the three Auth users, and a deployed URL all exist. What follows blocks
+**later phases**, with the phase it stops.
 
-- **Supabase dashboard or Management API access.** Blocks every Auth step: turning
-  public sign-up off, Site URL and redirect allow-list, password policy, custom
-  SMTP, and creating the three Auth users. The project-scoped database connection
-  available here cannot reach any of it.
-- **Supabase Auth Admin capability** (or a server-only secret key held by a human).
-  Blocks creating users without writing to `auth.users` directly, which is
-  forbidden.
-- **Database password / pooler URI**, held by a human. Blocks `supabase link`,
-  `npm run db:migrate`, and `gen types --linked` from this session.
-- **A Docker-capable machine.** Blocks `db:reset`, `db:lint`, `db:test`, so the
-  pgTAP suite remains unexecuted.
-- **A Vercel Pro project.** Blocks the deployed URL the exit gate is defined against.
+| Needed | Blocks | Owner |
+|---|---|---|
+| **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
+| **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
+| **Google API and LLM** accounts | The Google Doc import in Phase 3. The rest of that phase proceeds without them | Cospire |
+| **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
+| **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
+| **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
+| **Supabase Pro** | Daily backups, the tested restore, Storage for ARS uploads, leaked-password protection | Cospire, clause 8.3 |
+| **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
+| **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
+| **The second engineer's GitHub handle** | Making CODEOWNERS actually enforce anything | Two19 Labs |
+| **The written Kickoff Date** | Nothing directly, but the week-four content deadline hangs off it and it has never been confirmed | Cospire |
 
-Remaining client-owned items:
-
-- Custom SMTP account and DNS records
-- VdoCipher account and API access
-- Google API/LLM accounts for question import
-- Production plan upgrades and billing approval
-
-These do not invalidate the completed local scaffold or standalone migration
-verification. They do block the live Phase 0 exit gate.
+The delivery plan also assumes **feedback within two working days**. Where that
+slips the delivery date moves by the same amount, and it must be flagged in
+writing at the time rather than absorbed silently.
 
 ## Repository visibility
 
