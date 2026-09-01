@@ -63,6 +63,10 @@ export function buildUsersHref({
 export const userListErrors = {
   "assignment-failed": "That mentor assignment was refused. Nothing changed.",
   "invalid-request": "That request was not valid. Nothing changed.",
+  "last-admin":
+    "That would leave the organisation with no active admin. Promote another " +
+    "admin first. Nothing changed.",
+  "status-change-failed": "That account could not be updated. Nothing changed.",
 } as const;
 
 export type UserListError = keyof typeof userListErrors;

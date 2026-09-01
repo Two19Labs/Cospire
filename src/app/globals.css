@@ -321,7 +321,9 @@ code {
 }
 
 .toolbar {
-  align-items: end;
+  /* flex-end rather than end: `end` has mixed support in older engines and
+     autoprefixer warns on it. */
+  align-items: flex-end;
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;

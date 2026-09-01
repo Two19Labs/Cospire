@@ -12,6 +12,7 @@ import {
 } from "@/shared/ui";
 
 import { assignMentorAction } from "../actions/assign-mentor";
+import { setUserStatusAction } from "../actions/set-user-status";
 import {
   buildUsersHref,
   userListErrors,
@@ -125,9 +126,43 @@ export function UsersScreen({
                     <TableCell>{row.email}</TableCell>
                     <TableCell>{roleLabels[row.role]}</TableCell>
                     <TableCell>
-                      <span className={`pill pill--${row.status}`}>
-                        {row.status === "active" ? "Active" : "Disabled"}
-                      </span>
+                      <div className="row-form">
+                        <span className={`pill pill--${row.status}`}>
+                          {row.status === "active" ? "Active" : "Disabled"}
+                        </span>
+                        {/*
+                          Deliberately absent on the admin's own row. The
+                          database stops the last admin being disabled, but with
+                          a second admin present it would happily let someone
+                          lock themselves out of the console they are standing
+                          in. The action refuses it too, in case the form is
+                          posted by hand.
+                        */}
+                        {row.id === profile.id ? null : (
+                          <form action={setUserStatusAction}>
+                            <input name="page" type="hidden" value={page} />
+                            <input name="q" type="hidden" value={search} />
+                            <input
+                              name="userId"
+                              type="hidden"
+                              value={row.id}
+                            />
+                            <input
+                              name="status"
+                              type="hidden"
+                              value={
+                                row.status === "active" ? "disabled" : "active"
+                              }
+                            />
+                            <button
+                              className="button button--secondary button--compact"
+                              type="submit"
+                            >
+                              {row.status === "active" ? "Disable" : "Enable"}
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {row.role !== "student" ? (
