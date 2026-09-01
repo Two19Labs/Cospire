@@ -137,7 +137,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`. Current branch **`feat/admin-console`**,
-  three commits ahead of `main`, **not yet pushed**, clean working tree.
+  6 commits ahead of `main`, **not yet pushed**, clean working tree.
   `main` itself is unchanged and still synced with `origin/main`.
 - **All Phase 0 work is committed and merged.** Pull requests #1 to #11 are merged;
   `main` is the only branch. Nothing is left untracked.
@@ -901,7 +901,7 @@ verified. Nothing is blocking the next step.**
 1. **Add `SUPABASE_SECRET_KEY` to the Vercel project environment.** It is in
    local `.env.local` only, so user creation works locally and would fail in
    production. Server-side variable, never prefixed `NEXT_PUBLIC_`.
-2. **Open a pull request for `feat/admin-console`.** Three commits, unpushed.
+2. **Open a pull request for `feat/admin-console`.** 6 commits, unpushed.
    Two files need a human's eye because they sit outside a feature folder:
    `src/shared/db/supabase/admin.ts` and `vitest.config.mts`.
 3. Continue the build order: `documents` table with its Storage bucket and
