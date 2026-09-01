@@ -1,10 +1,12 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-08-31 (Asia/Calcutta)
+Last updated: 2026-09-01 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
-signed in on the deployed URL and reached their own role shell. Remaining items
-are plan upgrades and later-phase prerequisites, listed under Pending.
+signed in on the deployed URL and reached their own role shell.
+
+**Phase 1 is in progress.** Steps 1-3 of seven are done and verified against the
+hosted database; see Phase 1 progress below.
 
 ## Purpose and authority
 
@@ -134,8 +136,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
-  clean working tree.
+- Repository: `C:\Cospire\Cospire`. Current branch **`feat/admin-console`**,
+  three commits ahead of `main`, **not yet pushed**, clean working tree.
+  `main` itself is unchanged and still synced with `origin/main`.
 - **All Phase 0 work is committed and merged.** Pull requests #1 to #11 are merged;
   `main` is the only branch. Nothing is left untracked.
 - `main` is protected by an active ruleset: pull request required, `verify` status
@@ -203,7 +206,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3: paginated user list, single user creation, mentor assignment. **No schema change** - `profiles`, `mentor_assignments` and `content_access` already exist and need nothing added | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared), `vitest.config.mts` | **Code complete, NOT functionally verified.** Two commits on the branch, unpushed, no PR yet. Blocked on `SUPABASE_SECRET_KEY` before user creation can be run even once | 2026-09-01 |
+| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3 complete and verified. Next in the same branch or a fresh one: steps 6 and 7 (documents, Storage policies, protected viewer), then 4 (access granting), then 5 (bulk CSV) | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared), `vitest.config.mts` | Steps 1-3 done, verified against the hosted database, committed, **unpushed and no PR yet**. Not blocked | 2026-09-01 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -425,9 +428,9 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 
 | Step | State |
 |---|---|
-| 1. Console shell and paginated user list | Code complete, unverified against a signed-in admin |
-| 2. Create a single user | Code complete, **never executed** - needs `SUPABASE_SECRET_KEY` |
-| 3. Mentor assignment | Code complete, unverified against a signed-in admin |
+| 1. Console shell and paginated user list | **Done and verified** against the hosted database |
+| 2. Create a single user | **Done and verified**, success and four rejection paths |
+| 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
 | 4. Manual access granting | Not started. Deliberately after documents exist, so the picker has real resources to grant |
 | 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01 |
 | 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
@@ -469,28 +472,59 @@ call rather than an agent's:
 
 ### What was verified, and what was not
 
-Verified locally on 2026-09-01: `npm run typecheck`, `npm run lint`,
-`npm test` (**28 assertions, up from 9**), `npm run build` (12 routes), a scan
-of `.next/static` finding no `sb_secret` / `SUPABASE_SECRET` / `service_role`
-reference, and anonymous requests to `/admin/users` and `/admin/users/new`
-returning 307 to `/login`.
+`SUPABASE_SECRET_KEY` was supplied by the owner on 2026-09-01 and is a
+new-style `sb_secret_` key, not a legacy `service_role` JWT.
 
-**Not verified, and not to be recorded as working:**
+**Static checks:** `npm run typecheck`, `npm run lint`, `npm test`
+(**28 assertions, up from 9**), `npm run build` (12 routes), and a scan of
+`.next/static` finding no `sb_secret` / `SUPABASE_SECRET` / `service_role`
+reference.
 
-- **No page in this branch has ever been rendered for a signed-in admin.** The
-  307 checks above are middleware answering *before* the page runs, so the user
-  list, the create form and the mentor control have compiled and type-checked
-  but have never actually drawn. Phase 0 shipped a green build whose login page
-  was entirely broken; this is the same gap, still open.
-- **User creation has never run.** `SUPABASE_SECRET_KEY` is blank in
-  `.env.local`, so the Admin API call cannot be made. Neither the success path,
-  the duplicate-email path, nor the compensating delete has been executed once.
-- No migration was written and none was needed; the database is untouched by
-  this branch.
+**Behavioural checks against the hosted database, 2026-09-01.** Method: a
+throwaway admin was created, signed in through `@supabase/ssr` with a capturing
+cookie store so the session cookie was byte-identical to the application's own,
+and the running app was then driven over HTTP. Every form was posted through
+the **no-JavaScript progressive-enhancement path**, which incidentally proves
+these screens work with scripting disabled.
 
-The intended route to real verification, once the key exists: create a
-throwaway admin and student through the console, exercise the flows, then
-delete them, rather than changing the password of any existing account.
+| Check | Result |
+|---|---|
+| `/admin/users` as a signed-in admin | 200, list renders, count line correct |
+| `/admin/users/new` as a signed-in admin | 200, all three role options render |
+| Search | `?q=verification` narrowed 4 users to 1 |
+| **Search injection** `q=x,role.eq.admin` | Sanitised; no matches, no error, no admin list leaked |
+| Create user, success | 303 to `/admin/users`; Auth identity and profile both created, **same id**, email confirmed, `org_id` correct |
+| Create user, duplicate email | 200 with "An account already uses this email address"; nothing created |
+| Create user, weak password | 200 with "Use at least 8 characters."; **no Auth identity created** |
+| Create user, role not one of the three | 200 with "Choose a role."; nothing created |
+| Create user, malformed email | 200 with "Enter a valid email address."; nothing created |
+| **Orphan check after all rejections** | 0 Auth identities without a profile |
+| Assign mentor | 303; row written with correct `mentor_id`, `student_id`, `assigned_by`, `org_id` |
+| **Assign a student as the mentor** | Refused by `mentor_assignments_validate_roles`, redirected to `?error=assignment-failed`. The database did the refusing, not application code |
+| Malformed `studentId` | `?error=invalid-request`, refused before the round trip |
+| Unassign | 303, row removed |
+| Crafted `?error=<img src=x onerror=...>` | Banner does not render; payload appears only URL-encoded inside Next's router-state JSON. **Zero literal `<img` tags in the HTML** |
+
+**Test isolation.** Baseline before was 3 auth users, 1 org, 3 profiles, 0
+assignments, 0 grants. Every account created during verification was deleted
+afterwards and the live counts were re-checked: **identical to baseline**, with
+the mentor assignment removed by FK cascade. Only two identities needed
+deleting, because the invalid attempts never created one - independent
+confirmation that a rejected creation writes nothing.
+
+**Still not verified, and not to be recorded as working:**
+
+- **The compensating-delete branch of `createUserAction` has never executed.**
+  It fires only when the Auth identity is created and the `profiles` insert
+  then fails, which no input reaches: validation catches bad data first, and a
+  duplicate email fails at the Auth step before any profile write. It guards
+  against an unexpected database failure, so it is untested by construction
+  rather than by omission.
+- **Nothing has been tested on the deployed URL.** `SUPABASE_SECRET_KEY` is in
+  local `.env.local` only. It must be added to the Vercel project environment
+  or user creation will fail in production.
+- No migration was written and none was needed; this branch leaves the schema
+  untouched.
 
 ## Pending
 
@@ -840,18 +874,18 @@ time otherwise.
 
 ## Next recommended action
 
-**Phase 1 is in progress on `feat/admin-console`. The immediate blocker is
-`SUPABASE_SECRET_KEY`.**
+**Phase 1 is in progress on `feat/admin-console`, steps 1-3 of seven done and
+verified. Nothing is blocking the next step.**
 
-1. **Put the secret key in `.env.local`.** Supabase dashboard, Settings > API
-   Keys, "Publishable and secret API keys" tab. Never prefixed `NEXT_PUBLIC_`.
-   It also has to be added to the Vercel project environment before the exit
-   gate can pass on the deployed URL, because the deployed site cannot create
-   a user without it either.
-2. **Sign in as the admin and exercise steps 1-3.** Nothing on this branch has
-   been rendered for a signed-in user yet.
-3. Then continue the build order: document library and its Storage policies,
-   access granting, protected viewer, bulk CSV creation.
+1. **Add `SUPABASE_SECRET_KEY` to the Vercel project environment.** It is in
+   local `.env.local` only, so user creation works locally and would fail in
+   production. Server-side variable, never prefixed `NEXT_PUBLIC_`.
+2. **Open a pull request for `feat/admin-console`.** Three commits, unpushed.
+   Two files need a human's eye because they sit outside a feature folder:
+   `src/shared/db/supabase/admin.ts` and `vitest.config.mts`.
+3. Continue the build order: `documents` table with its Storage bucket and
+   policies, the protected viewer, then access granting, then bulk CSV
+   creation. `pdfjs-dist` is approved but not yet installed.
 
 Carried from Phase 0, none of it blocking:
 
