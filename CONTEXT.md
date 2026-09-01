@@ -431,6 +431,7 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 | 1. Console shell and paginated user list | **Done and verified** against the hosted database |
 | 2. Create a single user | **Done and verified**, success and four rejection paths |
 | 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
+| 3b. Deactivate / reactivate a user | **Done and verified.** Added 2026-09-01 after the owner spotted that the console could create users but never offboard one |
 | 4. Manual access granting | Not started. Deliberately after documents exist, so the picker has real resources to grant |
 | 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01 |
 | 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
@@ -456,6 +457,18 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 - **No return URLs in form fields.** The mentor form posts a page number and a
   search term, and the action rebuilds the destination from a literal path.
   A hidden field holding the URL would have been an open redirect.
+- **Users are deactivated, never deleted.** Annexure A names visibility and
+  creation only, so this is scope the owner chose to absorb rather than raise
+  as a variation. Deactivation rather than deletion is forced by the schema,
+  not preference:
+  `content_access.granted_by` and `mentor_assignments.assigned_by` reference
+  `profiles` with **ON DELETE RESTRICT**, so an admin who has ever granted a
+  document or assigned a mentor cannot be deleted at all; and deleting a
+  student cascades through their grants and assignments and would, from Phase 4,
+  take `attempts` with it - the very history that contracted rescoring operates
+  on. `profiles.status` already existed, so no migration was needed.
+  The control is hidden on the admin's own row and the action refuses a
+  hand-posted self-disable; the last-admin trigger remains the backstop.
 
 ### Shared and config files touched, needing review at PR
 
@@ -503,6 +516,9 @@ these screens work with scripting disabled.
 | **Assign a student as the mentor** | Refused by `mentor_assignments_validate_roles`, redirected to `?error=assignment-failed`. The database did the refusing, not application code |
 | Malformed `studentId` | `?error=invalid-request`, refused before the round trip |
 | Unassign | 303, row removed |
+| Disable a user, then re-enable | `profiles.status` written both ways |
+| Hand-posted self-disable, and a bogus status value | Both refused, nothing changed |
+| **A disabled user signing in** | Auth still issues a token, but the first request redirects to `/auth/no-access`, which ends the session. Disabling is effective without deleting the identity |
 | Crafted `?error=<img src=x onerror=...>` | Banner does not render; payload appears only URL-encoded inside Next's router-state JSON. **Zero literal `<img` tags in the HTML** |
 
 **Test isolation.** Baseline before was 3 auth users, 1 org, 3 profiles, 0
@@ -520,6 +536,11 @@ confirmation that a rejected creation writes nothing.
   duplicate email fails at the Auth step before any profile write. It guards
   against an unexpected database failure, so it is untested by construction
   rather than by omission.
+- **The `last-admin` error message is unreachable through the console.** The
+  toggle is hidden on your own row, so an admin can never take the count to
+  zero by hand: with two admins, A can disable B but not themselves. The
+  trigger and the 23001 mapping are a backstop for a hand-crafted request, and
+  the trigger itself was verified in Phase 0.
 - **Nothing has been tested on the deployed URL.** `SUPABASE_SECRET_KEY` is in
   local `.env.local` only. It must be added to the Vercel project environment
   or user creation will fail in production.
