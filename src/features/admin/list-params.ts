@@ -30,3 +30,48 @@ export function parsePageNumber(raw: string | undefined): number {
   const parsed = Number.parseInt(raw ?? "1", 10);
   return Number.isFinite(parsed) && parsed > 1 ? parsed : 1;
 }
+
+// Every link and post-action redirect to the user list is built here, from
+// parsed values only.
+//
+// This is what keeps the mentor-assignment form from being an open redirect.
+// The obvious way to return an admin to the page they came from is a hidden
+// field holding the URL, which hands an attacker a form that posts to our
+// origin and bounces the browser anywhere they like. Carrying the page number
+// and search term instead, and rebuilding the path from a literal here, makes
+// the destination impossible to influence.
+export function buildUsersHref({
+  error,
+  page,
+  search,
+}: {
+  error?: UserListError;
+  page: number;
+  search: string;
+}): string {
+  const params = new URLSearchParams();
+  if (search) params.set("q", search);
+  if (page > 1) params.set("page", String(page));
+  if (error) params.set("error", error);
+  const query = params.toString();
+  return query ? `/admin/users?${query}` : "/admin/users";
+}
+
+// A closed set, so a crafted `?error=` value renders nothing at all rather than
+// reaching the page. Same approach as the `?error=no_profile` handling added to
+// the sign-in screen in Phase 0.
+export const userListErrors = {
+  "assignment-failed": "That mentor assignment was refused. Nothing changed.",
+  "invalid-request": "That request was not valid. Nothing changed.",
+} as const;
+
+export type UserListError = keyof typeof userListErrors;
+
+export function parseUserListError(
+  raw: string | undefined,
+): UserListError | null {
+  if (raw && Object.hasOwn(userListErrors, raw)) {
+    return raw as UserListError;
+  }
+  return null;
+}

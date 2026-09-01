@@ -11,16 +11,15 @@ import {
   TableRow,
 } from "@/shared/ui";
 
-import { usersPageSize } from "../list-params";
+import { assignMentorAction } from "../actions/assign-mentor";
+import {
+  buildUsersHref,
+  userListErrors,
+  usersPageSize,
+  type UserListError,
+} from "../list-params";
+import type { MentorOption } from "../queries/list-mentors";
 import type { UserListPage } from "../queries/list-users";
-
-function pageHref(page: number, search: string): string {
-  const params = new URLSearchParams();
-  if (search) params.set("q", search);
-  if (page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/users?${query}` : "/admin/users";
-}
 
 const roleLabels: Record<Profile["role"], string> = {
   admin: "Admin",
@@ -29,12 +28,22 @@ const roleLabels: Record<Profile["role"], string> = {
 };
 
 interface UsersScreenProps {
+  error: UserListError | null;
+  mentorByStudent: Map<string, MentorOption>;
+  mentors: MentorOption[];
   profile: Profile;
   search: string;
   users: UserListPage;
 }
 
-export function UsersScreen({ profile, search, users }: UsersScreenProps) {
+export function UsersScreen({
+  error,
+  mentorByStudent,
+  mentors,
+  profile,
+  search,
+  users,
+}: UsersScreenProps) {
   const { page, pageCount, rows, total } = users;
   const firstOnPage = total === 0 ? 0 : (page - 1) * usersPageSize + 1;
   const lastOnPage = (page - 1) * usersPageSize + rows.length;
@@ -55,6 +64,12 @@ export function UsersScreen({ profile, search, users }: UsersScreenProps) {
             Create user
           </Link>
         </div>
+
+        {error ? (
+          <p className="form-error" role="alert">
+            {userListErrors[error]}
+          </p>
+        ) : null}
 
         {/*
           A plain GET form. Search belongs in the URL so a result page can be
@@ -97,21 +112,73 @@ export function UsersScreen({ profile, search, users }: UsersScreenProps) {
                 <TableHeaderCell>Email</TableHeaderCell>
                 <TableHeaderCell>Role</TableHeaderCell>
                 <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Mentor</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>{roleLabels[row.role]}</TableCell>
-                  <TableCell>
-                    <span className={`pill pill--${row.status}`}>
-                      {row.status === "active" ? "Active" : "Disabled"}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((row) => {
+                const currentMentor = mentorByStudent.get(row.id);
+
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>{roleLabels[row.role]}</TableCell>
+                    <TableCell>
+                      <span className={`pill pill--${row.status}`}>
+                        {row.status === "active" ? "Active" : "Disabled"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {row.role !== "student" ? (
+                        <span className="muted">Not applicable</span>
+                      ) : mentors.length === 0 ? (
+                        <span className="muted">No mentors yet</span>
+                      ) : (
+                        // The Server Action is passed straight to the form, so
+                        // assignment works with JavaScript disabled. The page
+                        // and search term travel as values, never as a URL:
+                        // the action rebuilds the destination itself, which is
+                        // what stops this being an open redirect.
+                        <form action={assignMentorAction} className="row-form">
+                          <input name="page" type="hidden" value={page} />
+                          <input name="q" type="hidden" value={search} />
+                          <input
+                            name="studentId"
+                            type="hidden"
+                            value={row.id}
+                          />
+                          <label
+                            className="visually-hidden"
+                            htmlFor={`mentor-${row.id}`}
+                          >
+                            Mentor for {row.name}
+                          </label>
+                          <select
+                            className="input input--compact"
+                            defaultValue={currentMentor?.id ?? ""}
+                            id={`mentor-${row.id}`}
+                            name="mentorId"
+                          >
+                            <option value="">Unassigned</option>
+                            {mentors.map((mentor) => (
+                              <option key={mentor.id} value={mentor.id}>
+                                {mentor.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className="button button--secondary button--compact"
+                            type="submit"
+                          >
+                            Save
+                          </button>
+                        </form>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -119,7 +186,10 @@ export function UsersScreen({ profile, search, users }: UsersScreenProps) {
         {pageCount > 1 ? (
           <nav aria-label="Pagination" className="pagination">
             {page > 1 ? (
-              <Link href={pageHref(page - 1, search)} rel="prev">
+              <Link
+                href={buildUsersHref({ page: page - 1, search })}
+                rel="prev"
+              >
                 Previous
               </Link>
             ) : (
@@ -129,7 +199,10 @@ export function UsersScreen({ profile, search, users }: UsersScreenProps) {
               Page {page} of {pageCount}
             </span>
             {page < pageCount ? (
-              <Link href={pageHref(page + 1, search)} rel="next">
+              <Link
+                href={buildUsersHref({ page: page + 1, search })}
+                rel="next"
+              >
                 Next
               </Link>
             ) : (

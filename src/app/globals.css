@@ -376,3 +376,28 @@ a.button {
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
+.row-form {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input--compact,
+.button--compact {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.6rem;
+}
+
+/* Visible to a screen reader, not on screen. Each row's mentor control needs a
+   label naming the student, or twenty-five identical "Mentor" selects are
+   indistinguishable when read aloud. */
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePageNumber, sanitizeUserSearch } from "./list-params";
+import {
+  buildUsersHref,
+  parsePageNumber,
+  parseUserListError,
+  sanitizeUserSearch,
+} from "./list-params";
 import {
   describePasswordProblem,
   normalizeEmail,
@@ -42,6 +47,46 @@ describe("parsePageNumber", () => {
   it("accepts a real page number", () => {
     expect(parsePageNumber("2")).toBe(2);
     expect(parsePageNumber("47")).toBe(47);
+  });
+});
+
+describe("buildUsersHref", () => {
+  it("omits defaults so the plain list has a clean URL", () => {
+    expect(buildUsersHref({ page: 1, search: "" })).toBe("/admin/users");
+  });
+
+  it("carries the page, search and error when they are set", () => {
+    expect(buildUsersHref({ page: 3, search: "priya" })).toBe(
+      "/admin/users?q=priya&page=3",
+    );
+    expect(
+      buildUsersHref({ error: "assignment-failed", page: 1, search: "" }),
+    ).toBe("/admin/users?error=assignment-failed");
+  });
+
+  // The reason the mentor form posts a page number and a search term rather
+  // than a return URL. Whatever an attacker puts in those fields, the
+  // destination stays on this origin and on this path.
+  it("cannot be steered off the user list", () => {
+    const hostile = buildUsersHref({
+      page: 1,
+      search: "https://evil.example/steal",
+    });
+    expect(hostile.startsWith("/admin/users?")).toBe(true);
+    expect(hostile).not.toContain("//evil.example");
+  });
+});
+
+describe("parseUserListError", () => {
+  it("accepts only the codes the screen can render", () => {
+    expect(parseUserListError("assignment-failed")).toBe("assignment-failed");
+    expect(parseUserListError("invalid-request")).toBe("invalid-request");
+  });
+
+  it("rejects anything else, including inherited object keys", () => {
+    for (const raw of [undefined, "", "nope", "toString", "constructor"]) {
+      expect(parseUserListError(raw)).toBeNull();
+    }
   });
 });
 
