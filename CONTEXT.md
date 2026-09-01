@@ -203,7 +203,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3: admin console shell, paginated user list, single user creation, mentor assignment. **No schema change** - `profiles`, `mentor_assignments` and `content_access` already exist and need nothing added | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared - flagged for human promotion), `package.json` (adds `pdfjs-dist`, owner-approved 2026-09-01) | In progress | 2026-09-01 |
+| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3: paginated user list, single user creation, mentor assignment. **No schema change** - `profiles`, `mentor_assignments` and `content_access` already exist and need nothing added | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared), `vitest.config.mts` | **Code complete, NOT functionally verified.** Two commits on the branch, unpushed, no PR yet. Blocked on `SUPABASE_SECRET_KEY` before user creation can be run even once | 2026-09-01 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -418,6 +418,79 @@ final counts above confirm nothing was left behind.
 
 The last row is a deliberate safety property: an admin cannot delete themselves and
 lock the organisation out of its only admin access.
+
+## Phase 1 progress, 2026-09-01
+
+Build order is the seven steps in `docs/implementation-plan.md`.
+
+| Step | State |
+|---|---|
+| 1. Console shell and paginated user list | Code complete, unverified against a signed-in admin |
+| 2. Create a single user | Code complete, **never executed** - needs `SUPABASE_SECRET_KEY` |
+| 3. Mentor assignment | Code complete, unverified against a signed-in admin |
+| 4. Manual access granting | Not started. Deliberately after documents exist, so the picker has real resources to grant |
+| 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01 |
+| 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
+| 7. Protected viewer | Not started. Needs `pdfjs-dist`, owner-approved 2026-09-01 but **not yet installed** |
+
+### Decisions taken on 2026-09-01
+
+- **Bulk upload accepts CSV only.** Excel and Sheets both export it, so an
+  `.xlsx` parser buys a dependency and a larger validation surface for a step
+  the admin can already do. The owner separately approved an `.xlsx` parser;
+  it was **not** added, because CSV-only leaves it nothing to do. Revisit only
+  if admins are found to be uploading workbooks untouched.
+- **The secret key is used for Auth identities and nothing else.** Creating a
+  user calls the Admin API with it, then inserts `profiles` through the
+  signed-in admin's own client so `profiles_insert_admin` still decides which
+  organisation may be written to. Using the secret key for the table write
+  would work and would silently take RLS out of the path.
+- **"Both or neither" is a compensating delete, not a transaction.** The Auth
+  identity is an API call and the profile is a database write, with no shared
+  transaction available. If the profile insert fails the Auth user is deleted;
+  if that delete *also* fails the admin is told, in plain words, that an
+  orphaned identity exists and must be removed from the dashboard.
+- **No return URLs in form fields.** The mentor form posts a page number and a
+  search term, and the action rebuilds the destination from a literal path.
+  A hidden field holding the URL would have been an open redirect.
+
+### Shared and config files touched, needing review at PR
+
+Both are outside a feature folder, so operating manual §6.1 makes them a human's
+call rather than an agent's:
+
+- `src/shared/db/supabase/admin.ts` is **new**. It is the only place
+  `SUPABASE_SECRET_KEY` is read, and is marked `server-only` so importing it
+  from a Client Component fails the build rather than shipping the key.
+- `vitest.config.mts` now mirrors the `@/*` alias from `tsconfig.json`. Without
+  it, any test whose subject imports across features fails to resolve - which
+  would have blocked the numerical-answer and scoring tests operating manual
+  §11 requires in Phases 3 and 4.
+
+### What was verified, and what was not
+
+Verified locally on 2026-09-01: `npm run typecheck`, `npm run lint`,
+`npm test` (**28 assertions, up from 9**), `npm run build` (12 routes), a scan
+of `.next/static` finding no `sb_secret` / `SUPABASE_SECRET` / `service_role`
+reference, and anonymous requests to `/admin/users` and `/admin/users/new`
+returning 307 to `/login`.
+
+**Not verified, and not to be recorded as working:**
+
+- **No page in this branch has ever been rendered for a signed-in admin.** The
+  307 checks above are middleware answering *before* the page runs, so the user
+  list, the create form and the mentor control have compiled and type-checked
+  but have never actually drawn. Phase 0 shipped a green build whose login page
+  was entirely broken; this is the same gap, still open.
+- **User creation has never run.** `SUPABASE_SECRET_KEY` is blank in
+  `.env.local`, so the Admin API call cannot be made. Neither the success path,
+  the duplicate-email path, nor the compensating delete has been executed once.
+- No migration was written and none was needed; the database is untouched by
+  this branch.
+
+The intended route to real verification, once the key exists: create a
+throwaway admin and student through the console, exercise the flows, then
+delete them, rather than changing the password of any existing account.
 
 ## Pending
 
@@ -767,9 +840,20 @@ time otherwise.
 
 ## Next recommended action
 
-Phase 0 is closed. Nothing below blocks starting Phase 1.
+**Phase 1 is in progress on `feat/admin-console`. The immediate blocker is
+`SUPABASE_SECRET_KEY`.**
 
-Carry into Phase 1:
+1. **Put the secret key in `.env.local`.** Supabase dashboard, Settings > API
+   Keys, "Publishable and secret API keys" tab. Never prefixed `NEXT_PUBLIC_`.
+   It also has to be added to the Vercel project environment before the exit
+   gate can pass on the deployed URL, because the deployed site cannot create
+   a user without it either.
+2. **Sign in as the admin and exercise steps 1-3.** Nothing on this branch has
+   been rendered for a signed-in user yet.
+3. Then continue the build order: document library and its Storage policies,
+   access granting, protected viewer, bulk CSV creation.
+
+Carried from Phase 0, none of it blocking:
 
 1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Until then the
    migration review requirement is documentation only.
