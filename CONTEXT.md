@@ -136,7 +136,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 - Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
   clean working tree.
-- **All Phase 0 work is committed and merged.** Pull requests #1 to #8 are merged;
+- **All Phase 0 work is committed and merged.** Pull requests #1 to #11 are merged;
   `main` is the only branch. Nothing is left untracked.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
@@ -203,7 +203,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Phase 0 closed and merged. No work in progress. Phase 1 is unclaimed and unblocked. | 2026-08-31 |
+| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3: admin console shell, paginated user list, single user creation, mentor assignment. **No schema change** - `profiles`, `mentor_assignments` and `content_access` already exist and need nothing added | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared - flagged for human promotion), `package.json` (adds `pdfjs-dist`, owner-approved 2026-09-01) | In progress | 2026-09-01 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
