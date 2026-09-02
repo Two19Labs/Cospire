@@ -436,7 +436,13 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 | 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
 | 7. Protected viewer | Not started. Needs `pdfjs-dist`, owner-approved 2026-09-01 but **not yet installed** |
 
-### Decisions taken on 2026-09-01
+### Decisions taken on 2026-09-01 and 2026-09-02
+
+- **The secret key was not rotated after being shown in an editor selection on
+  2026-09-02.** It has never been committed and `.env.local` remains absent from
+  git history. The owner reviewed the exposure and judged the key uncompromised.
+  Recorded so the decision is visible rather than implied; rotate if that
+  judgement changes.
 
 - **Bulk upload accepts CSV only.** Excel and Sheets both export it, so an
   `.xlsx` parser buys a dependency and a larger validation surface for a step
@@ -540,10 +546,14 @@ confirmation that a rejected creation writes nothing.
   zero by hand: with two admins, A can disable B but not themselves. The
   trigger and the 23001 mapping are a backstop for a hand-crafted request, and
   the trigger itself was verified in Phase 0.
-- **The admin console is deployed but has not been exercised by a human on the
-  production URL.** Routes, guards and all six security headers were confirmed
-  live after the merge; creating a user there will fail until the Vercel
-  environment variable is set.
+- **The admin console is verified working in production.** On 2026-09-02 a user
+  was created through `https://cospire-roan.vercel.app` and confirmed in the
+  database: Auth identity and profile written together, sharing one id, correct
+  role and organisation. Both test accounts were deleted afterwards. Routes,
+  guards and all six security headers were confirmed live. `SUPABASE_SECRET_KEY`
+  **is** set in the Vercel environment - that creation could not have succeeded
+  otherwise. It has not been exercised by a human through a browser, only over
+  HTTP with a real session.
 - No migration was written and none was needed; steps 1-3 left the schema
   untouched.
 
@@ -962,17 +972,17 @@ time otherwise.
 
 **Phase 1 steps 1-3 are merged and deployed. Nothing blocks steps 4 to 7.**
 
-1. **Add `SUPABASE_SECRET_KEY` to the Vercel project environment.** It is in
-   local `.env.local` only. The console is live in production now, so **Create
-   user is currently broken on the deployed site** and will stay broken until
-   this is done. It fails with a readable message on the form rather than
-   crashing. Server-side variable, never prefixed `NEXT_PUBLIC_`.
-2. Continue the build order: `documents` table with its Storage bucket and
-   policies, the protected viewer, then access granting, then bulk CSV
-   creation. `pdfjs-dist` is approved but not yet installed.
-3. Decide what to do about the leftover audit organisation described in the
+1. **Continue the build order.** `documents` table with its Storage bucket and
+   policies, then the protected viewer, then access granting, then bulk CSV
+   creation. `pdfjs-dist` is owner-approved but **not yet installed**, and
+   `package.json` is humans-only under operating manual §6.1.
+2. Decide what to do about the leftover audit organisation described in the
    Phase 1 security audit. It is harmless and RLS-isolated, but it can only be
    removed by a migration or a manual dashboard deletion.
+3. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
+   as `id, org_id, role, name, email` and omits `status`, which the deactivate
+   feature, the disabled-user behaviour and `enforce_last_admin` all depend on.
+   Owner's file, outside git, so it was left alone.
 
 Carried from Phase 0, none of it blocking:
 
