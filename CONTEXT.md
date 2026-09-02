@@ -1,12 +1,12 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-01 (Asia/Calcutta)
+Last updated: 2026-09-02 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
 
-**Phase 1 is in progress.** Steps 1-3 of seven are done and verified against the
-hosted database; see Phase 1 progress below.
+**Phase 1 is in progress.** Steps 1-3 of seven, plus user deactivation, are
+merged to `main` (PR #12) and live in production. Steps 4 to 7 remain.
 
 ## Purpose and authority
 
@@ -136,11 +136,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`. Current branch **`feat/admin-console`**,
-  6 commits ahead of `main`, **not yet pushed**, clean working tree.
-  `main` itself is unchanged and still synced with `origin/main`.
-- **All Phase 0 work is committed and merged.** Pull requests #1 to #11 are merged;
-  `main` is the only branch. Nothing is left untracked.
+- Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
+  clean working tree.
+- **All Phase 0 work and Phase 1 steps 1-3 are merged.** Pull requests #1 to #12
+  are merged; `main` is the only branch. Nothing is left untracked.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -206,7 +205,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3 complete and verified. Next in the same branch or a fresh one: steps 6 and 7 (documents, Storage policies, protected viewer), then 4 (access granting), then 5 (bulk CSV) | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared), `vitest.config.mts` | Steps 1-3 done, verified against the hosted database, committed, **unpushed and no PR yet**. Not blocked | 2026-09-01 |
+| None | - | - | - | Phase 1 steps 1-3 merged to `main` in PR #12 and live in production. Steps 4 to 7 are unclaimed and unblocked. | 2026-09-02 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -541,10 +540,11 @@ confirmation that a rejected creation writes nothing.
   zero by hand: with two admins, A can disable B but not themselves. The
   trigger and the 23001 mapping are a backstop for a hand-crafted request, and
   the trigger itself was verified in Phase 0.
-- **Nothing has been tested on the deployed URL.** `SUPABASE_SECRET_KEY` is in
-  local `.env.local` only. It must be added to the Vercel project environment
-  or user creation will fail in production.
-- No migration was written and none was needed; this branch leaves the schema
+- **The admin console is deployed but has not been exercised by a human on the
+  production URL.** Routes, guards and all six security headers were confirmed
+  live after the merge; creating a user there will fail until the Vercel
+  environment variable is set.
+- No migration was written and none was needed; steps 1-3 left the schema
   untouched.
 
 ## Phase 1 security audit, 2026-09-02
@@ -638,7 +638,7 @@ None of these block Phase 1.
 | **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Upgrade before ARS uploads and restore testing. Clause 8.3 budgets for it |
 | **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
 | **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
-| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover |
+| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover. CI now also warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 and are being forced onto Node 24; bumping to `@v5` clears both the warning and the pinning item in one change |
 | **`site_url` points at a `vercel.app` address** | It goes into password-reset emails | Replace if a custom domain is added, then `supabase config push` |
 
 ### Pulled forward from later phases
@@ -960,18 +960,19 @@ time otherwise.
 
 ## Next recommended action
 
-**Phase 1 is in progress on `feat/admin-console`, steps 1-3 of seven done and
-verified. Nothing is blocking the next step.**
+**Phase 1 steps 1-3 are merged and deployed. Nothing blocks steps 4 to 7.**
 
 1. **Add `SUPABASE_SECRET_KEY` to the Vercel project environment.** It is in
-   local `.env.local` only, so user creation works locally and would fail in
-   production. Server-side variable, never prefixed `NEXT_PUBLIC_`.
-2. **Open a pull request for `feat/admin-console`.** 6 commits, unpushed.
-   Two files need a human's eye because they sit outside a feature folder:
-   `src/shared/db/supabase/admin.ts` and `vitest.config.mts`.
-3. Continue the build order: `documents` table with its Storage bucket and
+   local `.env.local` only. The console is live in production now, so **Create
+   user is currently broken on the deployed site** and will stay broken until
+   this is done. It fails with a readable message on the form rather than
+   crashing. Server-side variable, never prefixed `NEXT_PUBLIC_`.
+2. Continue the build order: `documents` table with its Storage bucket and
    policies, the protected viewer, then access granting, then bulk CSV
    creation. `pdfjs-dist` is approved but not yet installed.
+3. Decide what to do about the leftover audit organisation described in the
+   Phase 1 security audit. It is harmless and RLS-isolated, but it can only be
+   removed by a migration or a manual dashboard deletion.
 
 Carried from Phase 0, none of it blocking:
 
