@@ -23,7 +23,7 @@ content deadline hangs off it. Confirm it before treating any date as contractua
 | Phase | Week | Scope | Status |
 |---|---|---|---|
 | **0** | 1 | Foundation, identity, access | **Complete** |
-| **1** | 2 | Admin console and documents | Next |
+| **1** | 2 | Admin console and documents | **In progress** - steps 1-3 merged and deployed |
 | **2** | 3 | Video, curriculums, **first demo** | Not started |
 | **3** | 4 | Question bank and authoring | Not started |
 | **4** | 5 | Test engine, **second demo** | Not started |
@@ -53,7 +53,7 @@ Full detail is in `CONTEXT.md`.
 
 # Phase 1 — Admin console and documents
 
-**Week 2. This is next.**
+**Week 2. In progress: steps 1 to 3 are merged and live; 4 to 7 remain.**
 
 **Exit gate, from the delivery plan:** *"An admin creating a student, granting them
 a document, and that student reading it while another student is correctly
@@ -65,18 +65,30 @@ That sentence is the acceptance test. Build toward demonstrating exactly it.
 
 Each step unblocks the next.
 
-1. **Admin console shell and user list.** Paginated from the first commit, per the
-   operating manual §8. `profiles` is small now and will not stay that way.
-2. **Create a single user.** The server creates the Auth identity and the
-   `profiles` row together, or neither. This is the first place the application
+1. ~~**Admin console shell and user list.**~~ **Done, PR #12.** Paginated from the
+   first commit, per the operating manual §8. `profiles` is small now and will not
+   stay that way.
+2. ~~**Create a single user.**~~ **Done, PR #12.** The server creates the Auth
+   identity and the `profiles` row together, or neither. This is the first place the application
    needs the Supabase secret key: server-only, never in a client component, never
    logged. `profiles.email` is derived from `auth.users` by trigger, so the two
    cannot drift.
-3. **Mentor assignment.** Writes `mentor_assignments`. The validation triggers
+3. ~~**Mentor assignment.**~~ **Done, PR #12.** Writes `mentor_assignments`. The validation triggers
    already refuse a non-mentor, a non-student, a disabled party or a cross-org
    pair, so the UI is a thin layer over rules the database enforces.
+3b. **Deactivate and reactivate a user.** **Done, PR #12.** Not in the original
+   build order and not named in Annexure A, which specifies visibility and
+   creation only. Added on 2026-09-01 after the owner noticed the console could
+   create users but never offboard one, and absorbed as included scope.
+
+   Deactivation rather than deletion is forced by the schema, not preference:
+   `content_access.granted_by` and `mentor_assignments.assigned_by` reference
+   `profiles` with ON DELETE RESTRICT, so an admin who has granted anything
+   cannot be deleted at all; and deleting a student would, from Phase 4, destroy
+   the `attempts` that contracted rescoring operates on.
+
 4. **Manual access granting.** Writes `content_access` as `resource_type` plus
-   `resource_id`. Needed before documents mean anything.
+   `resource_id`. Needed before documents mean anything. **Next.**
 5. **Bulk creation from a spreadsheet.** Upload, parse, **validate every row before
    creating anything**, report bad rows back, then create in one pass. A partial
    import leaving half a class created is worse than a clean failure.
@@ -106,6 +118,16 @@ Each step unblocks the next.
 ### Blocked by
 
 **Custom SMTP** blocks step 5 only. Steps 1 to 4, 6 and 7 can proceed without it.
+
+### Learned while building steps 1 to 3
+
+- **An organisation can never be decommissioned.** Its last active admin cannot
+  be deleted, demoted or disabled, and `profiles.org_id` is ON DELETE RESTRICT.
+  Correct for single-tenant V1; recorded because it is not obvious.
+- **`server-only` is a Next bundler alias, not a package.** Vitest cannot resolve
+  it, so pure logic that needs testing must live outside a `server-only` module.
+- **RLS filtering an UPDATE to zero rows returns no error.** An action that does
+  not count affected rows will report success for a change that never happened.
 
 ---
 
