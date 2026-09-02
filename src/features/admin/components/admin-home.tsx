@@ -18,6 +18,9 @@ export function AdminHome({ profile }: { profile: Profile }) {
           <Link className="button button--primary" href="/admin/users">
             Users
           </Link>
+          <Link className="button button--primary" href="/admin/documents">
+            Documents
+          </Link>
         </div>
       </section>
     </RoleShell>

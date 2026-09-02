@@ -205,7 +205,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Phase 1 steps 1-3 merged to `main` in PR #12 and live in production. Steps 4 to 7 are unclaimed and unblocked. | 2026-09-02 |
+| Claude Code session (documents slice) | `feat/documents` | Phase 1 steps 6, 7 and 4: `documents` table plus Storage bucket and policies, the document library, manual access granting, and the protected viewer | `supabase/migrations/2026090*_documents*.sql`, `src/features/documents/**`, `src/app/admin/documents/**`, `src/app/student/documents/**`, `src/shared/db/types.ts` (regenerated), `package.json` (adding `pdfjs-dist` only, owner-approved), `CONTEXT.md`, `docs/implementation-plan.md` | In progress, started 2026-09-02 | 2026-09-02 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
