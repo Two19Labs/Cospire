@@ -63,10 +63,25 @@ export async function setUserStatusAction(formData: FormData): Promise<void> {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase
+  // `.select()` on the update so the affected rows come back and can be counted.
+  //
+  // Without it this reports success for a change that never happened. When RLS
+  // filters an UPDATE down to zero rows, PostgREST returns no error at all --
+  // it is not a failure, there was simply nothing the caller was allowed to
+  // update. Found in the Phase 1 audit: an admin of another organisation
+  // posting a `userId` from this one got the success redirect while the row
+  // stayed exactly as it was. Nothing was disclosed and nothing was written,
+  // but "done" was reported for a no-op, and a status change that silently
+  // does nothing is worse than one that says it failed.
+  const { data, error } = await supabase
     .from("profiles")
     .update({ status })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("id");
+
+  if (!error && (data ?? []).length !== 1) {
+    redirect(buildUsersHref({ error: "status-change-failed", page, search }));
+  }
 
   if (error) {
     // `profiles_keep_one_active_admin` raises restrict_violation (23001) when a

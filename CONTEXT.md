@@ -547,6 +547,71 @@ confirmation that a rejected creation writes nothing.
 - No migration was written and none was needed; this branch leaves the schema
   untouched.
 
+## Phase 1 security audit, 2026-09-02
+
+An adversarial review of the admin console before merging `feat/admin-console`.
+Throwaway accounts were created for each role, real session cookies captured
+through `@supabase/ssr`, and the running application attacked over HTTP.
+
+### Held under attack
+
+| Attempt | Result |
+|---|---|
+| Student GETs `/admin/users` and `/admin/users/new` | 307 to `/student` |
+| Mentor GETs `/admin/users` | 307 to `/mentor` |
+| Student POSTs `createUserAction` to self-provision an admin | Refused; no profile and no Auth identity created |
+| Student POSTs `setUserStatusAction` to disable an admin | Refused; target still active |
+| Student POSTs `assignMentorAction` to give themselves a mentor | Refused; no row written |
+| Mentor POSTs `setUserStatusAction` and `assignMentorAction` | Both refused |
+| Anonymous GET and POST to the admin route and actions | 307 to `/login` |
+| **Admin of another organisation lists users** | Sees only their own org. The list query has no org filter by design; RLS scopes it, and this proves it |
+| Admin of another organisation assigns a mentor cross-org | Refused, `?error=assignment-failed` |
+| Search term carrying PostgREST filter syntax | Neutralised |
+| Crafted `?error=` payload | Not rendered; no literal tag reaches the HTML |
+| Secret key in the built client bundle | Absent. The **actual key value** appears nowhere in the entire `.next` tree |
+
+Static review: the secret key is read in exactly one module, which is
+`server-only`; all three admin Server Actions re-check the role rather than
+trusting the page guard; every `"use server"` file exports only async
+functions; no `console.log`, `any`, `@ts-ignore`, or migration on the branch;
+and every security-relevant Phase 0 file is untouched.
+
+Supabase security advisor: the same two WARN items as Phase 0, both plan or
+scope decisions rather than defects. No new findings.
+
+### Fixed during the audit
+
+**A status change that silently did nothing reported success.** An admin of
+another organisation posting a `userId` from this one received the success
+redirect while the row was unchanged. Nothing was disclosed and nothing was
+written -- RLS did its job -- but PostgREST returns no error when a policy
+filters an UPDATE to zero rows, so the action could not tell "done" from
+"not allowed". `setUserStatusAction` now selects the affected rows and treats
+anything other than exactly one as a failure. Re-tested: cross-org attempts
+report `status-change-failed`, and legitimate disable and re-enable still work.
+
+### Finding: an organisation can never be decommissioned
+
+Discovered while cleaning up. `profiles_keep_one_active_admin` refuses to
+delete, demote **or** disable an organisation's last active admin (23001), and
+`profiles.org_id` references `orgs` with ON DELETE RESTRICT. Both directions
+are therefore closed, and there is no application-level route to remove an
+organisation once it exists.
+
+For single-tenant V1 this is the invariant behaving exactly as intended and it
+protects the real deployment. It is recorded because it is not obvious, and
+because it has one consequence now:
+
+**A leftover test organisation exists.** The audit created a second org with
+one admin (`Rival Admin`, `audit-rival-...@example.com`) to prove cross-org
+isolation, and it cannot be removed by any application route. It is fully
+isolated by RLS -- Cospire admins cannot see it and it cannot see them, both
+verified -- so it is untidy rather than harmful. Removing it needs either a
+migration that relaxes the trigger when an organisation is being removed, or a
+one-off manual deletion in the Supabase dashboard with the trigger temporarily
+disabled. It was deliberately **not** removed through the MCP server, because
+operating manual §4.5 forbids schema writes by that route.
+
 ## Pending
 
 The full route is in `docs/implementation-plan.md`: six phases, one per contracted
