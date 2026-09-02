@@ -1,10 +1,12 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-08-31 (Asia/Calcutta)
+Last updated: 2026-09-01 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
-signed in on the deployed URL and reached their own role shell. Remaining items
-are plan upgrades and later-phase prerequisites, listed under Pending.
+signed in on the deployed URL and reached their own role shell.
+
+**Phase 1 is in progress.** Steps 1-3 of seven are done and verified against the
+hosted database; see Phase 1 progress below.
 
 ## Purpose and authority
 
@@ -134,9 +136,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
-  clean working tree.
-- **All Phase 0 work is committed and merged.** Pull requests #1 to #8 are merged;
+- Repository: `C:\Cospire\Cospire`. Current branch **`feat/admin-console`**,
+  6 commits ahead of `main`, **not yet pushed**, clean working tree.
+  `main` itself is unchanged and still synced with `origin/main`.
+- **All Phase 0 work is committed and merged.** Pull requests #1 to #11 are merged;
   `main` is the only branch. Nothing is left untracked.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
@@ -203,7 +206,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Phase 0 closed and merged. No work in progress. Phase 1 is unclaimed and unblocked. | 2026-08-31 |
+| Claude Code session (owner: `Two19Labs`) | `feat/admin-console` | Phase 1 steps 1-3 complete and verified. Next in the same branch or a fresh one: steps 6 and 7 (documents, Storage policies, protected viewer), then 4 (access granting), then 5 (bulk CSV) | `src/features/admin/**`, `src/app/admin/**`, `src/shared/db/supabase/admin.ts` (new, shared), `vitest.config.mts` | Steps 1-3 done, verified against the hosted database, committed, **unpushed and no PR yet**. Not blocked | 2026-09-01 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -418,6 +421,196 @@ final counts above confirm nothing was left behind.
 
 The last row is a deliberate safety property: an admin cannot delete themselves and
 lock the organisation out of its only admin access.
+
+## Phase 1 progress, 2026-09-01
+
+Build order is the seven steps in `docs/implementation-plan.md`.
+
+| Step | State |
+|---|---|
+| 1. Console shell and paginated user list | **Done and verified** against the hosted database |
+| 2. Create a single user | **Done and verified**, success and four rejection paths |
+| 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
+| 3b. Deactivate / reactivate a user | **Done and verified.** Added 2026-09-01 after the owner spotted that the console could create users but never offboard one |
+| 4. Manual access granting | Not started. Deliberately after documents exist, so the picker has real resources to grant |
+| 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01 |
+| 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
+| 7. Protected viewer | Not started. Needs `pdfjs-dist`, owner-approved 2026-09-01 but **not yet installed** |
+
+### Decisions taken on 2026-09-01
+
+- **Bulk upload accepts CSV only.** Excel and Sheets both export it, so an
+  `.xlsx` parser buys a dependency and a larger validation surface for a step
+  the admin can already do. The owner separately approved an `.xlsx` parser;
+  it was **not** added, because CSV-only leaves it nothing to do. Revisit only
+  if admins are found to be uploading workbooks untouched.
+- **The secret key is used for Auth identities and nothing else.** Creating a
+  user calls the Admin API with it, then inserts `profiles` through the
+  signed-in admin's own client so `profiles_insert_admin` still decides which
+  organisation may be written to. Using the secret key for the table write
+  would work and would silently take RLS out of the path.
+- **"Both or neither" is a compensating delete, not a transaction.** The Auth
+  identity is an API call and the profile is a database write, with no shared
+  transaction available. If the profile insert fails the Auth user is deleted;
+  if that delete *also* fails the admin is told, in plain words, that an
+  orphaned identity exists and must be removed from the dashboard.
+- **No return URLs in form fields.** The mentor form posts a page number and a
+  search term, and the action rebuilds the destination from a literal path.
+  A hidden field holding the URL would have been an open redirect.
+- **Users are deactivated, never deleted.** Annexure A names visibility and
+  creation only, so this is scope the owner chose to absorb rather than raise
+  as a variation. Deactivation rather than deletion is forced by the schema,
+  not preference:
+  `content_access.granted_by` and `mentor_assignments.assigned_by` reference
+  `profiles` with **ON DELETE RESTRICT**, so an admin who has ever granted a
+  document or assigned a mentor cannot be deleted at all; and deleting a
+  student cascades through their grants and assignments and would, from Phase 4,
+  take `attempts` with it - the very history that contracted rescoring operates
+  on. `profiles.status` already existed, so no migration was needed.
+  The control is hidden on the admin's own row and the action refuses a
+  hand-posted self-disable; the last-admin trigger remains the backstop.
+
+### Shared and config files touched, needing review at PR
+
+Both are outside a feature folder, so operating manual §6.1 makes them a human's
+call rather than an agent's:
+
+- `src/shared/db/supabase/admin.ts` is **new**. It is the only place
+  `SUPABASE_SECRET_KEY` is read, and is marked `server-only` so importing it
+  from a Client Component fails the build rather than shipping the key.
+- `vitest.config.mts` now mirrors the `@/*` alias from `tsconfig.json`. Without
+  it, any test whose subject imports across features fails to resolve - which
+  would have blocked the numerical-answer and scoring tests operating manual
+  §11 requires in Phases 3 and 4.
+
+### What was verified, and what was not
+
+`SUPABASE_SECRET_KEY` was supplied by the owner on 2026-09-01 and is a
+new-style `sb_secret_` key, not a legacy `service_role` JWT.
+
+**Static checks:** `npm run typecheck`, `npm run lint`, `npm test`
+(**28 assertions, up from 9**), `npm run build` (12 routes), and a scan of
+`.next/static` finding no `sb_secret` / `SUPABASE_SECRET` / `service_role`
+reference.
+
+**Behavioural checks against the hosted database, 2026-09-01.** Method: a
+throwaway admin was created, signed in through `@supabase/ssr` with a capturing
+cookie store so the session cookie was byte-identical to the application's own,
+and the running app was then driven over HTTP. Every form was posted through
+the **no-JavaScript progressive-enhancement path**, which incidentally proves
+these screens work with scripting disabled.
+
+| Check | Result |
+|---|---|
+| `/admin/users` as a signed-in admin | 200, list renders, count line correct |
+| `/admin/users/new` as a signed-in admin | 200, all three role options render |
+| Search | `?q=verification` narrowed 4 users to 1 |
+| **Search injection** `q=x,role.eq.admin` | Sanitised; no matches, no error, no admin list leaked |
+| Create user, success | 303 to `/admin/users`; Auth identity and profile both created, **same id**, email confirmed, `org_id` correct |
+| Create user, duplicate email | 200 with "An account already uses this email address"; nothing created |
+| Create user, weak password | 200 with "Use at least 8 characters."; **no Auth identity created** |
+| Create user, role not one of the three | 200 with "Choose a role."; nothing created |
+| Create user, malformed email | 200 with "Enter a valid email address."; nothing created |
+| **Orphan check after all rejections** | 0 Auth identities without a profile |
+| Assign mentor | 303; row written with correct `mentor_id`, `student_id`, `assigned_by`, `org_id` |
+| **Assign a student as the mentor** | Refused by `mentor_assignments_validate_roles`, redirected to `?error=assignment-failed`. The database did the refusing, not application code |
+| Malformed `studentId` | `?error=invalid-request`, refused before the round trip |
+| Unassign | 303, row removed |
+| Disable a user, then re-enable | `profiles.status` written both ways |
+| Hand-posted self-disable, and a bogus status value | Both refused, nothing changed |
+| **A disabled user signing in** | Auth still issues a token, but the first request redirects to `/auth/no-access`, which ends the session. Disabling is effective without deleting the identity |
+| Crafted `?error=<img src=x onerror=...>` | Banner does not render; payload appears only URL-encoded inside Next's router-state JSON. **Zero literal `<img` tags in the HTML** |
+
+**Test isolation.** Baseline before was 3 auth users, 1 org, 3 profiles, 0
+assignments, 0 grants. Every account created during verification was deleted
+afterwards and the live counts were re-checked: **identical to baseline**, with
+the mentor assignment removed by FK cascade. Only two identities needed
+deleting, because the invalid attempts never created one - independent
+confirmation that a rejected creation writes nothing.
+
+**Still not verified, and not to be recorded as working:**
+
+- **The compensating-delete branch of `createUserAction` has never executed.**
+  It fires only when the Auth identity is created and the `profiles` insert
+  then fails, which no input reaches: validation catches bad data first, and a
+  duplicate email fails at the Auth step before any profile write. It guards
+  against an unexpected database failure, so it is untested by construction
+  rather than by omission.
+- **The `last-admin` error message is unreachable through the console.** The
+  toggle is hidden on your own row, so an admin can never take the count to
+  zero by hand: with two admins, A can disable B but not themselves. The
+  trigger and the 23001 mapping are a backstop for a hand-crafted request, and
+  the trigger itself was verified in Phase 0.
+- **Nothing has been tested on the deployed URL.** `SUPABASE_SECRET_KEY` is in
+  local `.env.local` only. It must be added to the Vercel project environment
+  or user creation will fail in production.
+- No migration was written and none was needed; this branch leaves the schema
+  untouched.
+
+## Phase 1 security audit, 2026-09-02
+
+An adversarial review of the admin console before merging `feat/admin-console`.
+Throwaway accounts were created for each role, real session cookies captured
+through `@supabase/ssr`, and the running application attacked over HTTP.
+
+### Held under attack
+
+| Attempt | Result |
+|---|---|
+| Student GETs `/admin/users` and `/admin/users/new` | 307 to `/student` |
+| Mentor GETs `/admin/users` | 307 to `/mentor` |
+| Student POSTs `createUserAction` to self-provision an admin | Refused; no profile and no Auth identity created |
+| Student POSTs `setUserStatusAction` to disable an admin | Refused; target still active |
+| Student POSTs `assignMentorAction` to give themselves a mentor | Refused; no row written |
+| Mentor POSTs `setUserStatusAction` and `assignMentorAction` | Both refused |
+| Anonymous GET and POST to the admin route and actions | 307 to `/login` |
+| **Admin of another organisation lists users** | Sees only their own org. The list query has no org filter by design; RLS scopes it, and this proves it |
+| Admin of another organisation assigns a mentor cross-org | Refused, `?error=assignment-failed` |
+| Search term carrying PostgREST filter syntax | Neutralised |
+| Crafted `?error=` payload | Not rendered; no literal tag reaches the HTML |
+| Secret key in the built client bundle | Absent. The **actual key value** appears nowhere in the entire `.next` tree |
+
+Static review: the secret key is read in exactly one module, which is
+`server-only`; all three admin Server Actions re-check the role rather than
+trusting the page guard; every `"use server"` file exports only async
+functions; no `console.log`, `any`, `@ts-ignore`, or migration on the branch;
+and every security-relevant Phase 0 file is untouched.
+
+Supabase security advisor: the same two WARN items as Phase 0, both plan or
+scope decisions rather than defects. No new findings.
+
+### Fixed during the audit
+
+**A status change that silently did nothing reported success.** An admin of
+another organisation posting a `userId` from this one received the success
+redirect while the row was unchanged. Nothing was disclosed and nothing was
+written -- RLS did its job -- but PostgREST returns no error when a policy
+filters an UPDATE to zero rows, so the action could not tell "done" from
+"not allowed". `setUserStatusAction` now selects the affected rows and treats
+anything other than exactly one as a failure. Re-tested: cross-org attempts
+report `status-change-failed`, and legitimate disable and re-enable still work.
+
+### Finding: an organisation can never be decommissioned
+
+Discovered while cleaning up. `profiles_keep_one_active_admin` refuses to
+delete, demote **or** disable an organisation's last active admin (23001), and
+`profiles.org_id` references `orgs` with ON DELETE RESTRICT. Both directions
+are therefore closed, and there is no application-level route to remove an
+organisation once it exists.
+
+For single-tenant V1 this is the invariant behaving exactly as intended and it
+protects the real deployment. It is recorded because it is not obvious, and
+because it has one consequence now:
+
+**A leftover test organisation exists.** The audit created a second org with
+one admin (`Rival Admin`, `audit-rival-...@example.com`) to prove cross-org
+isolation, and it cannot be removed by any application route. It is fully
+isolated by RLS -- Cospire admins cannot see it and it cannot see them, both
+verified -- so it is untidy rather than harmful. Removing it needs either a
+migration that relaxes the trigger when an organisation is being removed, or a
+one-off manual deletion in the Supabase dashboard with the trigger temporarily
+disabled. It was deliberately **not** removed through the MCP server, because
+operating manual §4.5 forbids schema writes by that route.
 
 ## Pending
 
@@ -767,9 +960,20 @@ time otherwise.
 
 ## Next recommended action
 
-Phase 0 is closed. Nothing below blocks starting Phase 1.
+**Phase 1 is in progress on `feat/admin-console`, steps 1-3 of seven done and
+verified. Nothing is blocking the next step.**
 
-Carry into Phase 1:
+1. **Add `SUPABASE_SECRET_KEY` to the Vercel project environment.** It is in
+   local `.env.local` only, so user creation works locally and would fail in
+   production. Server-side variable, never prefixed `NEXT_PUBLIC_`.
+2. **Open a pull request for `feat/admin-console`.** 6 commits, unpushed.
+   Two files need a human's eye because they sit outside a feature folder:
+   `src/shared/db/supabase/admin.ts` and `vitest.config.mts`.
+3. Continue the build order: `documents` table with its Storage bucket and
+   policies, the protected viewer, then access granting, then bulk CSV
+   creation. `pdfjs-dist` is approved but not yet installed.
+
+Carried from Phase 0, none of it blocking:
 
 1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Until then the
    migration review requirement is documentation only.
