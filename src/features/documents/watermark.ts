@@ -14,12 +14,30 @@ export interface WatermarkSubject {
   name: string;
 }
 
-// UTC, and stated as UTC. A student in Mumbai and a reviewer reading a
-// screenshot months later need the same instant to mean the same thing, and an
-// unlabelled local time in an evidence trail is worth very little.
+// IST, and stated as IST.
+//
+// The requirement an evidence trail actually has is that the instant is
+// unambiguous, not that it is UTC. An unlabelled local time fails that; a
+// labelled one does not. Everyone who will ever read one of these -- the
+// students, the mentors, the admins -- is in India, and asking them to convert
+// from UTC to work out when a screenshot was taken is friction with nothing
+// bought for it.
+//
+// Computed by fixed offset rather than through `Intl` with a `timeZone`.
+// India is UTC+5:30 and has had no daylight saving since 1945, so the
+// arithmetic is exact, and it cannot degrade the way a time-zone lookup can: a
+// runtime with trimmed ICU data silently falls back to UTC while still printing
+// "IST", which is a wrong answer that looks right. Vercel runs on UTC, so this
+// has to be correct without depending on the server's clock settings.
+const istOffsetMinutes = 5 * 60 + 30;
+
 function formatViewedAt(viewedAt: Date): string {
-  const iso = viewedAt.toISOString();
-  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
+  const ist = new Date(viewedAt.getTime() + istOffsetMinutes * 60_000);
+  // Read back through the UTC getters, which is what makes the shift above the
+  // only time-zone arithmetic involved. The local getters would add the
+  // machine's own offset on top.
+  const iso = ist.toISOString();
+  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} IST`;
 }
 
 export function composeWatermark({

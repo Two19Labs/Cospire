@@ -222,13 +222,13 @@ describe("isDocumentStoragePath", () => {
 describe("composeWatermark", () => {
   const viewedAt = new Date("2026-09-02T12:52:31.000Z");
 
-  it("names the viewer and stamps the instant in UTC", () => {
+  it("names the viewer and stamps the instant in IST", () => {
     expect(
       composeWatermark({
         subject: { email: "student@example.com", name: "Asha Rao" },
         viewedAt,
       }),
-    ).toBe("Asha Rao · student@example.com · 2026-09-02 12:52 UTC");
+    ).toBe("Asha Rao · student@example.com · 2026-09-02 18:22 IST");
   });
 
   it("falls back to the address when a name is missing", () => {
@@ -237,10 +237,39 @@ describe("composeWatermark", () => {
         subject: { email: "student@example.com", name: "   " },
         viewedAt,
       }),
-    ).toBe("student@example.com · 2026-09-02 12:52 UTC");
+    ).toBe("student@example.com · 2026-09-02 18:22 IST");
   });
 
-  it("is stable regardless of the machine's time zone", () => {
+  it("rolls the date over when IST crosses midnight ahead of UTC", () => {
+    // 19:30 UTC is 01:00 the next day in India. Getting this wrong would date a
+    // screenshot to the previous day, which is exactly the kind of quiet error
+    // an evidence trail cannot afford.
+    expect(
+      composeWatermark({
+        subject: { email: "a@b.com", name: "A" },
+        viewedAt: new Date("2026-09-02T19:30:00.000Z"),
+      }),
+    ).toBe("A · a@b.com · 2026-09-03 01:00 IST");
+  });
+
+  it("adds exactly five and a half hours, and no daylight saving", () => {
+    // Sampled across the year: India has had no DST since 1945, so the offset
+    // must not move in July.
+    expect(
+      composeWatermark({
+        subject: { email: "a@b.com", name: "A" },
+        viewedAt: new Date("2026-07-15T00:00:00.000Z"),
+      }),
+    ).toBe("A · a@b.com · 2026-07-15 05:30 IST");
+    expect(
+      composeWatermark({
+        subject: { email: "a@b.com", name: "A" },
+        viewedAt: new Date("2026-01-15T00:00:00.000Z"),
+      }),
+    ).toBe("A · a@b.com · 2026-01-15 05:30 IST");
+  });
+
+  it("is stable regardless of the machine's own time zone", () => {
     const first = composeWatermark({
       subject: { email: "a@b.com", name: "A" },
       viewedAt,

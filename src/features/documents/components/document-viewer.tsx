@@ -65,6 +65,13 @@ export function DocumentViewer({ fileUrl, watermark }: DocumentViewerProps) {
     if (!host) return;
 
     let cancelled = false;
+    // Held so the cleanup below can terminate it. PDF.js runs the parse on a
+    // Web Worker, and neither the worker nor the document's buffers are
+    // released when the component unmounts -- they are owned by the loading
+    // task, not by React. Without this, every navigation between documents
+    // leaves another worker alive holding a whole PDF in memory. Found with
+    // five of them running in devtools.
+    let loadingTask: { destroy: () => Promise<void> } | null = null;
 
     // `host` is passed in rather than read from the ref inside. TypeScript will
     // not carry the null check above into a hoisted function body, and an
@@ -99,8 +106,9 @@ export function DocumentViewer({ fileUrl, watermark }: DocumentViewerProps) {
       const bytes = await response.arrayBuffer();
       if (cancelled) return;
 
-      const pdf = await pdfjs.getDocument({ data: new Uint8Array(bytes) })
-        .promise;
+      const task = pdfjs.getDocument({ data: new Uint8Array(bytes) });
+      loadingTask = task;
+      const pdf = await task.promise;
       if (cancelled) return;
 
       host.replaceChildren();
@@ -149,6 +157,10 @@ export function DocumentViewer({ fileUrl, watermark }: DocumentViewerProps) {
 
     return () => {
       cancelled = true;
+      // Terminates the worker and frees the document's buffers. It rejects if
+      // the task was already destroyed or never finished starting, which is not
+      // worth surfacing to a reader who has already navigated away.
+      void loadingTask?.destroy().catch(() => {});
     };
   }, [fileUrl, watermark]);
 
