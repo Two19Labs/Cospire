@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# PDFs are byte-exact. The verification sample encodes byte offsets in its
+# xref table, so LF normalisation would corrupt it.
+*.pdf binary

@@ -23,7 +23,7 @@ content deadline hangs off it. Confirm it before treating any date as contractua
 | Phase | Week | Scope | Status |
 |---|---|---|---|
 | **0** | 1 | Foundation, identity, access | **Complete** |
-| **1** | 2 | Admin console and documents | **In progress** - steps 1-3 merged and deployed |
+| **1** | 2 | Admin console and documents | **In progress** - steps 1-3 merged and deployed; 4, 6 and 7 built and verified locally in PR #16, unmerged; only step 5 unbuilt |
 | **2** | 3 | Video, curriculums, **first demo** | Not started |
 | **3** | 4 | Question bank and authoring | Not started |
 | **4** | 5 | Test engine, **second demo** | Not started |
@@ -53,7 +53,9 @@ Full detail is in `CONTEXT.md`.
 
 # Phase 1 — Admin console and documents
 
-**Week 2. In progress: steps 1 to 3 are merged and live; 4 to 7 remain.**
+**Week 2. In progress: steps 1 to 3 are merged and live. Steps 4, 6 and 7 are
+built and verified against the hosted database, sitting in PR #16 unmerged. Only
+step 5 is unbuilt.**
 
 **Exit gate, from the delivery plan:** *"An admin creating a student, granting them
 a document, and that student reading it while another student is correctly
@@ -87,14 +89,19 @@ Each step unblocks the next.
    cannot be deleted at all; and deleting a student would, from Phase 4, destroy
    the `attempts` that contracted rescoring operates on.
 
-4. **Manual access granting.** Writes `content_access` as `resource_type` plus
-   `resource_id`. Needed before documents mean anything. **Next.**
+4. ~~**Manual access granting.**~~ **Done, PR #16 (unmerged).** Writes
+   `content_access` as `resource_type` plus `resource_id`, from the document's
+   own detail page so the picker has a real resource to grant.
 5. **Bulk creation from a spreadsheet.** Upload, parse, **validate every row before
    creating anything**, report bad rows back, then create in one pass. A partial
-   import leaving half a class created is worse than a clean failure.
-6. **Document library.** `documents` table, folders, upload to Supabase Storage.
-7. **Protected viewer.** PDF.js to canvas with the student's identity drawn across
-   each page. Signed URLs expiring in five to fifteen minutes.
+   import leaving half a class created is worse than a clean failure. **The only
+   step still unbuilt, and the only one custom SMTP blocks.**
+6. ~~**Document library.**~~ **Done, PR #16 (unmerged).** `documents` table, flat
+   text folders, direct-to-Storage upload. Built before step 4 rather than after,
+   because a grant with nothing to point at cannot be demonstrated.
+7. ~~**Protected viewer.**~~ **Done, PR #16 (unmerged).** PDF.js to canvas with
+   the reader's identity drawn across each page, from a signed URL expiring in
+   ten minutes.
 
 ### Must be true
 
@@ -110,14 +117,39 @@ Each step unblocks the next.
 
 ### Tests before this phase is called done
 
-- A student requesting another student's document is refused.
-- The same request made **directly against the Storage path**, bypassing the app,
-  is also refused. RLS passing is not evidence the file is protected.
-- A bulk upload containing one invalid row creates nothing at all.
+- ~~A student requesting another student's document is refused.~~ **Done:** 404
+  through the app, and absent from their list.
+- ~~The same request made **directly against the Storage path**, bypassing the
+  app, is also refused.~~ **Done:** refused for the other student, the mentor,
+  another organisation's admin, an anonymous caller, and even for the student who
+  *does* hold the grant.
+- A bulk upload containing one invalid row creates nothing at all. **Still to do,
+  with step 5.**
+
+**Still open, and it is what keeps the gate open:** none of the above has run on
+the deployed URL. It was proved against the hosted database from a local build,
+which is not the same thing and must not be recorded as if it were.
 
 ### Blocked by
 
-**Custom SMTP** blocks step 5 only. Steps 1 to 4, 6 and 7 can proceed without it.
+**Custom SMTP** blocks step 5 only. Steps 1 to 4, 6 and 7 proceeded without it.
+
+### Learned while building the documents slice
+
+- **Migrations run as `supabase_admin`, a superuser. MCP `execute_sql` runs as
+  `postgres`, which is not.** `postgres` cannot create policies on
+  `storage.objects`; a migration can. Reasoning about migration permissions by
+  probing through MCP gives the wrong answer.
+- **`anon` and `authenticated` already hold full grants on `storage.objects`.**
+  RLS is the only thing between those grants and every file in the project, so a
+  bucket without policies is safe only by the absence of a permissive one.
+- **A permissive Storage read policy can quietly defeat the watermark.**
+  Mirroring the table policy onto objects let a granted student fetch the raw
+  PDF straight from the Storage API, skipping the viewer. Direct reads are now
+  admin-only.
+- **`upsert` needs UPDATE rights.** `content_access` grants only SELECT, INSERT
+  and DELETE, so an upsert is refused with `42501` and writes nothing — with no
+  error visible to typecheck, lint, tests or the build.
 
 ### Learned while building steps 1 to 3
 

@@ -25,6 +25,7 @@
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.112.4",
     "next": "15.5.24",
+    "pdfjs-dist": "6.3.289",
     "postgres": "3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8"

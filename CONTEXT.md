@@ -6,7 +6,18 @@ Last updated: 2026-09-02 (Asia/Calcutta)
 signed in on the deployed URL and reached their own role shell.
 
 **Phase 1 is in progress.** Steps 1-3 of seven, plus user deactivation, are
-merged to `main` (PR #12) and live in production. Steps 4 to 7 remain.
+merged to `main` (PR #12) and live in production.
+
+Steps 6 (document library), 4 (access granting) and 7 (protected viewer) are
+built, and their two migrations are **already applied to the hosted database**.
+They sit in **PR #16, open and unmerged**, with CI green. The whole slice was
+verified end to end against the hosted database from a locally running build:
+**36 checks, all passing**, including the exit-gate sentence and the direct
+Storage-path refusals.
+
+**The exit gate is not yet closed**, because it must pass on the deployed URL
+and the merge to `main` has not happened. Only step 5, bulk CSV creation,
+remains unbuilt, and it is blocked on custom SMTP.
 
 ## Purpose and authority
 
@@ -205,7 +216,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Phase 1 steps 1-3 merged to `main` in PR #12 and live in production. Steps 4 to 7 are unclaimed and unblocked. | 2026-09-02 |
+| None | - | - | - | **PR #16 is open and awaiting merge.** The documents slice is complete, CI is green, both migrations are applied, and it is verified end to end locally. It needs a human to merge it and then re-run the verification against the deployed URL. Nothing else is claimed. | 2026-09-02 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -381,8 +392,20 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts: 1 org, 3 profiles (3 active), 0 mentor assignments,
-0 content grants, 3 auth users.
+Current live counts, re-measured 2026-09-02 after the documents verification run
+was torn down: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 0 content
+grants, 0 documents, 0 storage objects, 5 auth users.**
+
+This is the baseline any future verification run should return to. Two parts of
+it are not the original three test accounts and must not be deleted as
+leftovers:
+
+- The **second organisation** is the audit org described under the Phase 1
+  security audit. It cannot be removed by any application route.
+- Of the five profiles, four are in Cospire and one is the audit org's admin.
+  The **fourth Cospire profile** is a real student account created by the owner
+  through the console on 2026-09-01, along with its mentor assignment. A real
+  user, not test data.
 
 ### RLS verified against the hosted database
 
@@ -431,10 +454,10 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 | 2. Create a single user | **Done and verified**, success and four rejection paths |
 | 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
 | 3b. Deactivate / reactivate a user | **Done and verified.** Added 2026-09-01 after the owner spotted that the console could create users but never offboard one |
-| 4. Manual access granting | Not started. Deliberately after documents exist, so the picker has real resources to grant |
-| 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01 |
-| 6. Document library | Not started. Needs a migration for `documents` plus a Storage bucket and its policies |
-| 7. Protected viewer | Not started. Needs `pdfjs-dist`, owner-approved 2026-09-01 but **not yet installed** |
+| 4. Manual access granting | **Built and verified locally.** In PR #16, unmerged |
+| 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01. The only step still unbuilt, and blocked on custom SMTP |
+| 6. Document library | **Built and verified locally.** In PR #16, unmerged. Migrations already applied |
+| 7. Protected viewer | **Built and verified locally**, except the browser render. `pdfjs-dist@6.3.289` installed, pinned exact |
 
 ### Decisions taken on 2026-09-01 and 2026-09-02
 
@@ -621,6 +644,155 @@ migration that relaxes the trigger when an organisation is being removed, or a
 one-off manual deletion in the Supabase dashboard with the trigger temporarily
 disabled. It was deliberately **not** removed through the MCP server, because
 operating manual §4.5 forbids schema writes by that route.
+
+## The documents slice, 2026-09-02 (PR #16, open)
+
+Phase 1 steps 6, 4 and 7 in one branch, because a library with nothing in it
+cannot be granted and a grant with nothing to read cannot be demonstrated.
+
+### Migrations, both applied to the hosted project
+
+| Version | What |
+|---|---|
+| `20260902180054_documents_library_and_storage` | `documents` table, RLS enabled and forced, four policies; the private `documents` bucket with `application/pdf` and a 50MiB cap plus four `storage.objects` policies; a `content_access` resource-validation trigger; `content_access_resource_idx` |
+| `20260902201530_restrict_document_object_reads_to_admins` | Narrows direct object reads to admins. See the decision below |
+
+Both are additive and safe against the deployed code, which reads none of it.
+
+### Decisions taken
+
+- **Direct Storage reads are admin-only, not mirrored from the table policy.**
+  The first migration mirrored `documents_select_authorized` onto
+  `storage.objects`, so a granted student could fetch the raw, un-watermarked
+  PDF straight from the Storage API with an hour-long session token, skipping
+  the viewer entirely. Both routes deliver the same bytes -- technical brief §8
+  is honest that any renderable PDF has already been delivered -- but one leaves
+  a traceable mark and the other does not, and there was no reason to publish
+  the untraceable one. Students now read only through server-minted signed URLs.
+  **This is a judgement call and is worth a second opinion.**
+- **Object first, row second.** The row is the commit point and is written only
+  after the object is confirmed present. The other order leaves a library entry
+  an admin can see and grant that opens as a 404; this order can only leave an
+  invisible orphan object.
+- **A check constraint pins the object key to the owning organisation** and to a
+  random UUID. The uploaded filename never reaches the object store, so no
+  admin-supplied text can carry `..` or an encoding trick, and a row can never
+  point at another organisation's file.
+- **Folders are a flat text label**, not a table and not a path. The technical
+  brief offers `parent_id` nesting as an option; nothing in Annexure A asks for
+  it.
+- **The upload widget requires JavaScript, and is the only component that does.**
+  A multipart post would send the PDF through the app server, which operating
+  manual §8 forbids and the Vercel payload limit would break in production.
+  Granting, revoking, search and filtering all still work with scripting off.
+- **Document deletion was deliberately not built.** It is not in the exit gate,
+  and `content_access` has no foreign key to `documents`, so deleting one would
+  leave dangling grants needing their own handling.
+- **Mentors have no document access.** `content_access` is per student, so a
+  mentor holds no grants. Nothing in Annexure A asks for it.
+
+### Verified, and how
+
+36 checks against the hosted database, driving a locally running production
+build over HTTP with real session cookies captured through `@supabase/ssr`.
+Five throwaway accounts: admin, two students, a mentor, and an admin of the
+second organisation. **All 36 passed.**
+
+The parts worth naming:
+
+| Check | Result |
+|---|---|
+| Admin uploads a real two-page PDF, grants it to student A, student A opens it | Signed URL returns the actual bytes: `%PDF-` header, exact length |
+| Student B opens the same document | 404, and it is absent from their list |
+| **Student B requests the object directly at the Storage path** | Refused, HTTP 400 |
+| Mentor, other-organisation admin, anonymous, direct at the Storage path | All refused |
+| **Student A, who holds a grant, direct at the Storage path** | Refused. This is the tightening above, working |
+| Admin of the owning organisation, direct at the Storage path | Allowed, HTTP 200 |
+| Student attempts to upload into the bucket | Refused, HTTP 400 |
+| Signed URL expiry, read from the token rather than assumed | 600 seconds, inside the contracted 5-15 minutes |
+| Tampered signed-URL token | Refused |
+| Watermark | Names student A and their address, composed server-side, present in the server-rendered HTML |
+| Student asks for an upload ticket; student B grants themselves access; other-org admin grants this document | All three refused, nothing written |
+| Database refuses: cross-org grant, grant naming a non-existent document, storage path escaping the org prefix | All three refused by trigger or check constraint |
+
+Test isolation: baseline taken first, everything deleted afterwards, live counts
+re-checked and identical.
+
+### Two defects the verification caught that every static check had passed
+
+Recorded because they are the argument for doing this at all. Typecheck, lint,
+58 unit tests and a production build were all green with both in place.
+
+1. **Granting silently wrote nothing.** The action used `upsert`, which compiles
+   to `INSERT ... ON CONFLICT DO UPDATE` and therefore needs UPDATE rights.
+   `content_access` is deliberately granted only SELECT, INSERT and DELETE and
+   has no UPDATE policy, so every grant was refused with `42501`. Replaced with
+   a plain insert treating `23505` as success. The table was right; the code was
+   wrong.
+2. **A malformed upload path returned a 500.** It reached `String.split` before
+   being validated. A Server Action is a public endpoint and TypeScript's
+   parameter types are erased at that boundary, so the type check is now made at
+   runtime.
+
+### Not verified, and not to be recorded as working
+
+- **Nothing has been tested on the deployed URL.** PR #16 is unmerged, and the
+  Vercel preview deployment sits behind Vercel SSO, so it could not be driven
+  from here. **The Phase 1 exit gate is therefore still open.** Everything above
+  was proved against the hosted database from a local build.
+- **PDF.js has never rendered a page in a real browser here.** There is no
+  browser automation in this environment. The bytes are proven to arrive and the
+  watermark is proven to be in the markup; that the canvas paints and the
+  watermark is legible needs one human to open one document.
+- **The orphan-object branch is untested by construction.** It fires only when
+  the browser transfers bytes and then fails to call the recording action.
+
+### Two operational facts worth keeping
+
+- **Migrations run as `supabase_admin`, a superuser; MCP `execute_sql` runs as
+  `postgres`, which is not.** This matters: `postgres` is not a member of
+  `supabase_storage_admin` and cannot create policies on `storage.objects`, so
+  reasoning about what a migration may do by testing through MCP gives the wrong
+  answer. Storage policies applied through `npm run db:migrate` without trouble.
+- **`anon` and `authenticated` hold full `arwdDxtm` grants on `storage.objects`
+  and `storage.buckets`**, issued by `supabase_storage_admin` when the extension
+  was installed. RLS is the only thing standing between those grants and every
+  file in the project, so a bucket with no policies is protected by the absence
+  of a permissive one rather than by design. Every future bucket needs its
+  policies in the migration that creates it.
+
+## Open question with the Client: how content access is granted at scale
+
+Raised 2026-09-03 by the owner, who is taking it to Cospire. **Nothing is
+blocked and nothing built is wasted**, because per-student, per-resource
+granting is exactly what the agreement specifies. The question is only whether
+to add a course-level shortcut on top of it.
+
+**What the agreement says**, in three places and consistently: *"Content access
+and mentor assignment are granted manually per student"*; *"Student, limited to
+content granted to them"*; and in the exclusions, *"Automated purchase to access
+logic. Access is granted manually by an admin."* So there is no enrol-in-a-course
+model, and there is **no group or batch concept anywhere in the agreement or the
+schema**. If Cospire describes batches, that is a contract variation under clause
+3.9, not an implementation detail, and must be raised rather than absorbed.
+
+**The practical problem.** Granting is currently one student, one document. A
+hundred students against forty documents is four thousand grants, and no bulk
+granting tool is in scope.
+
+**The likely answer, not yet confirmed.** `content_access.resource_type` already
+accepts `'course'`, so an admin could grant a course and have everything inside
+it follow. That stays manual and admin-controlled, so it needs no variation.
+
+**What it changes if confirmed.** `private.student_has_document_grant` checks
+only `resource_type = 'document'`. Course grants cascading to the documents
+inside a curriculum means extending that helper, and the equivalent for videos
+and mocks in Phases 2 and 4. Cheap to do before Phase 2, awkward afterwards, so
+it wants an answer before the curriculum builder is written.
+
+Three questions went to the Client: what a new student is given, how they would
+expect to hand out forty documents to a hundred students, and whether students
+think in terms of a course or a file list.
 
 ## Pending
 
@@ -967,22 +1139,45 @@ time otherwise.
 | 2026-08-28 | Final smoke test on merged `main` | Pass after a clean rebuild: `/login` 200, `/admin` and `/dashboard` 307, all five security headers present, no runtime errors |
 | 2026-08-28 | Security advisor, post-fix | Two WARN items, both plan or scope decisions rather than defects; recorded above |
 | 2026-08-28 | Explorer cleanup verification | Parent-workspace VS Code settings parse as valid JSON; repository `.vscode` clutter removed; `npm run typecheck` and `npm run lint` pass after cleanup |
+| 2026-09-02 | Documents migrations applied | Both applied with `npm run db:migrate`. `documents` has RLS enabled and forced with 4 policies; `storage.objects` has 4 documents policies; the bucket is private, PDF-only, 50MiB |
+| 2026-09-02 | Security advisor after the migrations | The same two pre-existing WARN items (leaked-password protection needs Pro, MFA is a scope decision). **No new findings** |
+| 2026-09-02 | `npm run typecheck` / `lint` / `test` / `build` | Pass. **58 test assertions, up from 28.** Production build of 14 routes |
+| 2026-09-02 | Client bundle secret scan | Pass: the **actual secret key value** appears nowhere in the entire `.next` tree. The only `sb_secret` match is supabase-js's own key-format check |
+| 2026-09-02 | pdfjs-dist worker asset | Emitted by webpack to `.next/static/media/`, so the `new URL(..., import.meta.url)` worker reference resolves in a production build |
+| 2026-09-02 | Documents end-to-end, hosted database, local build | **36 of 36 checks passed.** Full matrix in the documents slice section above |
+| 2026-09-02 | Documents defects found by that run | Two, both invisible to typecheck/lint/tests/build: granting wrote nothing because `upsert` needs UPDATE rights `content_access` does not grant; a malformed upload path returned a 500. Both fixed and re-verified |
+| 2026-09-02 | Test isolation after the documents run | Pass: live counts returned to baseline exactly (2 orgs, 5 profiles, 1 assignment, 0 grants, 0 documents, 0 storage objects) |
+| 2026-09-02 | CI on PR #16 | `verify` green in 50s; Vercel preview deployed |
+| 2026-09-02 | Documents on the deployed URL | **Not run.** PR #16 is unmerged, and the Vercel preview is behind Vercel SSO so it could not be driven from here. The Phase 1 exit gate remains open |
+| 2026-09-02 | PDF.js rendering in a browser | **Not verified.** No browser automation available. Bytes proven to arrive, watermark proven present in the markup; the canvas paint is unconfirmed |
 
 ## Next recommended action
 
-**Phase 1 steps 1-3 are merged and deployed. Nothing blocks steps 4 to 7.**
+**PR #16 needs merging, and then the exit gate needs closing on the deployed
+URL.** In order:
 
-1. **Continue the build order.** `documents` table with its Storage bucket and
-   policies, then the protected viewer, then access granting, then bulk CSV
-   creation. `pdfjs-dist` is owner-approved but **not yet installed**, and
-   `package.json` is humans-only under operating manual §6.1.
-2. Decide what to do about the leftover audit organisation described in the
+1. **Merge PR #16.** CI is green and both migrations are already applied. It was
+   not merged here because merging is an outward-facing action that needed the
+   owner's decision.
+2. **Re-run the verification against `https://cospire-roan.vercel.app`.** The
+   harness is written and was run 36/36 locally; it takes a base URL as its
+   third argument. It could not be pointed at the Vercel preview because preview
+   deployments sit behind Vercel SSO. **Until this passes on the deployed URL,
+   the Phase 1 exit gate is open**, and a green CI run is not a substitute.
+3. **Open one document in a real browser** and confirm PDF.js paints the page
+   and the watermark is legible. This is the one thing that cannot be checked
+   from here, and it is the client's own sentence: *that student reading it*.
+4. **Build step 5, bulk CSV creation**, the last unbuilt part of Phase 1. Still
+   blocked on custom SMTP.
+5. Decide what to do about the leftover audit organisation described in the
    Phase 1 security audit. It is harmless and RLS-isolated, but it can only be
    removed by a migration or a manual dashboard deletion.
-3. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
+6. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
    as `id, org_id, role, name, email` and omits `status`, which the deactivate
    feature, the disabled-user behaviour and `enforce_last_admin` all depend on.
-   Owner's file, outside git, so it was left alone.
+   It also lists `documents` without noting that `id` must be `bigint`, because
+   `content_access.resource_id` is. Owner's file, outside git, so it was left
+   alone.
 
 Carried from Phase 0, none of it blocking:
 
@@ -1006,7 +1201,10 @@ The route through the rest of the build is in `docs/implementation-plan.md`,
 split into six phases, one per contracted week, each with a single demonstrable
 exit gate taken from the signed delivery plan.
 
-**Phase 0 is complete. Phase 1 is next:** the admin console and the document
-library. Its exit gate is the client's own sentence, an admin creates a student,
-grants them a document, that student reads it, and another student is correctly
-refused.
+**Phase 0 is complete. Phase 1 is nearly complete:** the admin console and the
+document library are built, and only bulk CSV creation remains, itself blocked
+on custom SMTP. Its exit gate is the client's own sentence, an admin creates a
+student, grants them a document, that student reads it, and another student is
+correctly refused. Every part of that sentence has been demonstrated against the
+hosted database, and **none of it on the deployed URL yet**, which is what the
+gate requires.
