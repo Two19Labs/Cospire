@@ -761,6 +761,39 @@ Recorded because they are the argument for doing this at all. Typecheck, lint,
   of a permissive one rather than by design. Every future bucket needs its
   policies in the migration that creates it.
 
+## Open question with the Client: how content access is granted at scale
+
+Raised 2026-09-03 by the owner, who is taking it to Cospire. **Nothing is
+blocked and nothing built is wasted**, because per-student, per-resource
+granting is exactly what the agreement specifies. The question is only whether
+to add a course-level shortcut on top of it.
+
+**What the agreement says**, in three places and consistently: *"Content access
+and mentor assignment are granted manually per student"*; *"Student, limited to
+content granted to them"*; and in the exclusions, *"Automated purchase to access
+logic. Access is granted manually by an admin."* So there is no enrol-in-a-course
+model, and there is **no group or batch concept anywhere in the agreement or the
+schema**. If Cospire describes batches, that is a contract variation under clause
+3.9, not an implementation detail, and must be raised rather than absorbed.
+
+**The practical problem.** Granting is currently one student, one document. A
+hundred students against forty documents is four thousand grants, and no bulk
+granting tool is in scope.
+
+**The likely answer, not yet confirmed.** `content_access.resource_type` already
+accepts `'course'`, so an admin could grant a course and have everything inside
+it follow. That stays manual and admin-controlled, so it needs no variation.
+
+**What it changes if confirmed.** `private.student_has_document_grant` checks
+only `resource_type = 'document'`. Course grants cascading to the documents
+inside a curriculum means extending that helper, and the equivalent for videos
+and mocks in Phases 2 and 4. Cheap to do before Phase 2, awkward afterwards, so
+it wants an answer before the curriculum builder is written.
+
+Three questions went to the Client: what a new student is given, how they would
+expect to hand out forty documents to a hundred students, and whether students
+think in terms of a course or a file list.
+
 ## Pending
 
 The full route is in `docs/implementation-plan.md`: six phases, one per contracted
