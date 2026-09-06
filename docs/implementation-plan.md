@@ -183,7 +183,23 @@ it, is the point.
    in browser code exposes the API key.
 3. **`curriculum_items`.** Courses, sections, and the ordered mixed list. Not a
    lessons table; operating manual §4.1.
-4. **The curriculum builder**, reordering by `sort_order`.
+
+   **A course is a "programme" in the Client's language**, one per target
+   institution per content type — *Ashoka - aptitude prep*, *Masters' Union -
+   ARS*. Confirmed 2026-09-06. Admins create them; the list is never hardcoded.
+
+4. **The curriculum builder**, reordering by `sort_order`. **Admins must be able
+   to create a programme here**, because the Client asked explicitly not to be
+   locked to a list we ship.
+
+4b. **Make course grants cascade.** `private.student_has_document_grant` checks
+   only `resource_type = 'document'`, so a programme grant opens nothing today.
+   This step is why it was not done in Phase 1: cascading needs `courses` and
+   `curriculum_items` to know what a programme contains, and neither existed.
+   Do it here, with the same treatment for videos, and for mocks in Phase 4.
+
+   A student prepping for several institutions holds several programme grants,
+   and individual item grants remain as the override. Both, per the Client.
 5. **`item_progress`**, per curriculum item rather than per video, because
    completion is measured across the whole sequence.
 
@@ -289,6 +305,17 @@ Build **one round engine, not four screens.** `ars_rounds` carries
 `submission_mode` (`text`, `file`, `form`) and a `config` JSONB; one student route
 renders whichever shape the round declares. Annexure A commits to admins adding
 further round types, and a fifth round must not need a developer.
+
+**`ars_rounds` must carry a programme link in the migration that creates it.**
+Confirmed with the Client on 2026-09-06: ARS rounds differ per institution, and
+the admin creates them per institution. Ashoka's rounds are not Masters' Union's.
+Without a `course_id`, every student sees every institution's rounds, and adding
+it afterwards is a retrofit in the week this plan already calls overloaded.
+
+Access then needs no new mechanism: a round belongs to a programme, and granting
+the programme reaches it. **`content_access.resource_type` does not need
+widening** — it accepts `course`, `video`, `document`, `mock`, cannot name a
+round, and does not have to.
 
 The access rule is an RLS policy on `ars_submissions` **and** a Storage policy on
 the upload bucket. Video essays are files; a correct row policy in front of a
