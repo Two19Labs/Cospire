@@ -761,38 +761,74 @@ Recorded because they are the argument for doing this at all. Typecheck, lint,
   of a permissive one rather than by design. Every future bucket needs its
   policies in the migration that creates it.
 
-## Open question with the Client: how content access is granted at scale
+## How content is organised and granted: answered by the Client, 2026-09-06
 
-Raised 2026-09-03 by the owner, who is taking it to Cospire. **Nothing is
-blocked and nothing built is wasted**, because per-student, per-resource
-granting is exactly what the agreement specifies. The question is only whether
-to add a course-level shortcut on top of it.
+The open question from 2026-09-03 is **answered**. Nothing built is wasted, and
+no contract variation is needed.
 
-**What the agreement says**, in three places and consistently: *"Content access
-and mentor assignment are granted manually per student"*; *"Student, limited to
-content granted to them"*; and in the exclusions, *"Automated purchase to access
-logic. Access is granted manually by an admin."* So there is no enrol-in-a-course
-model, and there is **no group or batch concept anywhere in the agreement or the
-schema**. If Cospire describes batches, that is a contract variation under clause
-3.9, not an implementation detail, and must be raised rather than absorbed.
+### What Cospire said
 
-**The practical problem.** Granting is currently one student, one document. A
-hundred students against forty documents is four thousand grants, and no bulk
-granting tool is in scope.
+Content is organised as **programmes**, one per target institution per content
+type. The names came through a voice transcript and are **not yet confirmed in
+writing**, but the shape is: *Masters' Union - aptitude prep*, *Masters' Union -
+ARS*, *Ashoka - aptitude prep*, *Ashoka - ARS*, and others. The exact list is
+still owed by the Client.
 
-**The likely answer, not yet confirmed.** `content_access.resource_type` already
-accepts `'course'`, so an admin could grant a course and have everything inside
-it follow. That stays manual and admin-controlled, so it needs no variation.
+1. **A programme is a `courses` row, created by the admin.** Not a fixed list in
+   code. The Client explicitly asked for the freedom to add programmes himself
+   rather than being locked to a list we ship. `courses` is already a table, so
+   this costs nothing beyond the admin screen in Phase 2.
+2. **Access is granted per programme, with individual grants as the override.**
+   "Mostly grouped, but with the ability to give access individually", in his
+   words. Both mechanisms, not one.
+3. **A student prepping for several institutions holds several programme
+   grants.** That is the intended model, not an edge case.
+4. **ARS rounds differ per institution, and the admin creates them per
+   institution.** Confirmed 2026-09-06. This is the answer that has schema
+   consequences; see below.
 
-**What it changes if confirmed.** `private.student_has_document_grant` checks
-only `resource_type = 'document'`. Course grants cascading to the documents
-inside a curriculum means extending that helper, and the equivalent for videos
-and mocks in Phases 2 and 4. Cheap to do before Phase 2, awkward afterwards, so
-it wants an answer before the curriculum builder is written.
+### Why this needs no variation
 
-Three questions went to the Client: what a new student is given, how they would
-expect to hand out forty documents to a hundred students, and whether students
-think in terms of a course or a file list.
+The distinction that matters: he described groups **of content**, not groups
+**of students**. Content grouping is already in the schema as `courses`. Student
+grouping - batches, cohorts - appears nowhere in the agreement or the schema and
+would be a clause 3.9 variation. **If batches are ever raised, they must be
+raised as a variation rather than absorbed.**
+
+The scale problem that prompted the question also dissolves. Granting is not a
+hundred students against forty documents; it is two or three programme grants
+per student.
+
+### What this obliges, and when
+
+Neither item can be built now, and neither should be faked early. `courses`,
+`curriculum_items` and `ars_rounds` do not exist: the database holds five tables,
+all from Phase 0 and the documents slice.
+
+| Obligation | Build it in |
+|---|---|
+| **Course grants must cascade.** `private.student_has_document_grant` checks only `resource_type = 'document'`, so a programme grant currently opens nothing. Making it cascade needs `courses` and `curriculum_items` to know what a programme contains | **Phase 2, with the curriculum builder.** Not before: there is nothing to join to |
+| **`ars_rounds` carries a programme link from birth.** Without it every student sees every institution's rounds | **Phase 5, in the migration that creates the table.** Adding it later is a retrofit in the week `CONTEXT.md` already flags as overloaded |
+
+**`content_access.resource_type` does not need widening.** It accepts `course`,
+`video`, `document`, `mock` and cannot name an ARS round. Once rounds belong to a
+programme, granting the programme reaches them, so the constraint stays as it is.
+
+### Still owed by the Client
+
+- The written list of programmes, with the names as students should see them.
+- What "ARS" actually stands for. The agreement uses the term throughout and
+  **never expands it**; it is Cospire's own vocabulary and will appear as a label
+  in the interface, so it should be their words.
+
+### The agreement's own words, for the next reader
+
+The model above is consistent with all three places the agreement addresses it:
+*"Content access and mentor assignment are granted manually per student"*;
+*"Student, limited to content granted to them"*; and in the exclusions,
+*"Automated purchase to access logic. Access is granted manually by an admin."*
+Programme-level granting is still an admin granting, by hand, per student. It is
+a shortcut through the admin console, not automated enrolment.
 
 ## Pending
 
