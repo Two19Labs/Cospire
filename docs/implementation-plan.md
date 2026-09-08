@@ -23,7 +23,7 @@ content deadline hangs off it. Confirm it before treating any date as contractua
 | Phase | Week | Scope | Status |
 |---|---|---|---|
 | **0** | 1 | Foundation, identity, access | **Complete** |
-| **1** | 2 | Admin console and documents | **In progress** - steps 1-3 merged and deployed; 4, 6 and 7 built and verified locally in PR #16, unmerged; only step 5 unbuilt |
+| **1** | 2 | Admin console and documents | **In progress** - steps 1-4, 6 and 7 merged and deployed. Only step 5 (bulk CSV) is unbuilt, blocked on SMTP. The exit gate is open pending verification on the deployed URL |
 | **2** | 3 | Video, curriculums, **first demo** | Not started |
 | **3** | 4 | Question bank and authoring | Not started |
 | **4** | 5 | Test engine, **second demo** | Not started |
@@ -54,8 +54,10 @@ Full detail is in `CONTEXT.md`.
 # Phase 1 — Admin console and documents
 
 **Week 2. In progress: steps 1 to 3 are merged and live. Steps 4, 6 and 7 are
-built and verified against the hosted database, sitting in PR #16 unmerged. Only
-step 5 is unbuilt.**
+merged and deployed in PR #16 on 2026-09-03. Only step 5 is unbuilt.**
+
+The exit gate has **not** closed: the end-to-end verification has run against
+the hosted database from a local build, never against the deployed URL.
 
 **Exit gate, from the delivery plan:** *"An admin creating a student, granting them
 a document, and that student reading it while another student is correctly
@@ -89,17 +91,17 @@ Each step unblocks the next.
    cannot be deleted at all; and deleting a student would, from Phase 4, destroy
    the `attempts` that contracted rescoring operates on.
 
-4. ~~**Manual access granting.**~~ **Done, PR #16 (unmerged).** Writes
+4. ~~**Manual access granting.**~~ **Done, PR #16, merged and deployed.** Writes
    `content_access` as `resource_type` plus `resource_id`, from the document's
    own detail page so the picker has a real resource to grant.
 5. **Bulk creation from a spreadsheet.** Upload, parse, **validate every row before
    creating anything**, report bad rows back, then create in one pass. A partial
    import leaving half a class created is worse than a clean failure. **The only
    step still unbuilt, and the only one custom SMTP blocks.**
-6. ~~**Document library.**~~ **Done, PR #16 (unmerged).** `documents` table, flat
+6. ~~**Document library.**~~ **Done, PR #16, merged and deployed.** `documents` table, flat
    text folders, direct-to-Storage upload. Built before step 4 rather than after,
    because a grant with nothing to point at cannot be demonstrated.
-7. ~~**Protected viewer.**~~ **Done, PR #16 (unmerged).** PDF.js to canvas with
+7. ~~**Protected viewer.**~~ **Done, PR #16, merged and deployed.** PDF.js to canvas with
    the reader's identity drawn across each page, from a signed URL expiring in
    ten minutes.
 

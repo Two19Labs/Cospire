@@ -1,23 +1,25 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-02 (Asia/Calcutta)
+Last updated: 2026-09-08 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
 
-**Phase 1 is in progress.** Steps 1-3 of seven, plus user deactivation, are
-merged to `main` (PR #12) and live in production.
+**Phase 1 is nearly complete.** Six of its seven steps are merged and live:
+steps 1-3 plus user deactivation in PR #12, and steps 4, 6 and 7 -- access
+granting, the document library and the protected viewer -- in **PR #16, merged
+2026-09-03**. Both documents migrations are applied. Only **step 5, bulk CSV
+creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 
-Steps 6 (document library), 4 (access granting) and 7 (protected viewer) are
-built, and their two migrations are **already applied to the hosted database**.
-They sit in **PR #16, open and unmerged**, with CI green. The whole slice was
-verified end to end against the hosted database from a locally running build:
-**36 checks, all passing**, including the exit-gate sentence and the direct
-Storage-path refusals.
+**The exit gate is still open, and closing it is not a coding task.** The whole
+documents slice passed 36 of 36 end-to-end checks against the hosted database --
+including the exit-gate sentence and the direct Storage-path refusals -- but
+from a **locally running build**. The gate requires the deployed URL, and that
+run has never happened. The harness is in `scripts/verify/` and takes the base
+URL as an argument.
 
-**The exit gate is not yet closed**, because it must pass on the deployed URL
-and the merge to `main` has not happened. Only step 5, bulk CSV creation,
-remains unbuilt, and it is blocked on custom SMTP.
+What *is* confirmed on production: the documents routes exist and refuse
+anonymous callers. That proves the deploy landed and nothing more.
 
 ## Purpose and authority
 
@@ -216,7 +218,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | **PR #16 is open and awaiting merge.** The documents slice is complete, CI is green, both migrations are applied, and it is verified end to end locally. It needs a human to merge it and then re-run the verification against the deployed URL. Nothing else is claimed. | 2026-09-02 |
+| None | - | - | - | Nothing claimed. The documents slice is merged (PR #16) and deployed. **The outstanding task is running the end-to-end verification against `https://cospire-roan.vercel.app`**, which closes the Phase 1 exit gate. The harness is in `scripts/verify/`. | 2026-09-08 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -454,10 +456,10 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 | 2. Create a single user | **Done and verified**, success and four rejection paths |
 | 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
 | 3b. Deactivate / reactivate a user | **Done and verified.** Added 2026-09-01 after the owner spotted that the console could create users but never offboard one |
-| 4. Manual access granting | **Built and verified locally.** In PR #16, unmerged |
+| 4. Manual access granting | **Done, merged and deployed** (PR #16). Verified against the hosted database, not yet on the deployed URL |
 | 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01. The only step still unbuilt, and blocked on custom SMTP |
-| 6. Document library | **Built and verified locally.** In PR #16, unmerged. Migrations already applied |
-| 7. Protected viewer | **Built and verified locally**, except the browser render. `pdfjs-dist@6.3.289` installed, pinned exact |
+| 6. Document library | **Done, merged and deployed** (PR #16). Migrations applied |
+| 7. Protected viewer | **Done, merged and deployed** (PR #16). Browser render confirmed by the owner 2026-09-03. `pdfjs-dist@6.3.289`, pinned exact |
 
 ### Decisions taken on 2026-09-01 and 2026-09-02
 
@@ -645,7 +647,7 @@ one-off manual deletion in the Supabase dashboard with the trigger temporarily
 disabled. It was deliberately **not** removed through the MCP server, because
 operating manual §4.5 forbids schema writes by that route.
 
-## The documents slice, 2026-09-02 (PR #16, open)
+## The documents slice, merged 2026-09-03 (PR #16)
 
 Phase 1 steps 6, 4 and 7 in one branch, because a library with nothing in it
 cannot be granted and a grant with nothing to read cannot be demonstrated.
@@ -734,18 +736,48 @@ Recorded because they are the argument for doing this at all. Typecheck, lint,
    parameter types are erased at that boundary, so the type check is now made at
    runtime.
 
+### Verified in a browser by the owner, 2026-09-03
+
+This closed the one gap no automated check here could reach, and found two
+defects in the process. Done against a local production build of the branch,
+before the merge.
+
+| Check | Result |
+|---|---|
+| PDF.js renders the pages | **Pass.** The worker resolves in a production build, which had been the largest unverified risk |
+| The watermark reaches the canvas pixels | **Pass.** Saving a page as an image produces a file carrying the reader's name and address, so a screenshot or saved image is traceable |
+
+Two defects found and fixed as a result, in `6880ac3`:
+
+1. **The watermark read UTC.** Now IST, computed by fixed offset rather than an
+   `Intl` time-zone lookup, because a runtime with trimmed ICU data falls back to
+   UTC while still printing "IST" -- a wrong answer that looks right. Vercel runs
+   on UTC. Tested across the midnight rollover and under three machine time
+   zones.
+2. **A PDF.js worker leaked on every navigation.** The parse runs on a worker
+   owned by the loading task, not by React, so unmounting released neither the
+   worker nor the document's buffers. Five were alive in devtools. The cleanup
+   now destroys the loading task.
+
 ### Not verified, and not to be recorded as working
 
-- **Nothing has been tested on the deployed URL.** PR #16 is unmerged, and the
-  Vercel preview deployment sits behind Vercel SSO, so it could not be driven
-  from here. **The Phase 1 exit gate is therefore still open.** Everything above
-  was proved against the hosted database from a local build.
-- **PDF.js has never rendered a page in a real browser here.** There is no
-  browser automation in this environment. The bytes are proven to arrive and the
-  watermark is proven to be in the markup; that the canvas paints and the
-  watermark is legible needs one human to open one document.
+- **The end-to-end verification has never been run against the deployed URL.**
+  It has only run against a local build, which is not the same thing.
+  **The Phase 1 exit gate is therefore still open.** What *is* confirmed on
+  production, 2026-09-08: the routes exist and refuse anonymous callers
+  (`/admin/documents` and `/student/documents` both 307 to `/login`, where they
+  would have been 404 before the merge). That proves the deployment landed and
+  nothing more.
 - **The orphan-object branch is untested by construction.** It fires only when
   the browser transfers bytes and then fails to call the recording action.
+- **Saving a page as an image is possible and expected.** Technical brief §8
+  accepts this in terms: the defence is that every such copy carries the reader's
+  identity, not that copying is prevented. **A reader can also read the signed
+  URL out of the page source and fetch the clean, un-watermarked PDF** within its
+  ten-minute window. That is inherent to rendering a PDF in a browser and is not
+  closable without putting media through the app server, which operating manual
+  §8 forbids. Raised with the owner 2026-09-03; **worth telling Cospire plainly
+  rather than letting them discover it.**
 
 ### Two operational facts worth keeping
 
@@ -1184,31 +1216,39 @@ time otherwise.
 | 2026-09-02 | Documents defects found by that run | Two, both invisible to typecheck/lint/tests/build: granting wrote nothing because `upsert` needs UPDATE rights `content_access` does not grant; a malformed upload path returned a 500. Both fixed and re-verified |
 | 2026-09-02 | Test isolation after the documents run | Pass: live counts returned to baseline exactly (2 orgs, 5 profiles, 1 assignment, 0 grants, 0 documents, 0 storage objects) |
 | 2026-09-02 | CI on PR #16 | `verify` green in 50s; Vercel preview deployed |
-| 2026-09-02 | Documents on the deployed URL | **Not run.** PR #16 is unmerged, and the Vercel preview is behind Vercel SSO so it could not be driven from here. The Phase 1 exit gate remains open |
-| 2026-09-02 | PDF.js rendering in a browser | **Not verified.** No browser automation available. Bytes proven to arrive, watermark proven present in the markup; the canvas paint is unconfirmed |
+| 2026-09-08 | Documents on the deployed URL | **Still not run**, and it is the last thing holding the Phase 1 exit gate open. Confirmed on production that the routes exist and refuse anonymous callers (307 to `/login`); that proves the deploy landed, nothing more |
+| 2026-09-03 | PDF.js rendering in a browser | **Pass**, confirmed by the owner: pages render and a page saved as an image carries the reader's name. Found two defects, both fixed in `6880ac3`: the stamp read UTC rather than IST, and a PDF.js worker leaked per navigation |
 
 ## Next recommended action
 
-**PR #16 needs merging, and then the exit gate needs closing on the deployed
-URL.** In order:
+**One task closes Phase 1's exit gate, and it is not a coding task.** In order:
 
-1. **Merge PR #16.** CI is green and both migrations are already applied. It was
-   not merged here because merging is an outward-facing action that needed the
-   owner's decision.
-2. **Re-run the verification against `https://cospire-roan.vercel.app`.** The
-   harness is written and was run 36/36 locally; it takes a base URL as its
-   third argument. It could not be pointed at the Vercel preview because preview
-   deployments sit behind Vercel SSO. **Until this passes on the deployed URL,
-   the Phase 1 exit gate is open**, and a green CI run is not a substitute.
-3. **Open one document in a real browser** and confirm PDF.js paints the page
-   and the watermark is legible. This is the one thing that cannot be checked
-   from here, and it is the client's own sentence: *that student reading it*.
-4. **Build step 5, bulk CSV creation**, the last unbuilt part of Phase 1. Still
-   blocked on custom SMTP.
+1. **Run the end-to-end verification against `https://cospire-roan.vercel.app`.**
+   The harness is in `scripts/verify/` with a README; it takes the base URL as
+   its third argument and was 36/36 against a local build. **Until it passes on
+   the deployed URL the exit gate is open**, and neither a green CI run nor the
+   local pass is a substitute. This is the only thing standing between Phase 1
+   and done, apart from step 5 below.
+2. **Build step 5, bulk CSV creation**, the last unbuilt part of Phase 1. Blocked
+   on custom SMTP, which is Cospire's to provide.
+3. **Chase two things still owed by the Client**, both small and both cheap to
+   get while he is responsive: the written list of programmes with the names
+   students should see, and **what "ARS" actually stands for** — the agreement
+   uses the term throughout and never expands it, and it will be a label in the
+   interface.
+4. **Tell Cospire what the document watermark does and does not stop**, before
+   they discover it. A reader can save a page as an image (watermarked, so
+   traceable) and can read the signed URL out of the page source to fetch the
+   clean PDF (not traceable). Both are inherent to rendering a PDF in a browser.
+   Better raised in week two than found in week six.
 5. Decide what to do about the leftover audit organisation described in the
    Phase 1 security audit. It is harmless and RLS-isolated, but it can only be
    removed by a migration or a manual dashboard deletion.
-6. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
+6. **Two documents uploaded through the console during the owner's browser
+   testing are still live**, with two grants against them. Real rows, not test
+   residue from a verification run. **Document deletion is not built**, so
+   removing them needs the Supabase dashboard.
+7. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
    as `id, org_id, role, name, email` and omits `status`, which the deactivate
    feature, the disabled-user behaviour and `enforce_last_admin` all depend on.
    It also lists `documents` without noting that `id` must be `bigint`, because
