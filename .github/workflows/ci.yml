@@ -11,8 +11,36 @@ concurrency:
 
 permissions:
   contents: read
+  # Read-only, and only so the context check can ask GitHub whether a pull
+  # request CONTEXT.md calls "open" has in fact been merged.
+  pull-requests: read
 
 jobs:
+  # Deliberately its own job. It needs no dependencies and finishes in seconds,
+  # so it reports separately from the build rather than hiding behind a five
+  # minute install, and a red tick here reads as "the notes are wrong" rather
+  # than "the code is broken".
+  context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # The check compares against origin/main and reads the history of
+          # CONTEXT.md. A shallow clone has neither.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check CONTEXT.md against the repository
+        run: node scripts/check-context.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20

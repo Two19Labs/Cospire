@@ -53,3 +53,11 @@ entry without explicit coordination.
 This rule is not waived by being in a hurry, by the change being small, or by the
 work being unfinished. An unfinished task recorded honestly is useful. An
 unfinished task recorded as complete is worse than no record at all.
+
+## The rule is enforced
+
+`node scripts/check-context.mjs` runs in CI and fails a pull request that leaves
+`CONTEXT.md` contradicting the repository: a merged pull request described as
+open, a claimed branch that no longer exists, code changed with no context
+change, or a stale `Last updated` date. Run it before you push. `AGENTS.md`
+records what it checks and the one escape hatch.
