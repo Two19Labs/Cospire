@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import {
+  parseRoundError,
+  parseRoundNotice,
+  roundErrorKey,
+  roundNoticeKey,
+} from "@/features/ars/list-params";
+import { listRounds } from "@/features/ars/queries/list-rounds";
 import { requireRole } from "@/features/auth/guards";
 import { CourseDetail } from "@/features/curriculum/components/course-detail";
 import {
@@ -38,7 +45,10 @@ export default async function AdminCoursePage({
   const course = await getCourse(courseId);
   if (!course) notFound();
 
-  const students = await listCourseAccess(courseId);
+  const [students, rounds] = await Promise.all([
+    listCourseAccess(courseId),
+    listRounds(courseId),
+  ]);
 
   return (
     <CourseDetail
@@ -46,6 +56,9 @@ export default async function AdminCoursePage({
       error={parseCourseListError(firstValue(query.error))}
       notice={parseCourseNotice(firstValue(query.notice))}
       profile={profile}
+      roundError={parseRoundError(firstValue(query[roundErrorKey]))}
+      roundNotice={parseRoundNotice(firstValue(query[roundNoticeKey]))}
+      rounds={rounds}
       students={students}
     />
   );

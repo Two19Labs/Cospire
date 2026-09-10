@@ -16,7 +16,8 @@ creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 **36 of 36 checks passed**, including the exit-gate sentence itself and the direct
 Storage-path refusals. Teardown restored the baseline exactly.
 
-**Phase 5a step 1 is built.** Programmes -- the `courses` table, its grant helper
+**Phase 5a steps 1 and 2 are built.** Step 2, ARS rounds, is in **PR #21**,
+open -- see *Phase 5a progress*. Step 1, programmes -- the `courses` table, its grant helper
 and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
 are back in step, and the new routes are live: `/admin/courses` and
@@ -287,7 +288,44 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | **Phase 5a step 1: programmes** | `courses` table, `private.student_has_course_grant`, the `course` branch on `validate_content_access_resource`, a delete cascade for grants, and admin list/search/create/detail plus granting. Migration applied to the hosted project. PR #19. See *Phase 5a progress* |
 | 2026-09-10 | Programmes verified at both layers | **Database:** 12 probes in a rolled-back transaction with real JWT claims, covering reads, writes, the validation trigger and the cascade. **Application:** `scripts/verify/courses.mjs` drove the built app over HTTP with real session cookies, every form through the no-JavaScript path — **19 of 19**. Both runs returned the live counts to baseline |
 | 2026-09-10 | The ordering field was removed from the create form | The owner asked what "Order" meant, which is the answer. Choosing a sort key by hand needs the other programmes' keys, and no screen shows them. `sort_order` stays on the table, defaults to 0, and the list reads in creation order until a reorder control exists. `validateNewCourse` keeps its rules, now tested by a hand-posted request instead of a form field |
+| 2026-09-10 | **Phase 5a step 2: ARS rounds** | `ars_rounds` with its `course_id` as half a composite foreign key, `submission_mode` and a `config` JSONB; `private.mentor_reaches_course` and `private.student_reaches_round`; the `courses_select_mentor` policy; and admin round authoring on the programme detail page. One round engine, not four screens |
+| 2026-09-10 | ARS rounds verified at both layers | **Database:** 8 read probes on a discriminating pair -- the mentor's own student holds one programme and another student holds the other -- plus 12 write and constraint probes, all in rolled-back transactions. **Application:** `scripts/verify/ars-rounds.mjs`, **19 of 19**, every form posted through the no-JavaScript path. Baseline restored both times |
+| 2026-09-10 | **A CHECK constraint that passed on NULL** | `ars_rounds_form_has_fields` accepted the exact row it existed to refuse. Found by probe, fixed forward in `20260910144803`. See *The NULL that passed a CHECK* |
 | 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
+
+### The NULL that passed a CHECK, 2026-09-10
+
+`ars_rounds_form_has_fields` was written to stop a `form` round being created
+with no questions, since that renders a page asking the student to submit
+nothing. It read:
+
+```sql
+check (
+  submission_mode <> 'form'
+  or (
+    jsonb_typeof(config -> 'fields') = 'array'
+    and jsonb_array_length(config -> 'fields') > 0
+  )
+)
+```
+
+A `form` round carrying `{"prompt":"..."}` and **no `fields` key at all** was
+accepted. `config -> 'fields'` is SQL NULL when the key is absent, so
+`jsonb_typeof(NULL)` is NULL, `NULL = 'array'` is NULL, the AND is NULL, and
+`false or NULL` is NULL -- and **a CHECK constraint passes when its expression is
+NULL.** Only `false` rejects a row.
+
+What made it easy to miss: `{"fields": []}` *was* refused correctly. The case
+anyone thinks to test evaluates to a real `false`; the case nobody types
+evaluates to NULL.
+
+The rule worth carrying: **every CHECK over a nullable expression needs its NULL
+case decided on purpose.** `... IS TRUE` collapses NULL to false, which is what a
+constraint almost always wants.
+
+Fixed forward in `20260910144803` rather than by editing `20260910144415`, which
+was already applied and recorded -- editing it would have left a file that never
+runs again and a database that disagrees with it.
 
 ### Two mistakes from 2026-09-10, both worth keeping
 
@@ -341,7 +379,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed, and nothing awaiting review. **Phase 5a step 1 is merged and deployed.** The next work is **step 2, `ars_rounds` with its `course_id`**, plus the mentor-visibility policy that step must carry; nothing blocks starting it. Supabase Pro is needed before ARS is *used*, not before it is built — the owner is raising it with the Client. | 2026-09-10 |
+| None | - | - | - | Nothing claimed. **Phase 5a step 2 is built and verified, awaiting review**; both its migrations are already applied to the hosted database. The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-10 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -385,6 +423,9 @@ No credentials, keys, or connection strings are recorded in this file.
 
 Recorded migration versions match their repository filenames, so `supabase db push`
 treats them as applied and will not re-run them.
+
+| `20260910144415` | `supabase/migrations/20260910144415_ars_rounds.sql` | Applied 2026-09-10. Creates `public.ars_rounds` with RLS enabled **and forced** and four policies; adds `private.mentor_reaches_course` and `private.student_reaches_round`; adds `courses_id_org_unique` so the composite foreign key has something to reference; adds the `courses_select_mentor` policy. Additive throughout |
+| `20260910144803` | `supabase/migrations/20260910144803_fix_ars_rounds_form_fields_check.sql` | Applied 2026-09-10, minutes after the above, correcting `ars_rounds_form_has_fields`. See *The NULL that passed a CHECK* |
 
 Note the ordering that was used here: `20260910115938` was applied to the database
 while its code still sat in an unmerged pull request, and the two came back into
@@ -1020,7 +1061,7 @@ file **at its Storage path**.
 | Step | State |
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
-| 2. `ars_rounds` with its `course_id` | **Next.** Nothing blocks starting |
+| 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, 2026-09-10, verified at both layers.** Awaiting review; both migrations applied. Admin round authoring lives on the programme detail page |
 | 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
 | 5. The student submission route and the mentor review queue | Not started |
@@ -1034,19 +1075,27 @@ this file that treated Pro as blocking the phase outright.
 
 The phase needs no VdoCipher, no SMTP and no Google or LLM account.
 
-Two things step 2 must carry, both already decided and both expensive to retrofit:
+Both obligations that hung over step 2 are now discharged, and one new one takes
+their place.
 
-- **`ars_rounds.course_id` goes in the migration that creates the table**, per the
-  decision of 2026-09-06. `courses` now exists, so there is nothing left in the
-  way.
-- **Mentors currently cannot see a programme at all.** `courses_select_authorized`
-  covers admins and granted students only, deliberately. The review queue needs a
-  mentor to reach the programmes of their assigned students, and that is an
-  additive policy belonging in the `ars_rounds` migration.
+- **`ars_rounds.course_id` is in the migration that created the table**, per the
+  decision of 2026-09-06. It is half of a composite foreign key against
+  `courses (id, org_id)`, so a round cannot sit in one organisation while its
+  programme sits in another.
+- **Mentors can now see a programme**, through the separate `courses_select_mentor`
+  policy and `private.mentor_reaches_course`. The rule is the narrowest one that
+  makes a review queue possible: a mentor reaches a programme when they are the
+  active assigned mentor of an active student who holds it. Verified against a
+  discriminating pair -- their student's programme is visible, another student's
+  is not.
+- **New, and it belongs to step 3: `ars_submissions.round_id` must be ON DELETE
+  RESTRICT.** Rounds can be deleted today, which is safe only because nothing
+  hangs off them. Once a student has answered a round, deleting it destroys their
+  work, and the schema should refuse rather than the interface remembering to.
+  The note is also in `src/features/ars/actions/delete-round.ts`, beside the code
+  that would have to change.
 
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
-
-### Phase 1, one step still unbuilt
 
 ### Phase 1, one step still unbuilt
 
