@@ -404,12 +404,27 @@ uploaded file at its Storage path.
    `validate_content_access_resource`, and a trigger now cascades grants when a
    programme is deleted, because a polymorphic `resource_id` cannot carry the
    foreign key that would have done it.
-3. **`ars_rounds`** with `org_id`, **`course_id`**, `submission_mode`
-   (`text` | `file` | `form`), `config` jsonb and `sort_order`. The programme link
-   goes in this migration, per the decision of 2026-09-06. Retrofitting it later
-   was the thing that decision existed to prevent.
+3. ~~**`ars_rounds`**~~ **Done, migrations applied.** `org_id`, **`course_id`**,
+   `submission_mode` (`text` | `file` | `form`), `config` jsonb and `sort_order`,
+   plus admin round authoring on the programme detail page. The programme link
+   went in the creating migration, per the decision of 2026-09-06.
+
+   `course_id` is half a **composite** foreign key against
+   `courses (id, org_id)`, so a round cannot sit in one organisation while its
+   programme sits in another. `courses` needed a `(id, org_id)` unique
+   constraint to be referenced at all.
+
+   Mentors reach a programme through the separate `courses_select_mentor` policy
+   and `private.mentor_reaches_course`: a mentor sees a programme when they are
+   the active assigned mentor of an active student who holds it, and nothing
+   else.
 4. **`ars_submissions`** and **`ars_feedback`**, with RLS enabled in the same
    migration and policies covering **writes as well as reads**.
+
+   **`ars_submissions.round_id` must be ON DELETE RESTRICT.** Admins can delete a
+   round today, which is safe only while nothing hangs off one. Once a student
+   has answered, deleting the round destroys their work, and the schema should
+   refuse rather than the interface remembering to.
 5. **The Storage bucket and its policies on `storage.objects`.** Separate from
    RLS and not optional: a correct row policy in front of an open bucket protects
    nothing. This is rule #2 of the operating manual and it is the access rule the

@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { RoundsPanel } from "@/features/ars/components/rounds-panel";
+import type { RoundError, RoundNotice } from "@/features/ars/list-params";
+import type { RoundListRow } from "@/features/ars/queries/list-rounds";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
@@ -26,6 +29,12 @@ interface CourseDetailProps {
   error: CourseListError | null;
   notice: CourseNotice | null;
   profile: Profile;
+  // ARS keeps its own error and notice vocabulary, under its own query-string
+  // keys, so this page can host the rounds panel without either feature owning
+  // the other's words.
+  roundError: RoundError | null;
+  roundNotice: RoundNotice | null;
+  rounds: RoundListRow[];
   students: CourseAccessStudent[];
 }
 
@@ -34,6 +43,9 @@ export function CourseDetail({
   error,
   notice,
   profile,
+  roundError,
+  roundNotice,
+  rounds,
   students,
 }: CourseDetailProps) {
   const grantedCount = students.filter((student) => student.granted).length;
@@ -135,14 +147,21 @@ export function CourseDetail({
         )}
       </section>
 
+      <RoundsPanel
+        courseId={course.id}
+        error={roundError}
+        notice={roundNotice}
+        rounds={rounds}
+      />
+
       <section className="panel">
         <div>
-          <h2>What this programme contains</h2>
+          <h2>Curriculum</h2>
           <p className="muted">
             Nothing yet. Curriculum items — videos, documents and topic tests in
             a chosen order — arrive with the curriculum builder in the video
-            phase. Until then a programme grant is the unit of access, and ARS
-            rounds attach to it directly.
+            phase. Until then a programme grant is the unit of access, and the
+            ARS rounds above attach to it directly.
           </p>
         </div>
       </section>

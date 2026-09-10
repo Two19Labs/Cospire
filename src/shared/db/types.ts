@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ars_rounds: {
+        Row: {
+          config: Json
+          course_id: number
+          created_at: string
+          id: number
+          name: string
+          org_id: number
+          sort_order: number
+          submission_mode: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          course_id: number
+          created_at?: string
+          id?: never
+          name: string
+          org_id: number
+          sort_order?: number
+          submission_mode: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          course_id?: number
+          created_at?: string
+          id?: never
+          name?: string
+          org_id?: number
+          sort_order?: number
+          submission_mode?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_rounds_course_org_fkey"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_rounds_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_access: {
         Row: {
           created_at: string
