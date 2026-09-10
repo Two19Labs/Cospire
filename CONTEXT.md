@@ -341,7 +341,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed, and nothing awaiting review. **Phase 5a step 1 is merged and deployed.** The next work is **step 2, `ars_rounds` with its `course_id`**, plus the mentor-visibility policy that step must carry; nothing blocks starting it. Supabase Pro is needed before ARS is *used*, not before it is built — the owner is raising it with the Client. | 2026-09-10 |
+| Claude Code session | `feat/ars-rounds` | **Phase 5a step 2: `ars_rounds`**, its `course_id`, and the mentor-visibility policy on `courses` that the review queue needs. Admin round management on the programme detail page. Not `ars_submissions`, not the Storage bucket, not the student route -- those are steps 3 to 5. | `src/features/ars/**`, `src/app/admin/courses/[id]/**`, one new timestamped migration, and the rounds section of `src/features/curriculum/components/course-detail.tsx` | **In progress**, started 2026-09-10 | 2026-09-10 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
