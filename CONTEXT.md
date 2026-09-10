@@ -16,6 +16,12 @@ creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 **36 of 36 checks passed**, including the exit-gate sentence itself and the direct
 Storage-path refusals. Teardown restored the baseline exactly.
 
+**Phase 5a step 1 is built.** Programmes -- the `courses` table, its grant helper
+and the admin screens -- are complete and verified at both the database and the
+application, in **PR #19, open**. Its migration is **already applied** to the
+hosted project, so `main` and the database differ until that merges; the migration
+is additive and nothing deployed reads `courses`. The next work is `ars_rounds`.
+
 **The sequence changed on 2026-09-08. ARS is now the next phase built**, at the
 Client's request, ahead of video and the test engine. Weeks 4 to 6 are
 deliberately left un-planned until VdoCipher's arrival date is known. See
@@ -149,11 +155,17 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`. **Checked out on `docs/programme-decisions`**,
-  not `main`, three commits ahead of `origin/main` and pushed.
-- **PR #17 is open** (documentation only: the Client's programme decisions and a
-  context resync). PRs #1 to #16 are merged. `feat/documents` still exists locally
-  and on the remote after its merge and can be pruned.
+- Repository: `C:\Cospire\Cospire`. **Checked out on `feat/programmes`**, rebased
+  onto `origin/main` and pushed.
+- **PRs #1 to #18 are merged.** #18 carried the teardown data-loss fix and #17 the
+  gate closure and resequence, both merged 2026-09-10.
+- **PR #19 is open**: `feat/programmes`, Phase 5a step 1. The migration behind it
+  is **already applied to the hosted database**, so `main` and the database differ
+  until it merges. That is the expand-and-contract rule working as intended — the
+  migration is additive and the currently deployed code neither reads nor writes
+  `courses`.
+- `feat/documents` and `docs/programme-decisions` still exist on the remote after
+  their merges and can be pruned.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -271,6 +283,30 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-08 | **Data-loss bug found and fixed in `teardown.mjs`** | It deleted *every* document grant and *every* `documents` row with their Storage objects, unscoped. Running the documented sequence would have destroyed the owner's two real PDFs on a Free-plan project with no backups. Now scoped to the accounts in `state.json`, and refuses to run if that file names none. See *The teardown near-miss* |
 | 2026-09-08 | `verify.mjs` sample path fixed | It read `coverage/verify/sample.pdf`, left over from when the harness lived there; the file is tracked at `scripts/verify/sample.pdf`. Now resolved against `import.meta.url`, so the run no longer depends on the working directory |
 | 2026-09-08 | Sequence changed at the Client's request | ARS brought forward as Phase 5a; weeks 4-6 left un-planned pending VdoCipher. Checked against clauses 4.3, 4.4, 5, 7 and 12 before recording. See *Sequencing change* |
+| 2026-09-10 | **Phase 5a step 1: programmes** | `courses` table, `private.student_has_course_grant`, the `course` branch on `validate_content_access_resource`, a delete cascade for grants, and admin list/search/create/detail plus granting. Migration applied to the hosted project. PR #19. See *Phase 5a progress* |
+| 2026-09-10 | Programmes verified at both layers | **Database:** 12 probes in a rolled-back transaction with real JWT claims, covering reads, writes, the validation trigger and the cascade. **Application:** `scripts/verify/courses.mjs` drove the built app over HTTP with real session cookies, every form through the no-JavaScript path — **19 of 19**. Both runs returned the live counts to baseline |
+| 2026-09-10 | The ordering field was removed from the create form | The owner asked what "Order" meant, which is the answer. Choosing a sort key by hand needs the other programmes' keys, and no screen shows them. `sort_order` stays on the table, defaults to 0, and the list reads in creation order until a reorder control exists. `validateNewCourse` keeps its rules, now tested by a hand-posted request instead of a form field |
+| 2026-09-10 | PRs #17 and #18 merged | The teardown fix first, then the gate closure and resequence. `feat/programmes` rebased onto the result |
+
+### Two mistakes from 2026-09-10, both worth keeping
+
+Neither cost anything. Both are the kind that would have.
+
+**A verification probe gave a false pass.** The check that a student cannot grant
+themselves a programme was written as `INSERT ... SELECT`, and under the student's
+own RLS the SELECT matched zero rows — so it inserted nothing, raised nothing, and
+reported "ALLOWED", which read as a policy hole. Re-run with a literal
+`resource_id` and a row count, the write is correctly refused.
+
+This is the same shape as the upsert bug in the documents slice: **the absence of
+an error is not evidence of an effect.** Any probe asserting that a write was
+refused must count rows, and must not let RLS on the *read* side of the statement
+do the work.
+
+**The CI context gate was run at the wrong moment.** `check-context.mjs` passed
+locally, then failed on the branch that introduced it, because it was run *before*
+committing — while "Last updated" was still true. The commit is what made the
+header stale. **Run it after the commit, not before.**
 
 ### The teardown near-miss, 2026-09-08
 
@@ -304,7 +340,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. The Phase 1 exit gate is **closed** (36/36 on the deployed URL, 2026-09-08). The next phase is **5a, programmes then ARS** — see *Sequencing change*. It is blocked on the Supabase Pro upgrade, which the owner is raising with the Client. Uncommitted harness fixes sit on `docs/programme-decisions` and need a PR. | 2026-09-08 |
+| None | - | - | - | Nothing claimed. **Phase 5a step 1 is built and verified, awaiting review in PR #19**; its migration is already applied to the hosted database. The next work is **step 2, `ars_rounds` with its `course_id`**, and nothing blocks starting it. Supabase Pro is needed before ARS is *used*, not before it is built — the owner is raising it with the Client. | 2026-09-10 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -344,9 +380,15 @@ No credentials, keys, or connection strings are recorded in this file.
 |---|---|---|
 | `20260828093807` | `supabase/migrations/20260828093807_foundation_identity_access.sql` | Applied unchanged. 4 tables, 26 constraints, 16 indexes, 13 policies, 7 `private` helpers, 4 triggers, RLS enabled and forced everywhere, Cospire org seeded |
 | `20260828102907` | `supabase/migrations/20260828102907_restrict_rls_auto_enable_execute.sql` | New, append-only. Removes the Data API execute surface from the platform-managed `public.rls_auto_enable()` |
+| `20260910115938` | `supabase/migrations/20260910115938_courses_and_course_grants.sql` | Applied 2026-09-10 through `npm run db:migrate`, the CLI rather than MCP. Creates `public.courses` with RLS enabled **and forced** and four policies; adds `private.student_has_course_grant`; adds the `course` branch to `validate_content_access_resource`; adds the `courses_cascade_grants` trigger. Additive throughout. Security advisor: zero new findings |
 
 Recorded migration versions match their repository filenames, so `supabase db push`
-treats both as applied and will not re-run them.
+treats them as applied and will not re-run them.
+
+Note the ordering: `20260910115938` is applied to the database while its code sits
+in **unmerged PR #19**. Deliberate, and safe only because the migration is
+additive — nothing deployed reads `courses`. A migration that changed an existing
+column could not be applied ahead of its merge this way.
 
 ### The project was not clean
 
@@ -480,9 +522,10 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, re-measured 2026-09-08 after the deployed-URL verification
-run was torn down: **2 orgs, 5 profiles (5 active), 5 auth users, 1 mentor
-assignment, 2 content grants, 2 documents, 2 storage objects.**
+Current live counts, re-measured 2026-09-10 after the programmes verification run
+was torn down: **2 orgs, 5 profiles (5 active), 5 auth users, 1 mentor
+assignment, 1 course, 3 content grants (2 document, 1 course), 2 documents,
+2 storage objects.**
 
 This is the baseline any future verification run should return to. **None of it
 is test residue and none of it may be deleted:**
@@ -498,6 +541,12 @@ is test residue and none of it may be deleted:**
   on 2026-09-03 during the browser render confirmation, and grants 12 and 13
   point students at them. The project is on the Free plan with no backups, so
   these files cannot be recovered if they are deleted.
+- **Course 20, "Ashoka", is the owner's own**, created through the new programme
+  screens on 2026-09-10 while checking them by hand, and granted to Cospire
+  Student. Left in place rather than cleaned up, because it may be intended as a
+  real programme. Its name is the short form; the Client's own convention is
+  institution plus content type, as in "Ashoka - aptitude prep". Rename or remove
+  it deliberately rather than treating it as verification residue.
 
 ### RLS verified against the hosted database
 
@@ -958,21 +1007,43 @@ a shortcut through the admin console, not automated enrolment.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### Phase 5a, next: programmes then ARS
+### Phase 5a progress: programmes then ARS
 
 Exit gate: a student submits each of the three round shapes, their assigned mentor
 opens them in a queue and writes feedback, the student reads it, and a second
 student — and an unassigned mentor — are refused both the row and the uploaded
 file **at its Storage path**.
 
-**Blocked on the Supabase Pro upgrade**, which the owner is raising with the
-Client. Free-plan Storage is 1GB and `file_size_limit` is 50MiB; video essays are
-the only thing in this system that grows fast. Everything else about this phase is
-unblocked — it needs no VdoCipher, no SMTP and no Google or LLM account.
+| Step | State |
+|---|---|
+| 1. `courses`, the grant helper and admin screens | **Done, 2026-09-10, verified at both layers. In PR #19, unmerged.** Migration applied |
+| 2. `ars_rounds` with its `course_id` | **Next.** Nothing blocks starting |
+| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started |
+| 4. The Storage bucket and its policies on `storage.objects` | Not started |
+| 5. The student submission route and the mentor review queue | Not started |
 
-Build order and tests are in `docs/implementation-plan.md` under Phase 5a. The
-first step is `courses`, without which `ars_rounds` cannot carry the programme
-link the 2026-09-06 decision requires.
+**Nothing here is blocked from being built.** The Supabase Pro upgrade is a
+**capacity** limit and not a capability one: Free gives 1GB of Storage and a 50MiB
+`file_size_limit`, which is enough to build and test the upload path with small
+files. Pro blocks students uploading **real video essays**, so it must land before
+ARS is used rather than before it is written. This corrects an earlier reading of
+this file that treated Pro as blocking the phase outright.
+
+The phase needs no VdoCipher, no SMTP and no Google or LLM account.
+
+Two things step 2 must carry, both already decided and both expensive to retrofit:
+
+- **`ars_rounds.course_id` goes in the migration that creates the table**, per the
+  decision of 2026-09-06. `courses` now exists, so there is nothing left in the
+  way.
+- **Mentors currently cannot see a programme at all.** `courses_select_authorized`
+  covers admins and granted students only, deliberately. The review queue needs a
+  mentor to reach the programmes of their assigned students, and that is an
+  additive policy belonging in the `ars_rounds` migration.
+
+Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
+
+### Phase 1, one step still unbuilt
 
 ### Phase 1, one step still unbuilt
 
