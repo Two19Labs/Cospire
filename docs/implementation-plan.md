@@ -571,6 +571,26 @@ These block work rather than slow it.
 | **Supabase Pro** | Backups, restore test, Storage for ARS uploads | Cospire, clause 8.3 |
 | **Vercel Pro** | Commercial use; Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker** on a build machine | The two pgTAP suites, neither of which has ever run | Two19 Labs |
+| **Recoleta Bold web font files and licence** | Headings render in a fallback serif until they arrive. Blocks nothing else | Cospire, who already hold the licence |
+
+### The font, specifically
+
+The Client-approved design sets every heading in **Recoleta Bold**. The Client
+holds a licence and will supply the files; they are not in the prototype export,
+whose own `@font-face` blocks point at asset ids its manifest does not contain,
+so the prototype itself falls back to a system serif.
+
+What is needed when it arrives:
+
+1. The **`.woff2`** files -- a *web* kit. A desktop or OTF licence permits print
+   and design tools but not `@font-face` embedding, and that is the usual trap.
+2. The **licence terms**, so the named domain and any pageview cap are checked
+   before the platform goes live rather than after.
+3. **Weight 700 only.** All thirty heading usages in the prototype are Bold, so
+   the rest of the family would ship bytes nothing renders.
+
+Until then `--font-serif` in `src/app/globals.css` resolves to Georgia. Swapping
+it in is that one token plus a `@font-face` block; nothing else needs to know.
 
 The delivery plan assumes **feedback within two working days**. Where that slips
 the delivery date moves by the same amount, and it must be flagged in writing at
