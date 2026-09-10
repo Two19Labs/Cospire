@@ -1,6 +1,6 @@
 // Removes everything the verification run created, in dependency order, then
 // prints the live counts so they can be compared against the baseline.
-// node --env-file=.env.local coverage/verify/teardown.mjs <state.json>
+// node --env-file=.env.local scripts/verify/teardown.mjs <state.json>
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 
@@ -11,19 +11,36 @@ const admin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
+// Everything removed here is scoped to the accounts this run created. An
+// earlier version deleted every document grant and every document row, which
+// was equivalent while the baseline held none of either. It stopped being
+// equivalent the moment the owner uploaded real content, and would have taken
+// their PDFs out of Storage with no backup to restore from.
+const runIds = Object.values(state.people ?? {}).map((person) => person.id);
+if (runIds.length === 0) {
+  throw new Error(
+    "state.json names no accounts; refusing to delete anything unscoped",
+  );
+}
+
 // Order is forced by the schema. content_access.granted_by and
 // documents.uploaded_by both reference profiles with ON DELETE RESTRICT, so the
 // grants and the documents have to go before the accounts that made them.
-const { data: grants } = await admin
-  .from("content_access")
-  .delete()
-  .eq("resource_type", "document")
-  .select("id");
-console.log(`removed ${(grants ?? []).length} content_access rows`);
+let removedGrants = 0;
+for (const column of ["granted_by", "student_id"]) {
+  const { data } = await admin
+    .from("content_access")
+    .delete()
+    .in(column, runIds)
+    .select("id");
+  removedGrants += (data ?? []).length;
+}
+console.log(`removed ${removedGrants} content_access rows`);
 
 const { data: documents } = await admin
   .from("documents")
-  .select("id, storage_path");
+  .select("id, storage_path")
+  .in("uploaded_by", runIds);
 
 if ((documents ?? []).length > 0) {
   const paths = documents.map((d) => d.storage_path);
