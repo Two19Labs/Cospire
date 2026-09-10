@@ -1,5 +1,5 @@
 // Drives the running application over HTTP with real session cookies.
-// node --env-file=.env.local coverage/verify/verify.mjs <state.json> <baseUrl>
+// node --env-file=.env.local scripts/verify/verify.mjs <state.json> <baseUrl>
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -108,7 +108,9 @@ record(
 );
 
 // The browser's step: bytes go straight to Storage, never through the app.
-const pdf = readFileSync("coverage/verify/sample.pdf");
+// Resolved against this script, not the working directory: the harness lives in
+// scripts/verify/ while state.json is written to the gitignored coverage/.
+const pdf = readFileSync(new URL("sample.pdf", import.meta.url));
 const anonClient = createClient(URL_, PUB, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
