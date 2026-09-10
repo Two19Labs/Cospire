@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/check-context.mjs > /dev/null 2>&1 || node -e \"console.log(JSON.stringify({systemMessage:'CONTEXT.md contradicts the repository. Run: node scripts/check-context.mjs to see what, and correct the file rather than appending beneath the stale statement.'}))\"",
+            "timeout": 30,
+            "statusMessage": "Checking CONTEXT.md"
+          }
+        ]
+      }
+    ]
+  }
+}

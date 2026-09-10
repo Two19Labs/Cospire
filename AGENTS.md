@@ -58,3 +58,35 @@ unfinished task recorded as complete is worse than no record at all.
 The signed agreement remains authoritative on scope, and the parent operating
 manual remains authoritative on implementation. Where either conflicts with
 `CONTEXT.md`, they win and `CONTEXT.md` gets corrected.
+
+## The rule is enforced, not just written
+
+The three statements of the context rule in this repository did not stop
+`CONTEXT.md` describing a merged pull request as open for five days, or nine
+further statements going stale from that one event. A fourth, sterner paragraph
+is the remedy already known to fail, so the rule has a gate instead:
+
+```bash
+node scripts/check-context.mjs
+```
+
+It runs in CI on every pull request and refuses one that leaves `CONTEXT.md`
+contradicting the repository. It checks facts, never wording:
+
+1. A pull request `CONTEXT.md` calls open that GitHub says is merged.
+2. A branch claimed under **Active work** that no longer exists on `origin`.
+3. Changes under `src/` or `supabase/` with no change to `CONTEXT.md`.
+4. A `Last updated` date older than the file's own newest commit.
+
+Run it before you push. It needs no dependencies and takes a second.
+
+Check 3 has an escape hatch for the genuine case, as a commit trailer, so the
+reason travels with the history rather than living in a pull request comment
+that handover will not carry:
+
+```
+Context-Exempt: <why this change needs no context update>
+```
+
+Reaching for that trailer to avoid writing three sentences is how the file goes
+stale again. It is there for the change that truly records nothing.
