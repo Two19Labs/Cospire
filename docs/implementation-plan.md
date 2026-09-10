@@ -27,7 +27,7 @@ Phase numbers name **scope**, not order. The order changed on 2026-09-08; see
 |---|---|---|---|---|
 | **0** | Foundation, identity, access | 1 | done | **Complete** |
 | **1** | Admin console and documents | 2 | done | **Exit gate closed 2026-09-08**, 36/36 on the deployed URL. Only step 5 (bulk CSV) is unbuilt, blocked on SMTP |
-| **5a** | **Programmes, then ARS** | 6 | **next** | Not started. Brought forward at the Client's request |
+| **5a** | **Programmes, then ARS** | 6 | **in progress** | Brought forward at the Client's request. Step 1, programmes, is **done and verified** (PR #19, migration applied). `ars_rounds` is next |
 | **2** | Video, curriculums | 3 | deferred | **Blocked on VdoCipher**, which has still not arrived |
 | **3** | Question bank and authoring | 4 | to be re-planned | Not started |
 | **4** | Test engine | 5 | to be re-planned | Not started |
@@ -379,7 +379,7 @@ exit gate below belongs to 5b.
 anything not working as described, corrected free of charge, after which three
 months of support begins.
 
-## Phase 5a — Programmes and ARS · next
+## Phase 5a — Programmes and ARS · in progress
 
 **Exit gate:** a student submits each of the three round shapes, their assigned
 mentor opens them in a queue and writes feedback, the student reads it, and a
@@ -388,13 +388,22 @@ uploaded file at its Storage path.
 
 ### Build order
 
-1. **`courses`**, pulled forward from Phase 2 step 3. The table plus admin create,
-   list and grant. Not `curriculum_items`, not the builder. A programme is one per
+1. ~~**`courses`**, pulled forward from Phase 2 step 3.~~ **Done, PR #19,
+   migration applied.** The table plus admin list, search, create, detail and
+   granting. Not `curriculum_items`, not the builder. A programme is one per
    target institution per content type, in the Client's language, and admins
    create them rather than picking from a list we ship.
-2. **`private.student_has_course_grant()`**, the sibling of
-   `student_has_document_grant`. `content_access.resource_type` already accepts
-   `'course'`, so this needs no constraint change.
+
+   The create form deliberately offers **no ordering field**. Choosing a sort key
+   by hand needs the keys the other programmes hold, and no screen shows them, so
+   `sort_order` defaults to 0 and the list reads in creation order until the
+   reorder control arrives with the curriculum builder.
+2. ~~**`private.student_has_course_grant()`**~~ **Done, PR #19.** The sibling of
+   `student_has_document_grant`. `content_access.resource_type` already accepted
+   `'course'`, so no constraint changed. The `course` branch was added to
+   `validate_content_access_resource`, and a trigger now cascades grants when a
+   programme is deleted, because a polymorphic `resource_id` cannot carry the
+   foreign key that would have done it.
 3. **`ars_rounds`** with `org_id`, **`course_id`**, `submission_mode`
    (`text` | `file` | `form`), `config` jsonb and `sort_order`. The programme link
    goes in this migration, per the decision of 2026-09-06. Retrofitting it later
@@ -411,12 +420,21 @@ uploaded file at its Storage path.
 
 ### Blocked by
 
-**Supabase Pro**, brought forward from before Phase 5. Free gives 1GB of Storage
-and video essays are the only thing in this system that grows fast. Raise
-`[storage] file_size_limit` from 50MiB at the same time.
+**Nothing, for building.** Supabase Pro is a **capacity** limit rather than a
+capability one: Free gives 1GB of Storage and a 50MiB `file_size_limit`, which is
+enough to build and test the upload path with small files. Pro blocks students
+uploading **real video essays**, so it has to land before ARS is used rather than
+before it is written. Raise `[storage] file_size_limit` at the same time.
 
-Not blocked by VdoCipher. ARS video is a student upload reviewed by a mentor, not
-protected course content, so it goes to Supabase Storage behind a signed URL.
+Not blocked by VdoCipher either. ARS video is a student upload reviewed by a
+mentor, not protected course content, so it goes to Supabase Storage behind a
+signed URL. That is what makes this phase startable while Phase 2 is not.
+
+**One thing step 3 must carry.** `courses_select_authorized` covers admins and
+granted students only, deliberately: nothing a mentor did touched a programme
+when it was written. The review queue needs mentors to reach the programmes of
+their assigned students, and that policy belongs in the `ars_rounds` migration
+rather than as a guess made earlier.
 
 ### Tests before this phase is called done
 
