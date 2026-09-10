@@ -16,7 +16,7 @@ creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 **36 of 36 checks passed**, including the exit-gate sentence itself and the direct
 Storage-path refusals. Teardown restored the baseline exactly.
 
-**Phase 5a steps 1 and 2 are built.** Step 2, ARS rounds, is in **PR #20x**,
+**Phase 5a steps 1 and 2 are built.** Step 2, ARS rounds, is in **PR #21**,
 open -- see *Phase 5a progress*. Step 1, programmes -- the `courses` table, its grant helper
 and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
