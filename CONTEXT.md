@@ -18,9 +18,10 @@ Storage-path refusals. Teardown restored the baseline exactly.
 
 **Phase 5a step 1 is built.** Programmes -- the `courses` table, its grant helper
 and the admin screens -- are complete and verified at both the database and the
-application, in **PR #19, open**. Its migration is **already applied** to the
-hosted project, so `main` and the database differ until that merges; the migration
-is additive and nothing deployed reads `courses`. The next work is `ars_rounds`.
+application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
+are back in step, and the new routes are live: `/admin/courses` and
+`/admin/courses/[id]` answer on the deployed URL and refuse anonymous callers.
+The next work is `ars_rounds`.
 
 **The sequence changed on 2026-09-08. ARS is now the next phase built**, at the
 Client's request, ahead of video and the test engine. Weeks 4 to 6 are
@@ -159,13 +160,13 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   onto `origin/main` and pushed.
 - **PRs #1 to #18 are merged.** #18 carried the teardown data-loss fix and #17 the
   gate closure and resequence, both merged 2026-09-10.
-- **PR #19 is open**: `feat/programmes`, Phase 5a step 1. The migration behind it
-  is **already applied to the hosted database**, so `main` and the database differ
-  until it merges. That is the expand-and-contract rule working as intended — the
-  migration is additive and the currently deployed code neither reads nor writes
-  `courses`.
-- `feat/documents` and `docs/programme-decisions` still exist on the remote after
-  their merges and can be pruned.
+- **PRs #1 to #19 are merged.** #19 carried Phase 5a step 1 and merged
+  2026-09-10; its migration had been applied ahead of the merge, so code and
+  database are now back in step.
+- **No pull request is open.**
+- `feat/documents`, `docs/programme-decisions`, `fix/verify-teardown-scope` and
+  `feat/programmes` still exist on the remote after their merges and can be
+  pruned.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -286,7 +287,7 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | **Phase 5a step 1: programmes** | `courses` table, `private.student_has_course_grant`, the `course` branch on `validate_content_access_resource`, a delete cascade for grants, and admin list/search/create/detail plus granting. Migration applied to the hosted project. PR #19. See *Phase 5a progress* |
 | 2026-09-10 | Programmes verified at both layers | **Database:** 12 probes in a rolled-back transaction with real JWT claims, covering reads, writes, the validation trigger and the cascade. **Application:** `scripts/verify/courses.mjs` drove the built app over HTTP with real session cookies, every form through the no-JavaScript path — **19 of 19**. Both runs returned the live counts to baseline |
 | 2026-09-10 | The ordering field was removed from the create form | The owner asked what "Order" meant, which is the answer. Choosing a sort key by hand needs the other programmes' keys, and no screen shows them. `sort_order` stays on the table, defaults to 0, and the list reads in creation order until a reorder control exists. `validateNewCourse` keeps its rules, now tested by a hand-posted request instead of a form field |
-| 2026-09-10 | PRs #17 and #18 merged | The teardown fix first, then the gate closure and resequence. `feat/programmes` rebased onto the result |
+| 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
 
 ### Two mistakes from 2026-09-10, both worth keeping
 
@@ -340,7 +341,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. **Phase 5a step 1 is built and verified, awaiting review in PR #19**; its migration is already applied to the hosted database. The next work is **step 2, `ars_rounds` with its `course_id`**, and nothing blocks starting it. Supabase Pro is needed before ARS is *used*, not before it is built — the owner is raising it with the Client. | 2026-09-10 |
+| None | - | - | - | Nothing claimed, and nothing awaiting review. **Phase 5a step 1 is merged and deployed.** The next work is **step 2, `ars_rounds` with its `course_id`**, plus the mentor-visibility policy that step must carry; nothing blocks starting it. Supabase Pro is needed before ARS is *used*, not before it is built — the owner is raising it with the Client. | 2026-09-10 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -385,10 +386,12 @@ No credentials, keys, or connection strings are recorded in this file.
 Recorded migration versions match their repository filenames, so `supabase db push`
 treats them as applied and will not re-run them.
 
-Note the ordering: `20260910115938` is applied to the database while its code sits
-in **unmerged PR #19**. Deliberate, and safe only because the migration is
-additive — nothing deployed reads `courses`. A migration that changed an existing
-column could not be applied ahead of its merge this way.
+Note the ordering that was used here: `20260910115938` was applied to the database
+while its code still sat in an unmerged pull request, and the two came back into
+step when #19 merged on 2026-09-10. That is safe **only** because the migration is
+additive and nothing deployed read `courses` in the meantime. A migration that
+changed or removed an existing column must not be applied ahead of its merge this
+way, because Vercel deploys on merge while migrations are applied by hand.
 
 ### The project was not clean
 
@@ -1016,7 +1019,7 @@ file **at its Storage path**.
 
 | Step | State |
 |---|---|
-| 1. `courses`, the grant helper and admin screens | **Done, 2026-09-10, verified at both layers. In PR #19, unmerged.** Migration applied |
+| 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id` | **Next.** Nothing blocks starting |
 | 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
