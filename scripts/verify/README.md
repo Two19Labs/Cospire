@@ -35,6 +35,16 @@ ACTION_TICKET=<id> ACTION_RECORD=<id> \
 node --env-file=.env.local scripts/verify/teardown.mjs coverage/verify/state.json
 ```
 
+Teardown deletes **only rows belonging to the accounts named in `state.json`**:
+grants where the run's accounts are the granter or the grantee, and documents the
+run's admin uploaded. It refuses to run at all if `state.json` names no accounts.
+
+That scoping is not decoration. Until 2026-09-08 the script deleted every
+`resource_type = 'document'` grant and every row in `documents`, along with their
+Storage objects. That was indistinguishable from correct while the baseline held
+none of either, and became a data-loss bug the moment the owner uploaded real
+content on 2026-09-03. Do not "simplify" it back.
+
 Teardown order is forced by the schema: `content_access.granted_by` and
 `documents.uploaded_by` both reference `profiles` with ON DELETE RESTRICT, so
 grants and documents must go before the accounts that created them.
@@ -69,13 +79,18 @@ convincing false failure.
 ## The baseline
 
 Take the live counts before starting and compare after teardown. As of
-2026-09-02 the baseline is 2 orgs, 5 profiles, 1 mentor assignment, 0 grants,
-0 documents, 0 storage objects.
+2026-09-08 the baseline is 2 orgs, 5 profiles, 5 auth users, 1 mentor
+assignment, **2 grants, 2 documents, 2 storage objects**.
 
-Two things in that baseline are **not** leftovers and must not be deleted: the
-second organisation is the isolated audit org that no application route can
-remove, and the fourth Cospire profile is a real student account created by the
-owner on 2026-09-01, along with its mentor assignment.
+Nothing in that baseline is a leftover, and none of it may be deleted:
+
+- The second organisation (`id = 5`) is the isolated audit org that no
+  application route can remove. `setup.mjs` uses it as the rival org.
+- The fourth Cospire profile is a real student account created by the owner on
+  2026-09-01, along with its mentor assignment.
+- The two documents are the owner's **real PDFs**, uploaded through the console
+  on 2026-09-03, and the two grants point students at them. These are client
+  content on a Free-plan project with no backups.
 
 ## What it cannot prove
 
