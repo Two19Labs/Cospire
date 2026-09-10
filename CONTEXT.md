@@ -11,15 +11,15 @@ granting, the document library and the protected viewer -- in **PR #16, merged
 2026-09-03**. Both documents migrations are applied. Only **step 5, bulk CSV
 creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 
-**The exit gate is still open, and closing it is not a coding task.** The whole
-documents slice passed 36 of 36 end-to-end checks against the hosted database --
-including the exit-gate sentence and the direct Storage-path refusals -- but
-from a **locally running build**. The gate requires the deployed URL, and that
-run has never happened. The harness is in `scripts/verify/` and takes the base
-URL as an argument.
+**The Phase 1 exit gate closed on 2026-09-08.** `scripts/verify/` was run against
+`https://cospire-roan.vercel.app` -- the deployed URL, not a local build -- and
+**36 of 36 checks passed**, including the exit-gate sentence itself and the direct
+Storage-path refusals. Teardown restored the baseline exactly.
 
-What *is* confirmed on production: the documents routes exist and refuse
-anonymous callers. That proves the deploy landed and nothing more.
+**The sequence changed on 2026-09-08. ARS is now the next phase built**, at the
+Client's request, ahead of video and the test engine. Weeks 4 to 6 are
+deliberately left un-planned until VdoCipher's arrival date is known. See
+*Sequencing change* below and `docs/implementation-plan.md`.
 
 ## Purpose and authority
 
@@ -149,10 +149,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`, branch `main`, synced with `origin/main`,
-  clean working tree.
-- **All Phase 0 work and Phase 1 steps 1-3 are merged.** Pull requests #1 to #12
-  are merged; `main` is the only branch. Nothing is left untracked.
+- Repository: `C:\Cospire\Cospire`. **Checked out on `docs/programme-decisions`**,
+  not `main`, three commits ahead of `origin/main` and pushed.
+- **PR #17 is open** (documentation only: the Client's programme decisions and a
+  context resync). PRs #1 to #16 are merged. `feat/documents` still exists locally
+  and on the remote after its merge and can be pruned.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -187,6 +188,59 @@ Two operational notes that cost time to rediscover:
   server is for reading. Phase 0 applied two migrations through MCP out of
   necessity and reconciled the history afterwards; that route is no longer needed.
 
+## Sequencing change, 2026-09-08
+
+**The Client asked for ARS to be built first**, ahead of video and the test
+engine. Scope is untouched; only the order moves.
+
+**Only the next phase is committed.** ARS becomes **Phase 5a** and is next.
+**Weeks 4 to 6 are deliberately left un-planned** until VdoCipher's arrival date
+is known, because that date decides whether video slots alongside the question
+bank or displaces something. Migration and handover stay last as Phase 5b.
+
+Checked against the agreement before recording:
+
+- **Not a change request.** Clause 12 covers functionality not described in the
+  agreement; every module here is in Annexure A. Nothing to quote.
+- **No payment consequence.** Clause 7 is 20% on signing and 80% on completion
+  and acceptance, and clause 5 acceptance runs against clause 2, clause 3 and
+  Annexure A — not the week table. Payment is not milestone-linked.
+- **It does amend clause 4.3**, which names week 3 as video plus the first
+  demonstration and week 6 as ARS. This needs agreeing **in writing**.
+- **One delivery-plan promise moves.** Demo one was committed to showing *"a
+  copied video link failing in a second browser."* That moves to demo two and
+  must be said explicitly rather than dropped quietly.
+
+**Why it is defensible on its own merits.** Phase 2 is blocked on VdoCipher and
+nothing in it can start; ARS is blocked on a plan upgrade, which is a card
+payment. The reorder swaps a blocked slot for an unblocked one and empties ARS
+out of the final week this plan already calls overloaded.
+
+**The honest counter, to be said in the same conversation:** video is the bigger
+and more third-party-dependent module. If it simply lands in the last week
+instead, the overload moves rather than clears. Video belongs in its own worktree
+starting the day VdoCipher access arrives. If that has not happened by the start
+of week four, video slips and **clause 4.4 applies** — the delivery date extends
+day for day, notified in writing at the time.
+
+**Client communications on this are the owner's**, decided 2026-09-08: the
+resequence, the VdoCipher condition, the demo-one change and the Supabase Pro
+timing all go to Cospire from the owner rather than being raised from here.
+
+### What ARS needs before it can start
+
+- **`courses` must exist first.** The decision of 2026-09-06 requires `ars_rounds`
+  to carry its programme link in the migration that creates it. This is a small
+  pull-forward from Phase 2: the `courses` table plus admin create and grant, not
+  `curriculum_items` and not the builder. `content_access.resource_type` already
+  accepts `'course'`, so no constraint change is needed.
+- **Supabase Pro, now rather than before Phase 5.** 1GB of Free-plan Storage will
+  not hold video essays, and `[storage] file_size_limit` is 50MiB. Clause 8.3
+  already budgets it, so this is a timing note, not a new cost.
+- **Not VdoCipher.** ARS video is a student upload reviewed by a mentor, not
+  protected course content, so it goes to Supabase Storage behind a signed URL.
+  That is precisely what makes this phase startable while Phase 2 is not.
+
 ## Completed
 
 | Date | Work | Result / verification |
@@ -213,12 +267,44 @@ Two operational notes that cost time to rediscover:
 | 2026-08-28 | Login password `minLength` removed | The sign-in form enforced an 8-character minimum, locking out an existing shorter password and leaking the policy. Password rules belong where a password is set, not checked; Supabase enforces the real rule |
 | 2026-08-28 | Login action error handling | Unexpected failures now return a readable message on the form instead of escaping to the error boundary. `redirect()` deliberately stays outside the try, since it signals success by throwing |
 | 2026-08-28 | Workspace navigation cleanup | Added parent-workspace VS Code Explorer exclusions/file nesting; all required root metadata now appears collapsed under `package.json`; removed generated `.next` and `tsconfig.tsbuildinfo` artifacts (about 124 MB); kept `node_modules` installed but hidden |
+| 2026-09-08 | **Phase 1 exit gate closed** | `scripts/verify/` run against `https://cospire-roan.vercel.app`. **36 of 36 checks passed**, including the exit-gate sentence, the server-composed watermark, the 600-second signed URL, and direct Storage-path refusals for the other student, the mentor, another org's admin, an anonymous caller and even the grant-holding student. Teardown restored the baseline exactly |
+| 2026-09-08 | **Data-loss bug found and fixed in `teardown.mjs`** | It deleted *every* document grant and *every* `documents` row with their Storage objects, unscoped. Running the documented sequence would have destroyed the owner's two real PDFs on a Free-plan project with no backups. Now scoped to the accounts in `state.json`, and refuses to run if that file names none. See *The teardown near-miss* |
+| 2026-09-08 | `verify.mjs` sample path fixed | It read `coverage/verify/sample.pdf`, left over from when the harness lived there; the file is tracked at `scripts/verify/sample.pdf`. Now resolved against `import.meta.url`, so the run no longer depends on the working directory |
+| 2026-09-08 | Sequence changed at the Client's request | ARS brought forward as Phase 5a; weeks 4-6 left un-planned pending VdoCipher. Checked against clauses 4.3, 4.4, 5, 7 and 12 before recording. See *Sequencing change* |
+
+### The teardown near-miss, 2026-09-08
+
+Worth keeping visible, because the failure mode is one this project will meet
+again.
+
+`scripts/verify/teardown.mjs` deleted every row in `documents`, every
+`content_access` row with `resource_type = 'document'`, and every corresponding
+Storage object. It never filtered to the run that created them.
+
+That was **indistinguishable from correct** when it was written. The 2026-09-02
+baseline held zero documents and zero grants, so "delete everything" and "delete
+what I made" described the same set. It silently became a data-loss bug on
+2026-09-03, when the owner uploaded two real PDFs through the console — the very
+run that confirmed the viewer renders in a browser.
+
+Nothing failed, nothing warned, and the README instructed the operator to run it
+every time. It was caught only by reading the script before running it and
+noticing the live counts no longer matched the baseline the file recorded.
+
+Two things follow, and both are cheap:
+
+- **A cleanup routine scoped by "everything currently here" is a bug waiting for
+  someone to add real data.** Scope by what the run created.
+- **A recorded baseline that drifts is worse than none**, because it is what makes
+  a destructive operation look safe. The baseline in this file and in the harness
+  README is now 2 documents, 2 grants, 2 objects, and it must be re-measured
+  rather than assumed before any future run.
 
 ## Active work
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. The documents slice is merged (PR #16) and deployed. **The outstanding task is running the end-to-end verification against `https://cospire-roan.vercel.app`**, which closes the Phase 1 exit gate. The harness is in `scripts/verify/`. | 2026-09-08 |
+| None | - | - | - | Nothing claimed. The Phase 1 exit gate is **closed** (36/36 on the deployed URL, 2026-09-08). The next phase is **5a, programmes then ARS** — see *Sequencing change*. It is blocked on the Supabase Pro upgrade, which the owner is raising with the Client. Uncommitted harness fixes sit on `docs/programme-decisions` and need a PR. | 2026-09-08 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -394,20 +480,24 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, re-measured 2026-09-02 after the documents verification run
-was torn down: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 0 content
-grants, 0 documents, 0 storage objects, 5 auth users.**
+Current live counts, re-measured 2026-09-08 after the deployed-URL verification
+run was torn down: **2 orgs, 5 profiles (5 active), 5 auth users, 1 mentor
+assignment, 2 content grants, 2 documents, 2 storage objects.**
 
-This is the baseline any future verification run should return to. Two parts of
-it are not the original three test accounts and must not be deleted as
-leftovers:
+This is the baseline any future verification run should return to. **None of it
+is test residue and none of it may be deleted:**
 
-- The **second organisation** is the audit org described under the Phase 1
-  security audit. It cannot be removed by any application route.
+- The **second organisation** (`id = 5`) is the audit org described under the
+  Phase 1 security audit. It cannot be removed by any application route, and
+  `setup.mjs` uses it as the rival org.
 - Of the five profiles, four are in Cospire and one is the audit org's admin.
   The **fourth Cospire profile** is a real student account created by the owner
   through the console on 2026-09-01, along with its mentor assignment. A real
   user, not test data.
+- **Documents 7 and 8 are the owner's real PDFs**, uploaded through the console
+  on 2026-09-03 during the browser render confirmation, and grants 12 and 13
+  point students at them. The project is on the Free plan with no backups, so
+  these files cannot be recovered if they are deleted.
 
 ### RLS verified against the hosted database
 
@@ -839,8 +929,9 @@ all from Phase 0 and the documents slice.
 
 | Obligation | Build it in |
 |---|---|
-| **Course grants must cascade.** `private.student_has_document_grant` checks only `resource_type = 'document'`, so a programme grant currently opens nothing. Making it cascade needs `courses` and `curriculum_items` to know what a programme contains | **Phase 2, with the curriculum builder.** Not before: there is nothing to join to |
-| **`ars_rounds` carries a programme link from birth.** Without it every student sees every institution's rounds | **Phase 5, in the migration that creates the table.** Adding it later is a retrofit in the week `CONTEXT.md` already flags as overloaded |
+| **`courses` must exist.** Nothing about programmes can be built until the table does | **Phase 5a, first step.** Pulled forward from Phase 2 on 2026-09-08, because ARS cannot carry a programme link to a table that does not exist. The table plus admin create and grant only — not `curriculum_items`, not the builder |
+| **`ars_rounds` carries a programme link from birth.** Without it every student sees every institution's rounds | **Phase 5a, in the migration that creates the table** |
+| **Course grants must cascade to curriculum content.** `private.student_has_document_grant` checks only `resource_type = 'document'`, so a programme grant opens no videos or documents. Cascading needs `curriculum_items` to know what a programme contains | **Phase 2, with the curriculum builder.** Not before: there is nothing to join to. ARS does not wait on this — a round belongs to a programme directly, so `private.student_has_course_grant()` reaches it without any curriculum |
 
 **`content_access.resource_type` does not need widening.** It accepts `course`,
 `video`, `document`, `mock` and cannot name an ARS round. Once rounds belong to a
@@ -864,28 +955,47 @@ a shortcut through the admin console, not automated enrolment.
 
 ## Pending
 
-The full route is in `docs/implementation-plan.md`: six phases, one per contracted
-week, each with a demonstrable exit gate. Only what is open is listed here.
+The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
+not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### Phase 1, next and unblocked
+### Phase 5a, next: programmes then ARS
 
-Admin console and documents. Exit gate, in the client's own words: *an admin
-creating a student, granting them a document, and that student reading it while
-another student is correctly refused.*
+Exit gate: a student submits each of the three round shapes, their assigned mentor
+opens them in a queue and writes feedback, the student reads it, and a second
+student — and an unassigned mentor — are refused both the row and the uploaded
+file **at its Storage path**.
 
-Nothing blocks starting. Custom SMTP gates **only** bulk student creation; the
-admin console, single-user creation, mentor assignment, access granting, the
-document library and the protected viewer all proceed without it.
+**Blocked on the Supabase Pro upgrade**, which the owner is raising with the
+Client. Free-plan Storage is 1GB and `file_size_limit` is 50MiB; video essays are
+the only thing in this system that grows fast. Everything else about this phase is
+unblocked — it needs no VdoCipher, no SMTP and no Google or LLM account.
+
+Build order and tests are in `docs/implementation-plan.md` under Phase 5a. The
+first step is `courses`, without which `ars_rounds` cannot carry the programme
+link the 2026-09-06 decision requires.
+
+### Phase 1, one step still unbuilt
+
+Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
+The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
+not a gate item.
+
+### Phase 2, deferred and still blocked
+
+Video and curriculums. **VdoCipher access has still not arrived** and nothing in
+the phase can start without it. Build it in its own worktree the day access lands.
+If that has not happened by the start of week four, it slips and clause 4.4
+applies — flagged in writing at the time, not at the end.
 
 ### Carried over from Phase 0
 
-None of these block Phase 1.
+None of these block Phase 5a.
 
 | Item | Why it matters | Needs |
 |---|---|---|
 | **CODEOWNERS is inert** | It names two accounts that cannot access the repository, so GitHub ignores it and the review requirement on `/supabase/migrations/**` does not actually exist | The second engineer's real GitHub handle. The owner's account is `Two19Labs` |
 | **Vercel on Hobby** | Hobby forbids commercial use | Upgrade before the Client is told the platform is theirs. Clause 3.8 puts the account in Cospire's name |
-| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Upgrade before ARS uploads and restore testing. Clause 8.3 budgets for it |
+| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | **Now blocking.** ARS moved to the front on 2026-09-08, so its Storage requirement moved with it. Clause 8.3 budgets for it |
 | **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
 | **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
 | **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover. CI now also warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 and are being forced onto Node 24; bumping to `@v5` clears both the warning and the pinning item in one change |
@@ -901,7 +1011,8 @@ Recorded in the implementation plan, repeated here because they are easy to lose
    left rather than one.
 2. **Decide how historical attempts are protected from live question and mock
    edits, before Phase 4 starts.** Recorded as critical below.
-3. **Supabase Pro and a tested restore, before Phase 5 starts.** The deliverable is
+3. **Supabase Pro immediately, and a tested restore before handover.** Pro moved
+   from "before Phase 5" to "now" when ARS was brought forward. The deliverable is
    a restore tested, not enabled, and database backups exclude Storage objects.
 
 ## External blockers and client-owned steps
@@ -918,7 +1029,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
-| **Supabase Pro** | Daily backups, the tested restore, Storage for ARS uploads, leaked-password protection | Cospire, clause 8.3 |
+| **Supabase Pro** | **Phase 5a, the next phase.** Storage for ARS uploads, plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
 | **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
 | **The second engineer's GitHub handle** | Making CODEOWNERS actually enforce anything | Two19 Labs |

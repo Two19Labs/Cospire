@@ -20,14 +20,79 @@ content deadline hangs off it. Confirm it before treating any date as contractua
 
 ## Phase status
 
-| Phase | Week | Scope | Status |
-|---|---|---|---|
-| **0** | 1 | Foundation, identity, access | **Complete** |
-| **1** | 2 | Admin console and documents | **In progress** - steps 1-4, 6 and 7 merged and deployed. Only step 5 (bulk CSV) is unbuilt, blocked on SMTP. The exit gate is open pending verification on the deployed URL |
-| **2** | 3 | Video, curriculums, **first demo** | Not started |
-| **3** | 4 | Question bank and authoring | Not started |
-| **4** | 5 | Test engine, **second demo** | Not started |
-| **5** | 6 | ARS, migration, handover | Not started |
+Phase numbers name **scope**, not order. The order changed on 2026-09-08; see
+*The sequence changed* below.
+
+| Phase | Scope | Week in the agreement | Order now | Status |
+|---|---|---|---|---|
+| **0** | Foundation, identity, access | 1 | done | **Complete** |
+| **1** | Admin console and documents | 2 | done | **Exit gate closed 2026-09-08**, 36/36 on the deployed URL. Only step 5 (bulk CSV) is unbuilt, blocked on SMTP |
+| **5a** | **Programmes, then ARS** | 6 | **next** | Not started. Brought forward at the Client's request |
+| **2** | Video, curriculums | 3 | deferred | **Blocked on VdoCipher**, which has still not arrived |
+| **3** | Question bank and authoring | 4 | to be re-planned | Not started |
+| **4** | Test engine | 5 | to be re-planned | Not started |
+| **5b** | Migration, handover | 6 | last | Not started |
+
+---
+
+## The sequence changed, 2026-09-08
+
+**The Client asked for ARS to be built first**, ahead of video and the test
+engine. Recorded here as a sequencing change; the scope is untouched.
+
+**Only the next phase is committed. Weeks 4 to 6 are deliberately left open** and
+get re-planned once VdoCipher's arrival date is known, because that date decides
+whether video slots alongside the question bank or displaces something.
+
+### What this costs, checked against the agreement
+
+- **It is not a change request.** Clause 12 covers functionality not described in
+  the agreement. Every module here is already in Annexure A; only the order moves.
+  Nothing to quote.
+- **It has no payment consequence.** Clause 7 is 20% on signing and 80% on
+  completion and acceptance. Payment is not milestone-linked, and clause 5
+  acceptance runs against clause 2, clause 3 and Annexure A, not the week table.
+- **It does amend clause 4.3.** That table names week 3 as video plus the first
+  demonstration and week 6 as ARS. Changing the order changes the contracted
+  milestone table, so it needs agreeing in writing rather than absorbing quietly.
+- **One delivery-plan promise moves.** The first demonstration was committed to
+  showing *"a copied video link failing in a second browser."* Without video that
+  cannot be shown at demo one, and it moves to demo two. Say so explicitly.
+
+### Why ARS-first is defensible on its own merits
+
+Phase 2 is blocked on VdoCipher and nothing in it can legally start. ARS is
+blocked on a Supabase plan upgrade, which is a card payment. The reorder swaps a
+blocked slot for an unblocked one, and it empties ARS out of the final week that
+this plan already calls overloaded.
+
+The honest counter, which belongs in the same conversation: **video is a larger
+and more third-party-dependent module than ARS.** If it simply lands in the last
+week instead, the overload moves rather than clearing. Video should be built in
+its own worktree the day VdoCipher access arrives, not given a week of its own.
+If that access does not arrive by the start of week four, video slips and clause
+4.4 applies — the delivery date extends day for day, notified in writing at the
+time.
+
+### What ARS needs before it can start
+
+ARS is not free-standing. Two prerequisites, one of them ours:
+
+1. **`courses` must exist**, because the decision of 2026-09-06 requires
+   `ars_rounds` to carry its programme link in the migration that creates it.
+   This is a pull-forward from Phase 2 step 3, and a small one: ARS needs the
+   `courses` table plus admin create and grant. It does **not** need
+   `curriculum_items`, ordering, or the builder — those belong to video.
+   `content_access.resource_type` already accepts `'course'`, so no constraint
+   change is required.
+2. **Supabase Pro**, moved forward from before Phase 5 to before this phase.
+   1GB of Free-plan Storage will not hold video essays, and
+   `[storage] file_size_limit` is currently 50MiB. Clause 8.3 already budgets it,
+   so this is a timing note and not a new cost.
+
+ARS video essays are **student uploads reviewed by a mentor**, not protected
+course content, so they go to Supabase Storage behind signed URLs. They do **not**
+need VdoCipher, which is what makes this phase startable while Phase 2 is not.
 
 ---
 
@@ -53,11 +118,14 @@ Full detail is in `CONTEXT.md`.
 
 # Phase 1 — Admin console and documents
 
-**Week 2. In progress: steps 1 to 3 are merged and live. Steps 4, 6 and 7 are
-merged and deployed in PR #16 on 2026-09-03. Only step 5 is unbuilt.**
+**Week 2. Exit gate closed 2026-09-08.** Steps 1 to 4, 6 and 7 are merged,
+deployed and verified. Only step 5, bulk CSV creation, is unbuilt, and it is
+blocked on custom SMTP.
 
-The exit gate has **not** closed: the end-to-end verification has run against
-the hosted database from a local build, never against the deployed URL.
+The gate was closed by running `scripts/verify/` against
+`https://cospire-roan.vercel.app`: **36 of 36 checks passed**, including the
+exit-gate sentence itself and the direct Storage-path refusals. This is the
+deployed URL, not a local build.
 
 **Exit gate, from the delivery plan:** *"An admin creating a student, granting them
 a document, and that student reading it while another student is correctly
@@ -128,9 +196,9 @@ Each step unblocks the next.
 - A bulk upload containing one invalid row creates nothing at all. **Still to do,
   with step 5.**
 
-**Still open, and it is what keeps the gate open:** none of the above has run on
-the deployed URL. It was proved against the hosted database from a local build,
-which is not the same thing and must not be recorded as if it were.
+**Run on the deployed URL on 2026-09-08, 36 of 36 passing.** The one thing the
+harness still cannot prove is that PDF.js paints the page and the watermark is
+legible; the owner confirmed that in a browser on 2026-09-03.
 
 ### Blocked by
 
@@ -167,7 +235,15 @@ which is not the same thing and must not be recorded as if it were.
 
 # Phase 2 — Video, curriculums, and the first demonstration
 
-**Week 3.**
+**Deferred from week 3 on 2026-09-08.** ARS was brought forward at the Client's
+request and VdoCipher access has still not arrived, so nothing here can start.
+Build this in its own worktree the day that access lands rather than reserving a
+week for it. If it has not arrived by the start of week four, this phase slips and
+clause 4.4 applies.
+
+**`courses` is no longer built here.** Step 3 below is split: the `courses` table
+and admin create/grant move forward into the ARS phase, which cannot exist without
+them. `curriculum_items`, ordering and the builder stay here.
 
 **Exit gate:** a full walkthrough of the curriculum builder and the student
 experience **with Cospire's real content loaded**, including showing a copied video
@@ -295,13 +371,67 @@ real attempts exist.
 
 # Phase 5 — ARS, migration, handover
 
-**Week 6.**
+**Split on 2026-09-08.** ARS became **Phase 5a and is now the next phase built**,
+at the Client's request. Migration and handover stay last, as **Phase 5b**. The
+exit gate below belongs to 5b.
 
-**Exit gate:** handover accepted, followed by seven days for Cospire to report
+**Exit gate (5b):** handover accepted, followed by seven days for Cospire to report
 anything not working as described, corrected free of charge, after which three
 months of support begins.
 
-### ARS
+## Phase 5a — Programmes and ARS · next
+
+**Exit gate:** a student submits each of the three round shapes, their assigned
+mentor opens them in a queue and writes feedback, the student reads it, and a
+second student — and an unassigned mentor — are refused both the row and the
+uploaded file at its Storage path.
+
+### Build order
+
+1. **`courses`**, pulled forward from Phase 2 step 3. The table plus admin create,
+   list and grant. Not `curriculum_items`, not the builder. A programme is one per
+   target institution per content type, in the Client's language, and admins
+   create them rather than picking from a list we ship.
+2. **`private.student_has_course_grant()`**, the sibling of
+   `student_has_document_grant`. `content_access.resource_type` already accepts
+   `'course'`, so this needs no constraint change.
+3. **`ars_rounds`** with `org_id`, **`course_id`**, `submission_mode`
+   (`text` | `file` | `form`), `config` jsonb and `sort_order`. The programme link
+   goes in this migration, per the decision of 2026-09-06. Retrofitting it later
+   was the thing that decision existed to prevent.
+4. **`ars_submissions`** and **`ars_feedback`**, with RLS enabled in the same
+   migration and policies covering **writes as well as reads**.
+5. **The Storage bucket and its policies on `storage.objects`.** Separate from
+   RLS and not optional: a correct row policy in front of an open bucket protects
+   nothing. This is rule #2 of the operating manual and it is the access rule the
+   Client named as the one they care most about.
+6. **One student route** rendering whichever shape the round declares, and **the
+   mentor review queue** — the first feature the mentor role has ever had, and the
+   first use of `mentor_assignments` since Phase 0 built it.
+
+### Blocked by
+
+**Supabase Pro**, brought forward from before Phase 5. Free gives 1GB of Storage
+and video essays are the only thing in this system that grows fast. Raise
+`[storage] file_size_limit` from 50MiB at the same time.
+
+Not blocked by VdoCipher. ARS video is a student upload reviewed by a mentor, not
+protected course content, so it goes to Supabase Storage behind a signed URL.
+
+### Tests before this phase is called done
+
+Per operating manual §11, the write and Storage halves are the ones that matter:
+
+- Insert an `ars_submissions` row carrying **another student's** `student_id` and
+  assert the database refuses it.
+- Request another student's uploaded video **by its Storage path** as an unrelated
+  student, as an unassigned mentor, and anonymously. Assert all three are refused.
+  RLS passing is not evidence the file is protected.
+- An unassigned mentor's review queue is empty.
+
+### The ARS design, unchanged by the resequence
+
+This is the specification Phase 5a builds. Only its position in the order moved.
 
 Build **one round engine, not four screens.** `ars_rounds` carries
 `submission_mode` (`text`, `file`, `form`) and a `config` JSONB; one student route
@@ -323,6 +453,8 @@ The access rule is an RLS policy on `ars_submissions` **and** a Storage policy o
 the upload bucket. Video essays are files; a correct row policy in front of a
 world-readable bucket protects nothing.
 
+## Phase 5b — Migration and handover · last
+
 ### Handover deliverables
 
 - The complete source repository and its full history
@@ -334,11 +466,17 @@ world-readable bucket protects nothing.
 Database backups **do not include Storage objects**. A separate file backup and
 restore process is needed, recorded as critical in `CONTEXT.md`.
 
-### This phase is overloaded, and that is already known
+### This phase was overloaded, and moving ARS out is half the fix
 
-ARS, migration, QA, deployment, documentation and training all land here.
-`CONTEXT.md` records it as a high risk. The mitigation is not working harder in
-Phase 5; it is pulling work earlier, from now:
+ARS, migration, QA, deployment, documentation and training all landed here, which
+`CONTEXT.md` records as a high risk. **Building ARS first removes one of those
+six**, which is the largest single relief available to this week.
+
+It only holds if video does not simply take ARS's place. Video is the bigger
+module and the one with third-party risk, so it belongs in a parallel worktree
+starting when VdoCipher lands, not in the final week.
+
+The rest of the mitigation is unchanged: pull work earlier, from now.
 
 - Run the importer against real content in Phase 1 or 2, not Phase 3.
 - Get the content inventory and written acceptance boundary early. Migration cannot
@@ -357,7 +495,7 @@ naturally fall is how Phase 5 becomes unrecoverable.
 |---|---|---|
 | Run one of Cospire's **real** documents through the importer and show them the actual output | Phase 3 | **Phase 1 or 2.** The delivery plan commits to the first fortnight. Needs no finished UI. If accuracy is poor on their older material, that is a conversation with four weeks left rather than one |
 | Decide how historical attempts are protected from live edits | Phase 4 | **Before Phase 4 starts** |
-| Supabase Pro upgrade and a tested restore | Phase 5 | **Before Phase 5 starts** |
+| Supabase Pro upgrade and a tested restore | Phase 5 | **Now.** ARS moved to the front, so its Storage requirement moved with it. The restore test can follow, but the plan cannot start on 1GB |
 
 ---
 
