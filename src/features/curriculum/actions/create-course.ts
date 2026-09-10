@@ -42,6 +42,11 @@ export async function createCourseAction(formData: FormData): Promise<void> {
       );
     }
 
+    // No longer reachable through the form, which stopped offering an ordering
+    // field on 2026-09-10: an absent field arrives as null, validates to 0, and
+    // never lands here. The guard stays because a Server Action is an HTTP
+    // endpoint, and a hand-posted `sortOrder` must still be refused rather than
+    // reaching the integer column as whatever the caller typed.
     redirect(
       buildCoursesHref({ error: "sort-order-invalid", page: 1, search: "" }),
     );

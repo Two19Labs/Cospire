@@ -44,9 +44,12 @@ export function CourseDetail({
         <div className="panel__header">
           <div>
             <h2>{course.title}</h2>
-            <p className="muted">
-              Order {course.sortOrder} · created {course.createdAt.slice(0, 10)}
-            </p>
+            {/*
+              `sortOrder` is deliberately not shown. Every programme is 0 until
+              the reorder control exists, and a number the reader cannot change
+              and did not choose only invites the question of what it means.
+            */}
+            <p className="muted">Created {course.createdAt.slice(0, 10)}</p>
           </div>
           <Link className="button button--secondary" href="/admin/courses">
             Back to programmes

@@ -102,7 +102,6 @@ export function CoursesScreen({
             <TableHead>
               <TableRow>
                 <TableHeaderCell>Programme</TableHeaderCell>
-                <TableHeaderCell>Order</TableHeaderCell>
                 <TableHeaderCell>Created</TableHeaderCell>
               </TableRow>
             </TableHead>
@@ -114,7 +113,6 @@ export function CoursesScreen({
                       {course.title}
                     </Link>
                   </TableCell>
-                  <TableCell>{course.sortOrder}</TableCell>
                   <TableCell>{course.createdAt.slice(0, 10)}</TableCell>
                 </TableRow>
               ))}
@@ -178,19 +176,16 @@ export function CoursesScreen({
             />
           </label>
 
-          <label className="field">
-            <span>Order (optional)</span>
-            <input
-              className="input"
-              inputMode="numeric"
-              name="sortOrder"
-              placeholder="0"
-              type="text"
-            />
-            <span className="muted">
-              Lower numbers sort first. Leave blank for 0.
-            </span>
-          </label>
+          {/*
+            There is deliberately no ordering field.
+
+            To choose a sort key by hand an admin would need to know what keys
+            the other programmes already hold, and no screen tells them. The
+            column still exists and `validateNewCourse` still guards it, ready
+            for the drag-to-reorder control that arrives with the curriculum
+            builder; until then every programme is 0 and the list reads in
+            creation order, which needs no explanation.
+          */}
 
           <button className="button" type="submit">
             Create programme

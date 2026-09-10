@@ -154,47 +154,54 @@ try {
   const list = await get("/admin/courses", "admin");
   record("admin reaches the programme list", list.status === 200, `${list.status}`);
 
-  const createActionId = actionIdForFormWith(list.body, "sortOrder");
+  // Found by `title`, the only field unique to the create form. The GET search
+  // form posts nothing and carries no action id; the header's Sign out form is
+  // the one that would be picked by taking the first id on the page.
+  const createActionId = actionIdForFormWith(list.body, "title");
   record("the create form renders without JavaScript", Boolean(createActionId),
     createActionId ? `${createActionId.slice(0, 12)}...` : "no action id in HTML");
 
   if (!createActionId) throw new Error("cannot continue without the create action id");
 
   // ------------------------------------------------------------ B. creating
+  // Posted exactly as the form now renders it: a title and nothing else. The
+  // ordering defaults to 0 rather than being asked for.
   const created = await postForm("/admin/courses", "admin", createActionId, {
     title: TITLE,
-    sortOrder: "7",
   });
   let rows = await courseRows(TITLE);
   if (rows[0]) createdCourseIds.push(rows[0].id);
 
-  record("admin creates a programme", rows.length === 1 && rows[0].sort_order === 7 && rows[0].org_id === COSPIRE_ORG,
+  record("admin creates a programme, ordering defaulting to 0",
+    rows.length === 1 && rows[0].sort_order === 0 && rows[0].org_id === COSPIRE_ORG,
     rows.length === 1 ? `id ${rows[0].id}, sort_order ${rows[0].sort_order}` : `${rows.length} rows; action said ${created.status}`);
 
   if (rows.length !== 1) throw new Error("cannot continue without a programme");
   const courseId = rows[0].id;
 
-  const dup = await postForm("/admin/courses", "admin", createActionId, { title: TITLE, sortOrder: "" });
+  const dup = await postForm("/admin/courses", "admin", createActionId, { title: TITLE });
   rows = await courseRows(TITLE);
   record("a duplicate name is refused, and creates nothing",
     rows.length === 1 && (dup.location ?? "").includes("duplicate-title"),
     `${rows.length} row(s); -> ${dup.location}`);
 
-  const blank = await postForm("/admin/courses", "admin", createActionId, { title: "   ", sortOrder: "" });
+  const blank = await postForm("/admin/courses", "admin", createActionId, { title: "   " });
   record("a blank name is refused", (blank.location ?? "").includes("title-missing"), `-> ${blank.location}`);
 
+  // The form no longer offers an ordering field, so this is a hand-posted one.
+  // A Server Action is an HTTP endpoint: removing an input from the markup
+  // removes it from the browser, not from the request an attacker can send.
   const badOrder = await postForm("/admin/courses", "admin", createActionId, {
     title: `${TITLE} bad order`,
     sortOrder: "12abc",
   });
   const badRows = await courseRows(`${TITLE} bad order`);
-  record("an ordering that is only partly a number is refused, and creates nothing",
+  record("a hand-posted ordering that is only partly a number is still refused",
     badRows.length === 0 && (badOrder.location ?? "").includes("sort-order-invalid"),
     `${badRows.length} row(s); -> ${badOrder.location}`);
 
   const studentCreate = await postForm("/admin/courses", "studentA", createActionId, {
     title: `${TITLE} by a student`,
-    sortOrder: "",
   });
   const studentRows = await courseRows(`${TITLE} by a student`);
   record("a student posting the create action creates nothing",
