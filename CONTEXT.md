@@ -22,7 +22,12 @@ and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
 are back in step, and the new routes are live: `/admin/courses` and
 `/admin/courses/[id]` answer on the deployed URL and refuse anonymous callers.
-The next work is `ars_rounds`.
+The next work is **step 3, `ars_submissions` and `ars_feedback`**; its design
+decisions were taken on 2026-09-12 and are recorded under *Phase 5a progress*.
+
+**The design foundation is merged** (tokens from the Client's prototype, Figtree
+via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
+*The design integration*.
 
 **The sequence changed on 2026-09-08. ARS is now the next phase built**, at the
 Client's request, ahead of video and the test engine. Weeks 4 to 6 are
@@ -124,8 +129,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Decision | Confirmed state |
 |---|---|
-| Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan. To be made private once the project completes. See the note below |
-| Application URL during build | Local only (`http://127.0.0.1:3000`). Confirmed by the client-side owner on 2026-08-28. A Vercel URL replaces it later; see the must-change note below |
+| Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan. **This conflicts with clause 3.9 of the agreement**, which says the build is held in "a private repository controlled by the Developer", and clause 13.1 lists source code as confidential. The agreement wins; open for the owner's decision. See *Repository visibility* |
+| Application URL during build | `https://cospire-roan.vercel.app`, deployed from `main` since 2026-08-29. `site_url` and the redirect allow-list point at it |
 | Prerequisite gating | None in V1; every curriculum item is open |
 | Proctoring violation | Warn and log; never auto-submit |
 | Negative marking | Per mock and question type; defaults to MCQ types, not TITA |
@@ -157,17 +162,14 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Current repository state
 
-- Repository: `C:\Cospire\Cospire`. **Checked out on `feat/programmes`**, rebased
-  onto `origin/main` and pushed.
-- **PRs #1 to #18 are merged.** #18 carried the teardown data-loss fix and #17 the
-  gate closure and resequence, both merged 2026-09-10.
-- **PRs #1 to #19 are merged.** #19 carried Phase 5a step 1 and merged
-  2026-09-10; its migration had been applied ahead of the merge, so code and
-  database are now back in step.
-- **No pull request is open.**
-- `feat/documents`, `docs/programme-decisions`, `fix/verify-teardown-scope` and
-  `feat/programmes` still exist on the remote after their merges and can be
-  pruned.
+- Repository: `C:\Cospire\Cospire`.
+- **Everything through PR #23 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
+  #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
+  last two conflicted in this file; #23 was rebased and resolved by hand.
+- Merged branches still on the remote and safe to prune: `feat/documents`,
+  `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
+  `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
+  `feat/design-foundation`.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -179,9 +181,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   plan, which does not permit commercial use; the owner has chosen to build on it
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
-  and auth configuration are both applied and in sync with this repository: three
-  migrations present on both sides, and `supabase config push` reports zero
-  differing lines.
+  and auth configuration are both applied and in sync with this repository: all
+  eight migrations present on both sides, re-checked 2026-09-12.
 
 ### Tooling available to an agent in this repository
 
@@ -500,12 +501,14 @@ No credentials, keys, or connection strings are recorded in this file.
 | `20260828093807` | `supabase/migrations/20260828093807_foundation_identity_access.sql` | Applied unchanged. 4 tables, 26 constraints, 16 indexes, 13 policies, 7 `private` helpers, 4 triggers, RLS enabled and forced everywhere, Cospire org seeded |
 | `20260828102907` | `supabase/migrations/20260828102907_restrict_rls_auto_enable_execute.sql` | New, append-only. Removes the Data API execute surface from the platform-managed `public.rls_auto_enable()` |
 | `20260910115938` | `supabase/migrations/20260910115938_courses_and_course_grants.sql` | Applied 2026-09-10 through `npm run db:migrate`, the CLI rather than MCP. Creates `public.courses` with RLS enabled **and forced** and four policies; adds `private.student_has_course_grant`; adds the `course` branch to `validate_content_access_resource`; adds the `courses_cascade_grants` trigger. Additive throughout. Security advisor: zero new findings |
-
-Recorded migration versions match their repository filenames, so `supabase db push`
-treats them as applied and will not re-run them.
-
 | `20260910144415` | `supabase/migrations/20260910144415_ars_rounds.sql` | Applied 2026-09-10. Creates `public.ars_rounds` with RLS enabled **and forced** and four policies; adds `private.mentor_reaches_course` and `private.student_reaches_round`; adds `courses_id_org_unique` so the composite foreign key has something to reference; adds the `courses_select_mentor` policy. Additive throughout |
 | `20260910144803` | `supabase/migrations/20260910144803_fix_ars_rounds_form_fields_check.sql` | Applied 2026-09-10, minutes after the above, correcting `ars_rounds_form_has_fields`. See *The NULL that passed a CHECK* |
+
+Three further migrations are described in their own sections rather than here:
+`20260828122059` (last-admin protection, under *Phase 0 security audit*), and
+`20260902180054` and `20260902201530` (under *The documents slice*). All eight
+recorded versions match their repository filenames, so `supabase db push` treats
+them as applied and will not re-run them.
 
 Note the ordering that was used here: `20260910115938` was applied to the database
 while its code still sat in an unmerged pull request, and the two came back into
@@ -719,7 +722,7 @@ Build order is the seven steps in `docs/implementation-plan.md`.
 | 2. Create a single user | **Done and verified**, success and four rejection paths |
 | 3. Mentor assignment | **Done and verified**, including refusal by the database trigger |
 | 3b. Deactivate / reactivate a user | **Done and verified.** Added 2026-09-01 after the owner spotted that the console could create users but never offboard one |
-| 4. Manual access granting | **Done, merged and deployed** (PR #16). Verified against the hosted database, not yet on the deployed URL |
+| 4. Manual access granting | **Done, merged and deployed** (PR #16). Verified on the deployed URL on 2026-09-08 as part of the 36/36 gate run |
 | 5. Bulk creation from a spreadsheet | Not started. **CSV only**, decided 2026-09-01. The only step still unbuilt, and blocked on custom SMTP |
 | 6. Document library | **Done, merged and deployed** (PR #16). Migrations applied |
 | 7. Protected viewer | **Done, merged and deployed** (PR #16). Browser render confirmed by the owner 2026-09-03. `pdfjs-dist@6.3.289`, pinned exact |
@@ -1024,13 +1027,6 @@ Two defects found and fixed as a result, in `6880ac3`:
 
 ### Not verified, and not to be recorded as working
 
-- **The end-to-end verification has never been run against the deployed URL.**
-  It has only run against a local build, which is not the same thing.
-  **The Phase 1 exit gate is therefore still open.** What *is* confirmed on
-  production, 2026-09-08: the routes exist and refuse anonymous callers
-  (`/admin/documents` and `/student/documents` both 307 to `/login`, where they
-  would have been 404 before the merge). That proves the deployment landed and
-  nothing more.
 - **The orphan-object branch is untested by construction.** It fires only when
   the browser transfers bytes and then fails to call the recording action.
 - **Saving a page as an image is possible and expected.** Technical brief §8
@@ -1096,9 +1092,8 @@ per student.
 
 ### What this obliges, and when
 
-Neither item can be built now, and neither should be faked early. `courses`,
-`curriculum_items` and `ars_rounds` do not exist: the database holds five tables,
-all from Phase 0 and the documents slice.
+`courses` and `ars_rounds` now exist (Phase 5a steps 1 and 2). `curriculum_items`
+does not, and waits for Phase 2.
 
 | Obligation | Build it in |
 |---|---|
@@ -1142,7 +1137,7 @@ file **at its Storage path**.
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
-| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started |
+| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started. Design decisions taken 2026-09-12, below |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
 | 5. The student submission route and the mentor review queue | Not started |
 
@@ -1175,6 +1170,19 @@ their place.
   The note is also in `src/features/ars/actions/delete-round.ts`, beside the code
   that would have to change.
 
+**Step 3 decisions, taken by the owner on 2026-09-12:**
+
+- **One submission per student per round**, enforced by a unique
+  `(student_id, round_id)`. The student may edit it only while it is a `draft`;
+  once `submitted` it is fixed.
+- **The mentor marks the submission itself as reviewed**, after reading all of
+  it: `status` moves `submitted` to `reviewed`. Row policies cannot limit which
+  columns a role changes, so a trigger enforces that a mentor's only permitted
+  change is that one transition, and a student's only permitted changes are the
+  answer while a draft plus `draft` to `submitted`.
+- **Only the assigned mentor writes feedback.** Admins see submissions and
+  feedback (Annexure A: "visibility of all ... submissions") but do not write it.
+
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
 
 ### Phase 1, one step still unbuilt
@@ -1198,7 +1206,7 @@ None of these block Phase 5a.
 |---|---|---|
 | **CODEOWNERS is inert** | It names two accounts that cannot access the repository, so GitHub ignores it and the review requirement on `/supabase/migrations/**` does not actually exist | The second engineer's real GitHub handle. The owner's account is `Two19Labs` |
 | **Vercel on Hobby** | Hobby forbids commercial use | Upgrade before the Client is told the platform is theirs. Clause 3.8 puts the account in Cospire's name |
-| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | **Now blocking.** ARS moved to the front on 2026-09-08, so its Storage requirement moved with it. Clause 8.3 budgets for it |
+| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Blocks ARS being **used** with real video essays, not built: Free's 1GB and 50MiB file limit are enough to build and test the upload path. Needed before students upload for real, and before the restore test. Clause 8.3 budgets for it |
 | **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
 | **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
 | **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover. CI now also warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 and are being forced onto Node 24; bumping to `@v5` clears both the warning and the pinning item in one change |
@@ -1232,7 +1240,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
-| **Supabase Pro** | **Phase 5a, the next phase.** Storage for ARS uploads, plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
+| **Supabase Pro** | Real ARS video uploads (capacity, not building), plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
 | **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
 | **The second engineer's GitHub handle** | Making CODEOWNERS actually enforce anything | Two19 Labs |
@@ -1267,8 +1275,13 @@ What this exposes, recorded so the decision can be reviewed on its facts:
 
 Two points to revisit rather than assume:
 
-1. Whether the signed agreement permits publishing the Client's codebase. This was
-   not confirmed before the repository was made public.
+1. **The agreement answers whether the codebase may be public, and the answer is
+   no.** Checked 2026-09-12: clause 3.9 says that during the build the code "is
+   held in a private repository controlled by the Developer", and clause 13.1
+   lists source code among the confidential information neither party discloses.
+   The agreement outranks this file, so the public setting is a deviation awaiting
+   the owner's decision. Making it private means losing the free branch
+   protection, or paying for it.
 2. Cospire holds read access to this repository throughout the build, so the
    commercial commentary is readable by the Client regardless of visibility. That
    deserves a deliberate decision about what belongs in this file versus a
@@ -1530,71 +1543,50 @@ time otherwise.
 | 2026-09-02 | Documents defects found by that run | Two, both invisible to typecheck/lint/tests/build: granting wrote nothing because `upsert` needs UPDATE rights `content_access` does not grant; a malformed upload path returned a 500. Both fixed and re-verified |
 | 2026-09-02 | Test isolation after the documents run | Pass: live counts returned to baseline exactly (2 orgs, 5 profiles, 1 assignment, 0 grants, 0 documents, 0 storage objects) |
 | 2026-09-02 | CI on PR #16 | `verify` green in 50s; Vercel preview deployed |
-| 2026-09-08 | Documents on the deployed URL | **Still not run**, and it is the last thing holding the Phase 1 exit gate open. Confirmed on production that the routes exist and refuse anonymous callers (307 to `/login`); that proves the deploy landed, nothing more |
+| 2026-09-08 | Documents on the deployed URL | **Pass, 36 of 36**, `scripts/verify/` against `https://cospire-roan.vercel.app`. Closed the Phase 1 exit gate |
 | 2026-09-03 | PDF.js rendering in a browser | **Pass**, confirmed by the owner: pages render and a page saved as an image carries the reader's name. Found two defects, both fixed in `6880ac3`: the stamp read UTC rather than IST, and a PDF.js worker leaked per navigation |
 
 ## Next recommended action
 
-**One task closes Phase 1's exit gate, and it is not a coding task.** In order:
+**Build Phase 5a step 3**, `ars_submissions` and `ars_feedback`, to the decisions
+recorded under *Phase 5a progress*. Then step 4 (the upload bucket and its
+`storage.objects` policies) and step 5 (the student route and the mentor queue).
 
-1. **Run the end-to-end verification against `https://cospire-roan.vercel.app`.**
-   The harness is in `scripts/verify/` with a README; it takes the base URL as
-   its third argument and was 36/36 against a local build. **Until it passes on
-   the deployed URL the exit gate is open**, and neither a green CI run nor the
-   local pass is a substitute. This is the only thing standing between Phase 1
-   and done, apart from step 5 below.
-2. **Build step 5, bulk CSV creation**, the last unbuilt part of Phase 1. Blocked
-   on custom SMTP, which is Cospire's to provide.
-3. **Chase two things still owed by the Client**, both small and both cheap to
-   get while he is responsive: the written list of programmes with the names
-   students should see, and **what "ARS" actually stands for** — the agreement
-   uses the term throughout and never expands it, and it will be a label in the
-   interface.
-4. **Tell Cospire what the document watermark does and does not stop**, before
-   they discover it. A reader can save a page as an image (watermarked, so
-   traceable) and can read the signed URL out of the page source to fetch the
-   clean PDF (not traceable). Both are inherent to rendering a PDF in a browser.
-   Better raised in week two than found in week six.
-5. Decide what to do about the leftover audit organisation described in the
-   Phase 1 security audit. It is harmless and RLS-isolated, but it can only be
-   removed by a migration or a manual dashboard deletion.
-6. **Two documents uploaded through the console during the owner's browser
-   testing are still live**, with two grants against them. Real rows, not test
-   residue from a verification run. **Document deletion is not built**, so
-   removing them needs the Supabase dashboard.
-7. **Correct the parent operating manual.** `../CLAUDE.md` documents `profiles`
-   as `id, org_id, role, name, email` and omits `status`, which the deactivate
-   feature, the disabled-user behaviour and `enforce_last_admin` all depend on.
-   It also lists `documents` without noting that `id` must be `bigint`, because
-   `content_access.resource_id` is. Owner's file, outside git, so it was left
-   alone.
+Owed by the Client, to chase rather than work around:
+
+1. **VdoCipher access -- all of Phase 2.** Week 3 is burning. Notify in writing
+   now. Cite clause 4.4 (delivery extends day for day) and clause 4.2: the
+   Kickoff Date is the latest of signature, advance and the Client providing the
+   clause 6 access. Clause 6.4 sets no deadline for opening accounts, so 4.4 on
+   its own is arguable.
+2. **Supabase Pro**, before ARS is used with real video essays and before the
+   restore test.
+3. **Custom SMTP**, for bulk CSV creation (Phase 1 step 5), raising
+   `[auth.rate_limit] email_sent` at the same time.
+4. **Recoleta Bold `.woff2` and its web licence.** Headings use Georgia until then.
+5. **The written list of programmes**, and **what "ARS" stands for**.
+6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has
+   the Client's signature date blank; file the countersigned copy if one exists.
+
+Owner decisions:
+
+1. **Repository visibility against clause 3.9.** See *Repository visibility*.
+2. **Tell Cospire what the document watermark does and does not stop**: a saved
+   page image is watermarked, but the signed URL can be read from the page source
+   to fetch the clean PDF within its ten minutes.
+3. **The leftover audit organisation**, which can only be removed by a migration
+   or a manual dashboard deletion.
+4. **Correct the parent operating manual.** `../CLAUDE.md` omits `profiles.status`
+   and does not note that `documents.id` must be `bigint`. The owner's file,
+   outside git.
 
 Carried from Phase 0, none of it blocking:
 
-1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Until then the
-   migration review requirement is documentation only.
-2. **Vercel Hobby to Pro.** Hobby does not permit commercial use. The owner has
-   chosen to build on Hobby and upgrade later; it must happen before the Client is
-   told this is their platform. Clause 3.8 puts the account in Cospire's name.
-3. **Supabase Free to Pro**, before ARS uploads and restore testing. Also unlocks
-   leaked-password protection.
-4. **Custom SMTP**, raising `[auth.rate_limit] email_sent` at the same time,
-   before bulk student creation.
-5. **Run the pgTAP suites** on a Docker-enabled machine. Neither has ever executed;
-   both were verified by hand against the live schema instead.
-6. **Replace `site_url`** if a custom domain replaces the `vercel.app` address.
+1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Both engineers
+   currently commit as one shared account, so no review is enforceable.
+2. **Vercel Hobby to Pro**, before the Client is told this is their platform.
+3. **Run the pgTAP suites** on a Docker-enabled machine; neither has ever run.
+4. **Replace `site_url`** if a custom domain replaces the `vercel.app` address.
+5. **Pin Actions**, bumping `checkout` and `setup-node` to `@v5`.
 
-Phase 1 work can begin in parallel worktrees. The foundation, the access model,
-the deployment pipeline and the review workflow are all verified end to end.
-
-The route through the rest of the build is in `docs/implementation-plan.md`,
-split into six phases, one per contracted week, each with a single demonstrable
-exit gate taken from the signed delivery plan.
-
-**Phase 0 is complete. Phase 1 is nearly complete:** the admin console and the
-document library are built, and only bulk CSV creation remains, itself blocked
-on custom SMTP. Its exit gate is the client's own sentence, an admin creates a
-student, grants them a document, that student reads it, and another student is
-correctly refused. Every part of that sentence has been demonstrated against the
-hosted database, and **none of it on the deployed URL yet**, which is what the
-gate requires.
+The route through the rest of the build is in `docs/implementation-plan.md`.
