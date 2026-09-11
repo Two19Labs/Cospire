@@ -16,8 +16,8 @@ creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 **36 of 36 checks passed**, including the exit-gate sentence itself and the direct
 Storage-path refusals. Teardown restored the baseline exactly.
 
-**Phase 5a steps 1 and 2 are built.** Step 2, ARS rounds, is in **PR #21**,
-open -- see *Phase 5a progress*. Step 1, programmes -- the `courses` table, its grant helper
+**Phase 5a steps 1 and 2 are built, merged and deployed.** Step 2, ARS rounds,
+merged in **PR #21** on 2026-09-10 -- see *Phase 5a progress*. Step 1, programmes -- the `courses` table, its grant helper
 and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
 are back in step, and the new routes are live: `/admin/courses` and
@@ -290,8 +290,46 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | The ordering field was removed from the create form | The owner asked what "Order" meant, which is the answer. Choosing a sort key by hand needs the other programmes' keys, and no screen shows them. `sort_order` stays on the table, defaults to 0, and the list reads in creation order until a reorder control exists. `validateNewCourse` keeps its rules, now tested by a hand-posted request instead of a form field |
 | 2026-09-10 | **Phase 5a step 2: ARS rounds** | `ars_rounds` with its `course_id` as half a composite foreign key, `submission_mode` and a `config` JSONB; `private.mentor_reaches_course` and `private.student_reaches_round`; the `courses_select_mentor` policy; and admin round authoring on the programme detail page. One round engine, not four screens |
 | 2026-09-10 | ARS rounds verified at both layers | **Database:** 8 read probes on a discriminating pair -- the mentor's own student holds one programme and another student holds the other -- plus 12 write and constraint probes, all in rolled-back transactions. **Application:** `scripts/verify/ars-rounds.mjs`, **19 of 19**, every form posted through the no-JavaScript path. Baseline restored both times |
+| 2026-09-10 | Phase 5a step 2 merged and deployed | PR #21. `/admin/courses/[id]` now carries the ARS rounds panel on the deployed URL |
+| 2026-09-10 | **The context gate strengthened after it missed three stale claims** | It read a single line, and the word making the claim had wrapped onto the next. Now reads the sentence, and counts "awaiting review". See *The context gate's own blind spot* |
 | 2026-09-10 | **A CHECK constraint that passed on NULL** | `ars_rounds_form_has_fields` accepted the exact row it existed to refuse. Found by probe, fixed forward in `20260910144803`. See *The NULL that passed a CHECK* |
 | 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
+
+### The context gate's own blind spot, found 2026-09-10
+
+Merging the ARS rounds pull request left three statements in this file
+describing it as unmerged, and **`check-context.mjs` passed anyway**. The claim
+read, with the number written here as `#N` for the reason given below:
+
+```
+...ARS rounds, is in **PR #N**,
+open -- see *Phase 5a progress*.
+```
+
+The check tested only the line carrying the number, and the word making the
+claim had wrapped onto the next one. Two of the three misses were the phrase
+"awaiting review", which was not in its vocabulary at all.
+
+Both are fixed. The check now unwraps the paragraph and then cuts back to the
+**sentence** holding the mention, and "awaiting review" and "in review" count as
+open claims.
+
+Sentence scope rather than paragraph scope is deliberate, and the first attempt
+got it wrong: scanning the whole paragraph convicted the older pull request of
+the newer one's word, because "step 2 is in the open one" and "step 1 merged in
+the other" sit in the same paragraph and always will.
+
+**This section deliberately avoids writing the literal `PR #<number>` token.**
+A document that discusses staleness trips a staleness detector, and the first
+draft of this very passage failed the check four times over. Given the choice
+between an exemption mechanism and writing "the ARS rounds pull request", the
+prose gives way: an escape hatch in the check is a hole someone will later use
+to silence a real finding.
+
+The rule this leaves behind: **a safety net that reads one line is defeated by a
+line break**, and prose in this file wraps at 80 characters everywhere. A missed
+staleness is worse than a false positive here, because the whole point is that
+nobody has to remember.
 
 ### The NULL that passed a CHECK, 2026-09-10
 
@@ -379,7 +417,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. **Phase 5a step 2 is built and verified, awaiting review**; both its migrations are already applied to the hosted database. The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-10 |
+| None | - | - | - | Nothing claimed, and nothing outstanding. **Phase 5a step 2 is merged and deployed.** The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes, and `round_id` as ON DELETE RESTRICT. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-10 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1061,7 +1099,7 @@ file **at its Storage path**.
 | Step | State |
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
-| 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, 2026-09-10, verified at both layers.** Awaiting review; both migrations applied. Admin round authoring lives on the programme detail page |
+| 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
 | 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
 | 5. The student submission route and the mentor review queue | Not started |

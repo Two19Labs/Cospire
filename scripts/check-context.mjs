@@ -47,7 +47,48 @@ const baseRef = git(["rev-parse", "--verify", "--quiet", "origin/main"])
 // ---------------------------------------------------------------------------
 
 const openWords =
-  /\b(open|unmerged|awaiting merge|needs merging|not yet merged|pending merge)\b/i;
+  /\b(open|unmerged|awaiting merge|awaiting review|in review|needs merging|not yet merged|pending merge)\b/i;
+
+// The claim and the pull request number are not always on the same line.
+//
+// On 2026-09-10 this check passed over "is in **PR #21**," followed by "open"
+// on the next line, because the word making the claim had wrapped. Three stale
+// statements reached `main` as a result. A missed staleness is worse than a
+// false positive here: the whole point is that nobody has to remember.
+//
+// So the paragraph is unwrapped and then cut back to the *sentence* holding the
+// mention. The paragraph alone is too wide: "step 2 is in PR #21, open" and
+// "step 1 merged in PR #19" routinely sit together, and scanning the paragraph
+// convicted #19 of #21's word. Table rows are exempt and read alone -- a row is
+// self-contained, and joining a table would let one row's "open" convict its
+// neighbour.
+function claimText(index, number) {
+  const isRow = (line) => line.trimStart().startsWith("|");
+  if (isRow(lines[index])) return lines[index];
+
+  let start = index;
+  while (start > 0 && lines[start - 1].trim() !== "" && !isRow(lines[start - 1])) {
+    start -= 1;
+  }
+
+  let end = index;
+  while (end < lines.length - 1 && lines[end + 1].trim() !== "" && !isRow(lines[end + 1])) {
+    end += 1;
+  }
+
+  const paragraph = lines.slice(start, end + 1).join(" ");
+  // Escaped twice on purpose: inside a template literal `\b` is a backspace,
+  // not a word boundary, and the first version of this line matched nothing.
+  const mention = new RegExp(`\\bPR #${number}\\b`);
+
+  // Split on a full stop followed by whitespace. Crude, and deliberately so: a
+  // sentence wrongly joined to its neighbour only widens the search, which errs
+  // towards reporting rather than towards silence.
+  const sentences = paragraph.split(/(?<=\.)\s+/);
+  const holding = sentences.filter((sentence) => mention.test(sentence));
+
+  return holding.length > 0 ? holding.join(" ") : paragraph;
+}
 
 function repoSlug() {
   if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
@@ -77,7 +118,9 @@ async function checkPullRequests() {
     for (const match of line.matchAll(/\bPR #(\d+)/g)) {
       const number = match[1];
       if (!mentions.has(number)) mentions.set(number, []);
-      mentions.get(number).push({ line, number: index + 1 });
+      mentions
+        .get(number)
+        .push({ claim: claimText(index, number), line, number: index + 1 });
     }
   });
 
@@ -93,7 +136,7 @@ async function checkPullRequests() {
 
   for (const [number, occurrences] of mentions) {
     // Only the lines that make a claim about merge state are worth a call.
-    const claiming = occurrences.filter((o) => openWords.test(o.line));
+    const claiming = occurrences.filter((o) => openWords.test(o.claim));
     if (claiming.length === 0) continue;
 
     let state;
