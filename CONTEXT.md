@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-10 (Asia/Calcutta)
+Last updated: 2026-09-12 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
@@ -293,6 +293,8 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | Phase 5a step 2 merged and deployed | PR #21. `/admin/courses/[id]` now carries the ARS rounds panel on the deployed URL |
 | 2026-09-10 | **The context gate strengthened after it missed three stale claims** | It read a single line, and the word making the claim had wrapped onto the next. Now reads the sentence, and counts "awaiting review". See *The context gate's own blind spot* |
 | 2026-09-10 | **A CHECK constraint that passed on NULL** | `ars_rounds_form_has_fields` accepted the exact row it existed to refuse. Found by probe, fixed forward in `20260910144803`. See *The NULL that passed a CHECK* |
+| 2026-09-10 | **Design foundation integrated** | Tokens read out of the Client-approved prototype into `src/app/globals.css`; Figtree self-hosted through `next/font/google`; panels, buttons, inputs, tables and pills moved onto the tokens. The prototype is committed to `design/` as reference and is never shipped. See *The design integration* |
+| 2026-09-10 | **A font that loaded and never rendered** | `next/font` defines `--font-sans` on a class on `<html>`; `globals.css` defined a fallback for the same variable on `:root`. Equal specificity, and Next emits its class first, so the fallback won: Figtree downloaded on every page and nothing was set in it. The fallback now lives inside `var()`. Caught by reading the served stylesheet rather than the source |
 | 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
 
 ### The context gate's own blind spot, found 2026-09-10
@@ -330,6 +332,46 @@ The rule this leaves behind: **a safety net that reads one line is defeated by a
 line break**, and prose in this file wraps at 80 characters everywhere. A missed
 staleness is worse than a false positive here, because the whole point is that
 nobody has to remember.
+
+### The design integration, 2026-09-10
+
+The Client supplied a visual prototype, and it was integrated **before** the
+remaining features rather than after. The reasoning: there are 13 routes today
+and Phase 4 alone will add the most complex UI in the product, so building those
+against scaffolding and re-skinning later means building them twice, the second
+time under deadline. Week 3 was also blocked on VdoCipher, so the foundation pass
+filled a gap rather than displacing feature work.
+
+**Nothing in the prototype was copied.** It is a visual-builder export: React 18
+UMD from unpkg, assets base64-encoded into a manifest, markup escaped inside a
+template string, and -- decisively -- **423 inline `style` attributes and zero CSS
+classes**. There was no stylesheet to import and no component to reuse. The design
+was read instead: token values were derived by counting what the prototype
+actually uses, which is why the token set is deliberately small.
+
+Full detail, including the extracted palette, is in `design/README.md`.
+
+### Three things the Client should decide
+
+None block the build. All three would be worse discovered late.
+
+- **The heading font is not available.** Every heading in the design is Recoleta
+  Bold, a licensed face whose files are absent from the export -- the prototype
+  itself falls back to a system serif. The Client holds a licence and will supply
+  the files. Until then `--font-serif` resolves to Georgia. **Weight 700 only** is
+  needed; all thirty heading usages are Bold. It must be a *web* kit: a desktop
+  or OTF licence does not permit `@font-face` embedding.
+
+- **The type scale is small.** The prototype's body copy is 13px and its largest
+  heading 24px -- a dense admin-tool scale. It has been applied faithfully rather
+  than quietly enlarged, but 13px on a phone is a legibility question, and this
+  is a student-facing product. The Client should answer it deliberately.
+
+- **The prototype shows scope the agreement does not cover.** A **study streak**
+  counter, **"mocks attempted" / "average score"** dashboard statistics, and a
+  **"View as"** role switcher, which is impersonation. None appear in Annexure A.
+  Build the design's look without absorbing its scope: each is a clause 12 change
+  request if wanted, and none should arrive silently because it was in a picture.
 
 ### The NULL that passed a CHECK, 2026-09-10
 
@@ -417,7 +459,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed, and nothing outstanding. **Phase 5a step 2 is merged and deployed.** The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes, and `round_id` as ON DELETE RESTRICT. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-10 |
+| None | - | - | - | Nothing claimed. **Phase 5a step 2 is merged and deployed.** The design foundation pass is complete; the **per-screen re-skin of the 13 routes is not started**. The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes, and `round_id` as ON DELETE RESTRICT. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-12 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
