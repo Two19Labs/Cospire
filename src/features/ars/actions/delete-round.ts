@@ -10,16 +10,9 @@ import { buildRoundsHref, parseRoundId } from "../list-params";
 
 // Removing a round an admin added by mistake.
 //
-// Safe today because `ars_submissions` does not exist yet, so a round has
-// nothing hanging off it. **That changes in step 3**, and the decision belongs
-// with the table that creates the dependency: `ars_submissions.round_id` must be
-// ON DELETE RESTRICT, so a round a student has already answered cannot be
-// deleted at all. Losing a submission is losing a student's work, and the
-// schema should refuse rather than the interface remembering to.
-//
-// Recorded here as well as in CONTEXT.md because this is the file that would
-// have to change, and a note beside the FK is easier to miss than one beside
-// the delete.
+// A round a student has already answered cannot be deleted: the foreign key
+// from `ars_submissions` is ON DELETE RESTRICT, so Postgres refuses with 23503.
+// The schema does the refusing; this action only turns it into a sentence.
 export async function deleteRoundAction(formData: FormData): Promise<void> {
   await requireRole("admin");
 
@@ -60,6 +53,10 @@ export async function deleteRoundAction(formData: FormData): Promise<void> {
     .eq("id", roundId)
     .eq("course_id", courseId)
     .select("id");
+
+  if (error?.code === "23503") {
+    redirect(buildRoundsHref({ courseId, error: "has-submissions" }));
+  }
 
   if (error || (data ?? []).length !== 1) {
     redirect(buildRoundsHref({ courseId, error: "delete-failed" }));
