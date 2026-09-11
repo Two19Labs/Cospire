@@ -460,7 +460,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. **Phase 5a step 2 is merged and deployed.** The design foundation pass is complete; the **per-screen re-skin of the 13 routes is not started**. The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes, and `round_id` as ON DELETE RESTRICT. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-12 |
+| Claude Code session | `feat/ars-submissions` | **Phase 5a step 3**: `ars_submissions` and `ars_feedback`, RLS on reads and writes, `round_id` ON DELETE RESTRICT | `supabase/migrations/20260911200751_ars_submissions_and_feedback.sql`, `src/features/ars/**`, `src/shared/db/types.ts` (regenerated only) | **Migration written, not applied.** Next: owner reviews the SQL, then `npm run db:migrate`, `npm run db:types`, row-counting probes, then merge. The design re-skin of the 13 routes is separately not started | 2026-09-12 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1137,7 +1137,7 @@ file **at its Storage path**.
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
-| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started. Design decisions taken 2026-09-12, below |
+| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | **Migration written, NOT applied** (`20260911200751_ars_submissions_and_feedback.sql`, branch `feat/ars-submissions`). Awaiting the owner's review of the SQL before `npm run db:migrate`. It has never executed anywhere: Docker is unavailable and DDL through MCP is forbidden, even rolled back |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
 | 5. The student submission route and the mentor review queue | Not started |
 
@@ -1182,6 +1182,24 @@ their place.
   answer while a draft plus `draft` to `submitted`.
 - **Only the assigned mentor writes feedback.** Admins see submissions and
   feedback (Annexure A: "visibility of all ... submissions") but do not write it.
+
+Three further choices made in the migration, each worth the owner's eye:
+
+- **Mentors do not see drafts.** A queue showing half-written answers invites
+  feedback on something the student is still changing.
+- **A student reads feedback only once the submission is marked reviewed.**
+  Marking reviewed is the moment feedback is released.
+- **One feedback row per submission**, edited rather than appended to. So if a
+  student's mentor is reassigned after feedback exists, the new mentor can read
+  it but neither edit it nor add their own. Acceptable at V1 scale; a second row
+  per mentor is an additive change if it ever matters.
+
+Also in the migration: `submitted_at`, `reviewed_at` and `reviewed_by` are
+written by a trigger from the server clock, never the client; only `answer`,
+`file_path` and `status` are updatable columns at all; there is no DELETE grant;
+and `file_path` is pinned to `org/<org>/ars/<student>/<uuid>.<ext>` so step 4's
+bucket has a fixed shape. Deleting a round with submissions now returns "Students
+have already answered this round" instead of the generic failure.
 
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
 
