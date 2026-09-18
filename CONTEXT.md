@@ -31,12 +31,24 @@ plus 15 checks driven over HTTP. **The next build step is step 5**, the student
 route and the mentor review queue, which is also the first UI since the design
 foundation landed.
 
-**Both open pull requests merged on 2026-09-18**, and `main` moved for the first
-time since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4
-and 4b as `ce147b3`. **Everything built is now deployed** -- Production is on
-`ce147b3` and CI on `main` is green. #25's title and description were rewritten
-before merging, having described the `ars_feedback` table that the 2026-09-16
-rework removed.
+**PRs #24 and #25 merged on 2026-09-18**, and `main` moved for the first time
+since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
+4b as `ce147b3`. The follow-up context correction merged as PR #26 (`8ab93c7`),
+CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
+`docs/review-checklist.md`, which is now the current `main`. **PR #28 is open** from
+`feat/ars-report`, carrying the report database plus mentor/student UI; its
+`context`, `verify`, Vercel and preview checks are all green.
+
+**What a green `verify` does and does not mean.** The CI job named `verify` runs
+`typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
+anything in `scripts/verify/`**, so no database probe and no HTTP check is
+reproduced by any check on any pull request. Every probe count recorded in this
+file is a local run. The job's name invites the opposite reading, and this
+sentence exists because a review found the two sitting side by side here and
+read as one claim. Do not quote "verify is green" at a client checkpoint as
+evidence the database was verified. #25's title
+and description were rewritten before merging, having described the
+`ars_feedback` table that the 2026-09-16 rework removed.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -181,12 +193,16 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
   file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
   4b, merged the same day as `ce147b3`.
-- **No pull request is open.** #25 was stacked on #24's branch, so
+- **PR #27 merged 2026-09-18** as `6a39649`, adding the documentation-only
+  review contract in `docs/review-checklist.md`. #25 was stacked on #24's branch, so
   merging #24 with `--delete-branch` **closed** it rather than retargeting it;
   reopening needed that branch pushed back before the base could be moved to
   `main`. **Do not delete the base branch of a stacked pull request.** It was then
   rebased onto `main`, where git skipped the squashed cleanup commit as already
   applied.
+- **PR #28 is open** from `feat/ars-report` into `main`. It contains the applied
+  report migrations, mentor/student UI and both verification harnesses. Admin
+  template authoring remains a later slice and is not claimed by that PR.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
@@ -326,6 +342,58 @@ decisions of 2026-09-12, **the Client's answer wins and this section is right.**
   "got a little confused, but everything is clarified", and the matter was left.
   They read as course bundles of videos, PDFs and tests rather than ARS rounds.
 
+### The report template, supplied 2026-09-18
+
+The Client supplied a completed sample report, and the owner confirmed it is the
+shape to build. **The file is not in this repository and must not be**: it names
+a real student and carries her board marks, her venture, and candid assessments
+of her communication. Clause 13.3 and the rule at the head of this file both bar
+it. It sits outside git, and no migration, seed or pull request reproduces any
+of its content.
+
+What its structure settles, which prose had left open:
+
+- **The component table is weighted**, and the overall score is **computed** from
+  the parts, not typed. The sample's five components reconcile exactly to its
+  printed total, so a mentor editing one score must not be able to leave a stale
+  or invented total behind.
+- **The sub-metric table differs per component.** One scores each metric and
+  comments; one carries narrative and no scores; one scores with a tag and no
+  prose. Even the column heading differs across four words. So the heading and
+  the column set are template data, not code.
+- **Narrative blocks are optional per component** -- strengths, development
+  areas, action plan. The sample omits one of each in different components, and
+  the founder said so in terms.
+- **A component need not be a round.** Four of the sample's five map onto rounds;
+  "Profile & Content" does not, because no round exists in which a student
+  submits a profile. So a component *may* name a round and is not required to.
+  This was the one genuine modelling fork and it is now closed.
+
+**Scope.** Annexure A promises a mentor "writes feedback and marks a submission
+as reviewed". A configurable template carrying weighted quantitative scoring is
+more than that sentence, and it is the largest single piece of new work the
+2026-09-16 meeting produced. It is being built on the owner's instruction of
+2026-09-18; **the clause 12 quotation and the clause 16.1 written amendment are
+still outstanding and are not settled by having built it.**
+
+### Round deadlines: accept late, stamp it, show it
+
+Decided 2026-09-18, after a review found that `opens_at` and `due_at` were read
+by nothing at all -- no policy, no trigger, no function -- so a student could
+submit a month after a deadline and the database would accept it silently.
+
+A late submission is **accepted and stamped**, never refused. Refusing means a
+student whose upload finishes a minute past midnight is locked out of their own
+process and telephones Cospire; accepting silently means the deadline is a
+label. The stamp is computed from the **server clock** against the round's own
+`due_at`, which is operating manual rule 1 applied to a deadline rather than a
+timer. Whether lateness costs anything stays a human judgement, as it is off the
+platform.
+
+`submitted_late` is null while a draft, and null when the round carries no
+deadline -- which is deliberately not the same as "on time" and must not be
+flattened into false.
+
 ### Owed by Two19 from the call
 
 1. A document listing everything needed from the Client, including content and
@@ -427,6 +495,8 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | **Design foundation integrated** | Tokens read out of the Client-approved prototype into `src/app/globals.css`; Figtree self-hosted through `next/font/google`; panels, buttons, inputs, tables and pills moved onto the tokens. The prototype is committed to `design/` as reference and is never shipped. See *The design integration* |
 | 2026-09-10 | **A font that loaded and never rendered** | `next/font` defines `--font-sans` on a class on `<html>`; `globals.css` defined a fallback for the same variable on `:root`. Equal specificity, and Next emits its class first, so the fallback won: Figtree downloaded on every page and nothing was set in it. The fallback now lives inside `var()`. Caught by reading the served stylesheet rather than the source |
 | 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
+
+| 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
 
 ### The context gate's own blind spot, found 2026-09-10
 
@@ -590,7 +660,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | -- | **Phase 5a steps 3, 4 and 4b are merged and deployed** (`ce147b3`) | -- | **Nothing claimed.** Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
+| This chat | `feat/ars-report` | Corrections from the 2026-09-18 review of PR #28 | `supabase/migrations/20260918153000_*`, `src/features/ars-report/**`, `src/app/mentor/page.tsx`, `src/app/student/page.tsx`, `src/features/student/components/student-home.tsx`, `CONTEXT.md` | **In progress.** Fix-forward migration `20260918153000` **applied and verified**; pagination done; **admin report-template authoring built** at `/admin/report-templates`, which was the gate on the report being usable at all. **No migration** -- the tables already existed. The next report slice is admin template authoring; the next core ARS slice remains step 5, student submissions and mentor review | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -636,10 +706,14 @@ No credentials, keys, or connection strings are recorded in this file.
 | `20260911200751` | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql` | Applied 2026-09-18 through `npm run db:migrate`. Creates `ars_submissions`, `ars_process_runs` and `ars_attempt_grants`, all with RLS enabled **and forced**; adds `ars_rounds_id_org_unique`; three `private` helpers and four triggers carrying the sequence rule, the attempt allowance, the order snapshot and run completion. Additive throughout. Security advisor: zero new findings |
 | `20260918080226` | `supabase/migrations/20260918080226_ars_uploads_bucket.sql` | Applied 2026-09-18. Creates the private `ars-uploads` bucket (50MiB; mp4, quicktime, webm, pdf, jpeg, png) and four policies on `storage.objects`, plus `private.can_read_ars_object` and `private.can_write_ars_object`. Reads are **not** admin-only here, unlike documents: a video essay has no watermarked viewer to force anyone through, and Annexure A asks only that the file reach the student, their mentor and admins |
 | `20260918080815` | `supabase/migrations/20260918080815_ars_round_scheduling_and_offline_rounds.sql` | Applied 2026-09-18. Adds `opens_at`, `due_at` and `requires_review` to `ars_rounds`, widens the mode check to include `offline`, adds `private.round_is_offline` and a policy letting the assigned mentor record an off-platform round. Widening a check can never fail against existing rows and cannot break the deployed code, which only writes the three modes it already knows |
+| `20260918094500` | `supabase/migrations/20260918094500_ars_stamp_late_submissions.sql` | Applied 2026-09-18. Adds the server-authored `submitted_late` stamp and its partial queue index. The reviewed transition preserves the historical value; the first review caught and fixed an implementation that would have cleared it |
+| `20260918095000` | `supabase/migrations/20260918095000_ars_report_templates_and_reports.sql` | Applied 2026-09-18. Four RLS-enabled and forced tables hold configurable templates, filled reports and weighted components. Triggers enforce run/student/template consistency, compute the total and gate release |
+| `20260918100815` | `supabase/migrations/20260918100815_grant_ars_report_policy_helpers.sql` | Applied 2026-09-18 after the first live probe. Grants `authenticated` only the two private helper functions invoked by report-component policies; the original migration had revoked the execution those policies need |
+| `20260918101442` | `supabase/migrations/20260918101442_allow_students_to_render_released_reports.sql` | Applied 2026-09-18. Lets a student read only the template labels referenced by their own released report, so the authorized filled values can actually be rendered. Draft and unrelated templates remain invisible |
 
 Three further migrations are described in their own sections rather than here:
 `20260828122059` (last-admin protection, under *Phase 0 security audit*), and
-`20260902180054` and `20260902201530` (under *The documents slice*). All eight
+`20260902180054` and `20260902201530` (under *The documents slice*). All fifteen
 recorded versions match their repository filenames, so `supabase db push` treats
 them as applied and will not re-run them.
 
@@ -1277,6 +1351,7 @@ file **at its Storage path**.
 | 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
 | 5. The student submission route and the mentor review queue | Not started. The first UI since the design foundation landed, so it is built to the prototype's patterns rather than re-skinned later |
+| 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
 **capacity** limit and not a capability one: Free gives 1GB of Storage and a 50MiB
@@ -1716,6 +1791,23 @@ time otherwise.
 | 2026-09-18 | **Round scheduling driven over HTTP, 15 of 15** | `scripts/verify/ars-scheduling.mjs` against a running app with a throwaway admin's real session, every form posted through the no-JavaScript path. Dates stored as the right instants and shown back as the days typed; a backwards deadline and a malformed date both refused and creating nothing; an unticked review box reading `false`; an `offline` round authored. The last two checks read the **served** stylesheet rather than the source, which is how the font that rendered nowhere was caught |
 | 2026-09-18 | **PRs #24 and #25 merged, `main` deployed** | `main` moved from `e1644d0` to `ce147b3`, the first movement since 2026-09-12. CI green on `main`; Production deployment reports success on `ce147b3`. The deployed URL answers: `/login` 200, `/admin/courses`, `/student` and `/mentor` all 307 to sign-in for an anonymous caller. **The new admin round-date fields are not verified through a browser** -- they sit behind an admin session and no signed-in check was run after the deploy |
 | 2026-09-18 | `.stack-form`, `.choice` and `.field-row` were never defined | The round form had been using all three since it was written, so it rendered unstyled -- visible in the owner's screenshot of 2026-09-15. Now defined on the design tokens |
+| 2026-09-18 | Repository and context audit | `git fetch --prune origin` left `main` exactly at `origin/main` (`8ab93c7`) with green CI. The clean local `feat/ars-report` branch is one commit ahead and does not exist on `origin`; the first context-gate run correctly failed on that mismatch. GitHub reported the review-contract pull request mergeable with all four checks green; it has since merged. `CONTEXT.md` was corrected to record both facts |
+| 2026-09-18 | Supabase migration history audit | `npx.cmd supabase migration list` against the linked hosted project: local and remote agree through `20260918080815`; `20260918094500` and `20260918095000` are local only and unapplied, as this file says. Supabase CLI is `2.116.0`; it reported `2.117.0` available. No database write was made |
+| 2026-09-18 | **ARS report migrations applied and reviewed** | `20260918094500` and `20260918095000` applied through the linked CLI. Review fixed two defects before application: a review transition clearing `submitted_late`, and same-organisation report rows accepting a mismatched run/student/template. The first live probe then found policy helpers with EXECUTE revoked from `authenticated`; append-only `20260918100815` corrected it. UI review found released reports could not load their template labels; append-only `20260918101442` corrected that |
+| 2026-09-18 | **PR #28 reviewed independently; five defects found, none caught by CI** | A read-only review against the live database. **Fixed forward in `20260918153000`:** (1) `grant select, insert on ars_reports` was column-**wide**, so a mentor could insert a draft carrying a fabricated `overall_score` -- directly beneath a comment claiming no caller could; (2) a template whose weightages exceeded 100 made an ordinary component save fail with a raw constraint error, never reaching the readable release message; (3) `private.ars_stamp_late` read `OLD` on a BEFORE **INSERT** OR UPDATE trigger; (4) `private.mentor_reaches_report` was a `SECURITY DEFINER` function nothing referenced. **Fixed in code:** both report list queries were unpaginated, the mentor one fanning an unbounded id list into four `IN` queries |
+| 2026-09-18 | **Append-only was broken on this branch** | `20260918094500` and `20260918095000` were committed in `42613b7` and then **edited** in `5eb6370` -- 18 and 141 lines, including real schema changes moving `student_id` and `written_by` to composite foreign keys. The live schema does match the final files, so clause 3.9's rebuild-from-git promise survives, **but only because someone re-applied by hand.** The rule exists so that never has to be checked. Corrections since then are fix-forward |
+| 2026-09-18 | Whether `OLD` raises on INSERT in PL/pgSQL | **UNVERIFIED and now moot.** Settling it needs an INSERT or a probe trigger; the review was read-only and refused to guess. The nested guard was restored in `20260918153000` rather than resting a live trigger on an unreproduced result. Note the two sibling functions in the same pull request already used the nested form, with comments explaining why, so the codebase had been contradicting itself |
+| 2026-09-18 | **Admin report-template authoring built** | `/admin/report-templates` list and detail. Until this existed a template could only be created by hand-written SQL against the live database, which operating manual §4.5 forbids, so the report shipped with no way for the Client to switch it on. Server Components and plain forms throughout, so the no-JavaScript path is the only path. 159 unit tests, up from 144. **No migration needed** |
+| 2026-09-18 | **The deferred-constraint trap is handled, not just documented** | The weightages form posts every component together and `orderWeightageChanges` applies every decrease before any increase, so the running total is non-increasing until the last step and no intermediate state can exceed 100 whenever the final state does not. That makes a straight swap -- A 40->60 with B 60->40 -- work across separate PostgREST transactions, where editing one at a time would be refused. Unit tested, including a running-total assertion |
+| 2026-09-18 | A unit test asserted the wrong thing and was corrected, not the code | `validateWeightage(" 20 ")` returns 20 because the field is trimmed. The test had asserted a refusal. Trimming is right here and deliberately the opposite of `parsePage`, which refuses `" 2"`: an admin typing a percentage may leave a stray space, while a space in a URL parameter means someone built it by hand |
+| 2026-09-18 | **Fixes re-reviewed independently; nothing broken** | Each fix re-read from the live database, and the regression risk ruled out with a command rather than an assumption: the narrowed INSERT grant cannot break report creation, because `status` defaults to `'draft'` and every other NOT NULL column outside the four-column grant has a default or is an identity column, so the insert still satisfies `ars_reports_insert_mentor`. No new advisor finding. Every static `className` in the feature cross-checked against `globals.css` -- **zero undefined**, so the `.stack-form` trap did not recur |
+| 2026-09-18 | **Trap for the template-authoring slice: rebalancing weightages needs two ordered requests** | `ars_report_template_components_weightage_total` is `DEFERRABLE INITIALLY DEFERRED`, so a rebalance inside **one** transaction is fine -- A 40->60 with B 60->40 passes, because only the commit-time total is checked. PostgREST commits each request separately, and a deferred constraint cannot span transactions, so across **two** requests the raise lands first, hits 120 and is refused. **The authoring screen must lower before it raises**, or send both edits in one call. Cheap to handle in that slice, expensive to discover in front of the Client |
+| 2026-09-18 | Report creation is still unexercisable end to end | There are **0 rows in `ars_report_templates`**, no seed migration and no admin authoring UI, so the mentor queue renders "Admin template needed" and `createReportAction` cannot run against real data. The grant check above is a column-versus-source comparison, **not an executed insert**. Do not read "grant verified" as "creation verified"; the first real proof arrives with the authoring slice |
+| 2026-09-18 | **Fix-forward migration applied and verified, 4 of 4** | `20260918153000` through `npm run db:migrate`. Re-read from the live database rather than trusting the push: the INSERT grant on `ars_reports` is now exactly `org_id, run_id, student_id, template_id`; `private.mentor_reaches_report` is gone (0 rows in `pg_proc`); `ars_report_template_components_weightage_total` exists; and `private.ars_stamp_late` is the nested form. **The first check of that last one gave a false positive** -- the `LIKE` pattern matched the comment explaining the flat form, not the code -- so the body was re-read with comments stripped. A probe that matches prose rather than behaviour is the same class of error as a probe that does not count rows |
+| 2026-09-18 | **ARS report database probe, 17 of 17** | `scripts/verify/ars-report.sql` through `supabase db query --linked`, one transaction rolled back. Proves late stamping and preservation after review; mismatched student/run and component/template refusal; forged authorship discarded; drafts hidden from students; incomplete release refused; weighted score 72.0; release timestamps and author stamps; owning student reads report, values and template labels; unrelated student and rival admin see zero rows |
+| 2026-09-18 | Report schema checks | Linked database lint: no errors. Security advisor: only the two pre-existing Auth warnings (leaked-password protection and insufficient MFA options). Performance advisor: the same three pre-existing multiple-permissive-policy warnings, none introduced by the report tables. Migration list agrees locally and remotely through `20260918101442` |
+| 2026-09-18 | **ARS report UI driven over HTTP, 12 of 12** | `scripts/verify/ars-report-ui.mjs` against a production build with throwaway accounts and real sessions. Mentor queue rendered; report created through its no-JavaScript Server Action; both weighted components and metric observations saved; 72/100 rendered; release succeeded; student home listed it; student read scores, observations and closing note. Cleanup restored 5 profiles, 1 assignment, 4 courses and zero report/template/component rows |
+| 2026-09-18 | ARS report application verification | `typecheck`, lint, 136 tests and production build all pass. New routes: `/mentor/reports/[id]` and `/student/reports/[id]` |
 
 ## Next recommended action
 
@@ -1743,13 +1835,22 @@ left in this phase:
 - **The upload UI**, which is also what first exercises the bucket's delete and
   update policies. Those are written but unverified: Supabase refuses SQL
   deletes on `storage.objects`, so only an HTTP path can test them.
-- **The ARS report** once its template is agreed and the extra work is in
-  writing. `ars_process_runs.report_released_at` is the column it hangs from.
+- **The ARS report's admin template builder.** The schema, mentor editor,
+  weighted total, release path and student view are built and verified locally;
+  an admin screen for creating/changing the template is not. Until it exists,
+  templates must be inserted operationally and the feature is not deploy-ready.
+  The clause 12 quotation and clause 16.1 amendment are still outstanding.
 - **The per-screen re-skin of the 13 existing routes**, deliberately left until
   the features stop moving, because a re-skin touches every route.
 
-**Both pull requests are merged and deployed** (2026-09-18). The merged branches
-listed under *Current repository state* can now be pruned.
+**The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
+is on `main` and is what a reviewer works from. The merged branches listed under
+*Current repository state* can be pruned.
+
+**The ARS report work is pushed in PR #28.** Four migrations are applied and
+agree with the repository; the database probe is 17/17 and the HTTP workflow is
+12/12. The remaining product gap is admin template authoring, not
+mentor/student reporting.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
