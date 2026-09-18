@@ -19,6 +19,7 @@ import type { RoundListRow } from "../queries/list-rounds";
 import {
   roundNameMaxLength,
   roundPromptMaxLength,
+  formatRoundDay,
   roundSubmissionModeLabels,
   roundSubmissionModes,
 } from "../round-input";
@@ -61,6 +62,8 @@ export function RoundsPanel({
             <TableRow>
               <TableHeaderCell>Round</TableHeaderCell>
               <TableHeaderCell>Student submits</TableHeaderCell>
+              <TableHeaderCell>Opens</TableHeaderCell>
+              <TableHeaderCell>Due</TableHeaderCell>
               <TableHeaderCell>Instructions</TableHeaderCell>
               <TableHeaderCell>
                 <span className="visually-hidden">Actions</span>
@@ -81,7 +84,14 @@ export function RoundsPanel({
                     </span>
                   ) : null}
                 </TableCell>
-                <TableCell>{round.prompt}</TableCell>
+                <TableCell>{formatRoundDay(round.opensAt) ?? "—"}</TableCell>
+                <TableCell>{formatRoundDay(round.dueAt) ?? "—"}</TableCell>
+                <TableCell>
+                  {round.prompt}
+                  {round.requiresReview ? null : (
+                    <span className="muted"> (no mentor review)</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   {/*
                     The Server Action goes straight to the form, so this works
@@ -147,6 +157,22 @@ export function RoundsPanel({
             required
             rows={3}
           />
+        </label>
+
+        <div className="field-row">
+          <label className="field">
+            <span>Opens</span>
+            <input className="input" name="opensAt" type="date" />
+          </label>
+          <label className="field">
+            <span>Due</span>
+            <input className="input" name="dueAt" type="date" />
+          </label>
+        </div>
+
+        <label className="choice">
+          <input defaultChecked name="requiresReview" type="checkbox" />
+          <span>A mentor reviews this round</span>
         </label>
 
         <label className="field">

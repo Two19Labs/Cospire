@@ -52,6 +52,10 @@ export const roundErrors = {
   "create-failed": "That round could not be created. Nothing changed.",
   "delete-failed": "That round could not be removed. Nothing changed.",
   "duplicate-name": "This programme already has a round with that name.",
+  "dates-invalid":
+    "Enter dates as a day, and keep the deadline on or after the opening date.",
+  "has-submissions":
+    "Students have already answered this round, so it cannot be removed.",
   "fields-invalid":
     "Add at least one question, one per line, each different and under 200 characters.",
   "invalid-request": "That request was not valid. Nothing changed.",

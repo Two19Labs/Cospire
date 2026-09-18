@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-12 (Asia/Calcutta)
+Last updated: 2026-09-18 (Asia/Calcutta)
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
@@ -22,8 +22,20 @@ and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
 are back in step, and the new routes are live: `/admin/courses` and
 `/admin/courses/[id]` answer on the deployed URL and refuse anonymous callers.
-The next work is **step 3, `ars_submissions` and `ars_feedback`**; its design
-decisions were taken on 2026-09-12 and are recorded under *Phase 5a progress*.
+**Phase 5a steps 3, 4 and 4b are done at the database, on 2026-09-18**, all on
+the branch `feat/ars-submissions` and none of them merged: submissions, process
+runs and attempt grants; the `ars-uploads` bucket and its `storage.objects`
+policies; and round dates, `requires_review` and the `offline` round type. Three
+migrations applied to the hosted project and verified by probe -- 17, 12 and 8 --
+plus 15 checks driven over HTTP. **The next build step is step 5**, the student
+route and the mentor review queue, which is also the first UI since the design
+foundation landed.
+
+**The CONTEXT cleanup merged on 2026-09-18** as `00a43f3`, the first movement on
+`main` since 2026-09-12. The ARS work is #25, rebased onto `main` and ready for
+review; its title and description were rewritten on 2026-09-18, having previously
+described the `ars_feedback` table that the 2026-09-16 rework removed. Until it
+merges, **nothing built since 2026-09-12 is deployed**.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -163,13 +175,20 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #23 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
+- **Everything through PR #24 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
   #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
-  last two conflicted in this file; #23 was rebased and resolved by hand.
+  last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
+  file's cleanup, merged 2026-09-18 as `00a43f3`.
+- **Open: #25**, Phase 5a steps 3, 4 and 4b. It was stacked on #24's branch, so
+  merging #24 with `--delete-branch` **closed** it rather than retargeting it;
+  reopening needed that branch pushed back before the base could be moved to
+  `main`. **Do not delete the base branch of a stacked pull request.** It was then
+  rebased onto `main`, where git skipped the squashed cleanup commit as already
+  applied.
 - Merged branches still on the remote and safe to prune: `feat/documents`,
   `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
   `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
-  `feat/design-foundation`.
+  `feat/design-foundation`, `docs/context-truth`.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -189,19 +208,122 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Tool | State | Use it for |
 |---|---|---|
 | Supabase CLI | Logged in and **linked** | `npm run db:migrate` for migrations, `supabase config push` for auth settings, `npm run db:types` |
-| GitHub CLI (`gh`) | Installed, authenticated as `Two19Labs` | Creating pull requests, watching CI, merging |
+| GitHub CLI (`gh`) | Installed and **logged in as `Two19Labs`** (2026-09-18, scopes `repo`, `read:org`, `gist`). If a session reports no host, run `gh auth login` | Creating pull requests, watching CI, merging |
 | Supabase MCP | Available, **read-only by policy** | Inspecting tables, advisors, logs. Never DDL; see operating manual §4.5 |
 | Docker | **Unavailable** | `db:reset`, `db:lint` and `db:test` cannot run here |
 
 Two operational notes that cost time to rediscover:
 
-- **`gh` must be run from PowerShell, not Git Bash.** Its token lives in the
-  Windows keyring, which the Git Bash environment cannot read, so `gh auth status`
-  reports logged out there while working correctly in PowerShell. `gh.exe` sits at
-  `%ProgramFiles%\GitHub CLI\gh.exe`.
+- **`gh` reads the same credentials from PowerShell and from Git Bash.** An earlier
+  note here claimed the token was visible only to PowerShell; that was checked on
+  2026-09-18 and is **wrong** -- both reported logged out because no login had
+  completed. After `gh auth login` both see the account. `gh.exe` sits at
+  `%ProgramFiles%\GitHub CLI\gh.exe`, which Git Bash must call by full path.
 - **Migrations go through the CLI**, now that the project is linked. The MCP
   server is for reading. Phase 0 applied two migrations through MCP out of
   necessity and reconciled the history afterwards; that route is no longer needed.
+
+## The ARS meeting, 2026-09-16
+
+A call with the Client's founder about ARS. The full transcript is at
+`../Context/2026-09-16 ARS founder meeting - transcript.md`, outside git: the
+recording carried no audio, so it was read frame by frame from a screen capture
+of a transcript, and the recording begins partway into the meeting.
+
+This section is the record of what it settled. Where it contradicts the Step 3
+decisions of 2026-09-12, **the Client's answer wins and this section is right.**
+
+### Settled
+
+- **Two-way rounds stay off the platform.** Interviews, group discussions and
+  guesstimates happen elsewhere -- a guesstimate is a video call run like a
+  consulting case. The platform shows the student the step, its dates and
+  deadlines, and holds the mentor's evaluation afterwards. The founder raised
+  the contractual limit himself. This closes the Annexure B question that had
+  blocked the round design, and it means **a round needs date and deadline
+  fields**, which nothing in the schema has today.
+- **A round is built from a fixed set of components:** video submission, short
+  or long written answer, a form, an essay, email writing, and an aptitude test
+  (a mock). An ARS process may have **any number of rounds**; three to five is
+  usual. Admins compose a process out of those components.
+- **A process belongs to an admission process, not to a student.** Students are
+  enrolled into it; a college that changes its admission process gets a new one
+  built. One student can be in several processes at once.
+- **Mocks are built on the mock page and attached to ARS**, never authored
+  inside ARS. Scoring is automatic and **a mentor never touches a mock score**.
+  Negative marking stays a per-mock toggle, usually off. Timing is per test,
+  sectional or not.
+- **Word limits are configurable** on every written input.
+- **Question import:** a standard prompt run in Claude with the output pasted
+  into a parser in the platform, rather than a built-in API integration the
+  Client pays per call for. The founder agreed to this in the call.
+
+### What this changes in work already designed
+
+- **ARS-specific mocks DO appear on the student's dashboard**, and a student can
+  sit one on its own. The 2026-09-12 answer -- that they show only inside ARS --
+  is superseded. What limits them is **who is enrolled** (the "advanced
+  end-to-end" students), not hiding the mock.
+- **Application rounds DO take file uploads:** resume, tenth-grade marksheet,
+  certificates. They are real files kept in the back end, with an option to
+  delete later; not a pretend upload. The 2026-09-12 answer of "text only" is
+  superseded, and this pulls the Storage bucket of step 4 forward into the
+  application round.
+- **Scoring and the mentor's write-up happen at the end of a whole process, not
+  per submission.** `ars_feedback` as designed hangs one row off one submission,
+  which is now the wrong shape. This is why the step 3 migration is being
+  reworked rather than applied.
+
+### New scope, to be recorded rather than absorbed
+
+- **The ARS report.** The founder described a report with subjective scoring on
+  set parameters, written descriptions, detailed observations, a plan of action,
+  strengths and weaknesses, on a template the admin can change, with any field
+  left blank by a mentor. Annexure A promises that a mentor "writes feedback and
+  marks a submission as reviewed". A configurable report builder carrying
+  quantitative and qualitative sections is more than that, and it is the largest
+  single piece of new work the meeting produced.
+- **Further modules named in the same call:** feedback, onboarding, offboarding
+  and student journey trackers, wanted **before** the video module.
+
+### Two commitments made in the call that need attention
+
+- **"In the next 15 days we'll be ready and tested with ARS and the mock test?"
+  -- "Definitely."** That is roughly 2026-10-01, and it covers the question
+  bank, the test engine and the whole of ARS, none of which is built. The Client
+  was also told the project is "still on track" with only a slight VdoCipher
+  delay. Nothing has been sent in writing that revises the date, and this file
+  has recorded since 2026-09-14 that the original six weeks would not hold.
+  **Either what "ready" means on 1 October is cut down, or the date is reset in
+  writing.** Clause 4.4 requires the notice at the time, not at the end.
+- **A build-now, invoice-later arrangement for extra work.** The Client asked
+  not to price every small item, and Two19 agreed to invoice additional work
+  with the final payment. Clause 12.2 and 12.3 say the opposite in terms: each
+  request is quoted, approved in writing, and **nothing is built first and
+  invoiced afterwards.** Both sides want the friction gone, which is fine, but
+  clause 16.1 makes it a written amendment. Until that exists, "whatever the
+  additional work and pricing might be" is an open-ended promise with no number
+  attached.
+
+### Still unresolved after the meeting
+
+- **The MESA benchmark contradicts the agreed question types.** The founder
+  calls the MESA MAT process the benchmark and describes logical reasoning, an
+  aptitude test, email writing and a video essay as **four components of one
+  test**, with an application at the end. Annexure A fixes the question types to
+  four automatically scored ones, with no written or uploaded answer inside an
+  attempt. The choice recorded on 2026-09-15 -- restructure into separate rounds,
+  or quote for extending the engine -- was never put to him and is still open.
+- **Where the Aptitude Prep bundles sit.** "These are all a part of ARS", then
+  "got a little confused, but everything is clarified", and the matter was left.
+  They read as course bundles of videos, PDFs and tests rather than ARS rounds.
+
+### Owed by Two19 from the call
+
+1. A document listing everything needed from the Client, including content and
+   any app subscriptions.
+2. Go through the MESA ARS app properly; the founder asked twice.
+3. Review the three further public mock sites he was adding.
 
 ## Sequencing change, 2026-09-08
 
@@ -460,7 +582,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | - | - | - | Nothing claimed. **Phase 5a step 2 is merged and deployed.** The design foundation pass is complete; the **per-screen re-skin of the 13 routes is not started**. The next work is **step 3, `ars_submissions` and `ars_feedback`** with RLS covering writes, and `round_id` as ON DELETE RESTRICT. Supabase Pro is needed before ARS is *used*, not before it is built. | 2026-09-12 |
+| None | `feat/ars-submissions` | **Phase 5a steps 3, 4 and 4b**, all applied to the hosted database. Branch pushed, not merged | `supabase/migrations/2026091*`, `src/features/ars/**`, `src/app/globals.css`, `scripts/verify/ars-scheduling.mjs`, `src/shared/db/types.ts` (regenerated) | **Nothing claimed.** The database work is done and verified; the branch is pushed and unmerged. Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -503,6 +625,9 @@ No credentials, keys, or connection strings are recorded in this file.
 | `20260910115938` | `supabase/migrations/20260910115938_courses_and_course_grants.sql` | Applied 2026-09-10 through `npm run db:migrate`, the CLI rather than MCP. Creates `public.courses` with RLS enabled **and forced** and four policies; adds `private.student_has_course_grant`; adds the `course` branch to `validate_content_access_resource`; adds the `courses_cascade_grants` trigger. Additive throughout. Security advisor: zero new findings |
 | `20260910144415` | `supabase/migrations/20260910144415_ars_rounds.sql` | Applied 2026-09-10. Creates `public.ars_rounds` with RLS enabled **and forced** and four policies; adds `private.mentor_reaches_course` and `private.student_reaches_round`; adds `courses_id_org_unique` so the composite foreign key has something to reference; adds the `courses_select_mentor` policy. Additive throughout |
 | `20260910144803` | `supabase/migrations/20260910144803_fix_ars_rounds_form_fields_check.sql` | Applied 2026-09-10, minutes after the above, correcting `ars_rounds_form_has_fields`. See *The NULL that passed a CHECK* |
+| `20260911200751` | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql` | Applied 2026-09-18 through `npm run db:migrate`. Creates `ars_submissions`, `ars_process_runs` and `ars_attempt_grants`, all with RLS enabled **and forced**; adds `ars_rounds_id_org_unique`; three `private` helpers and four triggers carrying the sequence rule, the attempt allowance, the order snapshot and run completion. Additive throughout. Security advisor: zero new findings |
+| `20260918080226` | `supabase/migrations/20260918080226_ars_uploads_bucket.sql` | Applied 2026-09-18. Creates the private `ars-uploads` bucket (50MiB; mp4, quicktime, webm, pdf, jpeg, png) and four policies on `storage.objects`, plus `private.can_read_ars_object` and `private.can_write_ars_object`. Reads are **not** admin-only here, unlike documents: a video essay has no watermarked viewer to force anyone through, and Annexure A asks only that the file reach the student, their mentor and admins |
+| `20260918080815` | `supabase/migrations/20260918080815_ars_round_scheduling_and_offline_rounds.sql` | Applied 2026-09-18. Adds `opens_at`, `due_at` and `requires_review` to `ars_rounds`, widens the mode check to include `offline`, adds `private.round_is_offline` and a policy letting the assigned mentor record an off-platform round. Widening a check can never fail against existing rows and cannot break the deployed code, which only writes the three modes it already knows |
 
 Three further migrations are described in their own sections rather than here:
 `20260828122059` (last-admin protection, under *Phase 0 security audit*), and
@@ -649,10 +774,13 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, re-measured 2026-09-10 after the programmes verification run
-was torn down: **2 orgs, 5 profiles (5 active), 5 auth users, 1 mentor
-assignment, 1 course, 3 content grants (2 document, 1 course), 2 documents,
-2 storage objects.**
+Current live counts, re-measured 2026-09-18 after the step 3 probes were rolled
+back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 4 courses, 4 content
+grants, 2 documents, and 0 rows in every ARS table.** Courses rose from 1 to 3
+and grants from 3 to 4 during the owner's manual test pass of 2026-09-14, and a
+fourth course ("Mesa") was added by the owner on 2026-09-18; those rows are the
+owner's, not test residue. Two of them, ids 29 and 30, differ only by a space in
+the title and look like a duplicate the owner may want to remove.
 
 This is the baseline any future verification run should return to. **None of it
 is test residue and none of it may be deleted:**
@@ -1137,9 +1265,10 @@ file **at its Storage path**.
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
-| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | Not started. Design decisions taken 2026-09-12, below |
-| 4. The Storage bucket and its policies on `storage.objects` | Not started |
-| 5. The student submission route and the mentor review queue | Not started |
+| 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done at the database, 2026-09-18.** `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
+| 4. The Storage bucket and its policies on `storage.objects` | **Done at the database, 2026-09-18.** `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
+| 4b. Round dates, `requires_review`, and the `offline` round type | **Done at the database and in the admin form, 2026-09-18.** From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
+| 5. The student submission route and the mentor review queue | Not started. The first UI since the design foundation landed, so it is built to the prototype's patterns rather than re-skinned later |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
 **capacity** limit and not a capability one: Free gives 1GB of Storage and a 50MiB
@@ -1170,7 +1299,9 @@ their place.
   The note is also in `src/features/ars/actions/delete-round.ts`, beside the code
   that would have to change.
 
-**Step 3 decisions, taken by the owner on 2026-09-12:**
+**Step 3 decisions, taken by the owner on 2026-09-12. Read them with *The ARS
+meeting, 2026-09-16* beside them: the Client has since changed three of these,
+and the migration is being reworked rather than applied.**
 
 - **One submission per student per round**, enforced by a unique
   `(student_id, round_id)`. The student may edit it only while it is a `draft`;
@@ -1182,6 +1313,24 @@ their place.
   answer while a draft plus `draft` to `submitted`.
 - **Only the assigned mentor writes feedback.** Admins see submissions and
   feedback (Annexure A: "visibility of all ... submissions") but do not write it.
+
+Three further choices made in the migration, each worth the owner's eye:
+
+- **Mentors do not see drafts.** A queue showing half-written answers invites
+  feedback on something the student is still changing.
+- **A student reads feedback only once the submission is marked reviewed.**
+  Marking reviewed is the moment feedback is released.
+- **One feedback row per submission**, edited rather than appended to. So if a
+  student's mentor is reassigned after feedback exists, the new mentor can read
+  it but neither edit it nor add their own. Acceptable at V1 scale; a second row
+  per mentor is an additive change if it ever matters.
+
+Also in the migration: `submitted_at`, `reviewed_at` and `reviewed_by` are
+written by a trigger from the server clock, never the client; only `answer`,
+`file_path` and `status` are updatable columns at all; there is no DELETE grant;
+and `file_path` is pinned to `org/<org>/ars/<student>/<uuid>.<ext>` so step 4's
+bucket has a fixed shape. Deleting a round with submissions now returns "Students
+have already answered this round" instead of the generic failure.
 
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
 
@@ -1545,12 +1694,59 @@ time otherwise.
 | 2026-09-02 | CI on PR #16 | `verify` green in 50s; Vercel preview deployed |
 | 2026-09-08 | Documents on the deployed URL | **Pass, 36 of 36**, `scripts/verify/` against `https://cospire-roan.vercel.app`. Closed the Phase 1 exit gate |
 | 2026-09-03 | PDF.js rendering in a browser | **Pass**, confirmed by the owner: pages render and a page saved as an image carries the reader's name. Found two defects, both fixed in `6880ac3`: the stamp read UTC rather than IST, and a PDF.js worker leaked per navigation |
+| 2026-09-18 | **Step 3 migration applied** | `20260911200751` pushed with `npm run db:migrate` against `eeeftjwvbppznsmcljnw`. Three tables, RLS enabled and forced on all three, four triggers, three helpers |
+| 2026-09-18 | **Step 3 verified, 17 probes, all as designed** | In one rolled-back transaction with `set local role authenticated` and real JWT claims. Passing: a student's own draft; the sequence rule refusing round 2 before round 1 (42501); an insert carrying **another student's** id refused; a second attempt with no grant refused; an admin grant then attempt_no=2; the run row and its order snapshot created automatically; an unrelated student seeing **0 rows**; the assigned mentor seeing handed-in work but **0 drafts**; a mentor editing an answer refused, marking reviewed allowed; `completed_at` stamped once every round was in; a student deleting a submission refused; and deleting an answered round refused with **23503** |
+| 2026-09-18 | Probe isolation | Live counts re-checked after the rollback: 0 rows in all three ARS tables, courses still 4, documents still 2, profiles still 5. Nothing of the owner's was touched |
+| 2026-09-18 | `typecheck` / `lint` / `test` / `build` | Pass. 128 tests. Production build clean |
+| 2026-09-18 | Security advisor after the migration | The same two pre-existing WARN items (leaked-password protection needs Pro; MFA is a scope decision). **No new findings** |
+| 2026-09-18 | **ARS bucket applied and probed, 12 checks** | A student uploading beneath their own prefix allowed; into **another student's prefix refused**; into the `documents` bucket refused; the owning student reads their own file; **a mentor sees nothing while it is a draft** and the file once it is handed in; an unrelated student, another organisation's admin and an anonymous caller all see **0 rows** by the exact storage path; an anonymous upload refused |
+| 2026-09-18 | A cross-org move returned no error and changed 0 rows | RLS filtering a write to nothing, which is the shape this project has been caught by twice. The probe counts rows rather than trusting the absence of an error |
+| 2026-09-18 | **Direct deletes on `storage.objects` are blocked by Supabase itself** | `storage.protect_delete()` refuses any SQL delete: "Use the Storage API instead". So the two delete/update policies in this migration cannot be probed through SQL and are unverified until the upload UI exercises them over HTTP |
+| 2026-09-18 | Storage probe isolation | 0 objects left in `ars-uploads`; the owner's 2 document objects untouched; courses 3, grants 4, documents 2 |
+| 2026-09-18 | **Round scheduling and offline rounds, 8 probes** | A deadline before the opening date refused (23514); a student submitting an **off-platform round refused** (42501); the run correctly **not** complete until the interview was recorded; the assigned mentor recording it allowed; that same mentor recording a *written* round for a student refused; `completed_at` stamped once the interview was in; `requires_review` stored per round |
+| 2026-09-18 | Round dates, unit tested | 136 tests, up from 128. The cases worth naming: an opening date is the **start** of that day in IST and a deadline the **end** of it, so a deadline of the 1st does not quietly cost a student 24 hours; a stored instant displays as the day the admin typed even though it falls on the previous date in UTC |
+| 2026-09-18 | **Round scheduling driven over HTTP, 15 of 15** | `scripts/verify/ars-scheduling.mjs` against a running app with a throwaway admin's real session, every form posted through the no-JavaScript path. Dates stored as the right instants and shown back as the days typed; a backwards deadline and a malformed date both refused and creating nothing; an unticked review box reading `false`; an `offline` round authored. The last two checks read the **served** stylesheet rather than the source, which is how the font that rendered nowhere was caught |
+| 2026-09-18 | `.stack-form`, `.choice` and `.field-row` were never defined | The round form had been using all three since it was written, so it rendered unstyled -- visible in the owner's screenshot of 2026-09-15. Now defined on the design tokens |
 
 ## Next recommended action
 
-**Build Phase 5a step 3**, `ars_submissions` and `ars_feedback`, to the decisions
-recorded under *Phase 5a progress*. Then step 4 (the upload bucket and its
-`storage.objects` policies) and step 5 (the student route and the mentor queue).
+**First, two things that are not code**, both from the meeting of 2026-09-16 and
+both worse the longer they wait:
+
+1. **Settle the 1 October promise.** The Client was told ARS and the mock test
+   would be ready and tested "in the next 15 days", and that the project is
+   otherwise on track. The question bank, the test engine and most of ARS are
+   unbuilt. Decide what "ready" means on that date, and send the revised date in
+   writing under clause 4.4 if it moves.
+2. **Put the build-now, invoice-later arrangement in writing**, with the first
+   items named (feedback, onboarding, offboarding, student journey trackers, and
+   the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
+   written. Both sides want this, so it only needs recording.
+
+**Phase 5a steps 3, 4 and 4b are done at the database** (2026-09-18). What is
+left in this phase:
+
+- **Step 5, and it is the next thing to build**: one student route rendering
+  whichever component a round declares (written answer, essay, form, file
+  upload, or an off-platform round showing its date), and the mentor review
+  queue. It is the first UI since the design foundation merged, so build it to
+  the Client's prototype rather than re-skinning it later.
+- **The upload UI**, which is also what first exercises the bucket's delete and
+  update policies. Those are written but unverified: Supabase refuses SQL
+  deletes on `storage.objects`, so only an HTTP path can test them.
+- **The ARS report** once its template is agreed and the extra work is in
+  writing. `ars_process_runs.report_released_at` is the column it hangs from.
+- **The per-screen re-skin of the 13 existing routes**, deliberately left until
+  the features stop moving, because a re-skin touches every route.
+
+**Merge #25** and record it here afterwards, then prune the merged branches listed
+under *Current repository state*. #24 merged on 2026-09-18 and `main` moved for the
+first time since 2026-09-12.
+
+**Put the MESA question-type fork to the Client.** Their benchmark process puts
+email writing and a video essay inside one timed test; Annexure A fixes the four
+question types to automatically scored ones. Either the writing becomes its own
+round, which costs nothing, or extending the engine is quoted under clause 12.
 
 Owed by the Client, to chase rather than work around:
 

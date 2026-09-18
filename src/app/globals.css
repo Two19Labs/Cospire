@@ -183,6 +183,46 @@ body {
   gap: 0.45rem;
 }
 
+/* A form laid out as one column of fields, with the submit button sitting on
+   its own rather than stretching. Used by the ARS round authoring form. */
+.stack-form {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.stack-form > * {
+  width: 100%;
+}
+
+.stack-form > button {
+  width: auto;
+}
+
+/* Two fields that belong together -- an opening date and a deadline -- side by
+   side on a desk, stacked on a phone. Clause 3.3 asks for every part of the
+   platform to be usable on a phone. */
+.field-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+/* A radio or checkbox beside its words, aligned on the first line of the label
+   rather than centred, so a wrapping label does not drag the control down. */
+.choice {
+  align-items: start;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: auto 1fr;
+  line-height: 1.45;
+}
+
+.choice input {
+  accent-color: var(--primary);
+  margin-top: 0.15rem;
+}
+
 .field__label {
   font-size: 0.875rem;
   font-weight: 700;

@@ -7,7 +7,9 @@ import {
   parseRoundNotice,
 } from "./list-params";
 import {
+  formatRoundDay,
   parseFieldLabels,
+  parseRoundDay,
   roundFieldLabelMaxLength,
   roundMaxFields,
   roundNameMaxLength,
@@ -33,7 +35,10 @@ describe("validateNewRound", () => {
     expect(errors).toEqual({});
     expect(value).toEqual({
       config: { prompt: "Estimate the number of taxis in Mumbai." },
+      dueAt: null,
       name: "Guesstimate",
+      opensAt: null,
+      requiresReview: false,
       submissionMode: "text",
     });
   });
@@ -205,5 +210,76 @@ describe("buildRoundsHref", () => {
     expect(buildRoundsHref({ courseId: 7, error: "duplicate-name" })).toBe(
       "/admin/courses/7?roundError=duplicate-name#rounds",
     );
+  });
+});
+
+describe("round dates", () => {
+  it("reads an opening date as the start of that day in IST", () => {
+    // 00:00 IST is 18:30 UTC the evening before. Stored as an instant, so the
+    // database never has to know which time zone an admin was sitting in.
+    expect(parseRoundDay("2026-10-01", "start")).toBe("2026-09-30T18:30:00.000Z");
+  });
+
+  it("reads a deadline as the end of that day, not its start", () => {
+    // A deadline of the 1st means the student has all of the 1st. Taking the
+    // start of the day would quietly cost them 24 hours.
+    expect(parseRoundDay("2026-10-01", "end")).toBe("2026-10-01T18:29:59.000Z");
+  });
+
+  it("treats an empty date as absent, and a malformed one as an error", () => {
+    expect(parseRoundDay("", "start")).toBeNull();
+    expect(parseRoundDay(undefined, "start")).toBeNull();
+    expect(parseRoundDay("01/10/2026", "start")).toBeUndefined();
+    expect(parseRoundDay("2026-13-45", "start")).toBeUndefined();
+  });
+
+  it("shows a stored instant back as the day the admin meant", () => {
+    // The round trip that matters: what was typed is what is displayed, even
+    // though the stored instant falls on the previous date in UTC.
+    expect(formatRoundDay("2026-09-30T18:30:00.000Z")).toBe("2026-10-01");
+    expect(formatRoundDay("2026-10-01T18:29:59.000Z")).toBe("2026-10-01");
+    expect(formatRoundDay(null)).toBeNull();
+  });
+
+  it("refuses a deadline that falls before the opening date", () => {
+    const { errors, value } = validateNewRound({
+      ...valid,
+      dueAt: "2026-10-01",
+      opensAt: "2026-10-09",
+    });
+
+    expect(value).toBeNull();
+    expect(errors.dates).toBeTruthy();
+  });
+
+  it("accepts a deadline on the same day it opens", () => {
+    const { value } = validateNewRound({
+      ...valid,
+      dueAt: "2026-10-01",
+      opensAt: "2026-10-01",
+    });
+
+    expect(value?.opensAt).toBe("2026-09-30T18:30:00.000Z");
+    expect(value?.dueAt).toBe("2026-10-01T18:29:59.000Z");
+  });
+
+  it("treats an absent review checkbox as no review", () => {
+    // An unticked checkbox sends nothing at all, so this is the difference
+    // between an application nobody reads and an essay a mentor must.
+    expect(validateNewRound(valid).value?.requiresReview).toBe(false);
+    expect(
+      validateNewRound({ ...valid, requiresReview: "on" }).value?.requiresReview,
+    ).toBe(true);
+  });
+});
+
+describe("the offline round", () => {
+  it("is a mode an admin can choose", () => {
+    const { value } = validateNewRound({ ...valid, submissionMode: "offline" });
+
+    expect(value?.submissionMode).toBe("offline");
+    // No questions are required: the student submits nothing, because the
+    // interview or group discussion happens off the platform.
+    expect(value?.config.fields).toBeUndefined();
   });
 });
