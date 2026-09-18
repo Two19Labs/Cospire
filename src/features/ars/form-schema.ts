@@ -269,3 +269,105 @@ export function stepProgress({ stepCount, stepIndex }: { stepCount: number; step
   const clamped = Math.min(Math.max(stepIndex, 0), stepCount);
   return Math.round((clamped / stepCount) * 100);
 }
+
+// --------------------------------------------------------------------------
+// Reading whatever a round actually carries
+// --------------------------------------------------------------------------
+
+export type RoundMode = "file" | "form" | "offline" | "text";
+
+// Rounds authored before this format existed carry `{ prompt, fields: [{label}] }`,
+// and rounds authored after it carry `{ steps: [...] }`. Both are live in the
+// same table and neither may break, so this normalises whatever is there into
+// one shape the renderer understands.
+//
+// Returning null is meaningful rather than an error: an `offline` round has no
+// form at all. It happens somewhere else and the student is shown its dates.
+export function toFormSpec(config: unknown, mode: RoundMode): FormSpec | null {
+  if (mode === "offline") return null;
+
+  const record = isRecord(config) ? config : {};
+  const prompt = typeof record.prompt === "string" ? record.prompt.trim() : "";
+
+  // The current format, authored against this schema.
+  if (Array.isArray(record.steps)) {
+    return isFormSpec(record) ? (record as unknown as FormSpec) : null;
+  }
+
+  if (mode === "text") {
+    return {
+      steps: [
+        {
+          key: "response",
+          title: "Your answer",
+          subtitle: prompt || undefined,
+          sections: [
+            {
+              fields: [
+                {
+                  key: "response",
+                  label: prompt || "Your answer",
+                  type: "long_text",
+                  required: true,
+                  ...(typeof record.wordLimit === "number" ? { wordLimit: record.wordLimit } : {}),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (mode === "file") {
+    return {
+      steps: [
+        {
+          key: "upload",
+          title: "Your upload",
+          subtitle: prompt || undefined,
+          sections: [
+            {
+              fields: [
+                {
+                  key: "upload",
+                  label: prompt || "Upload your file",
+                  type: "file",
+                  required: true,
+                  accept: ["pdf", "mp4", "mov", "webm", "jpg", "png"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  // Legacy `form`: a flat list of labels, with no keys of its own. Keys are
+  // derived from position, which is stable as long as nobody reorders the
+  // labels -- the reason the current format demands explicit keys.
+  const legacyFields = Array.isArray(record.fields) ? record.fields : [];
+  const fields: FormField[] = legacyFields
+    .map((entry, index): FormField | null => {
+      const label = isRecord(entry) && typeof entry.label === "string" ? entry.label.trim() : "";
+      return label ? { key: `field_${index + 1}`, label, type: "short_text", required: true } : null;
+    })
+    .filter((entry): entry is FormField => entry !== null);
+
+  if (fields.length === 0) return null;
+
+  return {
+    steps: [{ key: "form", title: "Your answers", subtitle: prompt || undefined, sections: [{ fields }] }],
+  };
+}
+
+// Every field in a spec, flattened in render order. The renderer needs this to
+// decide which posted values belong to the step being saved.
+export function fieldsForStep(step: FormStep): FormField[] {
+  return step.sections.flatMap((section) => section.fields);
+}
+
+export function allFields(spec: FormSpec): FormField[] {
+  return spec.steps.flatMap(fieldsForStep);
+}
