@@ -37,8 +37,17 @@ since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
 which is the current `main`; CI on it is green. **PR #27 is open** from
 `docs/review-pipeline`, adding only `docs/review-checklist.md`; its `context`,
 `verify`, Vercel and preview checks are all green. **PR #28 is open** from
-`feat/ars-report`, carrying the verified report database plus mentor/student UI;
-its `context`, `verify`, Vercel and preview checks are all green. #25's title
+`feat/ars-report`, carrying the report database plus mentor/student UI; its
+`context`, `verify`, Vercel and preview checks are all green.
+
+**What a green `verify` does and does not mean.** The CI job named `verify` runs
+`typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
+anything in `scripts/verify/`**, so no database probe and no HTTP check is
+reproduced by any check on any pull request. Every probe count recorded in this
+file is a local run. The job's name invites the opposite reading, and this
+sentence exists because a review found the two sitting side by side here and
+read as one claim. Do not quote "verify is green" at a client checkpoint as
+evidence the database was verified. #25's title
 and description were rewritten before merging, having described the
 `ars_feedback` table that the 2026-09-16 rework removed.
 
@@ -653,7 +662,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | -- | ARS report database and mentor/student workflow are pushed in PR #28 | -- | **Nothing claimed.** PR #28 awaits CI/review. The next report slice is admin template authoring; the next core ARS slice remains step 5, student submissions and mentor review | 2026-09-18 |
+| This chat | `feat/ars-report` | Corrections from the 2026-09-18 review of PR #28 | `supabase/migrations/20260918153000_*`, `src/features/ars-report/**`, `src/app/mentor/page.tsx`, `src/app/student/page.tsx`, `src/features/student/components/student-home.tsx`, `CONTEXT.md` | **In progress.** Fix-forward migration written, **not yet applied**; pagination and its tests done. The next report slice is admin template authoring; the next core ARS slice remains step 5, student submissions and mentor review | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1787,6 +1796,9 @@ time otherwise.
 | 2026-09-18 | Repository and context audit | `git fetch --prune origin` left `main` exactly at `origin/main` (`8ab93c7`) with green CI. The clean local `feat/ars-report` branch is one commit ahead and does not exist on `origin`; the first context-gate run correctly failed on that mismatch. GitHub reports PR #27 open and mergeable with `context`, `verify`, Vercel and preview checks green. `CONTEXT.md` was corrected to record both facts |
 | 2026-09-18 | Supabase migration history audit | `npx.cmd supabase migration list` against the linked hosted project: local and remote agree through `20260918080815`; `20260918094500` and `20260918095000` are local only and unapplied, as this file says. Supabase CLI is `2.116.0`; it reported `2.117.0` available. No database write was made |
 | 2026-09-18 | **ARS report migrations applied and reviewed** | `20260918094500` and `20260918095000` applied through the linked CLI. Review fixed two defects before application: a review transition clearing `submitted_late`, and same-organisation report rows accepting a mismatched run/student/template. The first live probe then found policy helpers with EXECUTE revoked from `authenticated`; append-only `20260918100815` corrected it. UI review found released reports could not load their template labels; append-only `20260918101442` corrected that |
+| 2026-09-18 | **PR #28 reviewed independently; five defects found, none caught by CI** | A read-only review against the live database. **Fixed forward in `20260918153000`:** (1) `grant select, insert on ars_reports` was column-**wide**, so a mentor could insert a draft carrying a fabricated `overall_score` -- directly beneath a comment claiming no caller could; (2) a template whose weightages exceeded 100 made an ordinary component save fail with a raw constraint error, never reaching the readable release message; (3) `private.ars_stamp_late` read `OLD` on a BEFORE **INSERT** OR UPDATE trigger; (4) `private.mentor_reaches_report` was a `SECURITY DEFINER` function nothing referenced. **Fixed in code:** both report list queries were unpaginated, the mentor one fanning an unbounded id list into four `IN` queries |
+| 2026-09-18 | **Append-only was broken on this branch** | `20260918094500` and `20260918095000` were committed in `42613b7` and then **edited** in `5eb6370` -- 18 and 141 lines, including real schema changes moving `student_id` and `written_by` to composite foreign keys. The live schema does match the final files, so clause 3.9's rebuild-from-git promise survives, **but only because someone re-applied by hand.** The rule exists so that never has to be checked. Corrections since then are fix-forward |
+| 2026-09-18 | Whether `OLD` raises on INSERT in PL/pgSQL | **UNVERIFIED and now moot.** Settling it needs an INSERT or a probe trigger; the review was read-only and refused to guess. The nested guard was restored in `20260918153000` rather than resting a live trigger on an unreproduced result. Note the two sibling functions in the same pull request already used the nested form, with comments explaining why, so the codebase had been contradicting itself |
 | 2026-09-18 | **ARS report database probe, 17 of 17** | `scripts/verify/ars-report.sql` through `supabase db query --linked`, one transaction rolled back. Proves late stamping and preservation after review; mismatched student/run and component/template refusal; forged authorship discarded; drafts hidden from students; incomplete release refused; weighted score 72.0; release timestamps and author stamps; owning student reads report, values and template labels; unrelated student and rival admin see zero rows |
 | 2026-09-18 | Report schema checks | Linked database lint: no errors. Security advisor: only the two pre-existing Auth warnings (leaked-password protection and insufficient MFA options). Performance advisor: the same three pre-existing multiple-permissive-policy warnings, none introduced by the report tables. Migration list agrees locally and remotely through `20260918101442` |
 | 2026-09-18 | **ARS report UI driven over HTTP, 12 of 12** | `scripts/verify/ars-report-ui.mjs` against a production build with throwaway accounts and real sessions. Mentor queue rendered; report created through its no-JavaScript Server Action; both weighted components and metric observations saved; 72/100 rendered; release succeeded; student home listed it; student read scores, observations and closing note. Cleanup restored 5 profiles, 1 assignment, 4 courses and zero report/template/component rows |

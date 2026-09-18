@@ -4,9 +4,11 @@ import type { Profile } from "@/features/auth/types";
 import { RoleShell } from "@/features/auth/components/role-shell";
 
 import { createReportAction } from "../actions/report-actions";
-import type { MentorReportRow } from "../queries/list-reports";
+import { buildReportsHref } from "../list-params";
+import type { MentorReportPage } from "../queries/list-reports";
 
-export function MentorReports({ profile, rows }: { profile: Profile; rows: MentorReportRow[] }) {
+export function MentorReports({ profile, reports }: { profile: Profile; reports: MentorReportPage }) {
+  const { page, pageCount, rows, total } = reports;
   return (
     <RoleShell profile={profile} title="Mentor workspace">
       <section className="panel">
@@ -15,6 +17,7 @@ export function MentorReports({ profile, rows }: { profile: Profile; rows: Mento
             <h2>ARS reports</h2>
             <p className="muted">Completed processes waiting for your assessment, followed by reports already released.</p>
           </div>
+          {total > 0 ? <p className="muted">{total} completed {total === 1 ? "process" : "processes"}</p> : null}
         </div>
         {rows.length === 0 ? <p className="muted">No completed ARS process is ready for a report yet.</p> : (
           <div className="report-list">
@@ -39,6 +42,27 @@ export function MentorReports({ profile, rows }: { profile: Profile; rows: Mento
             ))}
           </div>
         )}
+        {pageCount > 1 ? (
+          <nav aria-label="Pagination" className="pagination">
+            {page > 1 ? (
+              <Link href={buildReportsHref({ base: "/mentor", page: page - 1 })} rel="prev">
+                Previous
+              </Link>
+            ) : (
+              <span className="muted">Previous</span>
+            )}
+            <span className="muted">
+              Page {page} of {pageCount}
+            </span>
+            {page < pageCount ? (
+              <Link href={buildReportsHref({ base: "/mentor", page: page + 1 })} rel="next">
+                Next
+              </Link>
+            ) : (
+              <span className="muted">Next</span>
+            )}
+          </nav>
+        ) : null}
       </section>
     </RoleShell>
   );

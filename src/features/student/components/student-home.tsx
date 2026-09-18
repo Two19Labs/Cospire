@@ -3,9 +3,9 @@ import Link from "next/link";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { StudentReports } from "@/features/ars-report/components/student-reports";
-import type { StudentReportRow } from "@/features/ars-report/queries/list-reports";
+import type { StudentReportPage } from "@/features/ars-report/queries/list-reports";
 
-export function StudentHome({ profile, reports }: { profile: Profile; reports: StudentReportRow[] }) {
+export function StudentHome({ profile, reports }: { profile: Profile; reports: StudentReportPage }) {
   return (
     <RoleShell profile={profile} title="My learning">
       <section className="panel">
@@ -23,7 +23,7 @@ export function StudentHome({ profile, reports }: { profile: Profile; reports: S
           </Link>
         </div>
       </section>
-      <StudentReports rows={reports} />
+      <StudentReports reports={reports} />
     </RoleShell>
   );
 }

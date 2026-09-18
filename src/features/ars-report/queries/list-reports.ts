@@ -2,6 +2,8 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { mentorReportsPageSize, studentReportsPageSize } from "../list-params";
+
 export interface MentorReportRow {
   completedAt: string;
   courseTitle: string;
@@ -20,17 +22,48 @@ export interface StudentReportRow {
   reportId: number;
 }
 
-export async function listMentorReports(): Promise<MentorReportRow[]> {
+export interface MentorReportPage {
+  page: number;
+  pageCount: number;
+  rows: MentorReportRow[];
+  total: number;
+}
+
+export interface StudentReportPage {
+  page: number;
+  pageCount: number;
+  rows: StudentReportRow[];
+  total: number;
+}
+
+// No mentor filter and no organisation filter, for the same reason
+// `listCourses` has none: the policies on ars_process_runs and ars_reports
+// already scope a mentor to their assigned students and a student to
+// themselves. Restating that here would be application code impersonating the
+// access control, and would hide the difference if a policy ever changed.
+export async function listMentorReports({ page }: { page: number }): Promise<MentorReportPage> {
   const supabase = await createServerSupabaseClient();
-  const { data: runs, error } = await supabase
+  const from = (page - 1) * mentorReportsPageSize;
+
+  const { count, data: runs, error } = await supabase
     .from("ars_process_runs")
-    .select("id, course_id, student_id, completed_at")
+    .select("id, course_id, student_id, completed_at", { count: "exact" })
     .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false });
+    .order("completed_at", { ascending: false })
+    // A unique final sort key. Two runs completing in the same millisecond would
+    // otherwise come back in an arbitrary order and could swap between pages,
+    // showing one student twice and hiding another entirely.
+    .order("id", { ascending: false })
+    .range(from, from + mentorReportsPageSize - 1);
 
   if (error) throw new Error(`Unable to load completed ARS processes: ${error.message}`);
-  if (!runs?.length) return [];
 
+  const total = count ?? runs?.length ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / mentorReportsPageSize));
+  if (!runs?.length) return { page, pageCount, rows: [], total };
+
+  // Every list below is bounded by the page above, so these `IN` lists carry at
+  // most `mentorReportsPageSize` ids rather than however many rows exist.
   const runIds = runs.map((row) => row.id);
   const courseIds = [...new Set(runs.map((row) => row.course_id))];
   const studentIds = [...new Set(runs.map((row) => row.student_id))];
@@ -40,10 +73,14 @@ export async function listMentorReports(): Promise<MentorReportRow[]> {
       supabase.from("courses").select("id, title").in("id", courseIds),
       supabase.from("profiles").select("id, name").in("id", studentIds),
       supabase.from("ars_reports").select("id, run_id, status").in("run_id", runIds),
+      // Only the templates this page could actually use: one tied to a
+      // programme on the page, or the organisation-wide default. The ids are
+      // integers read back from the database, never user input.
       supabase
         .from("ars_report_templates")
         .select("id, course_id, name")
-        .eq("is_active", true),
+        .eq("is_active", true)
+        .or(`course_id.in.(${courseIds.join(",")}),course_id.is.null`),
     ]);
 
   for (const result of [coursesResult, studentsResult, reportsResult, templatesResult]) {
@@ -55,7 +92,7 @@ export async function listMentorReports(): Promise<MentorReportRow[]> {
   const reports = new Map((reportsResult.data ?? []).map((row) => [row.run_id, row]));
   const templates = templatesResult.data ?? [];
 
-  return runs.map((run) => {
+  const rows = runs.map((run) => {
     const report = reports.get(run.id);
     const template = templates.find((row) => row.course_id === run.course_id)
       ?? templates.find((row) => row.course_id === null);
@@ -70,18 +107,27 @@ export async function listMentorReports(): Promise<MentorReportRow[]> {
       templateName: template?.name ?? null,
     };
   });
+
+  return { page, pageCount, rows, total };
 }
 
-export async function listStudentReports(): Promise<StudentReportRow[]> {
+export async function listStudentReports({ page }: { page: number }): Promise<StudentReportPage> {
   const supabase = await createServerSupabaseClient();
-  const { data: reports, error } = await supabase
+  const from = (page - 1) * studentReportsPageSize;
+
+  const { count, data: reports, error } = await supabase
     .from("ars_reports")
-    .select("id, run_id, overall_score, released_at")
+    .select("id, run_id, overall_score, released_at", { count: "exact" })
     .eq("status", "released")
-    .order("released_at", { ascending: false });
+    .order("released_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(from, from + studentReportsPageSize - 1);
 
   if (error) throw new Error(`Unable to load released ARS reports: ${error.message}`);
-  if (!reports?.length) return [];
+
+  const total = count ?? reports?.length ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / studentReportsPageSize));
+  if (!reports?.length) return { page, pageCount, rows: [], total };
 
   const { data: runs, error: runsError } = await supabase
     .from("ars_process_runs")
@@ -98,10 +144,13 @@ export async function listStudentReports(): Promise<StudentReportRow[]> {
 
   const runCourses = new Map((runs ?? []).map((row) => [row.id, row.course_id]));
   const courseNames = new Map((courses ?? []).map((row) => [row.id, row.title]));
-  return reports.map((report) => ({
+
+  const rows = reports.map((report) => ({
     courseTitle: courseNames.get(runCourses.get(report.run_id) ?? -1) ?? "Programme",
     overallScore: report.overall_score,
     releasedAt: report.released_at as string,
     reportId: report.id,
   }));
+
+  return { page, pageCount, rows, total };
 }
