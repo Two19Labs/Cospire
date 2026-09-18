@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   Table,
   TableBody,
@@ -99,6 +101,12 @@ export function RoundsPanel({
                     action rebuilds the destination from a literal path, which is
                     what stops this being an open redirect.
                   */}
+                  <Link
+                    className="button button--compact button--secondary"
+                    href={`/admin/courses/${courseId}/rounds/${round.id}`}
+                  >
+                    Edit round
+                  </Link>
                   <form action={deleteRoundAction}>
                     <input name="courseId" type="hidden" value={courseId} />
                     <input name="roundId" type="hidden" value={round.id} />
@@ -176,7 +184,7 @@ export function RoundsPanel({
         </label>
 
         <label className="field">
-          <span>Questions, one per line</span>
+          <span>Questions, one per line (optional)</span>
           <textarea
             className="input"
             name="fields"
@@ -184,8 +192,9 @@ export function RoundsPanel({
             rows={3}
           />
           <span className="muted">
-            Only used when the round is a set of written answers. Ignored
-            otherwise.
+            A quick start only. Once the round exists, use <strong>Edit round</strong>
+            {" "}to build the real form — pages, sections, and a type for every
+            question — with a preview of what the student sees.
           </span>
         </label>
 
