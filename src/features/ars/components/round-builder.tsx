@@ -121,17 +121,17 @@ function AddField({
   return (
     <details className="builder__disclosure">
       <summary>+ Add a question</summary>
-      <form action={addFieldAction} className="stack-form">
+      <form action={addFieldAction} className="stack-form builder__addq">
         <Ids courseId={courseId} roundId={roundId} />
         <input name="stepKey" type="hidden" value={stepKey} />
         <input name="sectionIndex" type="hidden" value={sectionIndex} />
 
         <div className="builder__grid builder__grid--pair">
-          <div>
+          <div className="builder__field-group">
             <label htmlFor={`label-${uid}`}>Question</label>
             <input id={`label-${uid}`} maxLength={200} name="label" placeholder="Full Name" required type="text" />
           </div>
-          <div>
+          <div className="builder__field-group">
             <label htmlFor={`type-${uid}`}>Type</label>
             <select defaultValue="short_text" id={`type-${uid}`} name="type">
               {Object.entries(typeLabels).map(([value, label]) => (
@@ -141,32 +141,28 @@ function AddField({
           </div>
         </div>
 
+        {/* Shown only for the types that can have options. See the `:has()`
+            rule in globals.css -- no JavaScript, and it falls back to showing
+            everything where `:has()` is unsupported. */}
+        <div className="builder__options builder__field-group">
+          <label htmlFor={`options-${uid}`}>Options — one per line</label>
+          <textarea id={`options-${uid}`} name="options" placeholder={"Male\nFemale\nOther"} rows={3} />
+        </div>
+
+        <div className="builder__wordlimit builder__field-group">
+          <label htmlFor={`wordLimit-${uid}`}>Word limit</label>
+          <input id={`wordLimit-${uid}`} inputMode="numeric" name="wordLimit" placeholder="200" type="text" />
+        </div>
+
+        <div className="builder__field-group">
+          <label htmlFor={`helpText-${uid}`}>Help text (optional)</label>
+          <input id={`helpText-${uid}`} maxLength={300} name="helpText" type="text" />
+        </div>
+
         <label className="choice" htmlFor={`required-${uid}`}>
           <input defaultChecked id={`required-${uid}`} name="required" type="checkbox" />
           <span>Required</span>
         </label>
-
-        <div className="builder__conditional">
-          <p className="builder__hint">
-            The next three apply to some question types only, and are ignored by the rest.
-          </p>
-          <div>
-            <label htmlFor={`options-${uid}`}>Options — one per line</label>
-            <textarea id={`options-${uid}`} name="options" placeholder={"Male\nFemale\nOther"} rows={3} />
-            <p className="builder__hint">Dropdown, multiple choice, single choice and score list.</p>
-          </div>
-          <div className="builder__grid builder__grid--pair">
-            <div>
-              <label htmlFor={`helpText-${uid}`}>Help text</label>
-              <input id={`helpText-${uid}`} maxLength={300} name="helpText" type="text" />
-            </div>
-            <div>
-              <label htmlFor={`wordLimit-${uid}`}>Word limit</label>
-              <input id={`wordLimit-${uid}`} inputMode="numeric" name="wordLimit" placeholder="200" type="text" />
-              <p className="builder__hint">Long answers only.</p>
-            </div>
-          </div>
-        </div>
 
         <button className="button button--primary" type="submit">Add question</button>
       </form>

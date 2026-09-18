@@ -178,9 +178,22 @@ function checkField(raw: unknown, where: string, problems: SpecProblem[], seen: 
   }
 }
 
+export interface ValidateOptions {
+  // A form being BUILT legitimately has an empty section: the admin has just
+  // added one and has not put a question in it yet. A form shown to a STUDENT
+  // must not, because it renders as a heading with nothing under it.
+  //
+  // Reading stored config is lenient and rendering is strict. Getting this the
+  // wrong way round cost a real bug on 2026-09-18: `toFormSpec` validated
+  // strictly, so the moment an admin added a section the stored form failed to
+  // parse, every caller fell back to the empty form, and the whole thing
+  // silently reverted to "Page 1".
+  allowEmptySections?: boolean;
+}
+
 // Returns every problem rather than the first, because an admin fixing a form
 // one error per save is an admin who stops using the feature.
-export function validateFormSpec(raw: unknown): SpecProblem[] {
+export function validateFormSpec(raw: unknown, options: ValidateOptions = {}): SpecProblem[] {
   const problems: SpecProblem[] = [];
 
   if (!isRecord(raw)) {
@@ -232,8 +245,14 @@ export function validateFormSpec(raw: unknown): SpecProblem[] {
         return;
       }
       const fields = section.fields;
-      if (!Array.isArray(fields) || fields.length === 0) {
+      if (!Array.isArray(fields)) {
         problems.push({ message: "A section needs at least one field.", where: sectionWhere });
+        return;
+      }
+      if (fields.length === 0) {
+        if (!options.allowEmptySections) {
+          problems.push({ message: "A section needs at least one field.", where: sectionWhere });
+        }
         return;
       }
       fieldCount += fields.length;
@@ -252,8 +271,11 @@ export function validateFormSpec(raw: unknown): SpecProblem[] {
   return problems;
 }
 
+// Lenient on purpose: this reads config back out of the database, where a
+// half-built form is a normal state. Strictness belongs at the point a student
+// is shown the form, which is `readyForStudents`.
 export function isFormSpec(raw: unknown): raw is FormSpec {
-  return validateFormSpec(raw).length === 0;
+  return validateFormSpec(raw, { allowEmptySections: true }).length === 0;
 }
 
 // Counts words the way a reader would, so the number under the box matches what

@@ -891,3 +891,72 @@ a.button {
   font-size: 0.75rem;
   font-style: italic;
 }
+
+/* Form controls inside the builder, so every input is styled without having to
+   remember a class on each one -- which is exactly what went wrong in the first
+   pass. Radios and checkboxes are excluded: `.choice` already places them. */
+.builder input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),
+.builder select,
+.builder textarea {
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--foreground);
+  font: inherit;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+}
+
+.builder textarea {
+  line-height: 1.5;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.builder input:not([type="radio"]):not([type="checkbox"]):focus,
+.builder select:focus,
+.builder textarea:focus {
+  border-color: var(--ink);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* A label is inline by default, so without this it sits on the same line as its
+   input. That is what the first pass shipped. */
+.builder label:not(.choice) {
+  color: var(--ink-70);
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+
+.builder__field-group {
+  display: block;
+}
+
+/* Only the parts that apply to the chosen question type.
+   `:has()` with `option:checked` tracks the select live, so this needs no
+   JavaScript -- which matters, because every screen here works with scripting
+   off. Guarded by @supports so a browser without `:has()` shows everything
+   rather than hiding controls the admin then cannot reach. */
+@supports selector(:has(*)) {
+  .builder__addq .builder__options,
+  .builder__addq .builder__wordlimit {
+    display: none;
+  }
+
+  .builder__addq:has(option[value="select"]:checked) .builder__options,
+  .builder__addq:has(option[value="radio"]:checked) .builder__options,
+  .builder__addq:has(option[value="single_choice"]:checked) .builder__options,
+  .builder__addq:has(option[value="score_list"]:checked) .builder__options {
+    display: block;
+  }
+
+  .builder__addq:has(option[value="long_text"]:checked) .builder__wordlimit {
+    display: block;
+  }
+}

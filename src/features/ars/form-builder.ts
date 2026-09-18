@@ -66,28 +66,15 @@ function keysIn(spec: FormSpec): Set<string> {
   return keys;
 }
 
-// A form mid-build legitimately has an empty section -- the admin has just added
-// one and has not put a field in it yet. `validateFormSpec` refuses that, because
-// a form shown to a STUDENT with an empty section is a defect. So builder state
-// is checked with the empty sections temporarily filled, and the real check
-// happens when the round is saved.
+// Every operation ends here. An operation that would produce a form the reader
+// cannot parse is refused, so a bug in one of them surfaces as a refused click
+// rather than as a round that silently resets itself.
+//
+// Empty sections are allowed, because a half-built form is a normal state to
+// leave overnight. `readyForStudents` is the strict check, and the builder shows
+// its verdict as a warning rather than refusing the save.
 function settleAllowingEmpty(spec: FormSpec): BuildResult {
-  const probe = clone(spec);
-  // The placeholder key must be unique per section: two empty sections sharing
-  // one would trip the duplicate-key rule and report a collision that exists
-  // only in this probe, not in the form the admin is building.
-  let placeholder = 0;
-  for (const step of probe.steps) {
-    for (const section of step.sections) {
-      if (section.fields.length === 0) {
-        placeholder += 1;
-        section.fields = [
-          { key: `placeholder_only_${placeholder}`, label: "placeholder", type: "short_text" },
-        ];
-      }
-    }
-  }
-  const problems = validateFormSpec(probe);
+  const problems = validateFormSpec(spec, { allowEmptySections: true });
   if (problems.length > 0) return { ok: false, message: problems[0].message };
   return { ok: true, spec };
 }

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   countWords,
+  isFormSpec,
   stepProgress,
+  toFormSpec,
   validateFormSpec,
   type FormSpec,
 } from "./form-schema";
@@ -275,5 +277,49 @@ describe("stepProgress", () => {
     expect(stepProgress({ stepCount: 4, stepIndex: -2 })).toBe(0);
     expect(stepProgress({ stepCount: 4, stepIndex: 99 })).toBe(100);
     expect(stepProgress({ stepCount: 0, stepIndex: 1 })).toBe(0);
+  });
+});
+
+describe("reading a half-built form back", () => {
+  // The regression this exists for, found by the owner on 2026-09-18: adding a
+  // section created an empty one, `toFormSpec` validated strictly and returned
+  // null, every caller fell back to the empty form, and the admin watched the
+  // whole form revert to "Page 1". Renaming looked broken; the form was being
+  // discarded before the rename landed.
+  const halfBuilt = {
+    steps: [
+      {
+        key: "personal",
+        title: "Personal Details",
+        sections: [
+          { title: "About You", fields: [{ key: "full_name", label: "Full Name", type: "short_text" }] },
+          { title: "Parent / Guardian Details", fields: [] },
+        ],
+      },
+    ],
+  };
+
+  it("survives a section with no questions in it yet", () => {
+    const spec = toFormSpec(halfBuilt, "form");
+    expect(spec).not.toBeNull();
+    expect(spec?.steps[0].title).toBe("Personal Details");
+    expect(spec?.steps[0].sections).toHaveLength(2);
+  });
+
+  it("never silently returns the empty form for a form that exists", () => {
+    // The failure mode was data loss, not a visible error.
+    const spec = toFormSpec(halfBuilt, "form");
+    expect(spec?.steps[0].key).not.toBe("page_1");
+  });
+
+  it("is lenient when reading and strict when rendering", () => {
+    expect(isFormSpec(halfBuilt)).toBe(true);
+    expect(validateFormSpec(halfBuilt)).not.toEqual([]);
+    expect(validateFormSpec(halfBuilt, { allowEmptySections: true })).toEqual([]);
+  });
+
+  it("still refuses config that is genuinely unreadable", () => {
+    expect(toFormSpec({ steps: [{ key: "x", title: "X", sections: [{ fields: [{ type: "nope" }] }] }] }, "form")).toBeNull();
+    expect(toFormSpec({ steps: [] }, "form")).toBeNull();
   });
 });
