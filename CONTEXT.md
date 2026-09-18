@@ -577,7 +577,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | `feat/ars-submissions` (unmerged, pushed) | **Phase 5a steps 3, 4 and 4b**, all applied to the hosted database | `supabase/migrations/2026091*`, `src/features/ars/**`, `src/app/globals.css`, `scripts/verify/ars-scheduling.mjs`, `src/shared/db/types.ts` (regenerated) | **Nothing claimed.** The database work is done and verified; the branch is pushed and unmerged. Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
+| None | `feat/ars-submissions` | **Phase 5a steps 3, 4 and 4b**, all applied to the hosted database. Branch pushed, not merged | `supabase/migrations/2026091*`, `src/features/ars/**`, `src/app/globals.css`, `scripts/verify/ars-scheduling.mjs`, `src/shared/db/types.ts` (regenerated) | **Nothing claimed.** The database work is done and verified; the branch is pushed and unmerged. Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
