@@ -31,11 +31,11 @@ plus 15 checks driven over HTTP. **The next build step is step 5**, the student
 route and the mentor review queue, which is also the first UI since the design
 foundation landed.
 
-**Two pull requests are open and unmerged since 2026-09-12**: #24, the CONTEXT
-cleanup, and #25, the ARS work, still marked draft and carrying a description
-that predates the 2026-09-16 rework. `main` has not moved since PR #23, so
-**nothing built since 2026-09-12 is deployed**. `gh` is logged out, so neither
-can be merged from a session until `gh auth login` is run.
+**The CONTEXT cleanup merged on 2026-09-18** as `00a43f3`, the first movement on
+`main` since 2026-09-12. The ARS work is #25, rebased onto `main` and ready for
+review; its title and description were rewritten on 2026-09-18, having previously
+described the `ars_feedback` table that the 2026-09-16 rework removed. Until it
+merges, **nothing built since 2026-09-12 is deployed**.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -175,16 +175,20 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #23 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
+- **Everything through PR #24 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
   #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
-  last two conflicted in this file; #23 was rebased and resolved by hand.
-- **Open since 2026-09-12, both awaiting the owner:** PR #24 (this file's
-  cleanup) and PR #25 (step 3, draft, based on #24). `main` is unchanged at
-  `e1644d0`, so nothing from either is live.
+  last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
+  file's cleanup, merged 2026-09-18 as `00a43f3`.
+- **Open: #25**, Phase 5a steps 3, 4 and 4b. It was stacked on #24's branch, so
+  merging #24 with `--delete-branch` **closed** it rather than retargeting it;
+  reopening needed that branch pushed back before the base could be moved to
+  `main`. **Do not delete the base branch of a stacked pull request.** It was then
+  rebased onto `main`, where git skipped the squashed cleanup commit as already
+  applied.
 - Merged branches still on the remote and safe to prune: `feat/documents`,
   `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
   `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
-  `feat/design-foundation`.
+  `feat/design-foundation`, `docs/context-truth`.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -204,16 +208,17 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Tool | State | Use it for |
 |---|---|---|
 | Supabase CLI | Logged in and **linked** | `npm run db:migrate` for migrations, `supabase config push` for auth settings, `npm run db:types` |
-| GitHub CLI (`gh`) | Installed. **Logged out as of 2026-09-18** -- `gh auth status` reports no host, where it worked on 2026-09-12. Run `gh auth login` before expecting any PR command to work | Creating pull requests, watching CI, merging |
+| GitHub CLI (`gh`) | Installed and **logged in as `Two19Labs`** (2026-09-18, scopes `repo`, `read:org`, `gist`). If a session reports no host, run `gh auth login` | Creating pull requests, watching CI, merging |
 | Supabase MCP | Available, **read-only by policy** | Inspecting tables, advisors, logs. Never DDL; see operating manual §4.5 |
 | Docker | **Unavailable** | `db:reset`, `db:lint` and `db:test` cannot run here |
 
 Two operational notes that cost time to rediscover:
 
-- **`gh` must be run from PowerShell, not Git Bash.** Its token lives in the
-  Windows keyring, which the Git Bash environment cannot read, so `gh auth status`
-  reports logged out there while working correctly in PowerShell. `gh.exe` sits at
-  `%ProgramFiles%\GitHub CLI\gh.exe`.
+- **`gh` reads the same credentials from PowerShell and from Git Bash.** An earlier
+  note here claimed the token was visible only to PowerShell; that was checked on
+  2026-09-18 and is **wrong** -- both reported logged out because no login had
+  completed. After `gh auth login` both see the account. `gh.exe` sits at
+  `%ProgramFiles%\GitHub CLI\gh.exe`, which Git Bash must call by full path.
 - **Migrations go through the CLI**, now that the project is linked. The MCP
   server is for reading. Phase 0 applied two migrations through MCP out of
   necessity and reconciled the history afterwards; that route is no longer needed.
@@ -770,7 +775,7 @@ Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
 Current live counts, re-measured 2026-09-18 after the step 3 probes were rolled
-back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 3 courses, 4 content
+back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 4 courses, 4 content
 grants, 2 documents, and 0 rows in every ARS table.** Courses rose from 1 to 3
 and grants from 3 to 4 during the owner's manual test pass of 2026-09-14, and a
 fourth course ("Mesa") was added by the owner on 2026-09-18; those rows are the
@@ -1691,7 +1696,7 @@ time otherwise.
 | 2026-09-03 | PDF.js rendering in a browser | **Pass**, confirmed by the owner: pages render and a page saved as an image carries the reader's name. Found two defects, both fixed in `6880ac3`: the stamp read UTC rather than IST, and a PDF.js worker leaked per navigation |
 | 2026-09-18 | **Step 3 migration applied** | `20260911200751` pushed with `npm run db:migrate` against `eeeftjwvbppznsmcljnw`. Three tables, RLS enabled and forced on all three, four triggers, three helpers |
 | 2026-09-18 | **Step 3 verified, 17 probes, all as designed** | In one rolled-back transaction with `set local role authenticated` and real JWT claims. Passing: a student's own draft; the sequence rule refusing round 2 before round 1 (42501); an insert carrying **another student's** id refused; a second attempt with no grant refused; an admin grant then attempt_no=2; the run row and its order snapshot created automatically; an unrelated student seeing **0 rows**; the assigned mentor seeing handed-in work but **0 drafts**; a mentor editing an answer refused, marking reviewed allowed; `completed_at` stamped once every round was in; a student deleting a submission refused; and deleting an answered round refused with **23503** |
-| 2026-09-18 | Probe isolation | Live counts re-checked after the rollback: 0 rows in all three ARS tables, courses still 3, documents still 2, profiles still 5. Nothing of the owner's was touched |
+| 2026-09-18 | Probe isolation | Live counts re-checked after the rollback: 0 rows in all three ARS tables, courses still 4, documents still 2, profiles still 5. Nothing of the owner's was touched |
 | 2026-09-18 | `typecheck` / `lint` / `test` / `build` | Pass. 128 tests. Production build clean |
 | 2026-09-18 | Security advisor after the migration | The same two pre-existing WARN items (leaked-password protection needs Pro; MFA is a scope decision). **No new findings** |
 | 2026-09-18 | **ARS bucket applied and probed, 12 checks** | A student uploading beneath their own prefix allowed; into **another student's prefix refused**; into the `documents` bucket refused; the owning student reads their own file; **a mentor sees nothing while it is a draft** and the file once it is handed in; an unrelated student, another organisation's admin and an anonymous caller all see **0 rows** by the exact storage path; an anonymous upload refused |
@@ -1734,8 +1739,9 @@ left in this phase:
 - **The per-screen re-skin of the 13 existing routes**, deliberately left until
   the features stop moving, because a re-skin touches every route.
 
-**Merge or close the two open pull requests** (#24, this file's cleanup; #25,
-step 3 as a draft). They have been open since 2026-09-12 and `main` has not moved.
+**Merge #25** and record it here afterwards, then prune the merged branches listed
+under *Current repository state*. #24 merged on 2026-09-18 and `main` moved for the
+first time since 2026-09-12.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
