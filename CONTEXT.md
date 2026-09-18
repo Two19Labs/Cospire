@@ -31,11 +31,12 @@ plus 15 checks driven over HTTP. **The next build step is step 5**, the student
 route and the mentor review queue, which is also the first UI since the design
 foundation landed.
 
-**The CONTEXT cleanup merged on 2026-09-18** as `00a43f3`, the first movement on
-`main` since 2026-09-12. The ARS work is #25, rebased onto `main` and ready for
-review; its title and description were rewritten on 2026-09-18, having previously
-described the `ars_feedback` table that the 2026-09-16 rework removed. Until it
-merges, **nothing built since 2026-09-12 is deployed**.
+**Both open pull requests merged on 2026-09-18**, and `main` moved for the first
+time since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4
+and 4b as `ce147b3`. **Everything built is now deployed** -- Production is on
+`ce147b3` and CI on `main` is green. #25's title and description were rewritten
+before merging, having described the `ars_feedback` table that the 2026-09-16
+rework removed.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -175,16 +176,23 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #24 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
+- **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
   #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
   last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
-  file's cleanup, merged 2026-09-18 as `00a43f3`.
-- **Open: #25**, Phase 5a steps 3, 4 and 4b. It was stacked on #24's branch, so
+  file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
+  4b, merged the same day as `ce147b3`.
+- **No pull request is open.** #25 was stacked on #24's branch, so
   merging #24 with `--delete-branch` **closed** it rather than retargeting it;
   reopening needed that branch pushed back before the base could be moved to
   `main`. **Do not delete the base branch of a stacked pull request.** It was then
   rebased onto `main`, where git skipped the squashed cleanup commit as already
   applied.
+- **The context gate fails on `main` for any pull request that describes itself as
+  open.** It did so for #24: the file merged saying #24 was open, which by then it
+  was not. `verify` passed and only `context` failed. The fix is the follow-up
+  commit that records the merge, which is what this entry is; the alternative,
+  claiming a merge before it happens, would make the gate lie in the worse
+  direction.
 - Merged branches still on the remote and safe to prune: `feat/documents`,
   `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
   `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
@@ -582,7 +590,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | `feat/ars-submissions` | **Phase 5a steps 3, 4 and 4b**, all applied to the hosted database. Branch pushed, not merged | `supabase/migrations/2026091*`, `src/features/ars/**`, `src/app/globals.css`, `scripts/verify/ars-scheduling.mjs`, `src/shared/db/types.ts` (regenerated) | **Nothing claimed.** The database work is done and verified; the branch is pushed and unmerged. Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
+| None | -- | **Phase 5a steps 3, 4 and 4b are merged and deployed** (`ce147b3`) | -- | **Nothing claimed.** Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1265,9 +1273,9 @@ file **at its Storage path**.
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
-| 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done at the database, 2026-09-18.** `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
-| 4. The Storage bucket and its policies on `storage.objects` | **Done at the database, 2026-09-18.** `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
-| 4b. Round dates, `requires_review`, and the `offline` round type | **Done at the database and in the admin form, 2026-09-18.** From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
+| 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
+| 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
+| 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
 | 5. The student submission route and the mentor review queue | Not started. The first UI since the design foundation landed, so it is built to the prototype's patterns rather than re-skinned later |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
@@ -1706,6 +1714,7 @@ time otherwise.
 | 2026-09-18 | **Round scheduling and offline rounds, 8 probes** | A deadline before the opening date refused (23514); a student submitting an **off-platform round refused** (42501); the run correctly **not** complete until the interview was recorded; the assigned mentor recording it allowed; that same mentor recording a *written* round for a student refused; `completed_at` stamped once the interview was in; `requires_review` stored per round |
 | 2026-09-18 | Round dates, unit tested | 136 tests, up from 128. The cases worth naming: an opening date is the **start** of that day in IST and a deadline the **end** of it, so a deadline of the 1st does not quietly cost a student 24 hours; a stored instant displays as the day the admin typed even though it falls on the previous date in UTC |
 | 2026-09-18 | **Round scheduling driven over HTTP, 15 of 15** | `scripts/verify/ars-scheduling.mjs` against a running app with a throwaway admin's real session, every form posted through the no-JavaScript path. Dates stored as the right instants and shown back as the days typed; a backwards deadline and a malformed date both refused and creating nothing; an unticked review box reading `false`; an `offline` round authored. The last two checks read the **served** stylesheet rather than the source, which is how the font that rendered nowhere was caught |
+| 2026-09-18 | **PRs #24 and #25 merged, `main` deployed** | `main` moved from `e1644d0` to `ce147b3`, the first movement since 2026-09-12. CI green on `main`; Production deployment reports success on `ce147b3`. The deployed URL answers: `/login` 200, `/admin/courses`, `/student` and `/mentor` all 307 to sign-in for an anonymous caller. **The new admin round-date fields are not verified through a browser** -- they sit behind an admin session and no signed-in check was run after the deploy |
 | 2026-09-18 | `.stack-form`, `.choice` and `.field-row` were never defined | The round form had been using all three since it was written, so it rendered unstyled -- visible in the owner's screenshot of 2026-09-15. Now defined on the design tokens |
 
 ## Next recommended action
@@ -1739,9 +1748,8 @@ left in this phase:
 - **The per-screen re-skin of the 13 existing routes**, deliberately left until
   the features stop moving, because a re-skin touches every route.
 
-**Merge #25** and record it here afterwards, then prune the merged branches listed
-under *Current repository state*. #24 merged on 2026-09-18 and `main` moved for the
-first time since 2026-09-12.
+**Both pull requests are merged and deployed** (2026-09-18). The merged branches
+listed under *Current repository state* can now be pruned.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
