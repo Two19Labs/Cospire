@@ -36,9 +36,11 @@ since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
 4b as `ce147b3`. The follow-up context correction merged as PR #26 (`8ab93c7`),
 which is the current `main`; CI on it is green. **PR #27 is open** from
 `docs/review-pipeline`, adding only `docs/review-checklist.md`; its `context`,
-`verify`, Vercel and preview checks are all green. #25's title and description
-were rewritten before merging, having described the `ars_feedback` table that
-the 2026-09-16 rework removed.
+`verify`, Vercel and preview checks are all green. **PR #28 is open** from
+`feat/ars-report`, carrying the verified report database plus mentor/student UI;
+its checks were pending when this sentence was written. #25's title and
+description were rewritten before merging, having described the `ars_feedback`
+table that the 2026-09-16 rework removed.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -191,6 +193,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   `main`. **Do not delete the base branch of a stacked pull request.** It was then
   rebased onto `main`, where git skipped the squashed cleanup commit as already
   applied.
+- **PR #28 is open** from `feat/ars-report` into `main`. It contains the applied
+  report migrations, mentor/student UI and both verification harnesses. Admin
+  template authoring remains a later slice and is not claimed by that PR.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
@@ -648,7 +653,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| This chat | -- | **Local-only branch `feat/ars-report` (not on `origin`)**: the ARS report (template plus filled reports) and late-submission stamping | `supabase/migrations/20260918094500_*`, `supabase/migrations/20260918095000_*`, `supabase/migrations/20260918100815_*`, `supabase/migrations/20260918101442_*`, `scripts/verify/ars-report*`, `src/shared/db/types.ts`, `src/features/ars-report/**`, `src/app/mentor/**`, `src/app/student/**`, `src/features/mentor/components/mentor-home.tsx`, `src/features/student/components/student-home.tsx`, `src/app/globals.css`, `CONTEXT.md` | **In progress and unpublished.** All four migrations are applied. The rollback-only database probe passes 17/17. Mentor/student UI typechecks, lints, passes 136 tests and builds; its real HTTP workflow is the remaining verification | 2026-09-18 |
+| None | -- | ARS report database and mentor/student workflow are pushed in PR #28 | -- | **Nothing claimed.** PR #28 awaits CI/review. The next report slice is admin template authoring; the next core ARS slice remains step 5, student submissions and mentor review | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1825,10 +1830,10 @@ left in this phase:
 `docs/review-pipeline` branch when ready. The other merged branches listed under
 *Current repository state* can be pruned.
 
-**The ARS report branch is local only.** Push `feat/ars-report` before handing it
-to a reviewer or another worker. Four migrations are applied and agree with the
-repository; the database probe is 17/17 and the HTTP workflow is 12/12. The
-remaining product gap is admin template authoring, not mentor/student reporting.
+**The ARS report work is pushed in PR #28.** Four migrations are applied and
+agree with the repository; the database probe is 17/17 and the HTTP workflow is
+12/12. The remaining product gap is admin template authoring, not
+mentor/student reporting.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
