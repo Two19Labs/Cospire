@@ -35,9 +35,10 @@ foundation landed.
 since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
 4b as `ce147b3`. The follow-up context correction merged as PR #26 (`8ab93c7`),
 CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
-`docs/review-checklist.md`, which is now the current `main`. **PR #28 is open** from
-`feat/ars-report`, carrying the report database plus mentor/student UI; its
-`context`, `verify`, Vercel and preview checks are all green.
+`docs/review-checklist.md`. The ARS report merged as PR #28 (`17cc78d`), which is
+the current `main` and is **deployed to Production**: the report database, the
+mentor and student screens, admin template authoring, and the corrections a
+review found. **No pull request is open.**
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -200,9 +201,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   `main`. **Do not delete the base branch of a stacked pull request.** It was then
   rebased onto `main`, where git skipped the squashed cleanup commit as already
   applied.
-- **PR #28 is open** from `feat/ars-report` into `main`. It contains the applied
-  report migrations, mentor/student UI and both verification harnesses. Admin
-  template authoring remains a later slice and is not claimed by that PR.
+- **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
+  the mentor and student screens, **admin template authoring**, pagination, and
+  the fix-forward migration `20260918153000`. Code and database are back in step
+  -- all 16 migrations are applied and all 16 are on `main`.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
@@ -660,7 +662,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| This chat | `feat/ars-report` | Corrections from the 2026-09-18 review of PR #28 | `supabase/migrations/20260918153000_*`, `src/features/ars-report/**`, `src/app/mentor/page.tsx`, `src/app/student/page.tsx`, `src/features/student/components/student-home.tsx`, `CONTEXT.md` | **In progress.** Fix-forward migration `20260918153000` **applied and verified**; pagination done; **admin report-template authoring built** at `/admin/report-templates`, which was the gate on the report being usable at all. **No migration** -- the tables already existed. The next report slice is admin template authoring; the next core ARS slice remains step 5, student submissions and mentor review | 2026-09-18 |
+| None | -- | **Phase 5a report work is merged and deployed** (`17cc78d`) | -- | **Nothing claimed.** The next slice is **step 5, the student submission route**, which is the missing link: a run is created by a student's first submission, so the mentor queue stays empty and no report can be started until it exists | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1797,6 +1799,7 @@ time otherwise.
 | 2026-09-18 | **PR #28 reviewed independently; five defects found, none caught by CI** | A read-only review against the live database. **Fixed forward in `20260918153000`:** (1) `grant select, insert on ars_reports` was column-**wide**, so a mentor could insert a draft carrying a fabricated `overall_score` -- directly beneath a comment claiming no caller could; (2) a template whose weightages exceeded 100 made an ordinary component save fail with a raw constraint error, never reaching the readable release message; (3) `private.ars_stamp_late` read `OLD` on a BEFORE **INSERT** OR UPDATE trigger; (4) `private.mentor_reaches_report` was a `SECURITY DEFINER` function nothing referenced. **Fixed in code:** both report list queries were unpaginated, the mentor one fanning an unbounded id list into four `IN` queries |
 | 2026-09-18 | **Append-only was broken on this branch** | `20260918094500` and `20260918095000` were committed in `42613b7` and then **edited** in `5eb6370` -- 18 and 141 lines, including real schema changes moving `student_id` and `written_by` to composite foreign keys. The live schema does match the final files, so clause 3.9's rebuild-from-git promise survives, **but only because someone re-applied by hand.** The rule exists so that never has to be checked. Corrections since then are fix-forward |
 | 2026-09-18 | Whether `OLD` raises on INSERT in PL/pgSQL | **UNVERIFIED and now moot.** Settling it needs an INSERT or a probe trigger; the review was read-only and refused to guess. The nested guard was restored in `20260918153000` rather than resting a live trigger on an unreproduced result. Note the two sibling functions in the same pull request already used the nested form, with comments explaining why, so the codebase had been contradicting itself |
+| 2026-09-18 | **PRs #27 and #28 merged and deployed** | `main` moved `8ab93c7` -> `6a39649` -> `17cc78d`, and Production reports success on `17cc78d`. Code and database are in step: 16 migrations applied, 16 on `main`. **CI on `main` failed on the `context` job for the merge commit**, which is the known artifact rather than a defect -- the file merged describing #28 as open, which by then it was not. `verify` passed. This commit is the fix |
 | 2026-09-18 | **Admin report-template authoring built** | `/admin/report-templates` list and detail. Until this existed a template could only be created by hand-written SQL against the live database, which operating manual §4.5 forbids, so the report shipped with no way for the Client to switch it on. Server Components and plain forms throughout, so the no-JavaScript path is the only path. 159 unit tests, up from 144. **No migration needed** |
 | 2026-09-18 | **The deferred-constraint trap is handled, not just documented** | The weightages form posts every component together and `orderWeightageChanges` applies every decrease before any increase, so the running total is non-increasing until the last step and no intermediate state can exceed 100 whenever the final state does not. That makes a straight swap -- A 40->60 with B 60->40 -- work across separate PostgREST transactions, where editing one at a time would be refused. Unit tested, including a running-total assertion |
 | 2026-09-18 | A unit test asserted the wrong thing and was corrected, not the code | `validateWeightage(" 20 ")` returns 20 because the field is trimmed. The test had asserted a refusal. Trimming is right here and deliberately the opposite of `parsePage`, which refuses `" 2"`: an admin typing a percentage may leave a stray space, while a space in a URL parameter means someone built it by hand |
