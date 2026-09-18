@@ -326,6 +326,58 @@ decisions of 2026-09-12, **the Client's answer wins and this section is right.**
   "got a little confused, but everything is clarified", and the matter was left.
   They read as course bundles of videos, PDFs and tests rather than ARS rounds.
 
+### The report template, supplied 2026-09-18
+
+The Client supplied a completed sample report, and the owner confirmed it is the
+shape to build. **The file is not in this repository and must not be**: it names
+a real student and carries her board marks, her venture, and candid assessments
+of her communication. Clause 13.3 and the rule at the head of this file both bar
+it. It sits outside git, and no migration, seed or pull request reproduces any
+of its content.
+
+What its structure settles, which prose had left open:
+
+- **The component table is weighted**, and the overall score is **computed** from
+  the parts, not typed. The sample's five components reconcile exactly to its
+  printed total, so a mentor editing one score must not be able to leave a stale
+  or invented total behind.
+- **The sub-metric table differs per component.** One scores each metric and
+  comments; one carries narrative and no scores; one scores with a tag and no
+  prose. Even the column heading differs across four words. So the heading and
+  the column set are template data, not code.
+- **Narrative blocks are optional per component** -- strengths, development
+  areas, action plan. The sample omits one of each in different components, and
+  the founder said so in terms.
+- **A component need not be a round.** Four of the sample's five map onto rounds;
+  "Profile & Content" does not, because no round exists in which a student
+  submits a profile. So a component *may* name a round and is not required to.
+  This was the one genuine modelling fork and it is now closed.
+
+**Scope.** Annexure A promises a mentor "writes feedback and marks a submission
+as reviewed". A configurable template carrying weighted quantitative scoring is
+more than that sentence, and it is the largest single piece of new work the
+2026-09-16 meeting produced. It is being built on the owner's instruction of
+2026-09-18; **the clause 12 quotation and the clause 16.1 written amendment are
+still outstanding and are not settled by having built it.**
+
+### Round deadlines: accept late, stamp it, show it
+
+Decided 2026-09-18, after a review found that `opens_at` and `due_at` were read
+by nothing at all -- no policy, no trigger, no function -- so a student could
+submit a month after a deadline and the database would accept it silently.
+
+A late submission is **accepted and stamped**, never refused. Refusing means a
+student whose upload finishes a minute past midnight is locked out of their own
+process and telephones Cospire; accepting silently means the deadline is a
+label. The stamp is computed from the **server clock** against the round's own
+`due_at`, which is operating manual rule 1 applied to a deadline rather than a
+timer. Whether lateness costs anything stays a human judgement, as it is off the
+platform.
+
+`submitted_late` is null while a draft, and null when the round carries no
+deadline -- which is deliberately not the same as "on time" and must not be
+flattened into false.
+
 ### Owed by Two19 from the call
 
 1. A document listing everything needed from the Client, including content and
@@ -590,7 +642,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | -- | **Phase 5a steps 3, 4 and 4b are merged and deployed** (`ce147b3`) | -- | **Nothing claimed.** Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
+| This chat | `feat/ars-report` | **The ARS report** (template plus filled reports) and **late-submission stamping**. Two migrations written, **neither applied anywhere** | `supabase/migrations/20260918094500_*`, `supabase/migrations/20260918095000_*`, `CONTEXT.md` | **In progress.** The SQL has never been executed: Docker is unavailable here and DDL through MCP is forbidden. Next is review, then `npm run db:migrate`, then row-counting probes, then the mentor and student screens | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
