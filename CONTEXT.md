@@ -38,9 +38,9 @@ which is the current `main`; CI on it is green. **PR #27 is open** from
 `docs/review-pipeline`, adding only `docs/review-checklist.md`; its `context`,
 `verify`, Vercel and preview checks are all green. **PR #28 is open** from
 `feat/ars-report`, carrying the verified report database plus mentor/student UI;
-its checks were pending when this sentence was written. #25's title and
-description were rewritten before merging, having described the `ars_feedback`
-table that the 2026-09-16 rework removed.
+its `context`, `verify`, Vercel and preview checks are all green. #25's title
+and description were rewritten before merging, having described the
+`ars_feedback` table that the 2026-09-16 rework removed.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
