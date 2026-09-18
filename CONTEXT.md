@@ -403,6 +403,51 @@ flattened into false.
 2. Go through the MESA ARS app properly; the founder asked twice.
 3. Review the three further public mock sites he was adding.
 
+## The Masters' Union ARS process, read 2026-09-18
+
+The Client sent the two public links behind their live MU ARS process, and the
+owner asked that it be rebuilt here end to end and then made replicable. It is
+the first real specification this project has had for ARS, and reading it
+settled several open questions and opened one gap.
+
+**The process is three rounds:** an application, an aptitude test, and
+interviews plus group discussions. The third is off the platform, which is what
+`submission_mode = 'offline'` already exists for.
+
+**The aptitude round is a mock**, and its specification maps onto the planned
+schema without change: three sections (QA, LR, DI), 45 questions, two hours
+overall, **no sectional time limits**, sections switchable at will, **no negative
+marking**, solutions shown afterwards. It cannot be delivered here yet, because
+the question bank and test engine are unbuilt. For a demonstration it can be an
+off-platform round linking to the Client's existing test, labelled honestly.
+
+**Components are not rounds, and their own data proves it.** The MU process has
+three rounds; the sample report has five components. The application round feeds
+*Profile & Content* and *Video Essay*; the single interview-and-GD round feeds
+two separate components. The decision of 2026-09-18 to let a component name a
+round without requiring one was therefore right.
+
+**The application form broke the old `config` shape, which is the useful
+finding.** It has four steps with per-step drafts and a progress reading,
+sections inside each step, eight field types, a 200-word essay with a live
+count, fields pre-filled from the account, and fields that appear in answer to
+another field. `config` had carried a flat `{ fields: [...] }`, which cannot
+express any of that. `src/features/ars/form-schema.ts` replaces it, and the
+Client's real application is transcribed into the test suite so that any change
+breaking it fails loudly.
+
+**Conditional fields are deliberately not in the first version.** The MU form
+hides the expected-passing-year fields unless the twelfth results are not out.
+Version one shows every field instead. The form stays usable and the gap is
+recorded rather than pretended away.
+
+**Two things to put to the Client.** Their application has **no file upload at
+all**, though the founder said resumes, tenth marksheets and certificates would
+be needed -- so either the form predates that or uploads belong elsewhere. And
+step two of the application, "Aptitude Test Details", collects *self-reported
+scores from other exams* and is **not** the aptitude test round; two different
+things with nearly the same name.
+
 ## Sequencing change, 2026-09-08
 
 **The Client asked for ARS to be built first**, ahead of video and the test
@@ -662,7 +707,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | -- | **Phase 5a report work is merged and deployed** (`17cc78d`) | -- | **Nothing claimed.** The next slice is **step 5, the student submission route**, which is the missing link: a run is created by a student's first submission, so the mentor queue stays empty and no report can be started until it exists | 2026-09-18 |
+| This chat | `feat/ars-form-engine` | **The ARS form format** -- multi-step forms expressed in `ars_rounds.config` | `src/features/ars/form-schema.ts`, `src/features/ars/form-schema.test.ts` | **In progress.** Format and validation written and tested against the Client's real Masters' Union application. **The student renderer is not built yet**, so no round can be answered | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
