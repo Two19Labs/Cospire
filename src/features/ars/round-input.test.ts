@@ -65,24 +65,41 @@ describe("validateNewRound", () => {
       submissionMode: "form",
     });
 
-    expect(value?.config.fields).toEqual([
-      { label: "Why this school?" },
-      { label: "What will you contribute?" },
+    // The builder's shape from the outset, so opening the round in the builder
+    // needs no conversion step.
+    const steps = value?.config.steps as
+      | { sections: { fields: { label: string; type: string }[] }[]; title: string }[]
+      | undefined;
+
+    expect(steps).toHaveLength(1);
+    expect(steps?.[0].title).toBe("Page 1");
+    expect(steps?.[0].sections[0].fields.map((field) => field.label)).toEqual([
+      "Why this school?",
+      "What will you contribute?",
     ]);
+    expect(steps?.[0].sections[0].fields[0].type).toBe("short_text");
   });
 
-  // This is the case the database check constraint originally let through: a
-  // form round carrying a prompt and no fields at all. The constraint is fixed;
-  // the validation must refuse it before the row is ever attempted.
-  it("refuses a form round with no questions", () => {
+  // Changed on 2026-09-18, when the round builder landed. Requiring the
+  // questions up front made the builder unreachable: the round could not exist
+  // without already carrying the very thing the builder is for, and the field
+  // was labelled optional while the database refused it.
+  //
+  // What still protects the student is the widened database constraint: a form
+  // round must carry a `steps` array, which this now always writes.
+  it("accepts a form round with no questions, to be built afterwards", () => {
     const { errors, value } = validateNewRound({
       ...valid,
       fields: "   \n  \n",
       submissionMode: "form",
     });
 
-    expect(value).toBeNull();
-    expect(errors.fields).toContain("at least one question");
+    expect(errors.fields).toBeUndefined();
+    expect(value).not.toBeNull();
+
+    const steps = value?.config.steps as { sections: { fields: unknown[] }[] }[] | undefined;
+    expect(steps).toHaveLength(1);
+    expect(steps?.[0].sections[0].fields).toEqual([]);
   });
 
   it("refuses duplicate questions, which would collide in the answer", () => {

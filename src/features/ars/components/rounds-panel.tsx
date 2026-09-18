@@ -192,9 +192,10 @@ export function RoundsPanel({
             rows={3}
           />
           <span className="muted">
-            A quick start only. Once the round exists, use <strong>Edit round</strong>
-            {" "}to build the real form — pages, sections, and a type for every
-            question — with a preview of what the student sees.
+            Genuinely optional — leave it empty and build the form properly in{" "}
+            <strong>Edit round</strong>, with pages, sections, a type for every
+            question and a preview of what the student sees. Anything typed here
+            becomes the first page&apos;s questions.
           </span>
         </label>
 
