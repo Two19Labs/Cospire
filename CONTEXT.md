@@ -614,6 +614,7 @@ No credentials, keys, or connection strings are recorded in this file.
 | `20260910144415` | `supabase/migrations/20260910144415_ars_rounds.sql` | Applied 2026-09-10. Creates `public.ars_rounds` with RLS enabled **and forced** and four policies; adds `private.mentor_reaches_course` and `private.student_reaches_round`; adds `courses_id_org_unique` so the composite foreign key has something to reference; adds the `courses_select_mentor` policy. Additive throughout |
 | `20260910144803` | `supabase/migrations/20260910144803_fix_ars_rounds_form_fields_check.sql` | Applied 2026-09-10, minutes after the above, correcting `ars_rounds_form_has_fields`. See *The NULL that passed a CHECK* |
 | `20260911200751` | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql` | Applied 2026-09-18 through `npm run db:migrate`. Creates `ars_submissions`, `ars_process_runs` and `ars_attempt_grants`, all with RLS enabled **and forced**; adds `ars_rounds_id_org_unique`; three `private` helpers and four triggers carrying the sequence rule, the attempt allowance, the order snapshot and run completion. Additive throughout. Security advisor: zero new findings |
+| `20260918080226` | `supabase/migrations/20260918080226_ars_uploads_bucket.sql` | Applied 2026-09-18. Creates the private `ars-uploads` bucket (50MiB; mp4, quicktime, webm, pdf, jpeg, png) and four policies on `storage.objects`, plus `private.can_read_ars_object` and `private.can_write_ars_object`. Reads are **not** admin-only here, unlike documents: a video essay has no watermarked viewer to force anyone through, and Annexure A asks only that the file reach the student, their mentor and admins |
 
 Three further migrations are described in their own sections rather than here:
 `20260828122059` (last-admin protection, under *Phase 0 security audit*), and
@@ -1250,7 +1251,7 @@ file **at its Storage path**.
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done at the database, 2026-09-18.** `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
-| 4. The Storage bucket and its policies on `storage.objects` | Not started |
+| 4. The Storage bucket and its policies on `storage.objects` | **Done at the database, 2026-09-18.** `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
 | 5. The student submission route and the mentor review queue | Not started |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
@@ -1682,6 +1683,10 @@ time otherwise.
 | 2026-09-18 | Probe isolation | Live counts re-checked after the rollback: 0 rows in all three ARS tables, courses still 3, documents still 2, profiles still 5. Nothing of the owner's was touched |
 | 2026-09-18 | `typecheck` / `lint` / `test` / `build` | Pass. 128 tests. Production build clean |
 | 2026-09-18 | Security advisor after the migration | The same two pre-existing WARN items (leaked-password protection needs Pro; MFA is a scope decision). **No new findings** |
+| 2026-09-18 | **ARS bucket applied and probed, 12 checks** | A student uploading beneath their own prefix allowed; into **another student's prefix refused**; into the `documents` bucket refused; the owning student reads their own file; **a mentor sees nothing while it is a draft** and the file once it is handed in; an unrelated student, another organisation's admin and an anonymous caller all see **0 rows** by the exact storage path; an anonymous upload refused |
+| 2026-09-18 | A cross-org move returned no error and changed 0 rows | RLS filtering a write to nothing, which is the shape this project has been caught by twice. The probe counts rows rather than trusting the absence of an error |
+| 2026-09-18 | **Direct deletes on `storage.objects` are blocked by Supabase itself** | `storage.protect_delete()` refuses any SQL delete: "Use the Storage API instead". So the two delete/update policies in this migration cannot be probed through SQL and are unverified until the upload UI exercises them over HTTP |
+| 2026-09-18 | Storage probe isolation | 0 objects left in `ars-uploads`; the owner's 2 document objects untouched; courses 3, grants 4, documents 2 |
 
 ## Next recommended action
 
