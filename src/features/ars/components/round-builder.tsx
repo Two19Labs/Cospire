@@ -29,18 +29,27 @@ import { RoundPreview } from "./round-preview";
 // has been built and verified throughout -- and drag would break it.
 
 const typeLabels: Record<string, string> = {
+  short_text: "Short text",
+  long_text: "Long answer",
+  select: "Dropdown",
+  radio: "Multiple choice",
+  single_choice: "Single choice",
   checkbox: "Checkbox",
   date: "Date",
-  file: "File upload",
-  long_text: "Long answer",
   month_year: "Month and year",
   number: "Number",
-  radio: "Multiple choice",
+  file: "File upload",
   score_list: "Score list (exam + score)",
-  select: "Dropdown",
-  short_text: "Short text",
-  single_choice: "Single choice",
 };
+
+function Ids({ courseId, roundId }: { courseId: number; roundId: number }) {
+  return (
+    <>
+      <input name="courseId" type="hidden" value={courseId} />
+      <input name="roundId" type="hidden" value={roundId} />
+    </>
+  );
+}
 
 function FieldRow({
   courseId,
@@ -61,28 +70,36 @@ function FieldRow({
     .join(" · ");
 
   return (
-    <div className="field-row">
+    <div className="builder__field">
       <div>
         <strong>{field.label}</strong>
-        <p className="muted">{detail}</p>
+        <p>{detail}</p>
       </div>
-      <div className="admin-nav">
+      <div className="builder__field-actions">
         {(["up", "down"] as const).map((direction) => (
           <form action={moveFieldAction} key={direction}>
-            <input name="courseId" type="hidden" value={courseId} />
-            <input name="roundId" type="hidden" value={roundId} />
+            <Ids courseId={courseId} roundId={roundId} />
             <input name="fieldKey" type="hidden" value={field.key} />
             <input name="direction" type="hidden" value={direction} />
-            <button className="button button--secondary" type="submit">
+            <button
+              aria-label={`Move ${field.label} ${direction}`}
+              className="builder__icon"
+              type="submit"
+            >
               {direction === "up" ? "↑" : "↓"}
             </button>
           </form>
         ))}
         <form action={removeFieldAction}>
-          <input name="courseId" type="hidden" value={courseId} />
-          <input name="roundId" type="hidden" value={roundId} />
+          <Ids courseId={courseId} roundId={roundId} />
           <input name="fieldKey" type="hidden" value={field.key} />
-          <button className="button button--secondary" type="submit">Remove</button>
+          <button
+            aria-label={`Remove ${field.label}`}
+            className="builder__icon builder__icon--danger"
+            type="submit"
+          >
+            ✕
+          </button>
         </form>
       </div>
     </div>
@@ -100,58 +117,56 @@ function AddField({
   sectionIndex: number;
   stepKey: string;
 }) {
+  const uid = `${stepKey}-${sectionIndex}`;
   return (
-    <details>
-      <summary>Add a question</summary>
+    <details className="builder__disclosure">
+      <summary>+ Add a question</summary>
       <form action={addFieldAction} className="stack-form">
-        <input name="courseId" type="hidden" value={courseId} />
-        <input name="roundId" type="hidden" value={roundId} />
+        <Ids courseId={courseId} roundId={roundId} />
         <input name="stepKey" type="hidden" value={stepKey} />
         <input name="sectionIndex" type="hidden" value={sectionIndex} />
 
-        <label htmlFor={`label-${stepKey}-${sectionIndex}`}>Question</label>
-        <input
-          id={`label-${stepKey}-${sectionIndex}`}
-          maxLength={200}
-          name="label"
-          placeholder="Full Name"
-          required
-          type="text"
-        />
+        <div className="builder__grid builder__grid--pair">
+          <div>
+            <label htmlFor={`label-${uid}`}>Question</label>
+            <input id={`label-${uid}`} maxLength={200} name="label" placeholder="Full Name" required type="text" />
+          </div>
+          <div>
+            <label htmlFor={`type-${uid}`}>Type</label>
+            <select defaultValue="short_text" id={`type-${uid}`} name="type">
+              {Object.entries(typeLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        <label htmlFor={`type-${stepKey}-${sectionIndex}`}>Type</label>
-        <select defaultValue="short_text" id={`type-${stepKey}-${sectionIndex}`} name="type">
-          {Object.entries(typeLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-
-        <label className="choice" htmlFor={`required-${stepKey}-${sectionIndex}`}>
-          <input defaultChecked id={`required-${stepKey}-${sectionIndex}`} name="required" type="checkbox" />
+        <label className="choice" htmlFor={`required-${uid}`}>
+          <input defaultChecked id={`required-${uid}`} name="required" type="checkbox" />
           <span>Required</span>
         </label>
 
-        <label htmlFor={`options-${stepKey}-${sectionIndex}`}>
-          Options — one per line, for dropdown, multiple choice and score list
-        </label>
-        <textarea
-          id={`options-${stepKey}-${sectionIndex}`}
-          name="options"
-          placeholder={"Male\nFemale\nOther"}
-          rows={3}
-        />
-
-        <label htmlFor={`wordLimit-${stepKey}-${sectionIndex}`}>Word limit — long answers only</label>
-        <input
-          id={`wordLimit-${stepKey}-${sectionIndex}`}
-          inputMode="numeric"
-          name="wordLimit"
-          placeholder="200"
-          type="text"
-        />
-
-        <label htmlFor={`helpText-${stepKey}-${sectionIndex}`}>Help text (optional)</label>
-        <input id={`helpText-${stepKey}-${sectionIndex}`} maxLength={300} name="helpText" type="text" />
+        <div className="builder__conditional">
+          <p className="builder__hint">
+            The next three apply to some question types only, and are ignored by the rest.
+          </p>
+          <div>
+            <label htmlFor={`options-${uid}`}>Options — one per line</label>
+            <textarea id={`options-${uid}`} name="options" placeholder={"Male\nFemale\nOther"} rows={3} />
+            <p className="builder__hint">Dropdown, multiple choice, single choice and score list.</p>
+          </div>
+          <div className="builder__grid builder__grid--pair">
+            <div>
+              <label htmlFor={`helpText-${uid}`}>Help text</label>
+              <input id={`helpText-${uid}`} maxLength={300} name="helpText" type="text" />
+            </div>
+            <div>
+              <label htmlFor={`wordLimit-${uid}`}>Word limit</label>
+              <input id={`wordLimit-${uid}`} inputMode="numeric" name="wordLimit" placeholder="200" type="text" />
+              <p className="builder__hint">Long answers only.</p>
+            </div>
+          </div>
+        </div>
 
         <button className="button button--primary" type="submit">Add question</button>
       </form>
@@ -179,14 +194,12 @@ export function RoundBuilder({
   spec: FormSpec;
 }) {
   const verdict = readyForStudents(spec);
+  const fieldCount = countFields(spec);
 
-  return (
-    <RoleShell profile={profile} title={roundName}>
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-
-      <p><Link href={`/admin/courses/${courseId}`}>← {courseTitle}</Link></p>
-
-      {mode === "offline" ? (
+  if (mode === "offline") {
+    return (
+      <RoleShell profile={profile} title={roundName}>
+        <p><Link href={`/admin/courses/${courseId}`}>← {courseTitle}</Link></p>
         <section className="panel">
           <h2>This round happens off the platform</h2>
           <p className="muted">
@@ -194,147 +207,169 @@ export function RoundBuilder({
             and its dates; the mentor records the outcome afterwards. There is no form to build.
           </p>
         </section>
-      ) : (
-        <>
-          <section className="panel">
-            <div className="panel__header">
-              <div>
-                <h2>The form</h2>
-                <p className="muted">
-                  {spec.steps.length} {spec.steps.length === 1 ? "page" : "pages"} ·{" "}
-                  {countFields(spec)} {countFields(spec) === 1 ? "question" : "questions"}
-                </p>
-              </div>
-              {verdict.ready ? (
-                <span className="pill">Ready for students</span>
-              ) : (
-                <span className="pill pill--disabled">Not finished</span>
-              )}
+      </RoleShell>
+    );
+  }
+
+  return (
+    <RoleShell profile={profile} title={roundName}>
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      <p><Link href={`/admin/courses/${courseId}`}>← {courseTitle}</Link></p>
+
+      <div className="builder">
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <h2>The form</h2>
+              <p className="muted">
+                {spec.steps.length} {spec.steps.length === 1 ? "page" : "pages"} · {fieldCount}{" "}
+                {fieldCount === 1 ? "question" : "questions"}
+              </p>
             </div>
+            <span className={verdict.ready ? "pill pill--active" : "pill pill--disabled"}>
+              {verdict.ready ? "Ready for students" : "Not finished"}
+            </span>
+          </div>
 
-            {verdict.ready ? null : <p className="muted">{verdict.reason}</p>}
+          {verdict.ready ? null : <p className="muted">{verdict.reason}</p>}
 
-            {spec.steps.map((step, stepIndex) => (
-              <section className="panel" key={step.key}>
-                <div className="panel__header">
-                  <div>
-                    <h3>Page {stepIndex + 1} — {step.title}</h3>
-                    {step.subtitle ? <p className="muted">{step.subtitle}</p> : null}
-                  </div>
-                  <p className="muted">
-                    {fieldsForStep(step).length}{" "}
-                    {fieldsForStep(step).length === 1 ? "question" : "questions"}
-                  </p>
+          {spec.steps.map((step, stepIndex) => (
+            <div className="builder__page" key={step.key}>
+              <div className="builder__page-head">
+                <div>
+                  <span className="builder__number">{stepIndex + 1}</span>{" "}
+                  <strong>{step.title}</strong>
+                  {step.subtitle ? <p className="muted">{step.subtitle}</p> : null}
                 </div>
+                <span className="muted">
+                  {fieldsForStep(step).length}{" "}
+                  {fieldsForStep(step).length === 1 ? "question" : "questions"}
+                </span>
+              </div>
 
-                <details>
-                  <summary>Rename this page</summary>
-                  <form action={renamePageAction} className="stack-form">
-                    <input name="courseId" type="hidden" value={courseId} />
-                    <input name="roundId" type="hidden" value={roundId} />
-                    <input name="stepKey" type="hidden" value={step.key} />
-                    <label htmlFor={`page-title-${step.key}`}>Page name</label>
-                    <input defaultValue={step.title} id={`page-title-${step.key}`} maxLength={200} name="title" required type="text" />
-                    <button className="button button--primary" type="submit">Rename</button>
-                  </form>
-                  <form action={setPageSubtitleAction} className="stack-form">
-                    <input name="courseId" type="hidden" value={courseId} />
-                    <input name="roundId" type="hidden" value={roundId} />
-                    <input name="stepKey" type="hidden" value={step.key} />
-                    <label htmlFor={`page-sub-${step.key}`}>Line beneath the heading</label>
-                    <input defaultValue={step.subtitle ?? ""} id={`page-sub-${step.key}`} maxLength={300} name="subtitle" type="text" />
-                    <button className="button button--secondary" type="submit">Save line</button>
-                  </form>
-                  {spec.steps.length > 1 ? (
-                    <form action={removePageAction}>
-                      <input name="courseId" type="hidden" value={courseId} />
-                      <input name="roundId" type="hidden" value={roundId} />
-                      <input name="stepKey" type="hidden" value={step.key} />
-                      <button className="button button--secondary" type="submit">Delete this page</button>
-                    </form>
-                  ) : null}
-                </details>
-
-                {step.sections.map((section, sectionIndex) => (
-                  <div key={`${step.key}-${sectionIndex}`}>
-                    <div className="panel__header">
-                      <h4>{section.title ?? "Questions"}</h4>
-                      {step.sections.length > 1 ? (
-                        <form action={removeSectionAction}>
-                          <input name="courseId" type="hidden" value={courseId} />
-                          <input name="roundId" type="hidden" value={roundId} />
-                          <input name="stepKey" type="hidden" value={step.key} />
-                          <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                          <button className="button button--secondary" type="submit">Remove section</button>
-                        </form>
-                      ) : null}
-                    </div>
-
-                    {section.fields.length === 0 ? (
-                      <p className="muted">No question here yet.</p>
-                    ) : (
-                      section.fields.map((field) => (
-                        <FieldRow courseId={courseId} field={field} key={field.key} roundId={roundId} />
-                      ))
-                    )}
-
-                    <details>
-                      <summary>Rename this section</summary>
-                      <form action={renameSectionAction} className="stack-form">
-                        <input name="courseId" type="hidden" value={courseId} />
-                        <input name="roundId" type="hidden" value={roundId} />
+              {step.sections.map((section, sectionIndex) => (
+                <div className="builder__section" key={`${step.key}-${sectionIndex}`}>
+                  <div className="builder__section-head">
+                    <h4>{section.title ?? "Questions"}</h4>
+                    {step.sections.length > 1 ? (
+                      <form action={removeSectionAction}>
+                        <Ids courseId={courseId} roundId={roundId} />
                         <input name="stepKey" type="hidden" value={step.key} />
                         <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                        <label htmlFor={`sec-${step.key}-${sectionIndex}`}>Section heading</label>
-                        <input
-                          defaultValue={section.title ?? ""}
-                          id={`sec-${step.key}-${sectionIndex}`}
-                          maxLength={200}
-                          name="title"
-                          type="text"
-                        />
-                        <button className="button button--primary" type="submit">Save heading</button>
+                        <button
+                          aria-label={`Remove section ${section.title ?? sectionIndex + 1}`}
+                          className="builder__icon builder__icon--danger"
+                          type="submit"
+                        >
+                          ✕
+                        </button>
                       </form>
-                    </details>
-
-                    <AddField
-                      courseId={courseId}
-                      roundId={roundId}
-                      sectionIndex={sectionIndex}
-                      stepKey={step.key}
-                    />
+                    ) : null}
                   </div>
-                ))}
 
-                <details>
-                  <summary>Add a section to this page</summary>
-                  <form action={addSectionAction} className="stack-form">
-                    <input name="courseId" type="hidden" value={courseId} />
-                    <input name="roundId" type="hidden" value={roundId} />
+                  {section.fields.length === 0 ? (
+                    <p className="builder__hint">No question here yet.</p>
+                  ) : (
+                    section.fields.map((field) => (
+                      <FieldRow courseId={courseId} field={field} key={field.key} roundId={roundId} />
+                    ))
+                  )}
+
+                  <AddField
+                    courseId={courseId}
+                    roundId={roundId}
+                    sectionIndex={sectionIndex}
+                    stepKey={step.key}
+                  />
+
+                  <details className="builder__disclosure">
+                    <summary>Rename this section</summary>
+                    <form action={renameSectionAction} className="stack-form">
+                      <Ids courseId={courseId} roundId={roundId} />
+                      <input name="stepKey" type="hidden" value={step.key} />
+                      <input name="sectionIndex" type="hidden" value={sectionIndex} />
+                      <label htmlFor={`sec-${step.key}-${sectionIndex}`}>Section heading</label>
+                      <input
+                        defaultValue={section.title ?? ""}
+                        id={`sec-${step.key}-${sectionIndex}`}
+                        maxLength={200}
+                        name="title"
+                        type="text"
+                      />
+                      <button className="button button--primary" type="submit">Save heading</button>
+                    </form>
+                  </details>
+                </div>
+              ))}
+
+              <details className="builder__disclosure">
+                <summary>Page settings</summary>
+                <form action={renamePageAction} className="stack-form">
+                  <Ids courseId={courseId} roundId={roundId} />
+                  <input name="stepKey" type="hidden" value={step.key} />
+                  <label htmlFor={`page-title-${step.key}`}>Page name</label>
+                  <input
+                    defaultValue={step.title}
+                    id={`page-title-${step.key}`}
+                    maxLength={200}
+                    name="title"
+                    required
+                    type="text"
+                  />
+                  <button className="button button--primary" type="submit">Rename page</button>
+                </form>
+                <form action={setPageSubtitleAction} className="stack-form">
+                  <Ids courseId={courseId} roundId={roundId} />
+                  <input name="stepKey" type="hidden" value={step.key} />
+                  <label htmlFor={`page-sub-${step.key}`}>Line beneath the heading</label>
+                  <input
+                    defaultValue={step.subtitle ?? ""}
+                    id={`page-sub-${step.key}`}
+                    maxLength={300}
+                    name="subtitle"
+                    type="text"
+                  />
+                  <button className="button button--secondary" type="submit">Save line</button>
+                </form>
+                <form action={addSectionAction} className="stack-form">
+                  <Ids courseId={courseId} roundId={roundId} />
+                  <input name="stepKey" type="hidden" value={step.key} />
+                  <label htmlFor={`new-sec-${step.key}`}>New section heading</label>
+                  <input
+                    id={`new-sec-${step.key}`}
+                    maxLength={200}
+                    name="title"
+                    placeholder="Parent / Guardian Details"
+                    type="text"
+                  />
+                  <button className="button button--secondary" type="submit">Add section</button>
+                </form>
+                {spec.steps.length > 1 ? (
+                  <form action={removePageAction} className="stack-form">
+                    <Ids courseId={courseId} roundId={roundId} />
                     <input name="stepKey" type="hidden" value={step.key} />
-                    <label htmlFor={`new-sec-${step.key}`}>Section heading</label>
-                    <input id={`new-sec-${step.key}`} maxLength={200} name="title" placeholder="Parent / Guardian Details" type="text" />
-                    <button className="button button--primary" type="submit">Add section</button>
+                    <button className="button button--secondary" type="submit">Delete this page</button>
                   </form>
-                </details>
-              </section>
-            ))}
+                ) : null}
+              </details>
+            </div>
+          ))}
 
-            <details>
-              <summary>Add a page</summary>
-              <form action={addPageAction} className="stack-form">
-                <input name="courseId" type="hidden" value={courseId} />
-                <input name="roundId" type="hidden" value={roundId} />
-                <label htmlFor="new-page">Page name</label>
-                <input id="new-page" maxLength={200} name="title" placeholder="Academic Details" required type="text" />
-                <button className="button button--primary" type="submit">Add page</button>
-              </form>
-            </details>
-          </section>
+          <details className="builder__disclosure">
+            <summary>+ Add a page</summary>
+            <form action={addPageAction} className="stack-form">
+              <Ids courseId={courseId} roundId={roundId} />
+              <label htmlFor="new-page">Page name</label>
+              <input id="new-page" maxLength={200} name="title" placeholder="Academic Details" required type="text" />
+              <button className="button button--primary" type="submit">Add page</button>
+            </form>
+          </details>
+        </section>
 
+        <div className="builder__preview">
           <RoundPreview spec={spec} />
-        </>
-      )}
+        </div>
+      </div>
     </RoleShell>
   );
 }
