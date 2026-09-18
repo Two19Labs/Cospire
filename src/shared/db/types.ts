@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      ars_attempt_grants: {
+        Row: {
+          created_at: string
+          granted_by: string
+          id: number
+          org_id: number
+          round_id: number
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by: string
+          id?: never
+          org_id: number
+          round_id: number
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string
+          id?: never
+          org_id?: number
+          round_id?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_attempt_grants_granter_org_fkey"
+            columns: ["granted_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_attempt_grants_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_attempt_grants_round_org_fkey"
+            columns: ["round_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_rounds"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_attempt_grants_student_org_fkey"
+            columns: ["student_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      ars_process_runs: {
+        Row: {
+          completed_at: string | null
+          course_id: number
+          created_at: string
+          id: number
+          org_id: number
+          report_released_at: string | null
+          round_order: Json
+          started_at: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: number
+          created_at?: string
+          id?: never
+          org_id: number
+          report_released_at?: string | null
+          round_order?: Json
+          started_at?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: number
+          created_at?: string
+          id?: never
+          org_id?: number
+          report_released_at?: string | null
+          round_order?: Json
+          started_at?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_process_runs_course_org_fkey"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_process_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_process_runs_student_org_fkey"
+            columns: ["student_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       ars_rounds: {
         Row: {
           config: Json
@@ -62,6 +179,93 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      ars_submissions: {
+        Row: {
+          answer: Json
+          attempt_no: number
+          created_at: string
+          file_path: string | null
+          id: number
+          org_id: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          round_id: number
+          run_id: number
+          status: string
+          student_id: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          answer?: Json
+          attempt_no?: number
+          created_at?: string
+          file_path?: string | null
+          id?: never
+          org_id: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          round_id: number
+          run_id: number
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: Json
+          attempt_no?: number
+          created_at?: string
+          file_path?: string | null
+          id?: never
+          org_id?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          round_id?: number
+          run_id?: number
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_submissions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_submissions_reviewer_org_fkey"
+            columns: ["reviewed_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_submissions_round_org_fkey"
+            columns: ["round_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_rounds"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_submissions_run_org_fkey"
+            columns: ["run_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_process_runs"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_submissions_student_org_fkey"
+            columns: ["student_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
           },
         ]
       }

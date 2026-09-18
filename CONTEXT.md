@@ -570,7 +570,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude Code session | `feat/ars-submissions` | **Phase 5a step 3**: `ars_submissions` and `ars_feedback`, RLS on reads and writes, `round_id` ON DELETE RESTRICT | `supabase/migrations/20260911200751_ars_submissions_and_feedback.sql`, `src/features/ars/**`, `src/shared/db/types.ts` (regenerated only) | **Paused, and the migration must be reworked before it is applied.** The Client meeting of 2026-09-16 moved scoring and the mentor's write-up to the end of a whole process rather than per submission, and added file uploads to application rounds. Nothing has been applied to the database, so this costs an edit rather than a second migration | 2026-09-18 |
+| Claude Code session | `feat/ars-submissions` | **Phase 5a step 3**: submissions, process runs, attempt grants, RLS on reads and writes | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql`, `src/features/ars/**`, `src/shared/db/types.ts` (regenerated) | **Migration applied and verified 2026-09-18.** Next: the upload bucket and its `storage.objects` policies, then round dates and the `requires_review` flag. PR #25 is still a draft and its description predates the rework | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -613,6 +613,7 @@ No credentials, keys, or connection strings are recorded in this file.
 | `20260910115938` | `supabase/migrations/20260910115938_courses_and_course_grants.sql` | Applied 2026-09-10 through `npm run db:migrate`, the CLI rather than MCP. Creates `public.courses` with RLS enabled **and forced** and four policies; adds `private.student_has_course_grant`; adds the `course` branch to `validate_content_access_resource`; adds the `courses_cascade_grants` trigger. Additive throughout. Security advisor: zero new findings |
 | `20260910144415` | `supabase/migrations/20260910144415_ars_rounds.sql` | Applied 2026-09-10. Creates `public.ars_rounds` with RLS enabled **and forced** and four policies; adds `private.mentor_reaches_course` and `private.student_reaches_round`; adds `courses_id_org_unique` so the composite foreign key has something to reference; adds the `courses_select_mentor` policy. Additive throughout |
 | `20260910144803` | `supabase/migrations/20260910144803_fix_ars_rounds_form_fields_check.sql` | Applied 2026-09-10, minutes after the above, correcting `ars_rounds_form_has_fields`. See *The NULL that passed a CHECK* |
+| `20260911200751` | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql` | Applied 2026-09-18 through `npm run db:migrate`. Creates `ars_submissions`, `ars_process_runs` and `ars_attempt_grants`, all with RLS enabled **and forced**; adds `ars_rounds_id_org_unique`; three `private` helpers and four triggers carrying the sequence rule, the attempt allowance, the order snapshot and run completion. Additive throughout. Security advisor: zero new findings |
 
 Three further migrations are described in their own sections rather than here:
 `20260828122059` (last-admin protection, under *Phase 0 security audit*), and
@@ -759,10 +760,11 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, re-measured 2026-09-10 after the programmes verification run
-was torn down: **2 orgs, 5 profiles (5 active), 5 auth users, 1 mentor
-assignment, 1 course, 3 content grants (2 document, 1 course), 2 documents,
-2 storage objects.**
+Current live counts, re-measured 2026-09-18 after the step 3 probes were rolled
+back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 3 courses, 4 content
+grants, 2 documents, and 0 rows in every ARS table.** Courses rose from 1 to 3
+and grants from 3 to 4 during the owner's manual test pass of 2026-09-14; those
+rows are the owner's, not test residue.
 
 This is the baseline any future verification run should return to. **None of it
 is test residue and none of it may be deleted:**
@@ -1247,7 +1249,7 @@ file **at its Storage path**.
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
-| 3. `ars_submissions` and `ars_feedback`, with RLS covering writes | **Migration written, NOT applied, and now to be reworked** (`20260911200751_ars_submissions_and_feedback.sql`, branch `feat/ars-submissions`, PR #25 draft). The 2026-09-16 meeting moved the mentor's write-up from per submission to a per-process report, and added real file uploads to application rounds. It has never executed anywhere: Docker is unavailable and DDL through MCP is forbidden, even rolled back |
+| 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done at the database, 2026-09-18.** `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
 | 4. The Storage bucket and its policies on `storage.objects` | Not started |
 | 5. The student submission route and the mentor review queue | Not started |
 
@@ -1675,6 +1677,11 @@ time otherwise.
 | 2026-09-02 | CI on PR #16 | `verify` green in 50s; Vercel preview deployed |
 | 2026-09-08 | Documents on the deployed URL | **Pass, 36 of 36**, `scripts/verify/` against `https://cospire-roan.vercel.app`. Closed the Phase 1 exit gate |
 | 2026-09-03 | PDF.js rendering in a browser | **Pass**, confirmed by the owner: pages render and a page saved as an image carries the reader's name. Found two defects, both fixed in `6880ac3`: the stamp read UTC rather than IST, and a PDF.js worker leaked per navigation |
+| 2026-09-18 | **Step 3 migration applied** | `20260911200751` pushed with `npm run db:migrate` against `eeeftjwvbppznsmcljnw`. Three tables, RLS enabled and forced on all three, four triggers, three helpers |
+| 2026-09-18 | **Step 3 verified, 17 probes, all as designed** | In one rolled-back transaction with `set local role authenticated` and real JWT claims. Passing: a student's own draft; the sequence rule refusing round 2 before round 1 (42501); an insert carrying **another student's** id refused; a second attempt with no grant refused; an admin grant then attempt_no=2; the run row and its order snapshot created automatically; an unrelated student seeing **0 rows**; the assigned mentor seeing handed-in work but **0 drafts**; a mentor editing an answer refused, marking reviewed allowed; `completed_at` stamped once every round was in; a student deleting a submission refused; and deleting an answered round refused with **23503** |
+| 2026-09-18 | Probe isolation | Live counts re-checked after the rollback: 0 rows in all three ARS tables, courses still 3, documents still 2, profiles still 5. Nothing of the owner's was touched |
+| 2026-09-18 | `typecheck` / `lint` / `test` / `build` | Pass. 128 tests. Production build clean |
+| 2026-09-18 | Security advisor after the migration | The same two pre-existing WARN items (leaked-password protection needs Pro; MFA is a scope decision). **No new findings** |
 
 ## Next recommended action
 
@@ -1691,13 +1698,18 @@ both worse the longer they wait:
    the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
    written. Both sides want this, so it only needs recording.
 
-**Then rework and apply Phase 5a step 3.** The migration on `feat/ars-submissions`
-is written but not applied, and the meeting changed three of its assumptions: the
-mentor's write-up belongs to a whole process rather than one submission,
-application rounds take real file uploads, and ARS mocks appear on the student's
-dashboard. Nothing has run against the database, so this is an edit rather than a
-corrective migration. Then step 4 (the upload bucket and its `storage.objects`
-policies) and step 5 (the student route and the mentor queue).
+**Phase 5a step 3 is done at the database** (applied and verified 2026-09-18).
+The build continues with:
+
+- **The upload bucket and its policies on `storage.objects`**, pulled forward
+  because application rounds now take real files (resume, marksheet,
+  certificates), not only video essays.
+- **Round dates and deadlines**, and a `requires_review` flag, both of which the
+  2026-09-16 meeting added and neither of which the schema has.
+- **Step 5**: one student route rendering whichever component a round declares,
+  and the mentor review queue.
+- **The ARS report** once its template is agreed and the extra work is in
+  writing. `ars_process_runs.report_released_at` is the column it hangs from.
 
 **Merge or close the two open pull requests** (#24, this file's cleanup; #25,
 step 3 as a draft). They have been open since 2026-09-12 and `main` has not moved.
