@@ -78,19 +78,17 @@ as $$
 declare
   deadline timestamptz;
 begin
-  if new.status <> 'submitted' then
-    new.submitted_late := null;
+  -- A mentor's submitted -> reviewed transition must preserve the stamp made
+  -- when the student handed the work in. It is historical evidence, not a
+  -- property of the row's current status.
+  if tg_op = 'UPDATE' and old.status in ('submitted', 'reviewed') then
+    new.submitted_late := old.submitted_late;
     return new;
   end if;
 
-  -- Nested rather than `tg_op = 'UPDATE' and old.status = ...`, because OLD is
-  -- unassigned on INSERT and SQL's AND is not guaranteed to short-circuit. The
-  -- flat form raises "record old is not assigned yet" on the very first insert.
-  if tg_op = 'UPDATE' then
-    if old.status = 'submitted' then
-      new.submitted_late := old.submitted_late;
-      return new;
-    end if;
+  if new.status <> 'submitted' then
+    new.submitted_late := null;
+    return new;
   end if;
 
   deadline := private.round_due_at(new.round_id);

@@ -131,6 +131,293 @@ export type Database = {
           },
         ]
       }
+      ars_report_components: {
+        Row: {
+          action_plan: string | null
+          created_at: string
+          development_areas: string | null
+          id: number
+          metrics: Json
+          next_step: string | null
+          org_id: number
+          readiness_tag: string | null
+          report_id: number
+          score: number | null
+          strengths: string | null
+          template_component_id: number
+          timeline: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_plan?: string | null
+          created_at?: string
+          development_areas?: string | null
+          id?: never
+          metrics?: Json
+          next_step?: string | null
+          org_id: number
+          readiness_tag?: string | null
+          report_id: number
+          score?: number | null
+          strengths?: string | null
+          template_component_id: number
+          timeline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_plan?: string | null
+          created_at?: string
+          development_areas?: string | null
+          id?: never
+          metrics?: Json
+          next_step?: string | null
+          org_id?: number
+          readiness_tag?: string | null
+          report_id?: number
+          score?: number | null
+          strengths?: string | null
+          template_component_id?: number
+          timeline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_report_components_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_report_components_report_fkey"
+            columns: ["report_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_reports"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_report_components_template_component_fkey"
+            columns: ["template_component_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_report_template_components"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      ars_report_template_components: {
+        Row: {
+          created_at: string
+          id: number
+          metric_has_notes: boolean
+          metric_has_scores: boolean
+          metric_label: string
+          metric_names: Json
+          org_id: number
+          round_id: number | null
+          sort_order: number
+          template_id: number
+          title: string
+          updated_at: string
+          uses_action_plan: boolean
+          uses_development_areas: boolean
+          uses_strengths: boolean
+          weightage_pct: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          metric_has_notes?: boolean
+          metric_has_scores?: boolean
+          metric_label?: string
+          metric_names?: Json
+          org_id: number
+          round_id?: number | null
+          sort_order?: number
+          template_id: number
+          title: string
+          updated_at?: string
+          uses_action_plan?: boolean
+          uses_development_areas?: boolean
+          uses_strengths?: boolean
+          weightage_pct: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          metric_has_notes?: boolean
+          metric_has_scores?: boolean
+          metric_label?: string
+          metric_names?: Json
+          org_id?: number
+          round_id?: number | null
+          sort_order?: number
+          template_id?: number
+          title?: string
+          updated_at?: string
+          uses_action_plan?: boolean
+          uses_development_areas?: boolean
+          uses_strengths?: boolean
+          weightage_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_report_template_components_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_report_template_components_round_fkey"
+            columns: ["round_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_rounds"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_report_template_components_template_fkey"
+            columns: ["template_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_report_templates"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      ars_report_templates: {
+        Row: {
+          course_id: number | null
+          created_at: string
+          id: number
+          is_active: boolean
+          name: string
+          org_id: number
+          overall_levels: Json
+          readiness_tags: Json
+          updated_at: string
+        }
+        Insert: {
+          course_id?: number | null
+          created_at?: string
+          id?: never
+          is_active?: boolean
+          name: string
+          org_id: number
+          overall_levels?: Json
+          readiness_tags?: Json
+          updated_at?: string
+        }
+        Update: {
+          course_id?: number | null
+          created_at?: string
+          id?: never
+          is_active?: boolean
+          name?: string
+          org_id?: number
+          overall_levels?: Json
+          readiness_tags?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_report_templates_course_org_fkey"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_report_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ars_reports: {
+        Row: {
+          closing_note: string | null
+          created_at: string
+          id: number
+          org_id: number
+          overall_level: string | null
+          overall_score: number | null
+          released_at: string | null
+          run_id: number
+          status: string
+          student_id: string
+          template_id: number
+          updated_at: string
+          written_by: string | null
+        }
+        Insert: {
+          closing_note?: string | null
+          created_at?: string
+          id?: never
+          org_id: number
+          overall_level?: string | null
+          overall_score?: number | null
+          released_at?: string | null
+          run_id: number
+          status?: string
+          student_id: string
+          template_id: number
+          updated_at?: string
+          written_by?: string | null
+        }
+        Update: {
+          closing_note?: string | null
+          created_at?: string
+          id?: never
+          org_id?: number
+          overall_level?: string | null
+          overall_score?: number | null
+          released_at?: string | null
+          run_id?: number
+          status?: string
+          student_id?: string
+          template_id?: number
+          updated_at?: string
+          written_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ars_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ars_reports_run_fkey"
+            columns: ["run_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_process_runs"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_reports_student_org_fkey"
+            columns: ["student_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_reports_template_fkey"
+            columns: ["template_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "ars_report_templates"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "ars_reports_writer_org_fkey"
+            columns: ["written_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       ars_rounds: {
         Row: {
           config: Json
@@ -206,6 +493,7 @@ export type Database = {
           status: string
           student_id: string
           submitted_at: string | null
+          submitted_late: boolean | null
           updated_at: string
         }
         Insert: {
@@ -222,6 +510,7 @@ export type Database = {
           status?: string
           student_id: string
           submitted_at?: string | null
+          submitted_late?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -238,6 +527,7 @@ export type Database = {
           status?: string
           student_id?: string
           submitted_at?: string | null
+          submitted_late?: boolean | null
           updated_at?: string
         }
         Relationships: [

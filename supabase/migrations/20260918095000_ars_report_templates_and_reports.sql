@@ -195,12 +195,12 @@ create table public.ars_reports (
   org_id bigint not null references public.orgs (id),
   run_id bigint not null,
   template_id bigint not null,
-  student_id uuid not null references public.profiles (id) on delete cascade,
+  student_id uuid not null,
   status text not null default 'draft',
   overall_score numeric(5,2),
   overall_level text,
   closing_note text,
-  written_by uuid references public.profiles (id),
+  written_by uuid,
   released_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -217,6 +217,16 @@ create table public.ars_reports (
   constraint ars_reports_template_fkey
     foreign key (template_id, org_id)
     references public.ars_report_templates (id, org_id)
+    on delete restrict,
+
+  constraint ars_reports_student_org_fkey
+    foreign key (student_id, org_id)
+    references public.profiles (id, org_id)
+    on delete restrict,
+
+  constraint ars_reports_writer_org_fkey
+    foreign key (written_by, org_id)
+    references public.profiles (id, org_id)
     on delete restrict,
 
   constraint ars_reports_status_valid
@@ -298,6 +308,123 @@ create trigger ars_report_components_set_updated_at
 before update on public.ars_report_components
 for each row execute function private.set_updated_at();
 
+-- A report is a view of one process run through one compatible template. The
+-- composite foreign keys above pin every reference to the organisation, but a
+-- same-organisation caller could otherwise pair run A with student B, or use a
+-- programme-specific template for a different programme. Those are relational
+-- invariants and therefore live here rather than in a form action.
+create or replace function private.guard_ars_report_shape()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  run_student_id uuid;
+  run_course_id bigint;
+  template_course_id bigint;
+  caller uuid := (select auth.uid());
+begin
+  select pr.student_id, pr.course_id
+    into run_student_id, run_course_id
+    from public.ars_process_runs as pr
+   where pr.id = new.run_id
+     and pr.org_id = new.org_id;
+
+  if not found then
+    raise exception 'report run % does not exist in organisation %', new.run_id, new.org_id
+      using errcode = '23503';
+  end if;
+
+  if new.student_id is distinct from run_student_id then
+    raise exception 'a report must belong to the student on its process run'
+      using errcode = '23514';
+  end if;
+
+  select t.course_id
+    into template_course_id
+    from public.ars_report_templates as t
+   where t.id = new.template_id
+     and t.org_id = new.org_id;
+
+  if not found then
+    raise exception 'report template % does not exist in organisation %', new.template_id, new.org_id
+      using errcode = '23503';
+  end if;
+
+  if template_course_id is not null and template_course_id <> run_course_id then
+    raise exception 'a programme-specific report template must match the run programme'
+      using errcode = '23514';
+  end if;
+
+  -- Authenticated callers never choose the author stamp. It is empty on a
+  -- draft and becomes the releasing mentor at the release transition.
+  if caller is not null then
+    if new.status = 'released' then
+      new.written_by := caller;
+    else
+      new.written_by := null;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke execute on function private.guard_ars_report_shape()
+  from public, anon, authenticated;
+
+create trigger ars_reports_guard_shape
+before insert or update on public.ars_reports
+for each row execute function private.guard_ars_report_shape();
+
+-- A filled component must come from the same template as its report. Without
+-- this check, a component from another template in the same organisation could
+-- be inserted and would corrupt the computed total while evading the release
+-- completeness count.
+create or replace function private.guard_ars_report_component_shape()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  report_template_id bigint;
+  component_template_id bigint;
+begin
+  select rep.template_id
+    into report_template_id
+    from public.ars_reports as rep
+   where rep.id = new.report_id
+     and rep.org_id = new.org_id;
+
+  select tc.template_id
+    into component_template_id
+    from public.ars_report_template_components as tc
+   where tc.id = new.template_component_id
+     and tc.org_id = new.org_id;
+
+  if report_template_id is null or component_template_id is null then
+    raise exception 'report and template component must exist in the same organisation'
+      using errcode = '23503';
+  end if;
+
+  if report_template_id <> component_template_id then
+    raise exception 'a filled report component must belong to the report template'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke execute on function private.guard_ars_report_component_shape()
+  from public, anon, authenticated;
+
+create trigger ars_report_components_guard_shape
+before insert or update on public.ars_report_components
+for each row execute function private.guard_ars_report_component_shape();
+
 -- ---------------------------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------------------------
@@ -338,8 +465,13 @@ as $$
     where rep.id = target_report_id
       and (
         private.is_admin_of_org(rep.org_id)
-        or private.is_assigned_mentor(rep.student_id)
-        or (rep.student_id = (select auth.uid()) and rep.status = 'released')
+        or (
+          rep.org_id = private.current_org_id()
+          and (
+            private.is_assigned_mentor(rep.student_id)
+            or (rep.student_id = (select auth.uid()) and rep.status = 'released')
+          )
+        )
       )
   )
 $$;
@@ -359,6 +491,7 @@ as $$
     from public.ars_reports as rep
     where rep.id = target_report_id
       and rep.status = 'draft'
+      and rep.org_id = private.current_org_id()
       and private.is_assigned_mentor(rep.student_id)
   )
 $$;
