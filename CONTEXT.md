@@ -34,9 +34,8 @@ foundation landed.
 **PRs #24 and #25 merged on 2026-09-18**, and `main` moved for the first time
 since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
 4b as `ce147b3`. The follow-up context correction merged as PR #26 (`8ab93c7`),
-which is the current `main`; CI on it is green. **PR #27 is open** from
-`docs/review-pipeline`, adding only `docs/review-checklist.md`; its `context`,
-`verify`, Vercel and preview checks are all green. **PR #28 is open** from
+CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
+`docs/review-checklist.md`, which is now the current `main`. **PR #28 is open** from
 `feat/ars-report`, carrying the report database plus mentor/student UI; its
 `context`, `verify`, Vercel and preview checks are all green.
 
@@ -194,9 +193,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
   file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
   4b, merged the same day as `ce147b3`.
-- **PR #27 is open and mergeable** from `docs/review-pipeline` into `main`. It
-  adds the documentation-only review contract in `docs/review-checklist.md`;
-  all four reported checks are green as of 2026-09-18. #25 was stacked on #24's branch, so
+- **PR #27 merged 2026-09-18** as `6a39649`, adding the documentation-only
+  review contract in `docs/review-checklist.md`. #25 was stacked on #24's branch, so
   merging #24 with `--delete-branch` **closed** it rather than retargeting it;
   reopening needed that branch pushed back before the base could be moved to
   `main`. **Do not delete the base branch of a stacked pull request.** It was then
@@ -1793,7 +1791,7 @@ time otherwise.
 | 2026-09-18 | **Round scheduling driven over HTTP, 15 of 15** | `scripts/verify/ars-scheduling.mjs` against a running app with a throwaway admin's real session, every form posted through the no-JavaScript path. Dates stored as the right instants and shown back as the days typed; a backwards deadline and a malformed date both refused and creating nothing; an unticked review box reading `false`; an `offline` round authored. The last two checks read the **served** stylesheet rather than the source, which is how the font that rendered nowhere was caught |
 | 2026-09-18 | **PRs #24 and #25 merged, `main` deployed** | `main` moved from `e1644d0` to `ce147b3`, the first movement since 2026-09-12. CI green on `main`; Production deployment reports success on `ce147b3`. The deployed URL answers: `/login` 200, `/admin/courses`, `/student` and `/mentor` all 307 to sign-in for an anonymous caller. **The new admin round-date fields are not verified through a browser** -- they sit behind an admin session and no signed-in check was run after the deploy |
 | 2026-09-18 | `.stack-form`, `.choice` and `.field-row` were never defined | The round form had been using all three since it was written, so it rendered unstyled -- visible in the owner's screenshot of 2026-09-15. Now defined on the design tokens |
-| 2026-09-18 | Repository and context audit | `git fetch --prune origin` left `main` exactly at `origin/main` (`8ab93c7`) with green CI. The clean local `feat/ars-report` branch is one commit ahead and does not exist on `origin`; the first context-gate run correctly failed on that mismatch. GitHub reports PR #27 open and mergeable with `context`, `verify`, Vercel and preview checks green. `CONTEXT.md` was corrected to record both facts |
+| 2026-09-18 | Repository and context audit | `git fetch --prune origin` left `main` exactly at `origin/main` (`8ab93c7`) with green CI. The clean local `feat/ars-report` branch is one commit ahead and does not exist on `origin`; the first context-gate run correctly failed on that mismatch. GitHub reported the review-contract pull request mergeable with all four checks green; it has since merged. `CONTEXT.md` was corrected to record both facts |
 | 2026-09-18 | Supabase migration history audit | `npx.cmd supabase migration list` against the linked hosted project: local and remote agree through `20260918080815`; `20260918094500` and `20260918095000` are local only and unapplied, as this file says. Supabase CLI is `2.116.0`; it reported `2.117.0` available. No database write was made |
 | 2026-09-18 | **ARS report migrations applied and reviewed** | `20260918094500` and `20260918095000` applied through the linked CLI. Review fixed two defects before application: a review transition clearing `submitted_late`, and same-organisation report rows accepting a mismatched run/student/template. The first live probe then found policy helpers with EXECUTE revoked from `authenticated`; append-only `20260918100815` corrected it. UI review found released reports could not load their template labels; append-only `20260918101442` corrected that |
 | 2026-09-18 | **PR #28 reviewed independently; five defects found, none caught by CI** | A read-only review against the live database. **Fixed forward in `20260918153000`:** (1) `grant select, insert on ars_reports` was column-**wide**, so a mentor could insert a draft carrying a fabricated `overall_score` -- directly beneath a comment claiming no caller could; (2) a template whose weightages exceeded 100 made an ordinary component save fail with a raw constraint error, never reaching the readable release message; (3) `private.ars_stamp_late` read `OLD` on a BEFORE **INSERT** OR UPDATE trigger; (4) `private.mentor_reaches_report` was a `SECURITY DEFINER` function nothing referenced. **Fixed in code:** both report list queries were unpaginated, the mentor one fanning an unbounded id list into four `IN` queries |
@@ -1845,8 +1843,8 @@ left in this phase:
 - **The per-screen re-skin of the 13 existing routes**, deliberately left until
   the features stop moving, because a re-skin touches every route.
 
-**PR #27 is open and green** (2026-09-18). Review and merge the documentation-only
-`docs/review-pipeline` branch when ready. The other merged branches listed under
+**The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
+is on `main` and is what a reviewer works from. The merged branches listed under
 *Current repository state* can be pruned.
 
 **The ARS report work is pushed in PR #28.** Four migrations are applied and
