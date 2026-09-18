@@ -31,3 +31,97 @@ export function buildReportsHref({ base, page }: { base: "/mentor" | "/student";
   const safePage = Number.isSafeInteger(page) && page > 1 ? page : 1;
   return safePage === 1 ? base : `${base}?page=${safePage}`;
 }
+
+// --------------------------------------------------------------------------
+// Report-template authoring
+// --------------------------------------------------------------------------
+
+// Closed sets. Nothing the admin typed is ever put into a URL and rendered --
+// the same rule the rounds panel and the admin console follow, and the reason a
+// crafted `?error=` payload reaches only Next's JSON-escaped router state.
+export type TemplateError =
+  | "component-invalid"
+  | "delete-failed"
+  | "invalid-request"
+  | "name-invalid"
+  | "not-found"
+  | "save-failed"
+  | "weightage-invalid"
+  | "weightage-over-100";
+
+export type TemplateNotice =
+  | "component-added"
+  | "component-removed"
+  | "created"
+  | "saved"
+  | "weightages-saved";
+
+export const templateErrorKey = "templateError";
+export const templateNoticeKey = "templateNotice";
+
+export function buildTemplatesHref({
+  error,
+  notice,
+  page,
+}: {
+  error?: TemplateError;
+  notice?: TemplateNotice;
+  page?: number;
+}): string {
+  const params = new URLSearchParams();
+  if (page && page > 1) params.set("page", String(page));
+  if (error) params.set(templateErrorKey, error);
+  if (notice) params.set(templateNoticeKey, notice);
+  const query = params.toString();
+  return query ? `/admin/report-templates?${query}` : "/admin/report-templates";
+}
+
+// Rebuilt from parsed values only. A hidden field holding the destination would
+// be an open redirect wearing a convenience costume.
+export function buildTemplateHref({
+  error,
+  notice,
+  templateId,
+}: {
+  error?: TemplateError;
+  notice?: TemplateNotice;
+  templateId: number;
+}): string {
+  const params = new URLSearchParams();
+  if (error) params.set(templateErrorKey, error);
+  if (notice) params.set(templateNoticeKey, notice);
+  const query = params.toString();
+  const base = `/admin/report-templates/${templateId}`;
+  return query ? `${base}?${query}` : base;
+}
+
+export const templateErrorMessages: Record<TemplateError, string> = {
+  "component-invalid": "Check the component's title, weightage and labels.",
+  "delete-failed": "That could not be removed. It may already be in use by a report.",
+  "invalid-request": "That request could not be read.",
+  "name-invalid": `Give the template a name of at most 120 characters.`,
+  "not-found": "That template no longer exists.",
+  "save-failed": "That could not be saved.",
+  "weightage-invalid": "A weightage is a percentage above 0 and at most 100.",
+  "weightage-over-100": "Those weightages would total more than 100. Lower another component first.",
+};
+
+export const templateNoticeMessages: Record<TemplateNotice, string> = {
+  "component-added": "Component added.",
+  "component-removed": "Component removed.",
+  created: "Template created.",
+  saved: "Saved.",
+  "weightages-saved": "Weightages updated.",
+};
+
+export function parseTemplateError(raw: string | string[] | undefined): TemplateError | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value && value in templateErrorMessages ? (value as TemplateError) : null;
+}
+
+export function parseTemplateNotice(raw: string | string[] | undefined): TemplateNotice | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value && value in templateNoticeMessages ? (value as TemplateNotice) : null;
+}
+
+export const templatesPageSize = 20;

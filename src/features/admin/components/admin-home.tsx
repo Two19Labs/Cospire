@@ -24,6 +24,9 @@ export function AdminHome({ profile }: { profile: Profile }) {
           <Link className="button button--primary" href="/admin/courses">
             Programmes
           </Link>
+          <Link className="button button--primary" href="/admin/report-templates">
+            Report templates
+          </Link>
         </div>
       </section>
     </RoleShell>
