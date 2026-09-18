@@ -22,13 +22,20 @@ and the admin screens -- are complete and verified at both the database and the
 application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
 are back in step, and the new routes are live: `/admin/courses` and
 `/admin/courses/[id]` answer on the deployed URL and refuse anonymous callers.
-The next work is **step 3, `ars_submissions` and `ars_feedback`**. Its migration
-is written but **not applied, and its design is now partly superseded** by the
-Client meeting of 2026-09-16. Rework it before applying anything. See *The ARS
-meeting, 2026-09-16*.
+**Phase 5a steps 3, 4 and 4b are done at the database, on 2026-09-18**, all on
+the branch `feat/ars-submissions` and none of them merged: submissions, process
+runs and attempt grants; the `ars-uploads` bucket and its `storage.objects`
+policies; and round dates, `requires_review` and the `offline` round type. Three
+migrations applied to the hosted project and verified by probe -- 17, 12 and 8 --
+plus 15 checks driven over HTTP. **The next build step is step 5**, the student
+route and the mentor review queue, which is also the first UI since the design
+foundation landed.
 
 **Two pull requests are open and unmerged since 2026-09-12**: #24, the CONTEXT
-cleanup, and #25, step 3 as a draft stacked on it. `main` has not moved.
+cleanup, and #25, the ARS work, still marked draft and carrying a description
+that predates the 2026-09-16 rework. `main` has not moved since PR #23, so
+**nothing built since 2026-09-12 is deployed**. `gh` is logged out, so neither
+can be merged from a session until `gh auth login` is run.
 
 **The design foundation is merged** (tokens from the Client's prototype, Figtree
 via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
@@ -570,7 +577,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude Code session | `feat/ars-submissions` | **Phase 5a step 3**: submissions, process runs, attempt grants, RLS on reads and writes | `supabase/migrations/20260911200751_ars_submissions_and_process_runs.sql`, `src/features/ars/**`, `src/shared/db/types.ts` (regenerated) | **Migration applied and verified 2026-09-18.** Next: the upload bucket and its `storage.objects` policies, then round dates and the `requires_review` flag. PR #25 is still a draft and its description predates the rework | 2026-09-18 |
+| None | `feat/ars-submissions` (unmerged, pushed) | **Phase 5a steps 3, 4 and 4b**, all applied to the hosted database | `supabase/migrations/2026091*`, `src/features/ars/**`, `src/app/globals.css`, `scripts/verify/ars-scheduling.mjs`, `src/shared/db/types.ts` (regenerated) | **Nothing claimed.** The database work is done and verified; the branch is pushed and unmerged. Next is **step 5**, the student submission route and the mentor review queue | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1711,18 +1718,21 @@ both worse the longer they wait:
    the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
    written. Both sides want this, so it only needs recording.
 
-**Phase 5a step 3 is done at the database** (applied and verified 2026-09-18).
-The build continues with:
+**Phase 5a steps 3, 4 and 4b are done at the database** (2026-09-18). What is
+left in this phase:
 
-- **The upload bucket and its policies on `storage.objects`**, pulled forward
-  because application rounds now take real files (resume, marksheet,
-  certificates), not only video essays.
-- **Round dates and deadlines**, and a `requires_review` flag, both of which the
-  2026-09-16 meeting added and neither of which the schema has.
-- **Step 5**: one student route rendering whichever component a round declares,
-  and the mentor review queue.
+- **Step 5, and it is the next thing to build**: one student route rendering
+  whichever component a round declares (written answer, essay, form, file
+  upload, or an off-platform round showing its date), and the mentor review
+  queue. It is the first UI since the design foundation merged, so build it to
+  the Client's prototype rather than re-skinning it later.
+- **The upload UI**, which is also what first exercises the bucket's delete and
+  update policies. Those are written but unverified: Supabase refuses SQL
+  deletes on `storage.objects`, so only an HTTP path can test them.
 - **The ARS report** once its template is agreed and the extra work is in
   writing. `ars_process_runs.report_released_at` is the column it hangs from.
+- **The per-screen re-skin of the 13 existing routes**, deliberately left until
+  the features stop moving, because a re-skin touches every route.
 
 **Merge or close the two open pull requests** (#24, this file's cleanup; #25,
 step 3 as a draft). They have been open since 2026-09-12 and `main` has not moved.
