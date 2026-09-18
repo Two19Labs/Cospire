@@ -765,8 +765,10 @@ diverge from the Auth identities.
 Current live counts, re-measured 2026-09-18 after the step 3 probes were rolled
 back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 3 courses, 4 content
 grants, 2 documents, and 0 rows in every ARS table.** Courses rose from 1 to 3
-and grants from 3 to 4 during the owner's manual test pass of 2026-09-14; those
-rows are the owner's, not test residue.
+and grants from 3 to 4 during the owner's manual test pass of 2026-09-14, and a
+fourth course ("Mesa") was added by the owner on 2026-09-18; those rows are the
+owner's, not test residue. Two of them, ids 29 and 30, differ only by a space in
+the title and look like a duplicate the owner may want to remove.
 
 This is the baseline any future verification run should return to. **None of it
 is test residue and none of it may be deleted:**
@@ -1691,6 +1693,8 @@ time otherwise.
 | 2026-09-18 | Storage probe isolation | 0 objects left in `ars-uploads`; the owner's 2 document objects untouched; courses 3, grants 4, documents 2 |
 | 2026-09-18 | **Round scheduling and offline rounds, 8 probes** | A deadline before the opening date refused (23514); a student submitting an **off-platform round refused** (42501); the run correctly **not** complete until the interview was recorded; the assigned mentor recording it allowed; that same mentor recording a *written* round for a student refused; `completed_at` stamped once the interview was in; `requires_review` stored per round |
 | 2026-09-18 | Round dates, unit tested | 136 tests, up from 128. The cases worth naming: an opening date is the **start** of that day in IST and a deadline the **end** of it, so a deadline of the 1st does not quietly cost a student 24 hours; a stored instant displays as the day the admin typed even though it falls on the previous date in UTC |
+| 2026-09-18 | **Round scheduling driven over HTTP, 15 of 15** | `scripts/verify/ars-scheduling.mjs` against a running app with a throwaway admin's real session, every form posted through the no-JavaScript path. Dates stored as the right instants and shown back as the days typed; a backwards deadline and a malformed date both refused and creating nothing; an unticked review box reading `false`; an `offline` round authored. The last two checks read the **served** stylesheet rather than the source, which is how the font that rendered nowhere was caught |
+| 2026-09-18 | `.stack-form`, `.choice` and `.field-row` were never defined | The round form had been using all three since it was written, so it rendered unstyled -- visible in the owner's screenshot of 2026-09-15. Now defined on the design tokens |
 
 ## Next recommended action
 
