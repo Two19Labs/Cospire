@@ -34,9 +34,12 @@ export async function createRoundAction(formData: FormData): Promise<void> {
   }
 
   const { errors, value } = validateNewRound({
+    dueAt: formData.get("dueAt"),
     fields: formData.get("fields"),
     name: formData.get("name"),
+    opensAt: formData.get("opensAt"),
     prompt: formData.get("prompt"),
+    requiresReview: formData.get("requiresReview"),
     submissionMode: formData.get("submissionMode"),
   });
 
@@ -49,7 +52,9 @@ export async function createRoundAction(formData: FormData): Promise<void> {
         ? "mode-invalid"
         : errors.prompt
           ? "prompt-invalid"
-          : "fields-invalid";
+          : errors.dates
+            ? "dates-invalid"
+            : "fields-invalid";
 
     redirect(buildRoundsHref({ courseId, error }));
   }
@@ -59,8 +64,11 @@ export async function createRoundAction(formData: FormData): Promise<void> {
   const { error } = await supabase.from("ars_rounds").insert({
     config: value.config,
     course_id: courseId,
+    due_at: value.dueAt,
     name: value.name,
+    opens_at: value.opensAt,
     org_id: admin.orgId,
+    requires_review: value.requiresReview,
     submission_mode: value.submissionMode,
   });
 

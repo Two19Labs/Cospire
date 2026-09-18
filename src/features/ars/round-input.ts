@@ -4,17 +4,46 @@
 // its correction in `20260910144803`. The database is the enforcer; this exists
 // so an admin gets a sentence they can act on instead of a constraint violation.
 
-export const roundSubmissionModes = ["text", "file", "form"] as const;
+export const roundSubmissionModes = ["text", "file", "form", "offline"] as const;
 
 export type RoundSubmissionMode = (typeof roundSubmissionModes)[number];
 
 // What each mode means, in the words the admin sees. Kept beside the validation
 // rather than in the component, so the list and the rules cannot drift.
+//
+// `offline` exists because interviews, group discussions and guesstimates are
+// two-way and happen elsewhere -- Annexure B excludes live features from this
+// platform. The round still belongs in the sequence so the student can see the
+// step and its date; the mentor records the outcome afterwards.
 export const roundSubmissionModeLabels: Record<RoundSubmissionMode, string> = {
   file: "A file upload, such as a video essay",
   form: "A set of written answers to named questions",
+  offline: "Nothing here — it happens on a call, and the mentor records it",
   text: "One written answer",
 };
+
+// Dates are typed as a day, not an instant: an admin setting a deadline means
+// the end of that day, in their own time zone.
+//
+// IST is applied as a fixed offset rather than through an `Intl` time-zone
+// lookup, for the reason recorded when the document watermark read UTC: a
+// runtime with trimmed ICU data falls back to UTC while still printing "IST",
+// which is a wrong answer that looks right. Vercel runs on UTC.
+const istOffset = "+05:30";
+
+export function parseRoundDay(
+  raw: unknown,
+  edge: "start" | "end",
+): string | null | undefined {
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+
+  const time = edge === "start" ? "00:00:00" : "23:59:59";
+  const parsed = new Date(`${raw}T${time}${istOffset}`);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+
+  return parsed.toISOString();
+}
 
 export const roundNameMaxLength = 200;
 export const roundPromptMaxLength = 4000;
@@ -31,6 +60,7 @@ export interface RoundConfig {
 }
 
 export interface NewRoundFieldErrors {
+  dates?: string;
   fields?: string;
   name?: string;
   prompt?: string;
@@ -39,7 +69,10 @@ export interface NewRoundFieldErrors {
 
 export interface NewRoundValue {
   config: RoundConfig;
+  dueAt: string | null;
   name: string;
+  opensAt: string | null;
+  requiresReview: boolean;
   submissionMode: RoundSubmissionMode;
 }
 
@@ -69,12 +102,26 @@ export function parseFieldLabels(raw: unknown): string[] {
 }
 
 export function validateNewRound(input: {
+  dueAt?: unknown;
   fields: unknown;
   name: unknown;
+  opensAt?: unknown;
+  requiresReview?: unknown;
   prompt: unknown;
   submissionMode: unknown;
 }): NewRoundValidation {
   const errors: NewRoundFieldErrors = {};
+
+  const opensAt = parseRoundDay(input.opensAt, "start");
+  const dueAt = parseRoundDay(input.dueAt, "end");
+
+  if (opensAt === undefined || dueAt === undefined) {
+    errors.dates = "Enter dates as a day, or leave them empty.";
+  } else if (opensAt && dueAt && dueAt < opensAt) {
+    // The same rule the ars_rounds_dates_ordered constraint enforces. Caught
+    // here so the admin gets a sentence rather than a constraint violation.
+    errors.dates = "The deadline cannot fall before the opening date.";
+  }
 
   const name = typeof input.name === "string" ? input.name.trim() : "";
   if (!name) {
@@ -128,8 +175,29 @@ export function validateNewRound(input: {
         submissionMode === "form"
           ? { fields: labels.map((label) => ({ label })), prompt }
           : { prompt },
+      dueAt: dueAt ?? null,
       name,
+      opensAt: opensAt ?? null,
+      // An unticked checkbox sends nothing at all, so absence is false. An
+      // application round is practice and nobody reads it; an essay is.
+      requiresReview: input.requiresReview === "on" || input.requiresReview === true,
       submissionMode,
     },
   };
+}
+
+// A stored instant, shown back as the day an admin meant.
+//
+// Fixed offset rather than an `Intl` time-zone lookup, for the same reason
+// `composeWatermark` avoids one: a runtime with trimmed ICU data falls back to
+// UTC while still printing "IST". Vercel runs on UTC.
+const istOffsetMinutes = 5 * 60 + 30;
+
+export function formatRoundDay(raw: string | null): string | null {
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getTime() + istOffsetMinutes * 60_000)
+    .toISOString()
+    .slice(0, 10);
 }

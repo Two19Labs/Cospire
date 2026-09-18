@@ -8,10 +8,13 @@ import {
 } from "../round-input";
 
 export interface RoundListRow {
+  dueAt: string | null;
   fieldLabels: string[];
   id: number;
   name: string;
+  opensAt: string | null;
   prompt: string;
+  requiresReview: boolean;
   submissionMode: RoundSubmissionMode;
 }
 
@@ -56,10 +59,15 @@ function toRow(entry: unknown): RoundListRow {
   const { fieldLabels, prompt } = readConfig(row.config);
 
   return {
+    dueAt: typeof row.due_at === "string" ? row.due_at : null,
     fieldLabels,
     id: row.id,
     name: row.name,
+    opensAt: typeof row.opens_at === "string" ? row.opens_at : null,
     prompt,
+    // Defaulted true in the database, so a row written before the column
+    // existed reads as needing review rather than silently skipping a mentor.
+    requiresReview: row.requires_review !== false,
     submissionMode: row.submission_mode as RoundSubmissionMode,
   };
 }
@@ -85,7 +93,7 @@ export async function listRounds(courseId: number): Promise<RoundListRow[]> {
 
   const { data, error } = await supabase
     .from("ars_rounds")
-    .select("id, name, submission_mode, config")
+    .select("id, name, submission_mode, config, opens_at, due_at, requires_review")
     .eq("course_id", courseId)
     .order("sort_order", { ascending: true })
     // A unique final sort key, so two rounds sharing a sort_order cannot swap

@@ -136,9 +136,12 @@ export type Database = {
           config: Json
           course_id: number
           created_at: string
+          due_at: string | null
           id: number
           name: string
+          opens_at: string | null
           org_id: number
+          requires_review: boolean
           sort_order: number
           submission_mode: string
           updated_at: string
@@ -147,9 +150,12 @@ export type Database = {
           config?: Json
           course_id: number
           created_at?: string
+          due_at?: string | null
           id?: never
           name: string
+          opens_at?: string | null
           org_id: number
+          requires_review?: boolean
           sort_order?: number
           submission_mode: string
           updated_at?: string
@@ -158,9 +164,12 @@ export type Database = {
           config?: Json
           course_id?: number
           created_at?: string
+          due_at?: string | null
           id?: never
           name?: string
+          opens_at?: string | null
           org_id?: number
+          requires_review?: boolean
           sort_order?: number
           submission_mode?: string
           updated_at?: string
