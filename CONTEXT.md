@@ -7,8 +7,8 @@ review the same evening). An admin copies a standard prompt into any model with
 an institution's admission-process document and pastes the answer back, and the
 whole ARS process is created after a preview they confirm. Building rounds by
 hand is unchanged and sits beside it. **35 of 35 checks over HTTP**, no
-migration, no new dependency. It is on `feat/ars-form-engine` with the form
-engine, which it depends on. See *The process importer*.
+migration, no new dependency. **Merged as PR #30 and deployed** on 2026-09-20,
+together with the form engine it depends on. See *The process importer*.
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
@@ -792,7 +792,19 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| This chat | `feat/ars-form-engine` | **The ARS form format** -- multi-step forms expressed in `ars_rounds.config` | `src/features/ars/form-schema.ts`, `src/features/ars/form-schema.test.ts` | **In progress.** Format, validation, the **student renderer** and the **admin round builder** are built: `/student/ars` shows the process with its steps and dates, `/student/ars/[id]` walks the round's steps with per-step drafts. Migration `20260918210000` applied, widening `ars_rounds_form_has_fields` so a form round may be created empty and composed afterwards. The builder is at `/admin/courses/[id]/rounds/[roundId]`: pages, sections, a typed question picker, up/down reordering and a preview rendered from the same spec. **Nothing has been driven over HTTP yet**, and file upload inside a form renders a placeholder rather than an upload | 2026-09-18 |
+
+**Nothing is in progress.** `feat/ars-form-engine` merged as PR #30 on
+2026-09-20 and its branch is deleted. The table above is deliberately left with
+no rows rather than a row of dashes: the context gate reads the branch column of
+every row and an em dash is not the ASCII hyphen it forgives, which is a
+five-minute lesson recorded here so nobody spends it twice.
+
+**What that branch left behind, which the next agent inherits rather than
+discovers:** the student process view and the multi-step round renderer are
+built and merged, but **file upload inside a form still renders a placeholder
+rather than an upload**, and **the mentor review queue does not exist**. The
+admin round builder and the process importer were driven over HTTP; the student
+route was not.
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1493,8 +1505,8 @@ file **at its Storage path**.
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
 | 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
-| 5. The student submission route and the mentor review queue | **Partly built on `feat/ars-form-engine`, unmerged.** The student process view and the multi-step round renderer exist; the mentor review queue does not. File upload inside a form still renders a placeholder rather than an upload |
-| 5b. **The process importer** | **Built and verified on `feat/ars-form-engine`, 2026-09-20.** 35 of 35 over HTTP. No migration. See *The process importer* |
+| 5. The student submission route and the mentor review queue | **Half done, merged and deployed 2026-09-20** (PR #30). The student process view and the multi-step round renderer exist; **the mentor review queue does not**, and file upload inside a form still renders a placeholder rather than an upload. The student route has not been driven over HTTP |
+| 5b. **The process importer** | **Done, merged and deployed 2026-09-20** (PR #30). 35 of 35 over HTTP. No migration. See *The process importer* |
 | 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
@@ -1958,6 +1970,7 @@ time otherwise.
 | 2026-09-20 | Two false passes found inside the importer's own harness | A check asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example; the assertions now key on text only a preview can produce. And a `\b` written into a regex by a Python patch became a literal backspace byte (0x08), so the hidden-field reader matched nothing and every action post returned HTTP 500 -- which reads as "Failed to find Server Action" and sends you looking at deployments rather than at your own regex |
 | 2026-09-20 | Next.js refuses a Server Action with no `Origin` header | Worth keeping, because the symptom misdirects: the request answers **500 "Failed to find Server Action. This request might be from an older or newer deployment"**, which reads like a build mismatch. A browser always sends the header; any script driving a Server Action must set it. The older scripts in `scripts/verify/` do not, and should be corrected when next touched |
 | 2026-09-20 | A `useActionState` form does not carry `$ACTION_ID_` | The other verify scripts find an action by that field. A form rendered by `useActionState` carries `$ACTION_REF_n`, an `$ACTION_n:0` / `$ACTION_n:1` bound pair and an `$ACTION_KEY` instead. `ars-import.mjs` replays whatever hidden fields the server rendered rather than recognising one shape, which is both more robust and the honest test of the no-JavaScript path. Confirmed against the **existing login form** first, to establish the pattern worked before blaming the new code |
+| 2026-09-20 | **PR #30 merged and deployed** | `main` moved `7ad0339` -> `5000a75`. `verify` green on the pull request and again on `main`; the Vercel preview deployed on the pull request and Production on the merge. `https://cospire-roan.vercel.app/login` answers 200 and `/admin/courses/46/import` refuses an anonymous caller with a 307. **CI on `main` failed the `context` job**, which is the known artifact rather than a defect: the branch is deleted on merge, so the Active work row naming it became false at the moment it merged. `verify` passed. This commit is the fix |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 
 ## Next recommended action
@@ -1975,9 +1988,9 @@ both worse the longer they wait:
    the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
    written. Both sides want this, so it only needs recording.
 
-**The process importer is built and verified** (2026-09-20), and it ships with
-the form engine on `feat/ars-form-engine`. Two things follow from it that are
-not code:
+**The process importer is built, verified, merged and deployed** (2026-09-20,
+PR #30), together with the form engine it depends on. Two things follow from it
+that are not code:
 
 - **It is a clause 12 conversation, like the report.** The founder agreed the
   paste-a-prompt mechanism on 2026-09-16 for *question* import. Pointing it at
