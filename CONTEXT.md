@@ -854,6 +854,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex / current chat | `feat/report-template-importer` | Add ARS-report-template paste-to-build document parser, preview and confirmed creation | `src/app/admin/report-templates/**`, `src/features/ars-report/**`, `scripts/verify/**`, `CONTEXT.md` | In progress | 2026-09-20 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The mentor
