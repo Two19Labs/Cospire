@@ -35,6 +35,7 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
     items: [
       { href: "/admin", icon: "home", label: "Overview", exact: true },
       { href: "/admin/courses", icon: "book", label: "Programmes" },
+      { href: "/admin/ars", icon: "grid", label: "ARS" },
       { href: "/admin/users", icon: "people", label: "Users" },
       { href: "/admin/documents", icon: "document", label: "Documents" },
       { href: "/admin/report-templates", icon: "template", label: "Report templates" },

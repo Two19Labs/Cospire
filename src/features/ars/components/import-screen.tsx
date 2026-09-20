@@ -124,8 +124,8 @@ export function ImportScreen({
           answer back here.
         </p>
         <p>
-          <Link className="button button--secondary" href={`/admin/courses/${courseId}#rounds`}>
-            Back to the programme
+          <Link className="button button--secondary" href={`/admin/ars/${courseId}`}>
+            Back to the ARS process
           </Link>
         </p>
       </section>

@@ -30,7 +30,7 @@ export async function createRoundAction(formData: FormData): Promise<void> {
   if (courseId === null) {
     // Nowhere sensible to send them: without a valid programme id there is no
     // detail page to return to.
-    redirect("/admin/courses?error=invalid-request");
+    redirect("/admin/ars?error=invalid-request");
   }
 
   const { errors, value } = validateNewRound({
@@ -84,6 +84,6 @@ export async function createRoundAction(formData: FormData): Promise<void> {
     );
   }
 
-  revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath(`/admin/ars/${courseId}`);
   redirect(buildRoundsHref({ courseId, notice: "created" }));
 }

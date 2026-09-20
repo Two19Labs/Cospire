@@ -42,8 +42,8 @@ export function buildRoundsHref({
   if (notice) params.set(roundNoticeKey, notice);
   const query = params.toString();
   return query
-    ? `/admin/courses/${courseId}?${query}#rounds`
-    : `/admin/courses/${courseId}#rounds`;
+    ? `/admin/ars/${courseId}?${query}`
+    : `/admin/ars/${courseId}`;
 }
 
 // A closed set, so a crafted value renders nothing at all rather than reaching

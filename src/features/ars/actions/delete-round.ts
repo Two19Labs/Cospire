@@ -27,7 +27,7 @@ export async function deleteRoundAction(formData: FormData): Promise<void> {
   );
 
   if (courseId === null) {
-    redirect("/admin/courses?error=invalid-request");
+    redirect("/admin/ars?error=invalid-request");
   }
 
   if (roundId === null) {
@@ -62,6 +62,6 @@ export async function deleteRoundAction(formData: FormData): Promise<void> {
     redirect(buildRoundsHref({ courseId, error: "delete-failed" }));
   }
 
-  revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath(`/admin/ars/${courseId}`);
   redirect(buildRoundsHref({ courseId, notice: "removed" }));
 }
