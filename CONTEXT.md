@@ -26,6 +26,11 @@ optional programme, and confirms before anything is written. Weightages must
 total 100 and named rounds must exist in the chosen programme. Imported
 templates start inactive for a final admin check. No migration or new dependency.
 
+**Admin Programmes and ARS are now separate sections** (2026-09-20).
+Programmes owns programme creation, student membership and curriculum; `/admin/ars`
+owns process selection, rounds, process document import and the round builder.
+The earlier course-nested URLs remain available so saved links do not break.
+
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
 
@@ -862,7 +867,6 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Codex / current chat | `feat/separate-admin-ars` | Separate programme administration from ARS process administration with its own navigation and routes | `src/app/admin/ars/**`, `src/app/admin/courses/**`, `src/features/ars/**`, `src/features/curriculum/components/course-detail.tsx`, `src/features/auth/components/app-nav.tsx`, `CONTEXT.md` | In progress | 2026-09-20 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
