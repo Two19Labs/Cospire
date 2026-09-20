@@ -11,6 +11,12 @@
 // importer that replaces a process is the most destructive control an admin has
 // in this application, and it went in on the day it was demonstrated.
 //
+// The importer moved from /admin/courses/[id]/import to /admin/ars/[id]/import
+// when Programmes and ARS were separated. This script was not updated with it
+// and quietly failed 7 of its 8 reachable checks until the duplicated route was
+// deleted and it was run again -- a harness that is not run is a harness that
+// rots, and the route it drove still existed, so nothing said so.
+//
 // node --env-file=.env.local scripts/verify/ars-import.mjs <baseUrl>
 
 import { createClient } from "@supabase/supabase-js";
@@ -221,12 +227,12 @@ try {
 
   const { data: made } = await admin
     .from("courses")
-    .insert({ org_id: COSPIRE_ORG, title: COURSE })
+    .insert({ kind: "ars_process", org_id: COSPIRE_ORG, title: COURSE })
     .select("id")
     .single();
   courseId = made.id;
 
-  const path = `/admin/courses/${courseId}/import`;
+  const path = `/admin/ars/${courseId}/import`;
 
   // ------------------------------------------------------------- A. access
   const anon = await get(path, null);
@@ -323,7 +329,7 @@ try {
   });
   record(
     "confirming redirects back to the programme",
-    (created.location ?? "").includes(`/admin/courses/${courseId}`) &&
+    (created.location ?? "").includes(`/admin/ars/${courseId}`) &&
       (created.location ?? "").includes("imported"),
     `-> ${created.location}`,
   );
@@ -377,14 +383,14 @@ try {
   );
 
   // The round is now real. It must open in the builder the admin already knows.
-  const builder = await get(`/admin/courses/${courseId}/rounds/${live[0].id}`, "admin");
+  const builder = await get(`/admin/ars/${courseId}/rounds/${live[0].id}`, "admin");
   record(
     "an imported round opens in the hand-built round builder",
     builder.status === 200 && builder.body.includes("Why this programme?"),
     `${builder.status}`,
   );
 
-  const programme = await get(`/admin/courses/${courseId}`, "admin");
+  const programme = await get(`/admin/ars/${courseId}`, "admin");
   record(
     "the programme page lists the imported rounds",
     programme.body.includes("Application") && programme.body.includes("Aptitude Test"),

@@ -128,7 +128,9 @@ try {
 
   const { data: made } = await admin
     .from("courses")
-    .insert({ org_id: COSPIRE_ORG, title: "Northgate School of Management - ARS" })
+    // An ARS process, not a programme: these captures are of the ARS section,
+    // and a row of the wrong kind would not appear in its list at all.
+    .insert({ kind: "ars_process", org_id: COSPIRE_ORG, title: "Northgate School of Management - ARS" })
     .select("id")
     .single();
   courseId = made.id;
@@ -211,8 +213,10 @@ try {
 
   await shoot("student-round", `/student/ars/${application.id}`, "student");
   await shoot("student-process", "/student/ars", "student");
-  await shoot("admin-programme", `/admin/courses/${courseId}`, "admin", 1440, 1300);
-  await shoot("admin-import", `/admin/courses/${courseId}/import`, "admin", 1440, 1300);
+  await shoot("admin-programmes", "/admin/courses", "admin", 1440, 1250);
+  await shoot("admin-ars", "/admin/ars", "admin", 1440, 1250);
+  await shoot("admin-process", `/admin/ars/${courseId}`, "admin", 1440, 1300);
+  await shoot("admin-import", `/admin/ars/${courseId}/import`, "admin", 1440, 1300);
   await shoot("student-round-phone", `/student/ars/${application.id}`, "student", 520, 1000);
 } catch (error) {
   console.error("FAILED:", error.message);
