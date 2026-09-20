@@ -186,3 +186,23 @@ Two things it knows:
   assignment still references it fails — and `deleteUser` reports that in a
   return value, not by throwing. It leaked one profile per run until the live
   counts in the cleanup line gave it away.
+
+## programmes-ars-split.mjs — the two admin sections are really separate
+
+```bash
+node --env-file=.env.local scripts/verify/programmes-ars-split.mjs https://cospire-roan.vercel.app
+```
+
+The risk in `courses.kind` was never the column. It is that both sections share
+one table, one create action and one granting action, so a mistake sends an
+admin to the wrong section — or leaves a section unable to create or grant
+anything at all, which an earlier attempt did.
+
+So it checks that each section creates its own kind and returns to itself, that
+neither list shows the other's rows, that **both** can grant a student, that a
+row can be moved between them and back, and that a student granted through ARS
+really reaches the process and its round.
+
+The last one is deliberate: an earlier version of that check passed against a
+process with **no rounds**, where there was nothing to see either way. A check
+that cannot fail is worse than no check.

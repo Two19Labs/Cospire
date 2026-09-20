@@ -2,7 +2,11 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { coursesPageSize, sanitizeCourseSearch } from "../list-params";
+import {
+  coursesPageSize,
+  sanitizeCourseSearch,
+  type CourseKind,
+} from "../list-params";
 
 export interface CourseListRow {
   createdAt: string;
@@ -48,9 +52,14 @@ function toRow(entry: unknown): CourseListRow {
 // student screens land, a student's own. The rows each sees differ entirely,
 // and the difference is the database's decision rather than this function's.
 export async function listCourses({
+  kind,
   page,
   search,
 }: {
+  // Which section is asking. Required rather than defaulted, so a new caller
+  // has to decide: the whole reason this column exists is that one list was
+  // silently showing the other's rows.
+  kind: CourseKind;
   page: number;
   search: string;
 }): Promise<CourseListPage> {
@@ -61,6 +70,7 @@ export async function listCourses({
   let query = supabase
     .from("courses")
     .select("id, title, sort_order, created_at", { count: "exact" })
+    .eq("kind", kind)
     .order("sort_order", { ascending: true })
     // A unique final sort key. Two programmes sharing a sort_order would
     // otherwise come back in an arbitrary order and could swap between pages,

@@ -624,6 +624,7 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          kind: string
           org_id: number
           sort_order: number
           title: string
@@ -632,6 +633,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: never
+          kind?: string
           org_id: number
           sort_order?: number
           title: string
@@ -640,6 +642,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: never
+          kind?: string
           org_id?: number
           sort_order?: number
           title?: string
