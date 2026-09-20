@@ -862,6 +862,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex / current chat | `feat/separate-admin-ars` | Separate programme administration from ARS process administration with its own navigation and routes | `src/app/admin/ars/**`, `src/app/admin/courses/**`, `src/features/ars/**`, `src/features/curriculum/components/course-detail.tsx`, `src/features/auth/components/app-nav.tsx`, `CONTEXT.md` | In progress | 2026-09-20 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
