@@ -50,6 +50,22 @@ export function RoundsPanel({
         </p>
       </div>
 
+      {/*
+        The two ways to build a process, side by side. Adding rounds by hand is
+        unchanged and remains the default; the importer is for the case this
+        screen is slow at -- an institution's whole admission process, written
+        down in a document, where typing it in question by question is an
+        afternoon.
+      */}
+      <p>
+        <Link
+          className="button button--secondary"
+          href={`/admin/courses/${courseId}/import`}
+        >
+          Build from a document instead
+        </Link>
+      </p>
+
       {error ? (
         <p className="form-error" role="alert">
           {roundErrors[error]}

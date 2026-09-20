@@ -100,3 +100,33 @@ still has to open one document in a real browser.
 
 `sample.pdf` is a hand-built two-page PDF with real text on both pages, so that
 check is a glance rather than an inspection. `make_pdf.py` regenerates it.
+
+## ars-import.mjs — the process importer
+
+```bash
+node --env-file=.env.local scripts/verify/ars-import.mjs http://127.0.0.1:3001
+```
+
+Self-contained: it creates its own throwaway admin, student and programme, and
+deletes them in a `finally` block scoped to what it created. It needs a running
+app and prints the live counts afterwards so they can be compared with the
+baseline in `CONTEXT.md`.
+
+Two things it knows that the older scripts here do not, both of which cost an
+hour to rediscover:
+
+- **A Server Action posted without an `Origin` header is refused** by Next.js,
+  and answers `500 Failed to find Server Action. This request might be from an
+  older or newer deployment` — which reads like a build mismatch and is not one.
+  A browser always sends the header. The older scripts do not set it and should
+  when they are next touched.
+- **A form rendered by `useActionState` carries no `$ACTION_ID_` field.** It
+  carries `$ACTION_REF_n`, an `$ACTION_n:0` / `$ACTION_n:1` bound pair and an
+  `$ACTION_KEY`. This script replays whichever hidden fields the server
+  rendered, rather than recognising one shape, which is also the honest test of
+  whether the form works with scripting switched off.
+
+Its assertions deliberately avoid the words `Application` and
+`Why this programme?`, which appear in the copyable prompt's own example on the
+same page: asserting on either passes against a page that parsed nothing at all.
+That false pass was found in this script's first draft.

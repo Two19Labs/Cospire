@@ -74,6 +74,7 @@ export function parseRoundError(raw: string | undefined): RoundError | null {
 
 export const roundNotices = {
   created: "Round added.",
+  imported: "Process imported. These rounds replaced whatever was here before.",
   removed: "Round removed.",
 } as const;
 
