@@ -8,7 +8,8 @@ an institution's admission-process document and pastes the answer back, and the
 whole ARS process is created after a preview they confirm. Building rounds by
 hand is unchanged and sits beside it. **35 of 35 checks over HTTP**, no
 migration, no new dependency. **Merged as PR #30 and deployed** on 2026-09-20,
-together with the form engine it depends on. See *The process importer*.
+together with the form engine it depends on, and then verified **35 of 35 on the
+deployed URL**. See *The process importer*.
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
@@ -1971,6 +1972,7 @@ time otherwise.
 | 2026-09-20 | Next.js refuses a Server Action with no `Origin` header | Worth keeping, because the symptom misdirects: the request answers **500 "Failed to find Server Action. This request might be from an older or newer deployment"**, which reads like a build mismatch. A browser always sends the header; any script driving a Server Action must set it. The older scripts in `scripts/verify/` do not, and should be corrected when next touched |
 | 2026-09-20 | A `useActionState` form does not carry `$ACTION_ID_` | The other verify scripts find an action by that field. A form rendered by `useActionState` carries `$ACTION_REF_n`, an `$ACTION_n:0` / `$ACTION_n:1` bound pair and an `$ACTION_KEY` instead. `ars-import.mjs` replays whatever hidden fields the server rendered rather than recognising one shape, which is both more robust and the honest test of the no-JavaScript path. Confirmed against the **existing login form** first, to establish the pattern worked before blaming the new code |
 | 2026-09-20 | **PR #30 merged and deployed** | `main` moved `7ad0339` -> `5000a75`. `verify` green on the pull request and again on `main`; the Vercel preview deployed on the pull request and Production on the merge. `https://cospire-roan.vercel.app/login` answers 200 and `/admin/courses/46/import` refuses an anonymous caller with a 307. **CI on `main` failed the `context` job**, which is the known artifact rather than a defect: the branch is deleted on merge, so the Active work row naming it became false at the moment it merged. `verify` passed. This commit is the fix |
+| 2026-09-20 | **The importer verified on the DEPLOYED URL: 35 of 35** | `scripts/verify/ars-import.mjs` against `https://cospire-roan.vercel.app` after the merge -- the deployed application, not a local build. Every check that passed locally passed there, including the refusal to replace an answered round. Live counts returned to baseline exactly: 5 courses, 2 rounds, 5 profiles, 2 documents, 0 submissions |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 
 ## Next recommended action
