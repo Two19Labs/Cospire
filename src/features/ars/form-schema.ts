@@ -97,6 +97,7 @@ export const fieldTypes: FieldType[] = [
 // pick nothing -- the same failure `ars_rounds_form_has_fields` exists to stop
 // at the round level.
 const typesNeedingOptions: FieldType[] = ["radio", "score_list", "select", "single_choice"];
+const allowedFileExtensions = ["jpg", "mov", "mp4", "pdf", "png", "webm"];
 
 export const maxStepsPerForm = 12;
 export const maxFieldsPerStep = 60;
@@ -175,6 +176,14 @@ function checkField(raw: unknown, where: string, problems: SpecProblem[], seen: 
 
   if (raw.accept !== undefined && type !== "file") {
     problems.push({ message: "Accepted file types only apply to a file field.", where });
+  } else if (
+    type === "file" &&
+    raw.accept !== undefined &&
+    (!Array.isArray(raw.accept) ||
+      raw.accept.length === 0 ||
+      !raw.accept.every((entry) => typeof entry === "string" && allowedFileExtensions.includes(entry)))
+  ) {
+    problems.push({ message: "Accepted file types must be PDF, MP4, MOV, WEBM, JPG or PNG.", where });
   }
 }
 
