@@ -28,7 +28,7 @@ export default async function AdminCoursesPage({
   const error = parseCourseListError(firstValue(params.error));
   const notice = parseCourseNotice(firstValue(params.notice));
 
-  const courses = await listCourses({ page, search });
+  const courses = await listCourses({ kind: "programme", page, search });
 
   return (
     <CoursesScreen

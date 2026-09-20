@@ -3,21 +3,12 @@ import Link from "next/link";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/shared/ui";
-
-import { setCourseAccessAction } from "../actions/set-course-access";
-import {
   courseListErrors,
   courseNotices,
   type CourseListError,
   type CourseNotice,
 } from "../list-params";
+import { CourseAccessPanel, CourseMoveForm } from "./course-access-panel";
 import type { Course } from "../queries/get-course";
 import type { CourseAccessStudent } from "../queries/list-course-access";
 
@@ -36,7 +27,6 @@ export function CourseDetail({
   profile,
   students,
 }: CourseDetailProps) {
-  const grantedCount = students.filter((student) => student.granted).length;
 
   return (
     <RoleShell profile={profile} title={course.title}>
@@ -63,77 +53,11 @@ export function CourseDetail({
         ) : null}
 
         {notice ? <p className="muted">{courseNotices[notice]}</p> : null}
+
+        <CourseMoveForm courseId={course.id} kind="programme" />
       </section>
 
-      <section className="panel">
-        <div>
-          <h2>Who is on this programme</h2>
-          <p className="muted">
-            {students.length === 0
-              ? "There are no active students to put on this yet."
-              : `${grantedCount} of ${students.length} students are on it.`}
-          </p>
-        </div>
-
-        {students.length === 0 ? null : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Student</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
-                <TableHeaderCell>Access</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.name}</TableCell>
-                  <TableCell>{student.email}</TableCell>
-                  <TableCell>
-                    <div className="row-form">
-                      <span
-                        className={`pill pill--${
-                          student.granted ? "active" : "disabled"
-                        }`}
-                      >
-                        {student.granted ? "On programme" : "Not on it"}
-                      </span>
-                      {/*
-                        The Server Action is passed straight to the form, so
-                        granting works with JavaScript disabled. The programme
-                        id travels as a value and the action rebuilds the
-                        destination from a literal path, which is what stops
-                        this being an open redirect.
-                      */}
-                      <form action={setCourseAccessAction}>
-                        <input name="courseId" type="hidden" value={course.id} />
-                        <input
-                          name="studentId"
-                          type="hidden"
-                          value={student.id}
-                        />
-                        <input
-                          name="intent"
-                          type="hidden"
-                          value={student.granted ? "revoke" : "grant"}
-                        />
-                        <button
-                          className={`button button--compact button--${
-                            student.granted ? "danger" : "secondary"
-                          }`}
-                          type="submit"
-                        >
-                          {student.granted ? "Remove" : "Add"}
-                        </button>
-                      </form>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </section>
+      <CourseAccessPanel courseId={course.id} kind="programme" students={students} />
 
       <section className="panel">
         <div>

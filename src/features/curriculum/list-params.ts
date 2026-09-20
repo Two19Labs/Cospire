@@ -44,6 +44,73 @@ export function parseCourseId(raw: string | undefined): number | null {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+// What a `courses` row actually is. The column was added on 2026-09-20 because
+// a learning programme and an admission-readiness process had been the same row
+// since Phase 5a step 1, so each admin list showed the other's rows.
+//
+// One vocabulary drives two things -- which rows a screen lists, and which
+// screen an action returns to -- so the two cannot drift apart.
+export const courseKinds = ["programme", "ars_process"] as const;
+
+export type CourseKind = (typeof courseKinds)[number];
+
+export const courseKindLabels: Record<CourseKind, string> = {
+  ars_process: "ARS process",
+  programme: "Programme",
+};
+
+// Returns null rather than guessing. Callers decide their own default, because
+// "the admin posted nothing" and "the admin posted rubbish" are the same thing
+// here and both should land on the section the caller came from.
+export function parseCourseKind(raw: unknown): CourseKind | null {
+  return typeof raw === "string" && (courseKinds as readonly string[]).includes(raw)
+    ? (raw as CourseKind)
+    : null;
+}
+
+// The two admin sections, as literal paths. A closed set mapped to a literal is
+// what keeps this from being an open redirect: a form may say WHICH of two
+// sections it belongs to, and nothing more.
+function sectionRoot(kind: CourseKind): string {
+  return kind === "ars_process" ? "/admin/ars" : "/admin/courses";
+}
+
+export function buildKindListHref({
+  error,
+  kind,
+  notice,
+}: {
+  error?: CourseListError;
+  kind: CourseKind;
+  notice?: CourseNotice;
+}): string {
+  const params = new URLSearchParams();
+  if (error) params.set("error", error);
+  if (notice) params.set("notice", notice);
+  const query = params.toString();
+  const root = sectionRoot(kind);
+  return query ? `${root}?${query}` : root;
+}
+
+export function buildKindCourseHref({
+  courseId,
+  error,
+  kind,
+  notice,
+}: {
+  courseId: number;
+  error?: CourseListError;
+  kind: CourseKind;
+  notice?: CourseNotice;
+}): string {
+  const params = new URLSearchParams();
+  if (error) params.set("error", error);
+  if (notice) params.set("notice", notice);
+  const query = params.toString();
+  const base = `${sectionRoot(kind)}/${courseId}`;
+  return query ? `${base}?${query}` : base;
+}
+
 // Every link and post-action redirect into the programme screens is built here,
 // from parsed values only, so no form field can ever influence the destination.
 // Same open-redirect reasoning as `buildDocumentsHref` and the admin console's
@@ -93,6 +160,7 @@ export function buildCourseHref({
 // rather than re-earning.
 export const courseListErrors = {
   "access-change-failed": "That access change was refused. Nothing changed.",
+  "move-failed": "That could not be moved to the other section. Nothing changed.",
   "duplicate-title": "A programme with that name already exists.",
   "invalid-request": "That request was not valid. Nothing changed.",
   "sort-order-invalid": "Use a whole number for the ordering.",
@@ -113,6 +181,7 @@ export function parseCourseListError(
 }
 
 export const courseNotices = {
+  moved: "Moved. You will find it in the other section.",
   created: "Programme created.",
   granted: "Access granted.",
   revoked: "Access removed.",

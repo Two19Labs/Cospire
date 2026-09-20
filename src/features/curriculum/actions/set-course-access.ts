@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { buildCourseHref, parseCourseId } from "../list-params";
+import { buildKindCourseHref, parseCourseKind, parseCourseId } from "../list-params";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -22,6 +22,10 @@ const uuidPattern =
 // rule is how the copies drift apart.
 export async function setCourseAccessAction(formData: FormData): Promise<void> {
   const admin = await requireRole("admin");
+
+  // The section this was posted from, so granting on an ARS process returns to
+  // the ARS screen rather than bouncing the admin into Programmes.
+  const kind = parseCourseKind(formData.get("kind")) ?? "programme";
 
   const rawCourseId = formData.get("courseId");
   const courseId = parseCourseId(
@@ -42,7 +46,7 @@ export async function setCourseAccessAction(formData: FormData): Promise<void> {
     !uuidPattern.test(studentId) ||
     (intent !== "grant" && intent !== "revoke")
   ) {
-    redirect(buildCourseHref({ courseId, error: "invalid-request" }));
+    redirect(buildKindCourseHref({ courseId, kind, error: "invalid-request" }));
   }
 
   const supabase = await createServerSupabaseClient();
@@ -89,13 +93,14 @@ export async function setCourseAccessAction(formData: FormData): Promise<void> {
   }
 
   if (failed) {
-    redirect(buildCourseHref({ courseId, error: "access-change-failed" }));
+    redirect(buildKindCourseHref({ courseId, kind, error: "access-change-failed" }));
   }
 
   revalidatePath(`/admin/courses/${courseId}`);
   redirect(
-    buildCourseHref({
+    buildKindCourseHref({
       courseId,
+      kind,
       notice: intent === "grant" ? "granted" : "revoked",
     }),
   );

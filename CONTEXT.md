@@ -2,6 +2,12 @@
 
 Last updated: 2026-09-20 (Asia/Calcutta)
 
+**Programmes and ARS are separate sections, 2026-09-20.** `courses.kind` says
+which a row is; each admin list filters on it; ARS creates and grants its own
+processes; Programmes carries the aptitude-prep and video placeholders above its
+real list; and a row can be moved between the two. 19 of 19 over HTTP. See
+*Programmes and ARS split apart*.
+
 **The Phase 5a exit gate is CLOSED, 2026-09-20.** `scripts/verify/ars-gate.mjs`
 was run against `https://cospire-roan.vercel.app` -- the deployed application,
 not a local build -- and **28 of 28 checks passed**, driving the gate sentence
@@ -237,10 +243,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   this section on 2026-09-20 and was overtaken by those merges, so its
   corrections are made here instead and it should be closed as superseded rather
   than merged into a conflict.
-- **Code and database are in step: 18 migrations on `main` and the same 18
-  applied to the hosted project**, versions matching filenames, re-checked
-  2026-09-20 through the read-only MCP server. The most recent is
-  `20260920150318_support_multiple_ars_form_uploads`.
+- **Code and database are in step: 19 migrations on `main` and the same 19
+  applied to the hosted project**, versions matching filenames. The most recent
+  is `20260920190000_separate_programmes_from_ars_processes`.
 - The older sequence, for the record. **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
   #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
   last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
@@ -726,6 +731,60 @@ worse than no CSS.
 **Headings still resolve to Georgia.** Recoleta Bold is the design's heading face
 and the Client has still not supplied the web licence and woff2, so this is as
 close to the prototype as it can get until they do.
+
+### Programmes and ARS split apart, 2026-09-20
+
+A learning programme and an admission-readiness process had been the same
+`courses` row since Phase 5a step 1, distinguished only by whether anyone had
+hung ARS rounds off it. So the Programmes list showed processes, the ARS list
+showed programmes, and the owner reported exactly that.
+
+**One column, not two tables.** `courses.kind` is `programme` or `ars_process`.
+Splitting the table would have meant rewriting the composite foreign key every
+round hangs from, every policy that reaches through it, and every grant -- for a
+distinction one word wide. The column is additive with a default, so it could
+not break the deployed code in the gap between applying it and merging.
+
+**The backfill rule, and the reason there is a way to undo it.** A course with
+ARS rounds became a process; everything else stayed a programme. That is the
+only rule true of the data as it stands, and it is stated as a rule rather than
+a list of ids so it reproduces on any rebuild -- clause 3.9. It moved "Ashoka"
+into ARS on the strength of one round called "ARS Template", which may or may
+not be what the owner wants. **So a course can be moved between the sections**,
+because a classification you cannot change is the same dead end as a list with
+no way in.
+
+**What each section can now do on its own.** ARS creates its own processes and
+grants its own students. Before this it could do neither: its empty state read
+"Create a programme first", and granting existed on exactly one screen in the
+other section. That is why the first attempt at this -- replacing
+`/admin/courses` with a static placeholder -- would have closed the flow
+completely, with no way to create a process and no way to put a student on one.
+The order matters: **make ARS self-sufficient first, reduce Programmes second.**
+
+**Programmes keeps its list.** It carries the two placeholder cards the owner
+asked for -- aptitude preparation and video curriculums, both marked *Not built
+yet* -- above the real programme list, rather than instead of it. A purely
+static page would have orphaned "Ashoka", "Mesa" and the two aptitude-prep rows:
+still in the database, reachable from no screen.
+
+**`kind` decides both the data and the destination**, so the two cannot drift.
+It travels with every post as a closed set mapped to a literal path -- a form
+may say which of two sections it belongs to and nothing more -- which is the
+same open-redirect reasoning as `buildUsersHref` and `buildRoundsHref`.
+
+**Two defects the verification found**, neither visible to typecheck, lint, 230
+tests or a production build:
+
+- **`createCourseAction` read `kind` for the redirect and never wrote it to the
+  insert.** So every process created from the ARS screen was filed as a
+  programme -- the exact conflation the column exists to end -- and the admin
+  landed in ARS looking at a row that was not there. The redirect was right and
+  the data was wrong, which is the hardest pairing to spot by eye.
+- **A check that proved nothing.** "The student sees the process they were
+  granted" passed against a process with no rounds, where there was nothing to
+  see either way. It now creates a round first, so granting through ARS is shown
+  to give real access rather than merely not erroring.
 
 ### The Phase 5a exit gate, closed 2026-09-20
 
@@ -2133,6 +2192,9 @@ time otherwise.
 | 2026-09-20 | **The re-skin confirmed on the DEPLOYED URL** | PR #33 merged as `1b748fc`; CI green on `main` and Production deployed. `scripts/verify/shot.mjs` re-run against `https://cospire-roan.vercel.app` and the five captures reviewed there rather than locally: the ink rail, the gold active item, the white title bar and the re-laid-out ARS form all render on the deployed site |
 | 2026-09-20 | Three defects the screenshots found that no test would have | `textarea` and `select` were missing from the `font: inherit` rule, so every textarea rendered in the browser's monospace; the sidebar email had an ellipsis with no `white-space: nowrap`, so it wrapped instead; and a `minmax(16rem, 1fr)` grid track could not shrink on a phone. All three were invisible to typecheck, lint, 222 tests and a production build |
 | 2026-09-20 | A capture that looked like a bug and was not | Chrome on Windows will not open a window narrower than about 500px, so a 430px capture renders at ~500 and crops -- which reads exactly like a layout overflowing its viewport. Recaptured at 520 and the layout was correct all along. Phone widths in `shot.mjs` are 520 and above for that reason |
+| 2026-09-20 | **Programmes and ARS separated: 19 of 19 over HTTP** | `scripts/verify/programmes-ars-split.mjs`. Each section creates its own kind and lands on its own detail page; neither list shows the other's rows; **ARS grants a student its own process** and stays in ARS; Programmes still grants and stays in Programmes; a process moves to Programmes and back; and the student granted through ARS reaches the process and its round. The ARS exit gate was re-run afterwards and still passes 28 of 28, so the split regressed nothing |
+| 2026-09-20 | Two defects the split's verification caught | `createCourseAction` read `kind` for its redirect but never wrote it to the insert, so every process created from the ARS screen was filed as a programme while the redirect went to the right place. And a check asserting the student "sees the process they were granted" passed against a process with no rounds, where there was nothing to see -- it now creates a round first |
+| 2026-09-20 | Migration `20260920190000` applied | Adds `courses.kind` with a default, a check constraint, the `courses_org_kind_sort_idx` index and a backfill by the rule "a course with ARS rounds is a process". Additive throughout. Verified against every live row: the backfill matches the rule for all 7, moving "Ashoka" into ARS on the strength of one round named "ARS Template" |
 | 2026-09-20 | **PHASE 5a EXIT GATE CLOSED: 28 of 28 on the DEPLOYED URL** | `scripts/verify/ars-gate.mjs` against `https://cospire-roan.vercel.app`, driving the gate sentence end to end in one sequence with five throwaway accounts and real sessions, every form posted through the no-JavaScript path. A student hands in all three round shapes; the assigned mentor queues, opens, reads, downloads and reviews; the student sees it reviewed; a second student **holding the same programme** and an unassigned mentor are refused the rows and the file at its Storage path; the mentor records the off-platform round; the run stamps complete. Live counts returned to baseline exactly |
 | 2026-09-20 | The gate's first run failed 7 of 26, and the cause was in the harness | **A file round cannot be handed in through the form alone**: `saveAnswers` skips file fields, so a required upload reads as missing until the upload action has attached it to a draft -- and that action, not the form, is what creates the draft. Every later round then stalled behind the sequence trigger. Not a defect in the application, but the file round has exactly one working order and anything that changes `getOrCreateDraft` will break it quietly |
 | 2026-09-20 | **The gate's teardown leaked one profile per run, and only the live counts caught it** | `mentor_assignments.assigned_by` is ON DELETE RESTRICT and the accounts were deleted in creation order, so the admin was removed while its own assignment still referenced it. `deleteUser` reports that in a return value the script was not reading, so it failed **silently** and the profile count climbed 5, 6, 7 across runs. Assignments are now deleted first across all three foreign keys and the delete result is checked. The two leaked accounts were removed by hand; the count is back to 5 |
@@ -2176,19 +2238,15 @@ browser-level harness is inside it. Nothing in the phase is outstanding.
 
 What is left around it, none of it Phase 5a:
 
-- **Programmes and ARS are still the same `courses` row**, so each admin list
-  shows the other's rows -- which is what the owner reported on 2026-09-20.
-  The agreed fix: a `kind` column so the two stop overlapping, ARS given its own
-  create and grant so it stands alone, and only then Programmes reduced to a
-  placeholder carrying the aptitude-prep and video cards, keeping the real
-  programme list beneath it.
-- **`feat/programmes-placeholder` holds an incomplete first attempt and must
-  not be merged as it stands.** Replacing `/admin/courses` with a static page
-  removes the only screen that creates a programme and the only route to the
-  only screen that grants a student access, while `/admin/ars` cannot create a
-  process at all -- its own empty state says "Create a programme first". As
-  written it closes the flow: no new process could be created and no student
-  granted one.
+- **Programmes and ARS are separated** (2026-09-20, 19 of 19). `courses.kind`
+  divides them, each section creates and grants for itself, and a row can be
+  moved between them. `feat/programmes-placeholder` is superseded by that work
+  and should be deleted rather than merged: as written it removed the only
+  screen that creates a programme and the only route to the only screen that
+  grants access, while ARS could not yet create a process.
+- **The owner should decide where "Ashoka" belongs.** The backfill filed it as
+  an ARS process because it holds one round called "ARS Template". If it is
+  really aptitude-prep content, move it back from its ARS page in one click.
 - **The aptitude test round has no engine behind it**, and it is the visible
   hole in ARS from the Client's side, since their own MESA benchmark puts a
   timed test in the middle of the process. It is Phases 3 and 4, not 5a. Until

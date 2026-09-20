@@ -45,6 +45,57 @@ export function CoursesScreen({
 
   return (
     <RoleShell profile={profile} title="Programmes">
+      {/*
+        What this section is FOR, said before what it currently holds.
+
+        Programmes and ARS processes were the same `courses` row until
+        2026-09-20, so this list showed admission processes and the ARS list
+        showed learning content. `kind` separates them, and this panel says what
+        belongs here now that it can be answered.
+
+        The two cards are honest placeholders: neither aptitude preparation nor
+        video curriculums is built, and both are whole phases away. They are
+        shown rather than hidden so the shape of the section is visible, and
+        marked so nobody demonstrates them by accident.
+      */}
+      <section className="panel">
+        <div className="panel__header">
+          <div>
+            <h2>Learning programmes</h2>
+            <p className="muted">
+              Teachable content a student works through. Admission readiness
+              processes are managed separately, under ARS.
+            </p>
+          </div>
+          <Link className="button button--secondary" href="/admin/ars">
+            Go to ARS
+          </Link>
+        </div>
+
+        <div className="report-list">
+          <article className="report-list__item">
+            <div>
+              <strong>Aptitude preparation</strong>
+              <p className="muted">
+                Quantitative, verbal and logical reasoning, with topic tests and
+                full-length mocks. Needs the question bank and the test engine.
+              </p>
+            </div>
+            <span className="pill pill--disabled">Not built yet</span>
+          </article>
+          <article className="report-list__item">
+            <div>
+              <strong>Video curriculums</strong>
+              <p className="muted">
+                Video lessons, documents and tests in an ordered sequence, with
+                progress tracking. Waiting on VdoCipher access.
+              </p>
+            </div>
+            <span className="pill pill--disabled">Not built yet</span>
+          </article>
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel__header">
           <div>
@@ -164,6 +215,9 @@ export function CoursesScreen({
           rebuilds every destination from a literal path.
         */}
         <form action={createCourseAction} className="stack-form">
+        {/* Says which section this is, so the action creates the right kind and
+            returns here rather than to ARS. */}
+        <input name="kind" type="hidden" value="programme" />
           <label className="field">
             <span>Name</span>
             <input
