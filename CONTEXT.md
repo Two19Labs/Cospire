@@ -854,10 +854,12 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex / current chat | `feat/ars-mentor-workflow` | Complete the mentor submission queue, review detail, private upload viewing, offline-round outcome recording, and end-to-end verification | `src/app/mentor/**`, `src/features/ars-review/**`, `src/features/mentor/**`, `src/app/globals.css`, `scripts/verify/**`, `CONTEXT.md` | In progress | 2026-09-20 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
-The ARS upload implementation merged as PR #36 and is deployed. Nothing is in
-progress; completed work does not remain in the table above.
+The ARS upload implementation merged as PR #36 and is deployed. The ARS mentor
+workflow is in progress on the branch above; completed work does not remain in
+the table.
 
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
