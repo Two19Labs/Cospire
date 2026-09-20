@@ -219,8 +219,13 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   applied.
 - **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
   the mentor and student screens, **admin template authoring**, pagination, and
-  the fix-forward migration `20260918153000`. Code and database are back in step
-  -- all 16 migrations are applied and all 16 are on `main`.
+  the fix-forward migration `20260918153000`.
+- **The hosted database is one additive migration ahead of `main`: 18 applied
+  versus 17 on `main`.** `20260920150318_support_multiple_ars_form_uploads.sql`
+  is applied and carried by active branch `feat/ars-file-upload`; it extends
+  Storage authorization for multiple upload questions. Merge that branch to
+  bring code and database back in step. The deployed application does not use
+  the new behavior yet.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
@@ -562,6 +567,7 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-20 | **Paste-to-build process import** | An admin copies a standard prompt into any model along with an institution's admission-process document, and pastes the answer back. The parser reads it, shows a preview, and creates the whole process on confirmation. `/admin/courses/[id]/import`. **No migration, no new table, no new dependency.** Verified over HTTP, 35 of 35, against a production build and the hosted database. See *The process importer* |
 | 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
+| 2026-09-20 | **Multi-file ARS upload UI built and Storage policies exercised** | A file question now uploads directly from the browser to the private `ars-uploads` bucket, attaches metadata under its stable field key, and can be replaced or removed only while the submission is a draft. Multiple questions in one form are supported. Migration `20260920150318` is applied; live Storage verification is 10/10; typecheck, lint, 226 tests and production build pass. On `feat/ars-file-upload`, not merged or deployed |
 
 ### The process importer, 2026-09-20
 
@@ -851,19 +857,17 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex / ARS uploads | `feat/ars-file-upload` | Direct student uploads for ARS file fields, including multiple fields, replacement/removal and submission persistence | `src/features/ars/**`, `src/app/globals.css`, `supabase/migrations/20260920150318_support_multiple_ars_form_uploads.sql`, `scripts/verify/ars-upload.mjs`, `CONTEXT.md` | Built and verified locally/live; migration applied; awaiting commit, review, merge and deployment | 2026-09-20 |
 
-**Nothing is in progress.** `feat/ars-form-engine` merged as PR #30 on
-2026-09-20 and its branch is deleted. The table above is deliberately left with
-no rows rather than a row of dashes: the context gate reads the branch column of
-every row and an em dash is not the ASCII hyphen it forgives, which is a
-five-minute lesson recorded here so nobody spends it twice.
+`feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
+The ARS upload work above is the only product work currently in progress.
 
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
-built and merged, but **file upload inside a form still renders a placeholder
-rather than an upload**, and **the mentor review queue does not exist**. The
-admin round builder and the process importer were driven over HTTP; the student
-route was not.
+built and merged, and **the mentor review queue does not exist**. File upload is
+now built on the active branch above but is not merged or deployed. The admin
+round builder and the process importer were driven over HTTP; the student route's
+ordinary draft/save action is still not covered by a browser-level harness.
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -1569,9 +1573,9 @@ file **at its Storage path**.
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
 | 2. `ars_rounds` with its `course_id`, and the mentor-visibility policy | **Done, merged and deployed 2026-09-10** (PR #21). Verified at both layers; both migrations applied. Admin round authoring lives on the programme detail page |
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
-| 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
+| 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25), then extended on `feat/ars-file-upload` for several file questions in one form. `20260920150318` is applied. Live Storage verification 10/10: two uploads attach to one draft; replacement/removal work before hand-in; mentor cannot read a draft but can read after hand-in; another student is refused; handed-in files cannot be replaced or deleted |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
-| 5. The student submission route and the mentor review queue | **Half done, merged and deployed 2026-09-20** (PR #30). The student process view and the multi-step round renderer exist; **the mentor review queue does not**, and file upload inside a form still renders a placeholder rather than an upload. The student route has not been driven over HTTP |
+| 5. The student submission route and the mentor review queue | **Student side built; mentor queue still absent.** PR #30 deployed the process view and multi-step renderer. `feat/ars-file-upload` replaces the file placeholders with direct private uploads supporting several file questions, draft replacement and removal. It is verified locally/live but not yet merged or deployed. The ordinary text-field draft/save path still lacks a browser-level harness |
 | 5b. **The process importer** | **Done, merged and deployed 2026-09-20** (PR #30). 35 of 35 over HTTP. No migration. See *The process importer* |
 | 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
 
@@ -2075,24 +2079,18 @@ that are not code:
   specification. Both are visible in the preview, and both are better said than
   discovered in front of a college.
 
-**Phase 5a steps 3, 4 and 4b are done at the database** (2026-09-18). What is
-left in this phase:
+**Phase 5a is not completely done.** What remains:
 
-- **The mentor review queue**, which is the half of step 5 that does not exist.
-  The student process view and the round renderer do.
-- **Step 5, and it is the next thing to build**: one student route rendering
-  whichever component a round declares (written answer, essay, form, file
-  upload, or an off-platform round showing its date), and the mentor review
-  queue. It is the first UI since the design foundation merged, so build it to
-  the Client's prototype rather than re-skinning it later.
-- **The upload UI**, which is also what first exercises the bucket's delete and
-  update policies. Those are written but unverified: Supabase refuses SQL
-  deletes on `storage.objects`, so only an HTTP path can test them.
-- **The ARS report's admin template builder.** The schema, mentor editor,
-  weighted total, release path and student view are built and verified locally;
-  an admin screen for creating/changing the template is not. Until it exists,
-  templates must be inserted operationally and the feature is not deploy-ready.
-  The clause 12 quotation and clause 16.1 amendment are still outstanding.
+- **The mentor review queue is the next product feature.** The student process
+  view and renderer exist; nothing yet lets a mentor open ordinary handed-in
+  round answers in a queue. The separate final ARS report workflow is finished
+  and deployed, including admin template authoring.
+- **Merge and deploy `feat/ars-file-upload`.** The upload UI is built, supports
+  multiple file questions, and the Storage policies pass 10/10 live checks.
+  A browser pass over the preview remains useful; this is no longer unbuilt.
+- **Exercise the ordinary student draft/save path in a browser-level harness.**
+  Storage upload and a real draft-to-submitted transition are verified, but the
+  existing text/form Server Actions still lack an end-to-end browser run.
 - **The per-screen re-skin of the remaining panels.** The shell and the ARS form
   are done (2026-09-20) and every screen inherits the new chrome through
   `RoleShell`, but the panels inside the admin and mentor screens have not been

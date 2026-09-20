@@ -153,6 +153,10 @@ async function saveAnswers(
   const step = spec.steps[stepIndex];
   for (const field of fieldsForStep(step)) {
     if (field.prefill) continue; // Server-owned; never taken from the body.
+    // Uploads are transferred directly to Storage and attached to the draft by
+    // upload-actions.ts. A plain form post carries no bytes and must preserve
+    // the already-recorded metadata rather than deleting it.
+    if (field.type === "file") continue;
     const { error, value } = readField(formData, field);
     if (error) redirect(hrefFor(roundId, { error, step: stepIndex + 1 }));
     if (value === undefined) delete merged[field.key];

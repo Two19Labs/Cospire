@@ -280,6 +280,21 @@ body {
   padding: 0.625rem 0.75rem;
 }
 
+.upload-status {
+  align-items: center;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.upload-status p {
+  margin: 0.25rem 0 0;
+}
+
 .field fieldset,
 fieldset.field {
   border: 0;

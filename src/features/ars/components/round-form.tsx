@@ -7,6 +7,7 @@ import type { Profile } from "@/features/auth/types";
 import { saveDraftAction, submitRoundAction } from "../actions/submission-actions";
 import { fieldsForStep, stepProgress, type FormField } from "../form-schema";
 import type { RoundForStudent } from "../queries/student-process";
+import { FileUploadField } from "./file-upload-field";
 
 // One student route rendering whichever shape the round declares, per the ARS
 // design: `submission_mode` plus `config` describe the form, and this walks it.
@@ -40,7 +41,7 @@ const noticeMessages: Record<string, string> = {
 // beside it. Before this they were emitted as bare <label> and <input>
 // siblings with no wrapper and no classes, so the grid laid them out inline and
 // a four-page application read as one run-on line of boxes.
-function Field({ field, value }: { field: FormField; value: unknown }) {
+function Field({ field, roundId, value }: { field: FormField; roundId: number; value: unknown }) {
   const id = `f-${field.key}`;
   const common = { id, name: field.key, required: field.required };
   const optional = field.required ? null : <span className="field__optional">Optional</span>;
@@ -159,15 +160,7 @@ function Field({ field, value }: { field: FormField; value: unknown }) {
   }
 
   if (field.type === "file") {
-    return (
-      <div className="field">
-        {label}
-        <p className="field__pending">
-          File upload is not available on this round yet. Your mentor will tell you where to
-          send it.
-        </p>
-      </div>
-    );
+    return <FileUploadField field={field} roundId={roundId} value={value} />;
   }
 
   const inputType =
@@ -294,7 +287,7 @@ export function RoundForm({
                     ) : null}
                     <div className="form-fields">
                       {section.fields.map((field) => (
-                        <Field field={field} key={field.key} value={round.answer[field.key]} />
+                        <Field field={field} key={field.key} roundId={round.roundId} value={round.answer[field.key]} />
                       ))}
                     </div>
                   </section>
