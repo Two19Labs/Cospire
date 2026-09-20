@@ -217,15 +217,15 @@ describe("the closed sets behind the round query keys", () => {
 
 describe("buildRoundsHref", () => {
   it("returns to the programme and anchors at the rounds panel", () => {
-    expect(buildRoundsHref({ courseId: 7 })).toBe("/admin/courses/7#rounds");
+    expect(buildRoundsHref({ courseId: 7 })).toBe("/admin/ars/7");
   });
 
   it("carries a code under the ARS-specific key, so it cannot collide", () => {
     expect(buildRoundsHref({ courseId: 7, notice: "created" })).toBe(
-      "/admin/courses/7?roundNotice=created#rounds",
+      "/admin/ars/7?roundNotice=created",
     );
     expect(buildRoundsHref({ courseId: 7, error: "duplicate-name" })).toBe(
-      "/admin/courses/7?roundError=duplicate-name#rounds",
+      "/admin/ars/7?roundError=duplicate-name",
     );
   });
 });

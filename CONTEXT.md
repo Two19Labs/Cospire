@@ -26,6 +26,11 @@ optional programme, and confirms before anything is written. Weightages must
 total 100 and named rounds must exist in the chosen programme. Imported
 templates start inactive for a final admin check. No migration or new dependency.
 
+**Admin Programmes and ARS are now separate sections** (2026-09-20).
+Programmes owns programme creation, student membership and curriculum; `/admin/ars`
+owns process selection, rounds, process document import and the round builder.
+The earlier course-nested URLs remain available so saved links do not break.
+
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
 

@@ -60,7 +60,7 @@ export function RoundsPanel({
       <p>
         <Link
           className="button button--secondary"
-          href={`/admin/courses/${courseId}/import`}
+          href={`/admin/ars/${courseId}/import`}
         >
           Build from a document instead
         </Link>
@@ -119,7 +119,7 @@ export function RoundsPanel({
                   */}
                   <Link
                     className="button button--compact button--secondary"
-                    href={`/admin/courses/${courseId}/rounds/${round.id}`}
+                    href={`/admin/ars/${courseId}/rounds/${round.id}`}
                   >
                     Edit round
                   </Link>

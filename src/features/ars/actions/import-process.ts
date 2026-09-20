@@ -162,6 +162,6 @@ export async function createImportedProcessAction(
     };
   }
 
-  revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath(`/admin/ars/${courseId}`);
   redirect(buildRoundsHref({ courseId, notice: "imported" }));
 }

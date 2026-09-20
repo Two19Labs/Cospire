@@ -195,7 +195,7 @@ export function RoundBuilder({
   if (mode === "offline") {
     return (
       <RoleShell profile={profile} title={roundName}>
-        <p><Link href={`/admin/courses/${courseId}`}>← {courseTitle}</Link></p>
+        <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
         <section className="panel">
           <h2>This round happens off the platform</h2>
           <p className="muted">
@@ -210,7 +210,7 @@ export function RoundBuilder({
   return (
     <RoleShell profile={profile} title={roundName}>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
-      <p><Link href={`/admin/courses/${courseId}`}>← {courseTitle}</Link></p>
+      <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
 
       <div className="builder">
         <section className="panel">

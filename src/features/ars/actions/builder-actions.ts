@@ -36,7 +36,7 @@ import { parseRoundId } from "../list-params";
 // endpoint and TypeScript's parameter types are erased at that boundary.
 
 function builderHref(courseId: number, roundId: number, error?: string): string {
-  const base = `/admin/courses/${courseId}/rounds/${roundId}`;
+  const base = `/admin/ars/${courseId}/rounds/${roundId}`;
   return error ? `${base}?error=${encodeURIComponent(error.slice(0, 120))}` : base;
 }
 
@@ -110,7 +110,7 @@ async function apply(
     redirect(builderHref(courseId, roundId, "That change could not be saved."));
   }
 
-  revalidatePath(`/admin/courses/${courseId}/rounds/${roundId}`);
+  revalidatePath(`/admin/ars/${courseId}/rounds/${roundId}`);
   revalidatePath(`/student/ars/${roundId}`);
   redirect(builderHref(courseId, roundId));
 }
