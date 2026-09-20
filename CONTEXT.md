@@ -32,29 +32,17 @@ creation**, is unbuilt, and it is blocked on custom SMTP, which Cospire owes.
 **36 of 36 checks passed**, including the exit-gate sentence itself and the direct
 Storage-path refusals. Teardown restored the baseline exactly.
 
-**Phase 5a steps 1 and 2 are built, merged and deployed.** Step 2, ARS rounds,
-merged in **PR #21** on 2026-09-10 -- see *Phase 5a progress*. Step 1, programmes -- the `courses` table, its grant helper
-and the admin screens -- are complete and verified at both the database and the
-application, and **merged to `main` in PR #19 on 2026-09-10**. Code and database
-are back in step, and the new routes are live: `/admin/courses` and
-`/admin/courses/[id]` answer on the deployed URL and refuse anonymous callers.
-**Phase 5a steps 3, 4 and 4b are done at the database, on 2026-09-18**, all on
-the branch `feat/ars-submissions` and none of them merged: submissions, process
-runs and attempt grants; the `ars-uploads` bucket and its `storage.objects`
-policies; and round dates, `requires_review` and the `offline` round type. Three
-migrations applied to the hosted project and verified by probe -- 17, 12 and 8 --
-plus 15 checks driven over HTTP. **The next build step is step 5**, the student
-route and the mentor review queue, which is also the first UI since the design
-foundation landed.
+**Phase 5a is partly complete and live.** Programmes and ARS rounds merged in
+PRs #19 and #21. Submissions, process runs, attempt grants, the private upload
+bucket, scheduling, and offline rounds merged in PR #25. The ARS report,
+including admin template authoring, merged in PR #28. The student process view,
+multi-step form renderer, and process importer merged in PR #30. The remaining
+product work is the mentor review queue, student draft/hand-in verification,
+and the upload UI; see *Phase 5a progress* for the exact boundary.
 
-**PRs #24 and #25 merged on 2026-09-18**, and `main` moved for the first time
-since 2026-09-12: the CONTEXT cleanup as `00a43f3`, then Phase 5a steps 3, 4 and
-4b as `ce147b3`. The follow-up context correction merged as PR #26 (`8ab93c7`),
-CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
-`docs/review-checklist.md`. The ARS report merged as PR #28 (`17cc78d`), which is
-the current `main` and is **deployed to Production**: the report database, the
-mentor and student screens, admin template authoring, and the corrections a
-review found. **No pull request is open.**
+**Everything through PR #34 is merged and deployed.** `main` is `35ab4aa`.
+PR #35 is the only open pull request: this documentation-only context audit on
+`docs/context-truth-0920`. No product code is awaiting merge.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -67,9 +55,11 @@ evidence the database was verified. #25's title
 and description were rewritten before merging, having described the
 `ars_feedback` table that the 2026-09-16 rework removed.
 
-**The design foundation is merged** (tokens from the Client's prototype, Figtree
-via `next/font`). The per-screen re-skin of the 13 routes is **not started**. See
-*The design integration*.
+**The design foundation, application shell, and ARS form re-skin are merged and
+deployed** (tokens from the Client's prototype, Figtree via `next/font`). Every
+signed-in route inherits the new shell; the per-screen pass over the remaining
+admin and mentor panels is still open. See *The design integration* and *The
+shell and the form re-skin*.
 
 **The sequence changed on 2026-09-08. ARS is now the next phase built**, at the
 Client's request, ahead of video and the test engine. Weeks 4 to 6 are
@@ -205,8 +195,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Nothing is awaiting merge.** Every pull request this project has raised is
-  merged, and `main` is at `35ab4aa`.
+- **PR #35 is open** from `docs/context-truth-0920` into `main`. It contains only
+  the full truth audit of this file. No application or database change is
+  awaiting merge. `main` is at `35ab4aa`.
 - **Everything through PR #34 is merged.** The sequence through 2026-09-18: #21 Phase 5a step 2, #22 the
   context-gate fix and #23 the design foundation, #24 this file's cleanup, #25
   Phase 5a steps 3/4/4b, #27 the review contract, #28 the ARS report, #29 the
@@ -228,9 +219,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   commit that records the merge, which is what this entry is; the alternative,
   claiming a merge before it happens, would make the gate lie in the worse
   direction.
-- **`origin` carries only `main`.** Every feature branch has been merged and
-  deleted; `git ls-remote --heads origin` returns one line, checked 2026-09-20.
-  Nothing is left to prune.
+- **`origin` carries `main` and `docs/context-truth-0920` only.** All feature
+  branches are merged and deleted; the documentation branch belongs to open
+  PR #35. Checked with `git ls-remote --heads origin` on 2026-09-20.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -561,7 +552,8 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | 2026-09-20 | **Paste-to-build process import** | An admin copies a standard prompt into any model along with an institution's admission-process document, and pastes the answer back. The parser reads it, shows a preview, and creates the whole process on confirmation. `/admin/courses/[id]/import`. **No migration, no new table, no new dependency.** Verified over HTTP, 35 of 35, against a production build and the hosted database. See *The process importer* |
 | 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
-| 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
+| 2026-09-18 | **ARS report, including admin template authoring** | Four report/late-stamp migrations are applied. Mentor queue/editor, student released-report view, and `/admin/report-templates` authoring are built, merged in PR #28, and deployed. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored |
+| 2026-09-20 | **Full context truth audit completed** | Finished the partial audit on PR #35: reconciled the executive summary, current repository/remote/PR state, Phase 5a boundary, report authoring, deployed design state, site URL, user state, student-route verification, and the removed feedback model. `node scripts/check-context.mjs` passes; no product code changed |
 
 ### The process importer, 2026-09-20
 
@@ -852,21 +844,24 @@ Two things follow, and both are cheap:
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-**Nothing is in progress.** `feat/ars-form-engine` merged as PR #30 on
-2026-09-20 and its branch is deleted. The table above is deliberately left with
-no rows rather than a row of dashes: the context gate reads the branch column of
-every row and an em dash is not the ASCII hyphen it forgives, which is a
-five-minute lesson recorded here so nobody spends it twice.
+`feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
+The documentation-only context audit is complete on open PR #35; no product work
+is in progress. The table stays empty because completed work does not belong
+here. Keep genuinely idle tables empty rather than adding a row of dashes: the
+context gate reads the branch column of every row and an em dash is not the ASCII
+hyphen it forgives.
 
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
 built and merged, but **file upload inside a form still renders a placeholder
 rather than an upload**, and **the mentor review queue does not exist**. The
-admin round builder and the process importer were driven over HTTP; the student
-route was not.
+admin round builder and the process importer were driven over HTTP. The student
+route was rendered and photographed over HTTP, but its draft-save and hand-in
+writes have not been exercised.
 
-An agent picking up Phase 1 should claim it here first, naming the branch and the
-files it will own, before editing anything.
+An agent picking up Phase 5a (or the remaining Phase 1 bulk-import step) should
+claim it here first, naming the branch and the files it will own, before editing
+anything.
 
 ## What Phase 0 added
 
@@ -978,19 +973,13 @@ Performance advisor: 11 findings, all INFO, **no correction made**.
   column-set match. At the 100-user ceiling fixed by clause 3.1, adding five more
   composite indexes is over-engineering excluded by clause 3.2.
 
-### Site URL: deliberately local, must change before real users
+### Site URL: deployed URL configured; revisit for a custom domain
 
-`auth.site_url` is set to `http://127.0.0.1:3000` and the redirect allow-list holds
-only `http://localhost:3000` and `http://127.0.0.1:3000`. This is a deliberate
-decision taken on 2026-08-28: the application currently runs only on the
-developer's machine and has no deployed URL yet.
-
-Supabase writes `site_url` into password-reset and invite emails, so this value is
-harmless while only the three test accounts exist and becomes a live defect the
-moment a real student resets a password. **Before any real user is created, the
-Vercel production URL must replace it in `supabase/config.toml` and be pushed with
-`supabase config push`, and the same URL must be added to
-`additional_redirect_urls`.**
+The local-only value used during initial setup was replaced before the Phase 0
+exit gate. `auth.site_url` and the redirect allow-list now include
+`https://cospire-roan.vercel.app`, and the configuration was pushed and verified
+against the deployed application on 2026-08-29. If a custom production domain is
+added, replace the `vercel.app` address and run `supabase config push` again.
 
 ### Auth configuration: pushed from `config.toml` on 2026-08-28
 
@@ -1009,7 +998,9 @@ Live and verified:
 | Minimum password length | 8 | pushed |
 | Password requirements | lower + upper + digits | pushed |
 
-Zero users exist; the signup probe above created nothing (`auth.users` = 0 rows).
+The signup probe created no user. The project now has five profiles; current
+counts and which rows belong to the owner are recorded under *Users and
+profiles* below.
 
 ### Trap found in `config.toml`, fixed — do not reintroduce
 
@@ -1607,38 +1598,19 @@ their place.
   The note is also in `src/features/ars/actions/delete-round.ts`, beside the code
   that would have to change.
 
-**Step 3 decisions, taken by the owner on 2026-09-12. Read them with *The ARS
-meeting, 2026-09-16* beside them: the Client has since changed three of these,
-and the migration is being reworked rather than applied.**
+**Step 3's final model, after the Client's 2026-09-16 answers.** One submission
+exists per student per round, enforced by unique `(student_id, round_id)`. A
+student may edit only a draft and may move it to submitted; there is no DELETE
+grant. Server triggers author submission and lateness timestamps, and a submitted
+round is protected from deletion by its foreign key.
 
-- **One submission per student per round**, enforced by a unique
-  `(student_id, round_id)`. The student may edit it only while it is a `draft`;
-  once `submitted` it is fixed.
-- **The mentor marks the submission itself as reviewed**, after reading all of
-  it: `status` moves `submitted` to `reviewed`. Row policies cannot limit which
-  columns a role changes, so a trigger enforces that a mentor's only permitted
-  change is that one transition, and a student's only permitted changes are the
-  answer while a draft plus `draft` to `submitted`.
-- **Only the assigned mentor writes feedback.** Admins see submissions and
-  feedback (Annexure A: "visibility of all ... submissions") but do not write it.
-
-Three further choices made in the migration, each worth the owner's eye:
-
-- **Mentors do not see drafts.** A queue showing half-written answers invites
-  feedback on something the student is still changing.
-- **A student reads feedback only once the submission is marked reviewed.**
-  Marking reviewed is the moment feedback is released.
-- **One feedback row per submission**, edited rather than appended to. So if a
-  student's mentor is reassigned after feedback exists, the new mentor can read
-  it but neither edit it nor add their own. Acceptable at V1 scale; a second row
-  per mentor is an additive change if it ever matters.
-
-Also in the migration: `submitted_at`, `reviewed_at` and `reviewed_by` are
-written by a trigger from the server clock, never the client; only `answer`,
-`file_path` and `status` are updatable columns at all; there is no DELETE grant;
-and `file_path` is pinned to `org/<org>/ars/<student>/<uuid>.<ext>` so step 4's
-bucket has a fixed shape. Deleting a round with submissions now returns "Students
-have already answered this round" instead of the generic failure.
+The earlier per-submission `ars_feedback` design was removed before the migration
+was applied. Review and scoring belong to the whole process instead: a process
+run groups the student's round submissions, and `ars_reports` carries the
+assigned mentor's configurable, weighted report. Draft submissions stay hidden
+from mentors. File paths are pinned to
+`org/<org>/ars/<student>/<uuid>.<ext>`. The schema is merged and deployed; what
+remains is application work for the mentor review queue and upload flow.
 
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
 
@@ -2046,6 +2018,7 @@ time otherwise.
 | 2026-09-20 | Three defects the screenshots found that no test would have | `textarea` and `select` were missing from the `font: inherit` rule, so every textarea rendered in the browser's monospace; the sidebar email had an ellipsis with no `white-space: nowrap`, so it wrapped instead; and a `minmax(16rem, 1fr)` grid track could not shrink on a phone. All three were invisible to typecheck, lint, 222 tests and a production build |
 | 2026-09-20 | A capture that looked like a bug and was not | Chrome on Windows will not open a window narrower than about 500px, so a 430px capture renders at ~500 and crops -- which reads exactly like a layout overflowing its viewport. Recaptured at 520 and the layout was correct all along. Phone widths in `shot.mjs` are 520 and above for that reason |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
+| 2026-09-20 | **Full `CONTEXT.md` truth audit** | Compared the complete file with Git history, remote heads, all pull-request states, migration filenames, and its own later verified entries. Replaced remaining stale current-state claims; `node scripts/check-context.mjs` passes. No application, migration, dependency, or hosted-state change |
 
 ## Next recommended action
 
@@ -2054,9 +2027,10 @@ both worse the longer they wait:
 
 1. **Settle the 1 October promise.** The Client was told ARS and the mock test
    would be ready and tested "in the next 15 days", and that the project is
-   otherwise on track. The question bank, the test engine and most of ARS are
-   unbuilt. Decide what "ready" means on that date, and send the revised date in
-   writing under clause 4.4 if it moves.
+   otherwise on track. The question bank and test engine are unbuilt, and ARS
+   still lacks its mentor review queue and upload UI. Decide what "ready" means
+   on that date, and send the revised date in writing under clause 4.4 if it
+   moves.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
    items named (feedback, onboarding, offboarding, student journey trackers, and
    the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
