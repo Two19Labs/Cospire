@@ -2,6 +2,13 @@
 
 Last updated: 2026-09-20 (Asia/Calcutta)
 
+**The application shell and the ARS form are re-skinned to the Client's
+prototype** (2026-09-20): a 232px ink rail on the left with role-grouped
+navigation and a gold active item, a white title bar, and a cream content area.
+`RoleShell` carries it, so all twenty signed-in screens took it at once. The
+student ARS form was rendering essentially unstyled and now reads as a designed
+form. See *The shell and the form re-skin*.
+
 **The process importer is built** (2026-09-20, owner's instruction, for client
 review the same evening). An admin copies a standard prompt into any model with
 an institution's admission-process document and pastes the answer back, and the
@@ -631,6 +638,57 @@ prompt that drifts from the parser is worse than no prompt, because the model is
 then told to produce something this platform will refuse and the admin is caught
 between the two.
 
+### The shell and the form re-skin, 2026-09-20
+
+The owner asked for the look to match the Client's prototype, and for the
+prototype's left panel to exist. Both are done for the shell and for the ARS
+form; the per-screen pass over the remaining panels is not, and is still the
+open item it was.
+
+**Where the values came from.** The prototype's markup was extracted rather than
+guessed at: its pages are gzipped blobs inside the export, and the shell's
+measurements were read straight off the inline styles -- a 232px rail in ink
+with cream text, a 64px white title bar, 32px content padding, group labels at
+10px tracked to .09em, and an active navigation item filled gold with ink text.
+They are tokens and classes here, not inline styles.
+
+**Why the form looked broken.** `round-form.tsx` emitted bare `<label>` and
+`<input>` siblings with no wrapper and no class at all, into a grid. So a
+four-page application rendered as one run-on line of boxes with the labels
+sitting between them. Every field is now one `.field` block, label above
+control, in a grid that gives long answers and choice lists the whole row.
+Nothing about the data changed; the markup had simply never been written.
+
+**Three real defects the screenshots found**, none of which any test would have:
+
+- **`button, input { font: inherit }` was missing `textarea` and `select`.** Form
+  controls do not inherit the page font on their own, so every textarea in the
+  application -- the essay box, the importer's paste box -- rendered in the
+  browser's default monospace. Fixed for all of them at once. The prompt and
+  paste boxes are deliberately put *back* to monospace through `.input--code`,
+  because they hold a prompt and JSON.
+- **The sidebar email had `text-overflow: ellipsis` and no `white-space:
+  nowrap`,** so the ellipsis never fired and a long address wrapped to three
+  lines inside a 232px rail.
+- **A grid track of `minmax(16rem, 1fr)` cannot shrink below 16rem,** so on a
+  phone the column kept its width and the page scrolled sideways.
+  `minmax(min(16rem, 100%), 1fr)` fixes it.
+
+**What the rail deliberately leaves out.** The prototype's rail also lists
+Curriculums, Mock tests and Mock Analytics, and shows a "View as" role switcher.
+The three screens are not built, so listing them would make a demonstration look
+broken at the first click; the switcher is impersonation, appears nowhere in
+Annexure A, and this file already records it as prototype scope not to absorb.
+
+**`.role-layout`, `.role-header` and `.account-summary` are gone.** The new shell
+replaced them and nothing referenced them afterwards. They were removed rather
+than left behind, because dead CSS carrying a comment about where it is used is
+worse than no CSS.
+
+**Headings still resolve to Georgia.** Recoleta Bold is the design's heading face
+and the Client has still not supplied the web licence and woff2, so this is as
+close to the prototype as it can get until they do.
+
 ### The context gate's own blind spot, found 2026-09-10
 
 Merging the ARS rounds pull request left three statements in this file
@@ -1001,10 +1059,17 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, **re-measured 2026-09-20** after the importer probes were
-cleaned up: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 5 courses, 5
-content grants, 2 documents, 2 ARS rounds, 1 ARS report template, and 0 rows in
-every other ARS table.**
+Current live counts, **re-measured 2026-09-20 at the end of that day's work**:
+**2 orgs, 5 profiles (5 active), 1 mentor assignment, 6 courses, 2 documents, 5
+ARS rounds, 1 ARS submission, 1 ARS process run, 1 ARS report template, and 0
+rows in every other ARS table.**
+
+The last three of those courses and rounds, and the submission, are **the
+owner's own**: a programme called "test" with three rounds, created through the
+new importer on 2026-09-20 at 13:43 UTC, and a draft answer started on it at
+13:47 UTC. They are not test residue and must not be deleted. The baseline moved
+twice in one day, which is the point of re-measuring rather than trusting this
+line.
 
 **This baseline had drifted from the one recorded on 2026-09-18**, which said 4
 courses and 0 rows in every ARS table. The difference is the owner's own work on
@@ -1973,6 +2038,9 @@ time otherwise.
 | 2026-09-20 | A `useActionState` form does not carry `$ACTION_ID_` | The other verify scripts find an action by that field. A form rendered by `useActionState` carries `$ACTION_REF_n`, an `$ACTION_n:0` / `$ACTION_n:1` bound pair and an `$ACTION_KEY` instead. `ars-import.mjs` replays whatever hidden fields the server rendered rather than recognising one shape, which is both more robust and the honest test of the no-JavaScript path. Confirmed against the **existing login form** first, to establish the pattern worked before blaming the new code |
 | 2026-09-20 | **PR #30 merged and deployed** | `main` moved `7ad0339` -> `5000a75`. `verify` green on the pull request and again on `main`; the Vercel preview deployed on the pull request and Production on the merge. `https://cospire-roan.vercel.app/login` answers 200 and `/admin/courses/46/import` refuses an anonymous caller with a 307. **CI on `main` failed the `context` job**, which is the known artifact rather than a defect: the branch is deleted on merge, so the Active work row naming it became false at the moment it merged. `verify` passed. This commit is the fix |
 | 2026-09-20 | **The importer verified on the DEPLOYED URL: 35 of 35** | `scripts/verify/ars-import.mjs` against `https://cospire-roan.vercel.app` after the merge -- the deployed application, not a local build. Every check that passed locally passed there, including the refusal to replace an answered round. Live counts returned to baseline exactly: 5 courses, 2 rounds, 5 profiles, 2 documents, 0 submissions |
+| 2026-09-20 | **The shell and ARS form re-skinned, and photographed** | `scripts/verify/shot.mjs` added: it signs in, saves the served HTML with a `<base>` tag and renders it through the installed Chrome, so a look can be judged rather than asserted. Five captures reviewed -- the student round, the student process, the programme page, the importer and a phone width. The importer's 35 checks were re-run against the re-skinned build: **35 of 35**, including the served-stylesheet check finding no undefined class |
+| 2026-09-20 | Three defects the screenshots found that no test would have | `textarea` and `select` were missing from the `font: inherit` rule, so every textarea rendered in the browser's monospace; the sidebar email had an ellipsis with no `white-space: nowrap`, so it wrapped instead; and a `minmax(16rem, 1fr)` grid track could not shrink on a phone. All three were invisible to typecheck, lint, 222 tests and a production build |
+| 2026-09-20 | A capture that looked like a bug and was not | Chrome on Windows will not open a window narrower than about 500px, so a 430px capture renders at ~500 and crops -- which reads exactly like a layout overflowing its viewport. Recaptured at 520 and the layout was correct all along. Phone widths in `shot.mjs` are 520 and above for that reason |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 
 ## Next recommended action
@@ -2024,8 +2092,10 @@ left in this phase:
   an admin screen for creating/changing the template is not. Until it exists,
   templates must be inserted operationally and the feature is not deploy-ready.
   The clause 12 quotation and clause 16.1 amendment are still outstanding.
-- **The per-screen re-skin of the 13 existing routes**, deliberately left until
-  the features stop moving, because a re-skin touches every route.
+- **The per-screen re-skin of the remaining panels.** The shell and the ARS form
+  are done (2026-09-20) and every screen inherits the new chrome through
+  `RoleShell`, but the panels inside the admin and mentor screens have not been
+  gone through one by one.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
 is on `main` and is what a reviewer works from. The merged branches listed under

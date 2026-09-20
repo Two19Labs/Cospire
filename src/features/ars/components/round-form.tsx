@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -35,111 +36,137 @@ const noticeMessages: Record<string, string> = {
   submitted: "Handed in. Your mentor will review it.",
 };
 
+// Every field renders as one `.field` block: a label above its control, never
+// beside it. Before this they were emitted as bare <label> and <input>
+// siblings with no wrapper and no classes, so the grid laid them out inline and
+// a four-page application read as one run-on line of boxes.
 function Field({ field, value }: { field: FormField; value: unknown }) {
   const id = `f-${field.key}`;
   const common = { id, name: field.key, required: field.required };
+  const optional = field.required ? null : <span className="field__optional">Optional</span>;
+  const hint = field.helpText ? <p className="field__hint">{field.helpText}</p> : null;
 
   if (field.type === "score_list") {
     return (
-      <fieldset>
-        <legend>{field.label}</legend>
-        {field.helpText ? <p className="muted">{field.helpText}</p> : null}
-        {(field.options ?? []).map((option) => {
-          const stored = typeof value === "object" && value !== null ? (value as Record<string, string>) : {};
-          return (
-            <div className="field-row" key={option}>
-              <label htmlFor={`${id}-${option}`}>{option}</label>
-              <input
-                defaultValue={stored[option] ?? ""}
-                id={`${id}-${option}`}
-                name={`${field.key}::${option}`}
-                placeholder="Enter score"
-                type="text"
-              />
-            </div>
-          );
-        })}
+      <fieldset className="field">
+        <legend className="field__label">
+          {field.label}
+          {optional}
+        </legend>
+        {hint}
+        <div className="field-row">
+          {(field.options ?? []).map((option) => {
+            const stored =
+              typeof value === "object" && value !== null ? (value as Record<string, string>) : {};
+            return (
+              <label className="field" htmlFor={`${id}-${option}`} key={option}>
+                <span className="field__label">{option}</span>
+                <input
+                  className="input"
+                  defaultValue={stored[option] ?? ""}
+                  id={`${id}-${option}`}
+                  name={`${field.key}::${option}`}
+                  placeholder="Score"
+                  type="text"
+                />
+              </label>
+            );
+          })}
+        </div>
       </fieldset>
     );
   }
 
   const label = (
-    <label htmlFor={id}>
+    <label className="field__label" htmlFor={id}>
       {field.label}
-      {field.required ? "" : " (optional)"}
+      {optional}
     </label>
   );
 
   if (field.type === "long_text") {
     return (
-      <>
+      <div className="field">
         {label}
-        {field.helpText ? <p className="muted">{field.helpText}</p> : null}
+        {hint}
         <textarea
           {...common}
+          className="input input--area"
           defaultValue={typeof value === "string" ? value : ""}
           placeholder={field.placeholder}
           rows={8}
         />
-        {field.wordLimit ? <p className="muted">Maximum {field.wordLimit} words.</p> : null}
-      </>
+        {field.wordLimit ? (
+          <p className="field__hint">Maximum {field.wordLimit} words.</p>
+        ) : null}
+      </div>
     );
   }
 
   if (field.type === "select") {
     return (
-      <>
+      <div className="field">
         {label}
-        <select {...common} defaultValue={typeof value === "string" ? value : ""}>
+        <select {...common} className="input" defaultValue={typeof value === "string" ? value : ""}>
           <option value="">Select…</option>
           {(field.options ?? []).map((option) => (
-            <option key={option} value={option}>{option}</option>
+            <option key={option} value={option}>
+              {option}
+            </option>
           ))}
         </select>
-        {field.helpText ? <p className="muted">{field.helpText}</p> : null}
-      </>
+        {hint}
+      </div>
     );
   }
 
   if (field.type === "radio" || field.type === "single_choice") {
     return (
-      <fieldset>
-        <legend>{field.label}</legend>
-        {(field.options ?? []).map((option) => (
-          <label className="choice" htmlFor={`${id}-${option}`} key={option}>
-            <input
-              defaultChecked={value === option}
-              id={`${id}-${option}`}
-              name={field.key}
-              type="radio"
-              value={option}
-            />
-            <span>{option}</span>
-          </label>
-        ))}
-        {field.helpText ? <p className="muted">{field.helpText}</p> : null}
+      <fieldset className="field">
+        <legend className="field__label">
+          {field.label}
+          {optional}
+        </legend>
+        <div className="choice-list">
+          {(field.options ?? []).map((option) => (
+            <label className="choice" htmlFor={`${id}-${option}`} key={option}>
+              <input
+                defaultChecked={value === option}
+                id={`${id}-${option}`}
+                name={field.key}
+                type="radio"
+                value={option}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+        {hint}
       </fieldset>
     );
   }
 
   if (field.type === "checkbox") {
     return (
-      <label className="choice" htmlFor={id}>
-        <input defaultChecked={value === true} id={id} name={field.key} type="checkbox" />
-        <span>{field.label}</span>
-      </label>
+      <div className="field">
+        <label className="choice" htmlFor={id}>
+          <input defaultChecked={value === true} id={id} name={field.key} type="checkbox" />
+          <span>{field.label}</span>
+        </label>
+        {hint}
+      </div>
     );
   }
 
   if (field.type === "file") {
     return (
-      <>
+      <div className="field">
         {label}
-        <p className="muted">
-          File upload is not available yet on this round. Your mentor will tell you where to
+        <p className="field__pending">
+          File upload is not available on this round yet. Your mentor will tell you where to
           send it.
         </p>
-      </>
+      </div>
     );
   }
 
@@ -147,17 +174,26 @@ function Field({ field, value }: { field: FormField; value: unknown }) {
     field.type === "date" ? "date" : field.type === "number" ? "number" : "text";
 
   return (
-    <>
+    <div className="field">
       {label}
       <input
         {...common}
-        defaultValue={typeof value === "string" || typeof value === "number" ? String(value) : ""}
+        className="input"
+        defaultValue={
+          typeof value === "string" || typeof value === "number" ? String(value) : ""
+        }
         disabled={Boolean(field.prefill)}
         placeholder={field.placeholder}
         type={inputType}
       />
-      {field.helpText ? <p className="muted">{field.helpText}</p> : null}
-    </>
+      {/* A prefilled field is filled from the account and disabled, so say why
+          rather than leaving the student wondering why they cannot type. */}
+      {field.prefill ? (
+        <p className="field__hint">Taken from your account.</p>
+      ) : (
+        hint
+      )}
+    </div>
   );
 }
 
@@ -222,28 +258,53 @@ export function RoundForm({
                   <h2>{step.title}</h2>
                   {step.subtitle ? <p className="muted">{step.subtitle}</p> : null}
                 </div>
-                <p className="muted">
-                  Step {index + 1} of {steps.length} · {stepProgress({ stepCount: steps.length, stepIndex: index })}%
-                </p>
+                <div className="step-progress">
+                  <p className="muted">
+                    Step {index + 1} of {steps.length}
+                  </p>
+                  <div
+                    aria-hidden="true"
+                    className="step-progress__track"
+                    style={{
+                      // The one inline style in this file, because the value is
+                      // data rather than design: it is the step the student has
+                      // reached, not a look.
+                      "--progress": `${stepProgress({
+                        stepCount: steps.length,
+                        stepIndex: index,
+                      })}%`,
+                    } as CSSProperties}
+                  >
+                    <span className="step-progress__fill" />
+                  </div>
+                </div>
               </div>
 
-              <form action={isLast ? submitRoundAction : saveDraftAction} className="stack-form">
+              <form action={isLast ? submitRoundAction : saveDraftAction} className="stack-form stack-form--wide">
                 <input name="roundId" type="hidden" value={round.roundId} />
                 <input name="stepIndex" type="hidden" value={index} />
 
                 {step.sections.map((section, sectionIndex) => (
-                  <div key={section.title ?? sectionIndex}>
-                    {section.title ? <h3>{section.title}</h3> : null}
-                    {section.description ? <p className="muted">{section.description}</p> : null}
-                    {section.fields.map((field) => (
-                      <Field field={field} key={field.key} value={round.answer[field.key]} />
-                    ))}
-                  </div>
+                  <section className="form-section" key={section.title ?? sectionIndex}>
+                    {section.title ? (
+                      <h3 className="form-section__title">{section.title}</h3>
+                    ) : null}
+                    {section.description ? (
+                      <p className="muted">{section.description}</p>
+                    ) : null}
+                    <div className="form-fields">
+                      {section.fields.map((field) => (
+                        <Field field={field} key={field.key} value={round.answer[field.key]} />
+                      ))}
+                    </div>
+                  </section>
                 ))}
 
-                <button className="button button--primary" type="submit">
-                  {isLast ? "Hand in" : "Save & continue →"}
-                </button>
+                <div className="form-actions">
+                  <button className="button button--primary" type="submit">
+                    {isLast ? "Hand in" : "Save & continue →"}
+                  </button>
+                </div>
               </form>
 
               <nav aria-label="Pagination" className="pagination">
