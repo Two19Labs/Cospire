@@ -205,32 +205,32 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
-  #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
-  last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
-  file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
-  4b, merged the same day as `ce147b3`.
-- **PR #27 merged 2026-09-18** as `6a39649`, adding the documentation-only
-  review contract in `docs/review-checklist.md`. #25 was stacked on #24's branch, so
-  merging #24 with `--delete-branch` **closed** it rather than retargeting it;
-  reopening needed that branch pushed back before the base could be moved to
-  `main`. **Do not delete the base branch of a stacked pull request.** It was then
-  rebased onto `main`, where git skipped the squashed cleanup commit as already
-  applied.
-- **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
-  the mentor and student screens, **admin template authoring**, pagination, and
-  the fix-forward migration `20260918153000`. Code and database are back in step
-  -- all 16 migrations are applied and all 16 are on `main`.
+- **Nothing is awaiting merge.** Every pull request this project has raised is
+  merged, and `main` is at `35ab4aa`.
+- **Everything through PR #34 is merged.** The sequence through 2026-09-18: #21 Phase 5a step 2, #22 the
+  context-gate fix and #23 the design foundation, #24 this file's cleanup, #25
+  Phase 5a steps 3/4/4b, #27 the review contract, #28 the ARS report, #29 the
+  record of that merge. Then on 2026-09-20: **#30** the ARS form engine and the
+  process importer (`5000a75`), **#31** its merge record, **#32** the importer's
+  deployed-URL verification, **#33** the application shell and the ARS form
+  re-skin (`1b748fc`), and **#34** that re-skin's deployed-URL verification.
+- **Code and database are in step: 17 migrations on `main` and the same 17
+  applied to the hosted project**, versions matching filenames, re-checked
+  2026-09-20 through the read-only MCP server.
+- **Do not delete the base branch of a stacked pull request.** #25 was stacked on
+  #24's branch, so merging #24 with `--delete-branch` **closed** it rather than
+  retargeting it; reopening needed that branch pushed back before the base could
+  be moved to `main`. It was then rebased onto `main`, where git skipped the
+  squashed cleanup commit as already applied.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
   commit that records the merge, which is what this entry is; the alternative,
   claiming a merge before it happens, would make the gate lie in the worse
   direction.
-- Merged branches still on the remote and safe to prune: `feat/documents`,
-  `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
-  `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
-  `feat/design-foundation`, `docs/context-truth`.
+- **`origin` carries only `main`.** Every feature branch has been merged and
+  deleted; `git ls-remote --heads origin` returns one line, checked 2026-09-20.
+  Nothing is left to prune.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -243,7 +243,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
   and auth configuration are both applied and in sync with this repository: all
-  eight migrations present on both sides, re-checked 2026-09-12.
+  seventeen migrations present on both sides, re-checked 2026-09-20.
 
 ### Tooling available to an agent in this repository
 
@@ -916,9 +916,12 @@ No credentials, keys, or connection strings are recorded in this file.
 
 Three further migrations are described in their own sections rather than here:
 `20260828122059` (last-admin protection, under *Phase 0 security audit*), and
-`20260902180054` and `20260902201530` (under *The documents slice*). All fifteen
+`20260902180054` and `20260902201530` (under *The documents slice*). All seventeen
 recorded versions match their repository filenames, so `supabase db push` treats
-them as applied and will not re-run them.
+them as applied and will not re-run them. The two most recent are
+`20260918153000` (the report fix-forward) and `20260918210000`, which widens
+`ars_rounds_form_has_fields` so a form round may be created empty and composed
+in the builder afterwards.
 
 Note the ordering that was used here: `20260910115938` was applied to the database
 while its code still sat in an unmerged pull request, and the two came back into
@@ -1571,9 +1574,9 @@ file **at its Storage path**.
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
 | 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
-| 5. The student submission route and the mentor review queue | **Half done, merged and deployed 2026-09-20** (PR #30). The student process view and the multi-step round renderer exist; **the mentor review queue does not**, and file upload inside a form still renders a placeholder rather than an upload. The student route has not been driven over HTTP |
+| 5. The student submission route and the mentor review queue | **Half done, merged and deployed 2026-09-20** (PR #30). The student process view and the multi-step round renderer exist; **the mentor review queue does not**, and file upload inside a form still renders a placeholder rather than an upload. The student route **renders** for a granted student over HTTP -- confirmed by capture on 2026-09-20 -- but saving a draft and handing in have never been exercised |
 | 5b. **The process importer** | **Done, merged and deployed 2026-09-20** (PR #30). 35 of 35 over HTTP. No migration. See *The process importer* |
-| 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
+| 6. The ARS report | **Done, merged and deployed 2026-09-18** (PR #28). Four migrations applied, 17/17 database checks, 12/12 production-build HTTP checks, and **admin template authoring included** -- `/admin/report-templates` and its detail screen are live. A review before merging found five defects, fixed forward in `20260918153000` |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
 **capacity** limit and not a capability one: Free gives 1GB of Storage and a 50MiB
@@ -2078,34 +2081,27 @@ that are not code:
 **Phase 5a steps 3, 4 and 4b are done at the database** (2026-09-18). What is
 left in this phase:
 
-- **The mentor review queue**, which is the half of step 5 that does not exist.
-  The student process view and the round renderer do.
-- **Step 5, and it is the next thing to build**: one student route rendering
-  whichever component a round declares (written answer, essay, form, file
-  upload, or an off-platform round showing its date), and the mentor review
-  queue. It is the first UI since the design foundation merged, so build it to
-  the Client's prototype rather than re-skinning it later.
+- **The mentor review queue, and it is the next thing to build.** It is the half
+  of step 5 that does not exist. The student process view and the multi-step
+  round renderer are built, merged and re-skinned; nothing yet lets a mentor
+  open what a student handed in and write against it.
+- **Exercise the student route's writes.** It renders, but saving a draft and
+  handing in have never been driven over HTTP, so `scripts/verify/` covers none
+  of it.
 - **The upload UI**, which is also what first exercises the bucket's delete and
   update policies. Those are written but unverified: Supabase refuses SQL
   deletes on `storage.objects`, so only an HTTP path can test them.
-- **The ARS report's admin template builder.** The schema, mentor editor,
-  weighted total, release path and student view are built and verified locally;
-  an admin screen for creating/changing the template is not. Until it exists,
-  templates must be inserted operationally and the feature is not deploy-ready.
-  The clause 12 quotation and clause 16.1 amendment are still outstanding.
+- **The ARS report is finished and deployed**, admin template authoring
+  included (PR #28). What remains on it is not code: the clause 12 quotation and
+  the clause 16.1 written amendment are still outstanding.
 - **The per-screen re-skin of the remaining panels.** The shell and the ARS form
   are done (2026-09-20) and every screen inherits the new chrome through
   `RoleShell`, but the panels inside the admin and mentor screens have not been
   gone through one by one.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
-is on `main` and is what a reviewer works from. The merged branches listed under
-*Current repository state* can be pruned.
-
-**The ARS report work is pushed in PR #28.** Four migrations are applied and
-agree with the repository; the database probe is 17/17 and the HTTP workflow is
-12/12. The remaining product gap is admin template authoring, not
-mentor/student reporting.
+is on `main` and is what a reviewer works from. Every feature branch has since
+been merged and deleted; `origin` carries only `main`.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
