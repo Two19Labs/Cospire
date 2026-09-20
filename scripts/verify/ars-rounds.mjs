@@ -11,6 +11,10 @@
 // round yet -- that is step 5 -- so there is nothing to drive over HTTP. What is
 // checked here is that a mentor cannot *write* one.
 //
+// Round authoring moved from /admin/courses/[id] to /admin/ars/[id] when
+// Programmes and ARS were separated on 2026-09-20, and the course this creates
+// has to be an ars_process or it will not appear in that section at all.
+//
 // node --env-file=.env.local scripts/verify/ars-rounds.mjs <baseUrl>
 
 import { createClient } from "@supabase/supabase-js";
@@ -128,19 +132,19 @@ try {
 
   const { data: made } = await admin
     .from("courses")
-    .insert({ org_id: COSPIRE_ORG, title: COURSE })
+    .insert({ kind: "ars_process", org_id: COSPIRE_ORG, title: COURSE })
     .select("id")
     .single();
   courseId = made.id;
 
   const { data: rivalMade } = await admin
     .from("courses")
-    .insert({ org_id: RIVAL_ORG, title: `${COURSE} rival` })
+    .insert({ kind: "ars_process", org_id: RIVAL_ORG, title: `${COURSE} rival` })
     .select("id")
     .single();
   rivalCourseId = rivalMade.id;
 
-  const path = `/admin/courses/${courseId}`;
+  const path = `/admin/ars/${courseId}`;
   const detail = await get(path, "admin");
   record("admin opens the programme with its rounds panel", detail.status === 200, `${detail.status}`);
 
@@ -167,11 +171,17 @@ try {
     fields: "Why this school?\n  What will you contribute?  \n\n",
   });
   rows = await rounds("Mock application");
-  record("admin adds a form round, its questions parsed one per line",
+  // Quick-start questions land in the BUILDER's shape, not the flat `fields`
+  // list this check originally expected. Since 20260918210000 a form round is
+  // always written as steps/sections/fields with a key and a type per question,
+  // so opening it in the builder needs no conversion. The old assertion was
+  // written before that and had not been run since.
+  const quickStart = rows[0]?.config?.steps?.[0]?.sections?.[0]?.fields ?? [];
+  record("admin adds a form round, its questions parsed one per line into the builder's shape",
     rows.length === 1
-      && JSON.stringify(rows[0].config.fields) ===
-         JSON.stringify([{ label: "Why this school?" }, { label: "What will you contribute?" }]),
-    rows.length === 1 ? JSON.stringify(rows[0].config.fields) : `${rows.length} rows`);
+      && quickStart.map((f) => f.label).join(" | ") ===
+         "Why this school? | What will you contribute?",
+    rows.length === 1 ? quickStart.map((f) => `${f.key}:${f.label}`).join(" | ") : `${rows.length} rows`);
 
   await postForm(path, "admin", createId, {
     courseId, name: "Video essay", submissionMode: "file",
@@ -186,8 +196,14 @@ try {
   const noFields = await postForm(path, "admin", createId, {
     courseId, name: "Empty form", submissionMode: "form", prompt: "x", fields: "   \n  ",
   });
-  record("a form round with no questions is refused, and creates nothing",
-    (await rounds("Empty form")).length === 0 && (noFields.location ?? "").includes("fields-invalid"),
+  // An empty form round is ACCEPTED now, and that is the product decision of
+  // 2026-09-18, not a regression: the builder is what composes a form, and
+  // demanding questions up front made it unreachable -- the round could not
+  // exist without already having the thing the builder is for. The check is
+  // inverted rather than deleted, so the behaviour stays pinned either way.
+  const empty = await rounds("Empty form");
+  record("a form round may be created empty, to be composed in the builder",
+    empty.length === 1 && (noFields.location ?? "").includes("created"),
     `-> ${noFields.location}`);
 
   const dup = await postForm(path, "admin", createId, {
@@ -233,7 +249,7 @@ try {
 
   // A round hand-posted against a programme in the rival's own organisation
   // must not be written into this admin's org either.
-  await postForm(`/admin/courses/${rivalCourseId}`, "admin", createId, {
+  await postForm(`/admin/ars/${rivalCourseId}`, "admin", createId, {
     courseId: rivalCourseId, name: "Cross tenant", submissionMode: "text", prompt: "x", fields: "",
   });
   record("an admin cannot add a round to another organisation's programme",
@@ -255,7 +271,7 @@ try {
     // belonging to a different programme would be deleted and the admin
     // returned to a page that looks unchanged.
     const wrongCourse = await postForm(
-      `/admin/courses/${rivalCourseId}`, "admin", deleteId,
+      `/admin/ars/${rivalCourseId}`, "admin", deleteId,
       { courseId: rivalCourseId, roundId: victim.id },
     );
     record("a round id posted against the wrong programme is refused",

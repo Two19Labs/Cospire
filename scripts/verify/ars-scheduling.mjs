@@ -10,6 +10,10 @@
 // this project has already shipped a font that downloaded on every page and
 // rendered nowhere: the source said one thing and the served CSS another.
 //
+// Round authoring moved from /admin/courses/[id] to /admin/ars/[id] when
+// Programmes and ARS were separated on 2026-09-20, and the course this creates
+// has to be an ars_process or it will not appear in that section at all.
+//
 // node --env-file=.env.local scripts/verify/ars-scheduling.mjs <baseUrl>
 
 import { createClient } from "@supabase/supabase-js";
@@ -119,12 +123,12 @@ try {
 
   const { data: made } = await admin
     .from("courses")
-    .insert({ org_id: COSPIRE_ORG, title: COURSE })
+    .insert({ kind: "ars_process", org_id: COSPIRE_ORG, title: COURSE })
     .select("id")
     .single();
   courseId = made.id;
 
-  const path = `/admin/courses/${courseId}`;
+  const path = `/admin/ars/${courseId}`;
   const page = await get(path, "admin");
   record("admin opens the programme", page.status === 200, `${page.status}`);
 
