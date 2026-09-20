@@ -857,12 +857,12 @@ Two things follow, and both are cheap:
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The mentor
-workflow is complete in PR #38; completed work does not remain in the table.
+workflow merged as PR #38; completed work does not remain in the table.
 
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
 built and merged, and the mentor review queue, review detail, private upload
-links and off-platform outcome recording are complete in PR #38. File upload is
+links and off-platform outcome recording merged as PR #38. File upload is
 merged and deployed. The admin round builder and the process importer were driven
 over HTTP; the student route's ordinary draft/save action is still not covered
 by a browser-level harness.
@@ -1573,7 +1573,7 @@ file **at its Storage path**.
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
 | 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25), then extended on `feat/ars-file-upload` for several file questions in one form. `20260920150318` is applied. Live Storage verification 10/10: two uploads attach to one draft; replacement/removal work before hand-in; mentor cannot read a draft but can read after hand-in; another student is refused; handed-in files cannot be replaced or deleted |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
-| 5. The student submission route and the mentor review queue | **Complete in PR #38.** The process view, multi-step renderer, private multi-file uploads, assigned-student queue, answer detail, short-lived private download links, review transition, and off-platform outcome recording are built. The ordinary text-field draft/save path still lacks a browser-level harness |
+| 5. The student submission route and the mentor review queue | **Merged as PR #38.** The process view, multi-step renderer, private multi-file uploads, assigned-student queue, answer detail, short-lived private download links, review transition, and off-platform outcome recording are built. The ordinary text-field draft/save path still lacks a browser-level harness |
 | 5b. **The process importer** | **Done, merged and deployed 2026-09-20** (PR #30). 35 of 35 over HTTP. No migration. See *The process importer* |
 | 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
 
@@ -2080,7 +2080,7 @@ that are not code:
 
 **Phase 5a is not completely done.** What remains:
 
-- **The mentor review workflow is complete in PR #38.** Assigned mentors see
+- **The mentor review workflow merged as PR #38.** Assigned mentors see
   handed-in rounds, open all answers and private uploads, mark work reviewed,
   and record off-platform outcomes with an optional note. The separate final
   ARS report workflow remains on the same dashboard.
