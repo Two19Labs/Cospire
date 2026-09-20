@@ -2081,7 +2081,7 @@ that are not code:
 **Phase 5a is not completely done.** What remains:
 
 - **The mentor review workflow in PR #38 merged.** Assigned mentors see
-  handed-in rounds, open all answers and private uploads, mark work reviewed,
+  handed-in rounds, view all answers and private uploads, mark work reviewed,
   and record off-platform outcomes with an optional note. The separate final
   ARS report workflow remains on the same dashboard.
 - **The upload UI is complete and deployed.** It supports multiple file
