@@ -130,3 +130,35 @@ Its assertions deliberately avoid the words `Application` and
 `Why this programme?`, which appear in the copyable prompt's own example on the
 same page: asserting on either passes against a page that parsed nothing at all.
 That false pass was found in this script's first draft.
+
+## shot.mjs — rendering signed-in screens to PNG
+
+```bash
+node --env-file=.env.local scripts/verify/shot.mjs http://127.0.0.1:3001 coverage/shots
+```
+
+A look cannot be asserted, so this photographs it. It signs in the way the other
+scripts here do, saves the served HTML with a `<base>` tag pointing back at the
+running app, and hands the file to the Chrome already installed on the machine.
+Stylesheets and the self-hosted font load from the app itself, so the capture is
+what the app served. It creates its own admin, student, programme and rounds and
+deletes them afterwards.
+
+Three things it knows, each of which cost time:
+
+- **Every `<script>` is stripped from the saved HTML.** React cannot hydrate from
+  a `file://` origin — the RSC payload fetches against the wrong origin and the
+  client error boundary replaces the whole page — and `--disable-javascript` is
+  a no-op in Chrome's new headless. Without the scripts the server HTML renders,
+  which is the honest thing to photograph here anyway: every screen works with
+  scripting off.
+- **A fresh `--user-data-dir` per run.** Chrome caches `file://` pages inside a
+  profile, and reusing one silently re-photographs the previous run — which
+  looks exactly like a change that did not take effect.
+- **Chrome resolves `--screenshot` against its own working directory**, so the
+  path must be absolute. It exits 0 when it cannot write, so the script checks
+  the file exists rather than trusting the exit code.
+
+**Chrome on Windows will not make a window narrower than about 500px.** Asking
+for 430 renders at ~500 and crops, which reads as a layout overflowing when it
+is not. Capture phone widths at 520 and above.

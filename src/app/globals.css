@@ -109,8 +109,13 @@ body {
   margin: 0;
 }
 
+/* `textarea` and `select` belong here too, and their absence is why every
+   textarea in this application rendered in the browser's default monospace:
+   form controls do not inherit the page font on their own. */
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -151,8 +156,7 @@ code {
   width: 100%;
 }
 
-.auth-card h1,
-.role-header h1 {
+.auth-card h1 {
   font-size: 1.5rem;
   line-height: 1.15;
 }
@@ -191,6 +195,13 @@ body {
   justify-items: start;
 }
 
+/* The same stack, stretched. `justify-items: start` suits a short admin form
+   whose inputs should not run the width of the screen; a multi-page application
+   wants its sections to fill the panel. */
+.stack-form--wide {
+  justify-items: stretch;
+}
+
 .stack-form > * {
   width: 100%;
 }
@@ -223,9 +234,142 @@ body {
   margin-top: 0.15rem;
 }
 
+/* The design's signature applied where it is used most: form labels. Small,
+   uppercase, tracked at .06em -- the same treatment the prototype gives its 42
+   other labels. This is the shared label class, so every form in the
+   application takes it at once rather than each screen inventing one. */
 .field__label {
-  font-size: 0.875rem;
-  font-weight: 700;
+  align-items: baseline;
+  color: var(--ink-55);
+  display: flex;
+  /* A two-line label pushed "Optional" to the far right of the field, where it
+     read as belonging to the next question rather than to this one. */
+  flex-wrap: wrap;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* "Optional" sits with the label rather than inside it, so a screen reader
+   announces the label cleanly and the eye still sees the distinction. */
+.field__optional {
+  color: var(--ink-35);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.field__hint {
+  color: var(--ink-55);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* A capability that is genuinely not built yet. Rust rather than a red, and
+   stated on the field rather than hidden, because a student meeting an upload
+   that does nothing is a support call. */
+.field__pending {
+  background: var(--cream-warm);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--rust);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  padding: 0.625rem 0.75rem;
+}
+
+.field fieldset,
+fieldset.field {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.choice-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* A textarea needs room to be worth writing in. The prototype's one textarea is
+   110px; this is taller because ARS essays run to 250 words. */
+/* Deliberately monospace, against the rule above: these two boxes hold a prompt
+   and a block of JSON, where alignment and character shapes carry meaning. It is
+   an exception stated in one place rather than a default nobody chose. */
+.input--code {
+  font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.input--area {
+  line-height: 1.55;
+  min-height: 9rem;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+/* A section inside a form page: a heading, then its fields. Separated by a rule
+   rather than a card, because cards inside a card is the thing that makes an
+   admin tool look busy. */
+.form-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.form-section + .form-section {
+  border-top: 1px solid var(--line-faint);
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+}
+
+.form-section__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* Two columns once there is room, one on a phone. Fields keep their own width
+   rather than every input stretching the full width of a wide screen, which is
+   what made the old layout read as a run-on line. */
+.form-fields {
+  display: grid;
+  gap: 1.125rem;
+  /* `min()` matters: a bare minmax(16rem, 1fr) cannot shrink below 16rem, so on
+     a phone the column keeps its width and the whole page scrolls sideways. */
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+}
+
+/* A long answer, a choice list and a score list each take the whole row: a
+   250-word essay in a half-width box is a worse form than a plain one. */
+.form-fields > .field:has(.input--area),
+.form-fields > .field:has(.choice-list),
+.form-fields > .field:has(.field-row),
+.form-fields > .field:has(.field__pending) {
+  grid-column: 1 / -1;
+}
+
+.step-progress {
+  display: grid;
+  gap: 0.375rem;
+  justify-items: end;
+  min-width: 9rem;
+}
+
+.step-progress__track {
+  background: var(--line);
+  border-radius: var(--r-pill);
+  height: 0.375rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.step-progress__fill {
+  background: var(--gold);
+  border-radius: var(--r-pill);
+  display: block;
+  height: 100%;
+  width: var(--progress, 0%);
 }
 
 .field__error,
@@ -309,38 +453,214 @@ body {
   padding: 1rem;
 }
 
-.role-layout {
-  margin: 0 auto;
-  max-width: 80rem;
-  min-height: 100vh;
-  padding: clamp(1.25rem, 4vw, 3.5rem);
-}
+/* ---------------------------------------------------------------------------
+ * The application shell: an ink rail on the left, a column on the right.
+ *
+ * Every measurement here was read off the prototype rather than chosen: the
+ * rail is 232px, the title bar 64px, the content padding 32px, and the active
+ * navigation item is gold with ink text. The prototype states them as inline
+ * styles on the elements themselves; they are tokens and classes here.
+ * ------------------------------------------------------------------------- */
 
-.role-header {
-  align-items: flex-start;
-  border-bottom: 1px solid var(--line);
+.app-shell {
+  background: var(--background);
+  color: var(--foreground);
   display: flex;
-  gap: 2rem;
-  justify-content: space-between;
-  padding-bottom: 2rem;
+  min-height: 100vh;
 }
 
-.account-summary {
+.app-sidebar {
+  background: var(--ink);
+  box-sizing: border-box;
+  color: var(--cream);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  height: 100vh;
+  overflow: auto;
+  padding: 1.25rem 1rem;
+  position: sticky;
+  top: 0;
+  width: 14.5rem;
+}
+
+.app-brand {
   align-items: center;
   display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem 1.5rem;
+}
+
+.app-brand__mark {
+  align-items: center;
+  background: var(--gold);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
+}
+
+.app-brand__name {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.app-nav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* The rail's group label. Tracked wider than the ink-on-cream labels elsewhere
+   -- .09em against .06em -- because the prototype does that, and light text on
+   a dark ground genuinely needs the extra air. */
+.app-nav__group {
+  color: rgb(251 246 227 / 45%);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  padding: 0.5rem 0.5rem 0.25rem;
+  text-transform: uppercase;
+}
+
+.app-nav__link {
+  align-items: center;
+  border-radius: var(--r-md);
+  color: var(--cream);
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  opacity: 0.85;
+  padding: 0.5625rem 0.625rem;
+  text-decoration: none;
+}
+
+.app-nav__link:hover {
+  background: rgb(251 246 227 / 8%);
+  opacity: 1;
+}
+
+.app-nav__link--active,
+.app-nav__link--active:hover {
+  background: var(--gold);
+  color: var(--ink);
+  opacity: 1;
+}
+
+.app-sidebar__spacer {
+  flex: 1;
+  min-height: 1.5rem;
+}
+
+.app-account {
+  border-top: 1px solid rgb(251 246 227 / 12%);
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.75rem 0.5rem 0;
+}
+
+.app-account__name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.app-account__email {
+  color: rgb(251 246 227 / 55%);
+  font-size: 0.6875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Without this the ellipsis never fires and a long address wraps to three
+     lines in a 232px rail. */
+  white-space: nowrap;
+}
+
+.app-account__signout {
+  background: none;
+  border: 0;
+  color: rgb(251 246 227 / 70%);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.app-account__signout:hover {
+  color: var(--cream);
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-topbar {
+  align-items: center;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
   gap: 1rem;
-  text-align: right;
+  height: 4rem;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-.account-summary span,
-.account-summary strong {
-  display: block;
+.app-topbar__title {
+  flex: 1;
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.account-summary span {
-  color: var(--muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
+.app-topbar__role {
+  color: var(--ink-55);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.app-topbar__avatar {
+  align-items: center;
+  background: var(--sage);
+  border-radius: var(--r-pill);
+  color: #fff;
+  display: flex;
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.app-content {
+  box-sizing: border-box;
+  flex: 1;
+  padding: 2rem;
+}
+
+.app-content__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 90rem;
 }
 
 .empty-state {
@@ -416,20 +736,89 @@ body {
   justify-content: space-between;
 }
 
+@media (max-width: 60rem) {
+  /* The rail stops being a rail. It becomes a strip across the top that
+     scrolls sideways, which keeps every destination reachable on a phone
+     without a menu button that would need JavaScript to open. */
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    height: auto;
+    padding: 0.75rem 1rem;
+    position: static;
+    width: 100%;
+  }
+
+  .app-brand {
+    padding: 0;
+  }
+
+  .app-nav {
+    display: flex;
+    flex: 1;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .app-nav__group {
+    display: none;
+  }
+
+  .app-nav__link {
+    white-space: nowrap;
+  }
+
+  .app-sidebar__spacer {
+    display: none;
+  }
+
+  .app-account {
+    border-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    /* Without this the name cannot shrink, the strip grows past the viewport
+       and the entire shell scrolls sideways. */
+    min-width: 0;
+    padding: 0;
+  }
+
+  .app-account__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-account__email {
+    display: none;
+  }
+
+  .app-account__signout {
+    margin-top: 0;
+  }
+
+  .app-topbar {
+    padding: 0 1rem;
+  }
+
+  .app-content {
+    min-width: 0;
+    padding: 1rem;
+  }
+}
+
 @media (max-width: 44rem) {
   .auth-layout {
     padding: 1rem;
   }
 
-  .role-header,
-  .account-summary {
-    align-items: stretch;
-    flex-direction: column;
-  }
 
-  .account-summary {
-    text-align: left;
-  }
 }
 
 .panel {

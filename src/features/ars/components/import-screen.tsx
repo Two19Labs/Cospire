@@ -137,7 +137,7 @@ export function ImportScreen({
         </p>
         <textarea
           aria-label="The prompt to copy"
-          className="input"
+          className="input input--code"
           readOnly
           rows={10}
           value={prompt}
@@ -153,7 +153,7 @@ export function ImportScreen({
         <label className="field">
           <span className="visually-hidden">The model&apos;s answer</span>
           <textarea
-            className="input"
+            className="input input--code"
             defaultValue={state.pasted || createState.pasted}
             name="pasted"
             placeholder={'{\n  "programme": "…",\n  "rounds": [ … ]\n}'}
