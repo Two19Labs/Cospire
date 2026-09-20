@@ -1,6 +1,14 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-18 (Asia/Calcutta)
+Last updated: 2026-09-20 (Asia/Calcutta)
+
+**The process importer is built** (2026-09-20, owner's instruction, for client
+review the same evening). An admin copies a standard prompt into any model with
+an institution's admission-process document and pastes the answer back, and the
+whole ARS process is created after a preview they confirm. Building rounds by
+hand is unchanged and sits beside it. **35 of 35 checks over HTTP**, no
+migration, no new dependency. It is on `feat/ars-form-engine` with the form
+engine, which it depends on. See *The process importer*.
 
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
@@ -403,6 +411,51 @@ flattened into false.
 2. Go through the MESA ARS app properly; the founder asked twice.
 3. Review the three further public mock sites he was adding.
 
+## The Masters' Union ARS process, read 2026-09-18
+
+The Client sent the two public links behind their live MU ARS process, and the
+owner asked that it be rebuilt here end to end and then made replicable. It is
+the first real specification this project has had for ARS, and reading it
+settled several open questions and opened one gap.
+
+**The process is three rounds:** an application, an aptitude test, and
+interviews plus group discussions. The third is off the platform, which is what
+`submission_mode = 'offline'` already exists for.
+
+**The aptitude round is a mock**, and its specification maps onto the planned
+schema without change: three sections (QA, LR, DI), 45 questions, two hours
+overall, **no sectional time limits**, sections switchable at will, **no negative
+marking**, solutions shown afterwards. It cannot be delivered here yet, because
+the question bank and test engine are unbuilt. For a demonstration it can be an
+off-platform round linking to the Client's existing test, labelled honestly.
+
+**Components are not rounds, and their own data proves it.** The MU process has
+three rounds; the sample report has five components. The application round feeds
+*Profile & Content* and *Video Essay*; the single interview-and-GD round feeds
+two separate components. The decision of 2026-09-18 to let a component name a
+round without requiring one was therefore right.
+
+**The application form broke the old `config` shape, which is the useful
+finding.** It has four steps with per-step drafts and a progress reading,
+sections inside each step, eight field types, a 200-word essay with a live
+count, fields pre-filled from the account, and fields that appear in answer to
+another field. `config` had carried a flat `{ fields: [...] }`, which cannot
+express any of that. `src/features/ars/form-schema.ts` replaces it, and the
+Client's real application is transcribed into the test suite so that any change
+breaking it fails loudly.
+
+**Conditional fields are deliberately not in the first version.** The MU form
+hides the expected-passing-year fields unless the twelfth results are not out.
+Version one shows every field instead. The form stays usable and the gap is
+recorded rather than pretended away.
+
+**Two things to put to the Client.** Their application has **no file upload at
+all**, though the founder said resumes, tenth marksheets and certificates would
+be needed -- so either the form predates that or uploads belong elsewhere. And
+step two of the application, "Aptitude Test Details", collects *self-reported
+scores from other exams* and is **not** the aptitude test round; two different
+things with nearly the same name.
+
 ## Sequencing change, 2026-09-08
 
 **The Client asked for ARS to be built first**, ahead of video and the test
@@ -498,7 +551,84 @@ timing all go to Cospire from the owner rather than being raised from here.
 | 2026-09-10 | **A font that loaded and never rendered** | `next/font` defines `--font-sans` on a class on `<html>`; `globals.css` defined a fallback for the same variable on `:root`. Equal specificity, and Next emits its class first, so the fallback won: Figtree downloaded on every page and nothing was set in it. The fallback now lives inside `var()`. Caught by reading the served stylesheet rather than the source |
 | 2026-09-10 | PRs #17, #18 and #19 merged | The teardown fix, then the gate closure and resequence, then Phase 5a step 1. `/admin/courses` and `/admin/courses/[id]` confirmed live on the deployed URL, refusing anonymous callers |
 
+| 2026-09-20 | **Paste-to-build process import** | An admin copies a standard prompt into any model along with an institution's admission-process document, and pastes the answer back. The parser reads it, shows a preview, and creates the whole process on confirmation. `/admin/courses/[id]/import`. **No migration, no new table, no new dependency.** Verified over HTTP, 35 of 35, against a production build and the hosted database. See *The process importer* |
+| 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
+
+### The process importer, 2026-09-20
+
+Built on the owner's instruction, for the Client to review the same evening.
+An admin builds an ARS process by hand today -- a round at a time, a question at
+a time. That stays and is unchanged. Beside it there is now a second route: copy
+a standard prompt into whatever model the admin already has, give it the
+institution's admission-process document, and paste the answer back here.
+
+**It is the mechanism the founder already agreed**, on 2026-09-16, for question
+import: a standard prompt run in a model the Client already pays for, with the
+output pasted into a parser here, rather than an API integration billed per
+call. Pointing it at ARS processes needs no Google account, no LLM account, no
+key in the application and no per-call cost -- all four of which are still owed
+by the Client and still blocking Phase 3.
+
+Four decisions were taken with the owner **before** any code was written, and
+three of them are not what would have been guessed:
+
+- **One paste builds every round of one existing programme.** The programme
+  itself is still created by hand.
+- **A preview is shown and nothing is written until it is confirmed.** This is
+  also what Annexure A asks of the question importer -- an admin reviews before
+  anything lands.
+- **An import REPLACES the programme's rounds.** Not appends. This was the
+  owner's explicit choice against the recommendation, and it is why the
+  destruction guards below exist rather than being optional polish.
+- **A timed aptitude round becomes a placeholder** carrying its full
+  specification -- sections, question count, duration, negative marking -- stored
+  as an `offline` round with `config.pendingFeature = "test-engine"`. There is no
+  question bank and no test engine, so a round that pretended otherwise would be
+  a demonstration of something that does not exist.
+
+**What protects a live process from a bad paste.** Replacing is the most
+destructive control an admin has in this application, so:
+
+- Reading a paste touches no table at all. Only confirming writes.
+- Confirming **re-parses the pasted text on the server**. The preview travels to
+  the browser and back, and a Server Action is a public endpoint, so treating
+  the returned preview as the thing to insert would let a crafted post write any
+  rounds it liked.
+- The delete is **one statement**, so it is all or nothing. Both
+  `ars_submissions.round_id` and `ars_attempt_grants.round_id` are ON DELETE
+  RESTRICT, so if any single round has been answered the whole delete is refused
+  and the process is left exactly as it was. Verified over HTTP: a student's
+  submission was created, the import was attempted, and it was refused with the
+  process intact.
+- Two rounds sharing a name are caught **before** anything is deleted. The
+  database would otherwise refuse the second insert for
+  `ars_rounds_name_unique_per_course` after the old process had already gone.
+- The remaining gap, stated rather than hidden: a delete and an insert cannot
+  share a transaction over PostgREST. If the insert failed after the delete
+  succeeded the programme would be left with no rounds. Everything is parsed and
+  validated before the delete so that insert has nothing left to fail on, and
+  the screen says plainly what happened and that pressing Create again fixes it.
+
+**The parser is lenient about names and strict about values.** A model told to
+emit `instructions` will emit `prompt` or `description`; told `questions` it will
+emit `fields`; told `select` it will say `dropdown`. All of those are accepted,
+because a wrong name is a synonym. A question type this platform cannot render is
+refused rather than guessed at, because a wrong value is a broken round. Prose
+and ``` fences around the JSON are stripped, since models wrap their answers more
+often than not, and a half-copied answer is told it looks cut off rather than
+told it contains no JSON.
+
+**Keys are ours, never the model's.** A field key is what an answer is stored
+under, so asking a language model for stable identifiers invites two questions
+silently overwriting one another's answer. Labels come from the model; `toKey`
+derives the keys, with the same collision handling the hand builder uses.
+
+**The prompt is generated from the schema**, not typed out as a literal: it lists
+the field types from `fieldTypes` and the page limit from `maxStepsPerForm`. A
+prompt that drifts from the parser is worse than no prompt, because the model is
+then told to produce something this platform will refuse and the admin is caught
+between the two.
 
 ### The context gate's own blind spot, found 2026-09-10
 
@@ -662,7 +792,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| None | -- | **Phase 5a report work is merged and deployed** (`17cc78d`) | -- | **Nothing claimed.** The next slice is **step 5, the student submission route**, which is the missing link: a run is created by a student's first submission, so the mentor queue stays empty and no report can be started until it exists | 2026-09-18 |
+| This chat | `feat/ars-form-engine` | **The ARS form format** -- multi-step forms expressed in `ars_rounds.config` | `src/features/ars/form-schema.ts`, `src/features/ars/form-schema.test.ts` | **In progress.** Format, validation, the **student renderer** and the **admin round builder** are built: `/student/ars` shows the process with its steps and dates, `/student/ars/[id]` walks the round's steps with per-step drafts. Migration `20260918210000` applied, widening `ars_rounds_form_has_fields` so a form round may be created empty and composed afterwards. The builder is at `/admin/courses/[id]/rounds/[roundId]`: pages, sections, a typed question picker, up/down reordering and a preview rendered from the same spec. **Nothing has been driven over HTTP yet**, and file upload inside a form renders a placeholder rather than an upload | 2026-09-18 |
 
 An agent picking up Phase 1 should claim it here first, naming the branch and the
 files it will own, before editing anything.
@@ -858,13 +988,24 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, re-measured 2026-09-18 after the step 3 probes were rolled
-back: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 4 courses, 4 content
-grants, 2 documents, and 0 rows in every ARS table.** Courses rose from 1 to 3
-and grants from 3 to 4 during the owner's manual test pass of 2026-09-14, and a
-fourth course ("Mesa") was added by the owner on 2026-09-18; those rows are the
-owner's, not test residue. Two of them, ids 29 and 30, differ only by a space in
-the title and look like a duplicate the owner may want to remove.
+Current live counts, **re-measured 2026-09-20** after the importer probes were
+cleaned up: **2 orgs, 5 profiles (5 active), 1 mentor assignment, 5 courses, 5
+content grants, 2 documents, 2 ARS rounds, 1 ARS report template, and 0 rows in
+every other ARS table.**
+
+**This baseline had drifted from the one recorded on 2026-09-18**, which said 4
+courses and 0 rows in every ARS table. The difference is the owner's own work on
+2026-09-18: a fifth course, "MU ARS" (id 46), and two rounds -- "ARS Template" on
+course 20 and "Application" on course 46. Nothing here is test residue. The
+correction is made rather than appended because a recorded baseline that drifts
+is worse than none: it is exactly what makes a destructive operation look safe,
+which is the lesson of *The teardown near-miss*. Re-measure before the next run
+rather than trusting this line.
+
+Courses rose from 1 to 3 and grants from 3 to 4 during the owner's manual test
+pass of 2026-09-14, and "Mesa" was added on 2026-09-18; those rows are the
+owner's too. Two of them, ids 29 and 30, differ only by a space in the title and
+look like a duplicate the owner may want to remove.
 
 This is the baseline any future verification run should return to. **None of it
 is test residue and none of it may be deleted:**
@@ -1352,7 +1493,8 @@ file **at its Storage path**.
 | 3. `ars_submissions`, `ars_process_runs`, `ars_attempt_grants` | **Done, merged and deployed 2026-09-18** (PR #25). `20260911200751_ars_submissions_and_process_runs.sql` applied to the hosted project and verified by 17 probes in a rolled-back transaction. Reworked before applying, after the 2026-09-16 meeting: `ars_feedback` is gone, since the write-up belongs to a whole process. No application code yet -- that is step 5 |
 | 4. The Storage bucket and its policies on `storage.objects` | **Done, merged and deployed 2026-09-18** (PR #25). `20260918080226_ars_uploads_bucket.sql` applied and verified by 12 probes. Private `ars-uploads` bucket, 50MiB, video/PDF/image; a student writes only beneath `org/<org>/ars/<their id>/`, a mentor reads only handed-in work, admins their own org. **Not yet exercised over HTTP** -- that comes with the upload UI in step 5 |
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
-| 5. The student submission route and the mentor review queue | Not started. The first UI since the design foundation landed, so it is built to the prototype's patterns rather than re-skinned later |
+| 5. The student submission route and the mentor review queue | **Partly built on `feat/ars-form-engine`, unmerged.** The student process view and the multi-step round renderer exist; the mentor review queue does not. File upload inside a form still renders a placeholder rather than an upload |
+| 5b. **The process importer** | **Built and verified on `feat/ars-form-engine`, 2026-09-20.** 35 of 35 over HTTP. No migration. See *The process importer* |
 | 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
@@ -1811,6 +1953,12 @@ time otherwise.
 | 2026-09-18 | Report schema checks | Linked database lint: no errors. Security advisor: only the two pre-existing Auth warnings (leaked-password protection and insufficient MFA options). Performance advisor: the same three pre-existing multiple-permissive-policy warnings, none introduced by the report tables. Migration list agrees locally and remotely through `20260918101442` |
 | 2026-09-18 | **ARS report UI driven over HTTP, 12 of 12** | `scripts/verify/ars-report-ui.mjs` against a production build with throwaway accounts and real sessions. Mentor queue rendered; report created through its no-JavaScript Server Action; both weighted components and metric observations saved; 72/100 rendered; release succeeded; student home listed it; student read scores, observations and closing note. Cleanup restored 5 profiles, 1 assignment, 4 courses and zero report/template/component rows |
 | 2026-09-18 | ARS report application verification | `typecheck`, lint, 136 tests and production build all pass. New routes: `/mentor/reports/[id]` and `/student/reports/[id]` |
+| 2026-09-20 | **The process importer, driven over HTTP: 35 of 35** | `scripts/verify/ars-import.mjs` against a local production build and the hosted database, with throwaway accounts and real sessions, every form posted through the no-JavaScript path. Proves: anonymous and student callers refused; a model's answer wrapped in prose and fences read; **reading a paste writes nothing**; a paste with no JSON and a half-copied one each refused with a sentence that fits; three rounds created in document order with the right modes; a deadline stored as the END of that day in IST; a `dropdown` normalised to a select with its options; keys derived from labels, not the model; the aptitude round kept as a placeholder carrying its specification; an imported round opening in the hand-built builder; a second import **replacing** the process; and **an import that would destroy an answered round refused with the process left intact**. Baseline restored exactly |
+| 2026-09-20 | `typecheck` / `lint` / `test` / `build` | Pass. **222 tests, up from 159.** 27 of them are the importer's, against pastes a model actually produces |
+| 2026-09-20 | Two false passes found inside the importer's own harness | A check asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example; the assertions now key on text only a preview can produce. And a `\b` written into a regex by a Python patch became a literal backspace byte (0x08), so the hidden-field reader matched nothing and every action post returned HTTP 500 -- which reads as "Failed to find Server Action" and sends you looking at deployments rather than at your own regex |
+| 2026-09-20 | Next.js refuses a Server Action with no `Origin` header | Worth keeping, because the symptom misdirects: the request answers **500 "Failed to find Server Action. This request might be from an older or newer deployment"**, which reads like a build mismatch. A browser always sends the header; any script driving a Server Action must set it. The older scripts in `scripts/verify/` do not, and should be corrected when next touched |
+| 2026-09-20 | A `useActionState` form does not carry `$ACTION_ID_` | The other verify scripts find an action by that field. A form rendered by `useActionState` carries `$ACTION_REF_n`, an `$ACTION_n:0` / `$ACTION_n:1` bound pair and an `$ACTION_KEY` instead. `ars-import.mjs` replays whatever hidden fields the server rendered rather than recognising one shape, which is both more robust and the honest test of the no-JavaScript path. Confirmed against the **existing login form** first, to establish the pattern worked before blaming the new code |
+| 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 
 ## Next recommended action
 
@@ -1827,9 +1975,27 @@ both worse the longer they wait:
    the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
    written. Both sides want this, so it only needs recording.
 
+**The process importer is built and verified** (2026-09-20), and it ships with
+the form engine on `feat/ars-form-engine`. Two things follow from it that are
+not code:
+
+- **It is a clause 12 conversation, like the report.** The founder agreed the
+  paste-a-prompt mechanism on 2026-09-16 for *question* import. Pointing it at
+  whole ARS processes is more than Annexure A's words and was built on the
+  owner's instruction of 2026-09-20 for a client review the same evening. The
+  quotation and the clause 16.1 written amendment are outstanding, and are not
+  settled by having built it.
+- **Tell the Client what it does not do.** It reads what a model gives it. It
+  never invents a date, and it will not deliver an aptitude test, because the
+  test engine is unbuilt -- those rounds arrive as placeholders carrying their
+  specification. Both are visible in the preview, and both are better said than
+  discovered in front of a college.
+
 **Phase 5a steps 3, 4 and 4b are done at the database** (2026-09-18). What is
 left in this phase:
 
+- **The mentor review queue**, which is the half of step 5 that does not exist.
+  The student process view and the round renderer do.
 - **Step 5, and it is the next thing to build**: one student route rendering
   whichever component a round declares (written answer, essay, form, file
   upload, or an off-platform round showing its date), and the mentor review

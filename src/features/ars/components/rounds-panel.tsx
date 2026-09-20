@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   Table,
   TableBody,
@@ -47,6 +49,22 @@ export function RoundsPanel({
             : `${rounds.length} round${rounds.length === 1 ? "" : "s"}, in the order students see them.`}
         </p>
       </div>
+
+      {/*
+        The two ways to build a process, side by side. Adding rounds by hand is
+        unchanged and remains the default; the importer is for the case this
+        screen is slow at -- an institution's whole admission process, written
+        down in a document, where typing it in question by question is an
+        afternoon.
+      */}
+      <p>
+        <Link
+          className="button button--secondary"
+          href={`/admin/courses/${courseId}/import`}
+        >
+          Build from a document instead
+        </Link>
+      </p>
 
       {error ? (
         <p className="form-error" role="alert">
@@ -99,6 +117,12 @@ export function RoundsPanel({
                     action rebuilds the destination from a literal path, which is
                     what stops this being an open redirect.
                   */}
+                  <Link
+                    className="button button--compact button--secondary"
+                    href={`/admin/courses/${courseId}/rounds/${round.id}`}
+                  >
+                    Edit round
+                  </Link>
                   <form action={deleteRoundAction}>
                     <input name="courseId" type="hidden" value={courseId} />
                     <input name="roundId" type="hidden" value={round.id} />
@@ -176,7 +200,7 @@ export function RoundsPanel({
         </label>
 
         <label className="field">
-          <span>Questions, one per line</span>
+          <span>Questions, one per line (optional)</span>
           <textarea
             className="input"
             name="fields"
@@ -184,8 +208,10 @@ export function RoundsPanel({
             rows={3}
           />
           <span className="muted">
-            Only used when the round is a set of written answers. Ignored
-            otherwise.
+            Genuinely optional — leave it empty and build the form properly in{" "}
+            <strong>Edit round</strong>, with pages, sections, a type for every
+            question and a preview of what the student sees. Anything typed here
+            becomes the first page&apos;s questions.
           </span>
         </label>
 

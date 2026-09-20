@@ -55,8 +55,13 @@ export interface RoundField {
 }
 
 export interface RoundConfig {
+  // Legacy, still read so rounds authored before the builder keep working.
   fields?: RoundField[];
   prompt: string;
+  // What the builder writes. Typed loosely here because `form-schema.ts` owns
+  // the real shape and validates it; duplicating that type invites the two
+  // drifting apart.
+  steps?: unknown[];
 }
 
 export interface NewRoundFieldErrors {
@@ -146,9 +151,12 @@ export function validateNewRound(input: {
   const labels = parseFieldLabels(input.fields);
 
   if (input.submissionMode === "form") {
-    if (labels.length === 0) {
-      errors.fields = "Add at least one question, one per line.";
-    } else if (labels.length > roundMaxFields) {
+    // No longer required. Since the round builder landed on 2026-09-18 a form
+    // round is created empty and composed afterwards, with pages, sections and
+    // a type per question. Demanding the questions up front made the builder
+    // unreachable -- the round could not exist without already having what the
+    // builder is for. The field stays as a quick start for a simple round.
+    if (labels.length > roundMaxFields) {
       errors.fields = `Use at most ${roundMaxFields} questions.`;
     } else if (labels.some((label) => label.length > roundFieldLabelMaxLength)) {
       errors.fields = `Keep each question under ${roundFieldLabelMaxLength} characters.`;
@@ -171,9 +179,31 @@ export function validateNewRound(input: {
       // `fields` is written only for `form`. Carrying an empty array on the
       // other modes would suggest the shape supports questions when the student
       // route will never read them.
+      // A form round is always written in the builder's own shape, so opening
+      // it in the builder needs no conversion step. Anything typed into the
+      // quick-start box becomes the first page's questions; an empty box gives
+      // an empty first page, which the builder then fills.
       config:
         submissionMode === "form"
-          ? { fields: labels.map((label) => ({ label })), prompt }
+          ? {
+              prompt,
+              steps: [
+                {
+                  key: "page_1",
+                  sections: [
+                    {
+                      fields: labels.map((label, index) => ({
+                        key: `field_${index + 1}`,
+                        label,
+                        required: true,
+                        type: "short_text",
+                      })),
+                    },
+                  ],
+                  title: "Page 1",
+                },
+              ],
+            }
           : { prompt },
       dueAt: dueAt ?? null,
       name,
