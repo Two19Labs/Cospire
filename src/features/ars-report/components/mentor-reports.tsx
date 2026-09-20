@@ -7,10 +7,9 @@ import { createReportAction } from "../actions/report-actions";
 import { buildReportsHref } from "../list-params";
 import type { MentorReportPage } from "../queries/list-reports";
 
-export function MentorReports({ profile, reports }: { profile: Profile; reports: MentorReportPage }) {
+export function MentorReports({ profile, reports, embedded = false }: { profile: Profile; reports: MentorReportPage; embedded?: boolean }) {
   const { page, pageCount, rows, total } = reports;
-  return (
-    <RoleShell profile={profile} title="Mentor workspace">
+  const content = (
       <section className="panel">
         <div className="panel__header">
           <div>
@@ -64,6 +63,6 @@ export function MentorReports({ profile, reports }: { profile: Profile; reports:
           </nav>
         ) : null}
       </section>
-    </RoleShell>
   );
+  return embedded ? content : <RoleShell profile={profile} title="Mentor workspace">{content}</RoleShell>;
 }

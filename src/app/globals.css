@@ -1364,3 +1364,35 @@ a.button {
     display: block;
   }
 }
+.review-answers {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.review-answer {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.review-answer h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.review-answer__value {
+  white-space: pre-wrap;
+}
+
+.offline-outcome {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.offline-outcome .input {
+  min-width: 10rem;
+  width: auto;
+}
