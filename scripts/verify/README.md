@@ -162,3 +162,27 @@ Three things it knows, each of which cost time:
 **Chrome on Windows will not make a window narrower than about 500px.** Asking
 for 430 renders at ~500 and crops, which reads as a layout overflowing when it
 is not. Capture phone widths at 520 and above.
+
+## ars-gate.mjs — the Phase 5a exit gate
+
+```bash
+node --env-file=.env.local scripts/verify/ars-gate.mjs https://cospire-roan.vercel.app
+```
+
+The gate sentence driven end to end in one sequence, rather than inferred from
+parts. It creates five throwaway accounts — an admin, an assigned mentor, an
+unassigned one, and two students who **both hold the programme** — and deletes
+everything it made.
+
+Two things it knows:
+
+- **A file round cannot be handed in through the form alone.** `saveAnswers`
+  skips file fields, because a plain post carries no bytes, so a required upload
+  reads as missing until the upload action has attached it to a draft — and that
+  action, not the form, creates the draft. The harness does what the browser
+  does. Get this wrong and every later round stalls behind the sequence trigger.
+- **Delete every `mentor_assignments` row before deleting any account.**
+  `assigned_by` is ON DELETE RESTRICT, so removing the admin while its own
+  assignment still references it fails — and `deleteUser` reports that in a
+  return value, not by throwing. It leaked one profile per run until the live
+  counts in the cleanup line gave it away.

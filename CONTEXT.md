@@ -2,6 +2,17 @@
 
 Last updated: 2026-09-20 (Asia/Calcutta)
 
+**The Phase 5a exit gate is CLOSED, 2026-09-20.** `scripts/verify/ars-gate.mjs`
+was run against `https://cospire-roan.vercel.app` -- the deployed application,
+not a local build -- and **28 of 28 checks passed**, driving the gate sentence
+end to end in one sequence: a student hands in a written answer, an upload and a
+two-page form; their assigned mentor sees all three in a queue, opens one, reads
+it, downloads the file and marks it reviewed; the student sees it reviewed; and a
+second student holding the same programme, plus an unassigned mentor, are refused
+both the rows and the uploaded file **at its Storage path**. The mentor also
+records the off-platform round, and the process run stamps itself complete. Live
+counts returned to baseline exactly. See *The Phase 5a exit gate*.
+
 **The application shell and the ARS form are re-skinned to the Client's
 prototype** (2026-09-20): a 232px ink rail on the left with role-grouped
 navigation and a gold active item, a white title bar, and a cream content area.
@@ -218,7 +229,19 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
+- **Everything through PR #42 is merged and `main` is at `0f97157`.** The work of
+  2026-09-20 after the re-skin: **#36** private multi-file ARS uploads, **#38**
+  the mentor review workflow, **#40** the report-template document importer, and
+  **#42** the separation of Programmes and ARS administration, each with a
+  documentation follow-up (#37, #39, #41). **PR #35 remains open**: it corrected
+  this section on 2026-09-20 and was overtaken by those merges, so its
+  corrections are made here instead and it should be closed as superseded rather
+  than merged into a conflict.
+- **Code and database are in step: 18 migrations on `main` and the same 18
+  applied to the hosted project**, versions matching filenames, re-checked
+  2026-09-20 through the read-only MCP server. The most recent is
+  `20260920150318_support_multiple_ars_form_uploads`.
+- The older sequence, for the record. **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
   #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
   last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
   file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
@@ -242,10 +265,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   commit that records the merge, which is what this entry is; the alternative,
   claiming a merge before it happens, would make the gate lie in the worse
   direction.
-- Merged branches still on the remote and safe to prune: `feat/documents`,
-  `docs/programme-decisions`, `fix/verify-teardown-scope`, `feat/programmes`,
-  `docs/phase-5a-merged`, `feat/ars-rounds`, `docs/gate-blind-spot`,
-  `feat/design-foundation`, `docs/context-truth`.
+- **`origin` carries `main` and `docs/context-truth-0920` only**, the second
+  being PR #35 above. Every other feature branch has been merged and deleted;
+  checked with `git ls-remote --heads origin` on 2026-09-20.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -258,7 +280,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
   and auth configuration are both applied and in sync with this repository: all
-  eight migrations present on both sides, re-checked 2026-09-12.
+  eighteen migrations present on both sides, re-checked 2026-09-20.
 
 ### Tooling available to an agent in this repository
 
@@ -704,6 +726,55 @@ worse than no CSS.
 **Headings still resolve to Georgia.** Recoleta Bold is the design's heading face
 and the Client has still not supplied the web licence and woff2, so this is as
 close to the prototype as it can get until they do.
+
+### The Phase 5a exit gate, closed 2026-09-20
+
+Every piece of ARS had been verified on its own -- uploads 10/10, the importer
+35/35, the report 17/17 and 12/12, scheduling 15/15 -- and the sentence the
+phase is judged by had never been run as one sequence. "ARS works" was an
+inference from parts. `scripts/verify/ars-gate.mjs` is that sequence, and it
+passes **28 of 28 against `https://cospire-roan.vercel.app`**.
+
+**One word of the gate has moved, and the script says so.** "Writes feedback"
+was written when `ars_feedback` hung one row off one submission. The 2026-09-16
+meeting replaced that with a report belonging to a whole process, so the mentor
+step here is the review transition that releases the student's view; the
+report's own path stays covered by `ars-report.sql` and `ars-report-ui.mjs`.
+Recorded rather than quietly reinterpreted.
+
+**What it drives, in order:** a programme with all four round shapes; the
+student's process list; a written answer handed in and stamped by the server; an
+upload into the student's own private folder, attached to a draft and handed in;
+a two-page form saving page one as a draft and handing in on page two with both
+pages' answers intact; the assigned mentor's queue showing all three; the mentor
+opening one and reading it; the review transition stamping who and when; the
+student seeing it reviewed; the mentor recording the off-platform round; and the
+process run stamping itself complete.
+
+**What it refuses**, which is the half that matters: a second student **holding
+the same programme** sees none of the first student's submissions -- a student
+without the grant would prove much less -- an unassigned mentor sees none of
+them and gets a 404 opening one directly, and both are refused the uploaded file
+**at its Storage path**, while the owning student and the assigned mentor can
+read it. Row counts are asserted rather than the absence of an error, which is
+the shape this project has been caught by twice.
+
+**Two things the gate found on its first run.**
+
+- **A file round cannot be handed in through the form alone.** `saveAnswers`
+  skips file fields, because a plain post carries no bytes, so a required upload
+  reads as missing until the upload action has attached it to a draft. The draft
+  is created by that action, not by the form. The harness now does what the
+  browser does. Not a defect -- but it means the file round has exactly one
+  working order, and anything that changes `getOrCreateDraft` will break it
+  silently.
+- **The teardown leaked one profile per run.** `mentor_assignments.assigned_by`
+  is ON DELETE RESTRICT, and the accounts were deleted in creation order, so the
+  admin was removed while its own assignment still referenced it. The Auth API
+  reports that in a return value the script was not reading, so it failed
+  silently and the live profile count climbed 5, 6, 7 across runs. Assignments
+  are now all deleted first and the delete result is checked. **The count in the
+  cleanup line is the only thing that caught it.**
 
 ### The context gate's own blind spot, found 2026-09-10
 
@@ -1580,6 +1651,10 @@ opens them in a queue and writes feedback, the student reads it, and a second
 student — and an unassigned mentor — are refused both the row and the uploaded
 file **at its Storage path**.
 
+**This gate is closed, 2026-09-20, 28 of 28 against the deployed URL.** See
+*The Phase 5a exit gate* below for what it proves and the one word of it that
+has moved since it was written.
+
 | Step | State |
 |---|---|
 | 1. `courses`, the grant helper and admin screens | **Done, merged and deployed 2026-09-10** (PR #19). Verified at both layers; migration applied |
@@ -1589,7 +1664,7 @@ file **at its Storage path**.
 | 4b. Round dates, `requires_review`, and the `offline` round type | **Done, merged and deployed 2026-09-18** (PR #25). From the 2026-09-16 meeting: a round carries when it opens and when it is due, whether a mentor reads it, and whether it happens off the platform (interview, GD, guesstimate) with the mentor recording the outcome |
 | 5. The student submission route and the mentor review queue | **PR #38 merged.** The process view, multi-step renderer, private multi-file uploads, assigned-student queue, answer detail, short-lived private download links, review transition, and off-platform outcome recording are built. The ordinary text-field draft/save path still lacks a browser-level harness |
 | 5b. **The process importer** | **Done, merged and deployed 2026-09-20** (PR #30). 35 of 35 over HTTP. No migration. See *The process importer* |
-| 6. The ARS report | **Database and mentor/student paths done locally on `feat/ars-report`**: four migrations applied, 17/17 database checks and 12/12 production-build HTTP checks. Admin template authoring remains, then review/merge/deploy |
+| 6. The ARS report | **Done, merged and deployed 2026-09-18** (PR #28), with admin template authoring included -- `/admin/report-templates` and its detail screen are live -- and a document importer for templates added in **PR #40**. Four migrations applied, 17/17 database checks, 12/12 production-build HTTP checks |
 
 **Nothing here is blocked from being built.** The Supabase Pro upgrade is a
 **capacity** limit and not a capability one: Free gives 1GB of Storage and a 50MiB
@@ -2058,6 +2133,9 @@ time otherwise.
 | 2026-09-20 | **The re-skin confirmed on the DEPLOYED URL** | PR #33 merged as `1b748fc`; CI green on `main` and Production deployed. `scripts/verify/shot.mjs` re-run against `https://cospire-roan.vercel.app` and the five captures reviewed there rather than locally: the ink rail, the gold active item, the white title bar and the re-laid-out ARS form all render on the deployed site |
 | 2026-09-20 | Three defects the screenshots found that no test would have | `textarea` and `select` were missing from the `font: inherit` rule, so every textarea rendered in the browser's monospace; the sidebar email had an ellipsis with no `white-space: nowrap`, so it wrapped instead; and a `minmax(16rem, 1fr)` grid track could not shrink on a phone. All three were invisible to typecheck, lint, 222 tests and a production build |
 | 2026-09-20 | A capture that looked like a bug and was not | Chrome on Windows will not open a window narrower than about 500px, so a 430px capture renders at ~500 and crops -- which reads exactly like a layout overflowing its viewport. Recaptured at 520 and the layout was correct all along. Phone widths in `shot.mjs` are 520 and above for that reason |
+| 2026-09-20 | **PHASE 5a EXIT GATE CLOSED: 28 of 28 on the DEPLOYED URL** | `scripts/verify/ars-gate.mjs` against `https://cospire-roan.vercel.app`, driving the gate sentence end to end in one sequence with five throwaway accounts and real sessions, every form posted through the no-JavaScript path. A student hands in all three round shapes; the assigned mentor queues, opens, reads, downloads and reviews; the student sees it reviewed; a second student **holding the same programme** and an unassigned mentor are refused the rows and the file at its Storage path; the mentor records the off-platform round; the run stamps complete. Live counts returned to baseline exactly |
+| 2026-09-20 | The gate's first run failed 7 of 26, and the cause was in the harness | **A file round cannot be handed in through the form alone**: `saveAnswers` skips file fields, so a required upload reads as missing until the upload action has attached it to a draft -- and that action, not the form, is what creates the draft. Every later round then stalled behind the sequence trigger. Not a defect in the application, but the file round has exactly one working order and anything that changes `getOrCreateDraft` will break it quietly |
+| 2026-09-20 | **The gate's teardown leaked one profile per run, and only the live counts caught it** | `mentor_assignments.assigned_by` is ON DELETE RESTRICT and the accounts were deleted in creation order, so the admin was removed while its own assignment still referenced it. `deleteUser` reports that in a return value the script was not reading, so it failed **silently** and the profile count climbed 5, 6, 7 across runs. Assignments are now deleted first across all three foreign keys and the delete result is checked. The two leaked accounts were removed by hand; the count is back to 5 |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 | 2026-09-20 | **ARS multi-file uploads merged and verified on Production** | PR #36 merged as `0e0f14f`; `verify` passed and Vercel Production reported success. `scripts/verify/ars-upload.mjs` passed 10/10 against the hosted project. A separate signed-in capture against `https://cospire-roan.vercel.app` returned HTTP 200 and rendered `<input type="file">` with the allowed types and size instead of the old “not available” placeholder; cleanup restored 6 courses, 5 rounds, 5 profiles and 2 documents |
 
@@ -2092,31 +2170,37 @@ that are not code:
   specification. Both are visible in the preview, and both are better said than
   discovered in front of a college.
 
-**Phase 5a is not completely done.** What remains:
+**Phase 5a is complete.** Its exit gate closed on 2026-09-20, **28 of 28 against
+the deployed URL**, and the draft/save path that previously lacked a
+browser-level harness is inside it. Nothing in the phase is outstanding.
 
-- **The mentor review workflow in PR #38 merged.** Assigned mentors see
-  handed-in rounds, view all answers and private uploads, mark work reviewed,
-  and record off-platform outcomes with an optional note. The separate final
-  ARS report workflow remains on the same dashboard.
-- **The upload UI is complete and deployed.** It supports multiple file
-  questions, the Storage policies pass 10/10 live checks, and a signed-in capture
-  from Production shows the real file control instead of the old placeholder.
-- **Exercise the ordinary student draft/save path in a browser-level harness.**
-  Storage upload and a real draft-to-submitted transition are verified, but the
-  existing text/form Server Actions still lack an end-to-end browser run.
+What is left around it, none of it Phase 5a:
+
+- **Programmes and ARS are still the same `courses` row**, so each admin list
+  shows the other's rows -- which is what the owner reported on 2026-09-20.
+  The agreed fix: a `kind` column so the two stop overlapping, ARS given its own
+  create and grant so it stands alone, and only then Programmes reduced to a
+  placeholder carrying the aptitude-prep and video cards, keeping the real
+  programme list beneath it.
+- **`feat/programmes-placeholder` holds an incomplete first attempt and must
+  not be merged as it stands.** Replacing `/admin/courses` with a static page
+  removes the only screen that creates a programme and the only route to the
+  only screen that grants a student access, while `/admin/ars` cannot create a
+  process at all -- its own empty state says "Create a programme first". As
+  written it closes the flow: no new process could be created and no student
+  granted one.
+- **The aptitude test round has no engine behind it**, and it is the visible
+  hole in ARS from the Client's side, since their own MESA benchmark puts a
+  timed test in the middle of the process. It is Phases 3 and 4, not 5a. Until
+  it exists those rounds arrive as placeholders carrying their specification.
 - **The per-screen re-skin of the remaining panels.** The shell and the ARS form
   are done (2026-09-20) and every screen inherits the new chrome through
   `RoleShell`, but the panels inside the admin and mentor screens have not been
   gone through one by one.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
-is on `main` and is what a reviewer works from. The merged branches listed under
-*Current repository state* can be pruned.
-
-**The ARS report work is pushed in PR #28.** Four migrations are applied and
-agree with the repository; the database probe is 17/17 and the HTTP workflow is
-12/12. The remaining product gap is admin template authoring, not
-mentor/student reporting.
+is on `main` and is what a reviewer works from. `origin` carries `main` and the
+still-open PR #35 only; there is nothing else to prune.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
