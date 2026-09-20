@@ -43,6 +43,8 @@ export function TemplatesScreen({
           {total > 0 ? <p className="muted">{total} {total === 1 ? "template" : "templates"}</p> : null}
         </div>
 
+        <p><Link className="button button--secondary" href="/admin/report-templates/import">Build from a document</Link></p>
+
         <form action={createTemplateAction} className="stack-form">
           <label htmlFor="template-name">Name</label>
           <input

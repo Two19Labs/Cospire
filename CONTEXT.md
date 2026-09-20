@@ -18,6 +18,13 @@ migration, no new dependency. **Merged as PR #30 and deployed** on 2026-09-20,
 together with the form engine it depends on, and then verified **35 of 35 on the
 deployed URL**. See *The process importer*.
 
+**The report-template document importer is built** (2026-09-20). It mirrors the
+ARS process importer: an admin copies a bounded prompt into any AI model with a
+report document, pastes the JSON answer, previews the template, chooses an
+optional programme, and confirms before anything is written. Weightages must
+total 100 and named rounds must exist in the chosen programme. Imported
+templates start inactive for a final admin check. No migration or new dependency.
+
 **Phase 0 is complete.** The exit gate closed on 2026-08-29: all three roles
 signed in on the deployed URL and reached their own role shell.
 
@@ -856,7 +863,8 @@ Two things follow, and both are cheap:
 |---|---|---|---|---|---|
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
-The ARS upload implementation merged as PR #36 and is deployed. The mentor
+The ARS upload implementation merged as PR #36 and is deployed. The report
+template document importer is complete on `feat/report-template-importer`. The mentor
 workflow in PR #38 merged; completed work does not remain in the table.
 
 **What that branch left behind, which the next agent inherits rather than
