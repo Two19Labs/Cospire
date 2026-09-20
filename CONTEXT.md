@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-20 (Asia/Calcutta)
+Last updated: 2026-09-21 (Asia/Calcutta)
 
 **Programmes and ARS are separate sections, 2026-09-20.** `courses.kind` says
 which a row is; each admin list filters on it; ARS creates and grants its own
