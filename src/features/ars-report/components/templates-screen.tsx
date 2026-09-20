@@ -12,6 +12,7 @@ import {
   type TemplateNotice,
 } from "../list-params";
 import type { TemplateListPage } from "../queries/list-templates";
+import { SubmitButton } from "@/shared/ui";
 
 export function TemplatesScreen({
   error,
@@ -58,7 +59,7 @@ export function TemplatesScreen({
           <p className="muted">
             Leave the programme blank for a template any programme may use.
           </p>
-          <button className="button button--primary" type="submit">Create template</button>
+          <SubmitButton variant="primary" pendingLabel="Creating…">Create template</SubmitButton>
         </form>
       </section>
 

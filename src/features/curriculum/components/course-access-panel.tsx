@@ -5,6 +5,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import { setCourseAccessAction } from "../actions/set-course-access";
@@ -78,14 +79,9 @@ export function CourseAccessPanel({ courseId, kind, students }: CourseAccessPane
                         type="hidden"
                         value={student.granted ? "revoke" : "grant"}
                       />
-                      <button
-                        className={`button button--compact button--${
-                          student.granted ? "danger" : "secondary"
-                        }`}
-                        type="submit"
-                      >
+                      <SubmitButton variant="primary" compact>
                         {student.granted ? "Remove" : "Add"}
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </TableCell>
@@ -114,9 +110,9 @@ export function CourseMoveForm({ courseId, kind }: { courseId: number; kind: Cou
       <span className="muted">
         Filed as a <strong>{courseKindLabels[kind]}</strong>.
       </span>
-      <button className="button button--compact button--secondary" type="submit">
+      <SubmitButton variant="secondary" compact>
         Move to {courseKindLabels[target]}s
-      </button>
+      </SubmitButton>
     </form>
   );
 }

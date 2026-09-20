@@ -7,6 +7,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import { createRoundAction } from "../actions/create-round";
@@ -126,12 +127,9 @@ export function RoundsPanel({
                   <form action={deleteRoundAction}>
                     <input name="courseId" type="hidden" value={courseId} />
                     <input name="roundId" type="hidden" value={round.id} />
-                    <button
-                      className="button button--compact button--danger"
-                      type="submit"
-                    >
+                    <SubmitButton variant="danger" compact pendingLabel="Removing…">
                       Remove
-                    </button>
+                    </SubmitButton>
                   </form>
                 </TableCell>
               </TableRow>
@@ -215,9 +213,9 @@ export function RoundsPanel({
           </span>
         </label>
 
-        <button className="button" type="submit">
+        <SubmitButton variant="primary" pendingLabel="Adding…">
           Add round
-        </button>
+        </SubmitButton>
       </form>
     </section>
   );

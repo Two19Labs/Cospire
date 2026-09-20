@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import { setDocumentAccessAction } from "../actions/set-document-access";
@@ -121,14 +122,9 @@ export function DocumentDetail({
                           type="hidden"
                           value={student.granted ? "revoke" : "grant"}
                         />
-                        <button
-                          className={`button button--compact button--${
-                            student.granted ? "danger" : "secondary"
-                          }`}
-                          type="submit"
-                        >
+                        <SubmitButton variant="primary" compact>
                           {student.granted ? "Revoke" : "Grant"}
-                        </button>
+                        </SubmitButton>
                       </form>
                     </div>
                   </TableCell>

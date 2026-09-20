@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import { assignMentorAction } from "../actions/assign-mentor";
@@ -89,9 +90,9 @@ export function UsersScreen({
               type="search"
             />
           </label>
-          <button className="button button--secondary" type="submit">
+          <SubmitButton variant="secondary" pendingLabel="Searching…">
             Search
-          </button>
+          </SubmitButton>
           {search ? (
             <Link className="muted" href="/admin/users">
               Clear
@@ -154,12 +155,9 @@ export function UsersScreen({
                                 row.status === "active" ? "disabled" : "active"
                               }
                             />
-                            <button
-                              className="button button--secondary button--compact"
-                              type="submit"
-                            >
+                            <SubmitButton variant="secondary" compact>
                               {row.status === "active" ? "Disable" : "Enable"}
-                            </button>
+                            </SubmitButton>
                           </form>
                         )}
                       </div>
@@ -202,12 +200,9 @@ export function UsersScreen({
                               </option>
                             ))}
                           </select>
-                          <button
-                            className="button button--secondary button--compact"
-                            type="submit"
-                          >
+                          <SubmitButton variant="secondary" compact pendingLabel="Saving…">
                             Save
-                          </button>
+                          </SubmitButton>
                         </form>
                       )}
                     </TableCell>

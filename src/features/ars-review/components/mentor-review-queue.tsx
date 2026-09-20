@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { MentorSubmissionRow } from "../queries/mentor-submissions";
 import type { OfflineRoundRow } from "../queries/mentor-submissions";
 import { recordOfflineRoundAction } from "../actions/review-actions";
+import { SubmitButton } from "@/shared/ui";
 
 export function MentorReviewQueue({ rows }: { rows: MentorSubmissionRow[] }) {
   const waiting = rows.filter((row) => row.status === "submitted");
@@ -40,7 +41,7 @@ export function OfflineRoundQueue({ rows }: { rows: OfflineRoundRow[] }) {
       <div className="report-list">{rows.map((row) => (
         <article className="report-list__item" key={`${row.studentId}:${row.roundId}`}>
           <div><strong>{row.studentName} · {row.roundName}</strong><p className="muted">{row.courseTitle}</p></div>
-          <form action={recordOfflineRoundAction} className="offline-outcome"><input name="studentId" type="hidden" value={row.studentId} /><input name="roundId" type="hidden" value={row.roundId} /><select aria-label="Outcome" className="input" defaultValue="completed" name="outcome"><option value="completed">Completed</option><option value="passed">Passed</option><option value="needs_follow_up">Needs follow-up</option></select><input aria-label="Mentor note" className="input" maxLength={2000} name="note" placeholder="Note (optional)" /><button className="button button--primary" type="submit">Record outcome</button></form>
+          <form action={recordOfflineRoundAction} className="offline-outcome"><input name="studentId" type="hidden" value={row.studentId} /><input name="roundId" type="hidden" value={row.roundId} /><select aria-label="Outcome" className="input" defaultValue="completed" name="outcome"><option value="completed">Completed</option><option value="passed">Passed</option><option value="needs_follow_up">Needs follow-up</option></select><input aria-label="Mentor note" className="input" maxLength={2000} name="note" placeholder="Note (optional)" /><SubmitButton variant="primary" pendingLabel="Saving…">Record outcome</SubmitButton></form>
         </article>
       ))}</div>
     </section>

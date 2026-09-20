@@ -8,6 +8,7 @@ import { saveDraftAction, submitRoundAction } from "../actions/submission-action
 import { fieldsForStep, stepProgress, type FormField } from "../form-schema";
 import type { RoundForStudent } from "../queries/student-process";
 import { FileUploadField } from "./file-upload-field";
+import { SubmitButton } from "@/shared/ui";
 
 // One student route rendering whichever shape the round declares, per the ARS
 // design: `submission_mode` plus `config` describe the form, and this walks it.
@@ -294,9 +295,9 @@ export function RoundForm({
                 ))}
 
                 <div className="form-actions">
-                  <button className="button button--primary" type="submit">
+                  <SubmitButton variant="primary">
                     {isLast ? "Hand in" : "Save & continue →"}
-                  </button>
+                  </SubmitButton>
                 </div>
               </form>
 

@@ -448,10 +448,22 @@ try {
   );
 
   const otherDetail = await get(`/mentor/ars/${textSubmission.id}`, "othermentor");
+  // Asserted on the CONTENT, not the status code, and the difference matters.
+  //
+  // Adding a `loading.tsx` to this route makes Next stream the response: the
+  // headers go out with the skeleton before the page runs, so a `notFound()`
+  // decided afterwards can no longer change the status. An unassigned mentor
+  // now gets 200 with the not-found page in the body rather than a 404.
+  //
+  // Nothing is disclosed -- that was checked directly against a submission
+  // carrying a known string, and the unassigned mentor's response contained
+  // none of it while the assigned mentor's contained all of it. Which is the
+  // property worth pinning anyway: a status code was always a proxy for "did
+  // they see it", and this asks the real question.
   record(
-    "an unassigned mentor opening the same submission is refused",
-    otherDetail.status === 404 || otherDetail.status === 307,
-    `${otherDetail.status}`,
+    "an unassigned mentor opening the same submission sees none of the answer",
+    !otherDetail.body.includes("regretted it since"),
+    otherDetail.body.includes("regretted it since") ? "LEAKED" : `refused (HTTP ${otherDetail.status})`,
   );
 
   // ------------------------------------------------- G. the review transition

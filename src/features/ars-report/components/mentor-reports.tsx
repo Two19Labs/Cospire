@@ -6,6 +6,7 @@ import { RoleShell } from "@/features/auth/components/role-shell";
 import { createReportAction } from "../actions/report-actions";
 import { buildReportsHref } from "../list-params";
 import type { MentorReportPage } from "../queries/list-reports";
+import { SubmitButton } from "@/shared/ui";
 
 export function MentorReports({ profile, reports, embedded = false }: { profile: Profile; reports: MentorReportPage; embedded?: boolean }) {
   const { page, pageCount, rows, total } = reports;
@@ -34,7 +35,7 @@ export function MentorReports({ profile, reports, embedded = false }: { profile:
                   <form action={createReportAction}>
                     <input name="runId" type="hidden" value={row.runId} />
                     <input name="templateId" type="hidden" value={row.templateId} />
-                    <button className="button button--primary" type="submit">Start {row.templateName}</button>
+                    <SubmitButton variant="primary">Start {row.templateName}</SubmitButton>
                   </form>
                 ) : <span className="pill pill--disabled">Admin template needed</span>}
               </article>

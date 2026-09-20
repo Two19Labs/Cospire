@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import { createCourseAction } from "../actions/create-course";
@@ -132,9 +133,9 @@ export function CoursesScreen({
             placeholder="Search by name"
             type="search"
           />
-          <button className="button button--secondary" type="submit">
+          <SubmitButton variant="secondary" pendingLabel="Searching…">
             Search
-          </button>
+          </SubmitButton>
           {search ? (
             <Link className="button button--ghost" href="/admin/courses">
               Clear
@@ -241,9 +242,9 @@ export function CoursesScreen({
             creation order, which needs no explanation.
           */}
 
-          <button className="button" type="submit">
+          <SubmitButton variant="primary" pendingLabel="Creating…">
             Create programme
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </RoleShell>
