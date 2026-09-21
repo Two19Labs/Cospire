@@ -824,12 +824,304 @@ export type Database = {
           },
         ]
       }
+      question_imports: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_by: string | null
+          id: number
+          org_id: number
+          parsed: Json | null
+          position: number
+          problems: string[]
+          question_id: number | null
+          raw: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_ref: string | null
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: never
+          org_id: number
+          parsed?: Json | null
+          position: number
+          problems?: string[]
+          question_id?: number | null
+          raw: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_ref?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: never
+          org_id?: number
+          parsed?: Json | null
+          position?: number
+          problems?: string[]
+          question_id?: number | null
+          raw?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_ref?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_imports_created_by_fk"
+            columns: ["created_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "question_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_imports_question_fk"
+            columns: ["question_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "question_imports_reviewed_by_fk"
+            columns: ["reviewed_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      question_keys: {
+        Row: {
+          correct_answer: Json | null
+          created_at: string
+          org_id: number
+          question_id: number
+          solution: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          correct_answer?: Json | null
+          created_at?: string
+          org_id: number
+          question_id: number
+          solution?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          correct_answer?: Json | null
+          created_at?: string
+          org_id?: number
+          question_id?: number
+          solution?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_keys_question_fk"
+            columns: ["question_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "question_keys_updated_by_fk"
+            columns: ["updated_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      question_sections: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          org_id: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          name: string
+          org_id: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          name?: string
+          org_id?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_sections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          archived_at: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          id: number
+          images: Json
+          marks: number
+          options: Json
+          org_id: number
+          parent_id: number | null
+          section_id: number
+          topic: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          body: string
+          created_at?: string
+          created_by?: string | null
+          difficulty: string
+          id?: never
+          images?: Json
+          marks: number
+          options?: Json
+          org_id: number
+          parent_id?: number | null
+          section_id: number
+          topic: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          id?: never
+          images?: Json
+          marks?: number
+          options?: Json
+          org_id?: number
+          parent_id?: number | null
+          section_id?: number
+          topic?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_created_by_fk"
+            columns: ["created_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "questions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_parent_fk"
+            columns: ["parent_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "questions_section_fk"
+            columns: ["section_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "question_sections"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "questions_updated_by_fk"
+            columns: ["updated_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_question_import: {
+        Args: {
+          p_body: string
+          p_correct_answer: Json
+          p_difficulty: string
+          p_images: Json
+          p_import_id: number
+          p_marks: number
+          p_options: Json
+          p_parent_id: number
+          p_section_id: number
+          p_solution: string
+          p_topic: string
+          p_type: string
+        }
+        Returns: number
+      }
+      save_question: {
+        Args: {
+          p_body: string
+          p_correct_answer: Json
+          p_difficulty: string
+          p_images: Json
+          p_marks: number
+          p_options: Json
+          p_parent_id: number
+          p_question_id: number
+          p_section_id: number
+          p_solution: string
+          p_topic: string
+          p_type: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

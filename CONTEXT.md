@@ -255,9 +255,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   the duplicated ARS routes #42 left behind, **#46** loading states and pending
   buttons. Each feature has a documentation follow-up where the context gate
   required one (#37, #39, #41).
-- **Code and database are in step: 19 migrations on `main` and the same 19
-  applied to the hosted project**, versions matching filenames. The most recent
-  is `20260920190000_separate_programmes_from_ars_processes`.
+- **The hosted project is 3 migrations ahead of `main`**: 19 on `main`, 22
+  applied, the extra three being the question bank's, on
+  `feat/question-bank` and applied 2026-09-21. They are additive and nothing
+  deployed reads them, so this is safe (see *Migration safety*). `main` and
+  the database come back into step when that branch merges.
 - Two things worth keeping from the earlier merge history, because both cost
   time. **Do not delete the base branch of a stacked pull request**: merging #24
   with `--delete-branch` closed #25 rather than retargeting it, and reopening
@@ -789,7 +791,7 @@ update, so a refused approval leaves no question behind.
 questions and keys. Sections, imports, approval and hard deletes are
 admin-only.
 
-**The three migrations**, none applied yet:
+**The three migrations**, applied 2026-09-21 with `supabase db push --linked` after a `--dry-run` listed exactly these three:
 `20260921120000_question_bank` (sections, questions, keys, `save_question`),
 `20260921120100_question_images_bucket` (private bucket, 5MiB, images only,
 authors of the org by path, no student policy) and
@@ -798,7 +800,8 @@ once, staged content immutable).
 
 **Verified so far:**
 
-- **Dry run, 41 of 41.** `scripts/verify/question-bank.sql` and migrations 1
+- **Against the applied schema, 41 of 41.** `scripts/verify/question-bank.sql` re-run after the push, rolled back as always. RLS enabled and forced on all four tables, with INSERT and UPDATE policies as well as SELECT; the bucket is private and holds its 4 `storage.objects` policies. Security advisor: the same two pre-existing Auth warnings and nothing new. Types regenerated. Live counts unchanged: 5 profiles, 7 courses, 2 documents, 0 rows in every question table.
+- **Before applying, a dry run, also 41 of 41.** `scripts/verify/question-bank.sql` and migrations 1
   and 3 were run in one transaction against the hosted project through
   `supabase db query --linked`, then rolled back. Afterwards
   `to_regclass('public.questions')` is null, so nothing persisted.
@@ -1143,7 +1146,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PR 1 of 4 (schema, normaliser, validator) written and committed locally; its three migrations are NOT applied** and wait on the owner's go-ahead. See *The question bank, 2026-09-21* | 2026-09-21 |
+| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PR 1 of 4 (schema, normaliser, validator) pushed; its three migrations are APPLIED** to the hosted project and verified 41/41. PR 2 (authoring screens) is next. See *The question bank, 2026-09-21* | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
