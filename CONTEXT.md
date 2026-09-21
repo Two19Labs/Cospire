@@ -243,7 +243,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 - Repository: `C:\Cospire\Cospire`.
 - **Nothing is awaiting merge.** Every pull request this project has raised is
-  merged or closed, and `main` is at `56479e0`. PR #35 was **closed as
+  merged or closed, and `main` is at `2d8abfe`. PR #35 was **closed as
   superseded** -- it corrected this file on 2026-09-20 and was overtaken by
   #36-#42, so its corrections were restated against current `main` instead of
   resolved through a stale conflict.
@@ -274,9 +274,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 - **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
   the mentor and student screens, **admin template authoring**, pagination, and
   the fix-forward migration `20260918153000`.
-- **Code and database are in step: 18 migrations on `main` and the same 18
-  applied to the hosted project.** PR #36 merged as `0e0f14f` and Production
-  deployed that commit. Its multi-file Storage authorization is live.
+- PR #36 merged as `0e0f14f` and Production deployed that commit. Its
+  multi-file Storage authorization is live.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
@@ -298,7 +297,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
   and auth configuration are both applied and in sync with this repository: all
-  eighteen migrations present on both sides, re-checked 2026-09-20.
+  nineteen migrations present on both sides, re-checked 2026-09-20.
 
 ### Tooling available to an agent in this repository
 
@@ -746,6 +745,84 @@ worse than no CSS.
 and the Client has still not supplied the web licence and woff2, so this is as
 close to the prototype as it can get until they do.
 
+### The question bank, 2026-09-21
+
+Phase 3 started on `feat/question-bank`. The owner approved the plan and
+settled four decisions the same day, all of which shape the schema:
+
+- **Questions stay editable, even after a mock using them has been attempted.**
+  The student's review screen shows the question as it reads now. No locking,
+  no version table. A changed key, option set or marks value is left to the
+  contracted rescore in Phase 4. This **supersedes** the "publishing/version
+  snapshots" mitigation in the Critical finding below. That finding now
+  reduces to "rescore on every change that affects a score", which Phase 4 has
+  to do anyway.
+- **Sections are a fixed list per organisation**, on one admin screen
+  (`question_sections`), so the analytics cannot split "QA" from "Quant".
+  Topics stay free text, and `save_question` snaps each one to an existing
+  spelling within the section.
+- **Clause 3.15 images:** import is paste-a-prompt now. Images that a Google
+  Doc import would have extracted are added in the review screen by upload or
+  clipboard paste. That falls short of 3.15's "no manual re-uploading", so it
+  **joins the clause 16.1 written amendment** with the report and the process
+  importer. The prompt will carry `[[image-N]]` markers so that a Google Docs
+  image fetch (a Google account only, no LLM) can be added later without
+  redesign. `question_imports.source_type` already accepts `google_doc`.
+- **Notation is plain text with Unicode** (½, x², √, ≤), line breaks kept. No
+  KaTeX dependency. Anything that needs typesetting goes in as an image.
+
+**How the answer key is kept from students (the Critical finding).** It is
+not on the question row. `question_keys` holds `correct_answer` and
+`solution` and has **no student policy at all**. Column grants could not do
+this, because admins and students both connect as `authenticated`. Phase 4
+adds a student read, and only after the student's own attempt is submitted.
+
+**Every scored question has a valid key, enforced at commit.** A deferred
+constraint trigger checks both tables, so a key naming a removed option is
+refused. The only way to write a question is `public.save_question`, a
+SECURITY INVOKER function, so RLS still decides. It exists because PostgREST
+commits each request separately and the question and its key must commit
+together. `public.approve_question_import` wraps it with the staging-row
+update, so a refused approval leaves no question behind.
+
+**Annexure A says "admins and mentors" author questions.** Mentors can write
+questions and keys. Sections, imports, approval and hard deletes are
+admin-only.
+
+**The three migrations**, none applied yet:
+`20260921120000_question_bank` (sections, questions, keys, `save_question`),
+`20260921120100_question_images_bucket` (private bucket, 5MiB, images only,
+authors of the org by path, no student policy) and
+`20260921120200_question_imports` (staging, admin-only, a decision is made
+once, staged content immutable).
+
+**Verified so far:**
+
+- **Dry run, 41 of 41.** `scripts/verify/question-bank.sql` and migrations 1
+  and 3 were run in one transaction against the hosted project through
+  `supabase db query --linked`, then rolled back. Afterwards
+  `to_regclass('public.questions')` is null, so nothing persisted.
+- **What the dry run proves:** every missing tag is refused; a scored question
+  without a key is refused at commit; a key naming a missing option, two
+  answers on a single-correct MCQ, and removing the keyed option are all
+  refused; DI rules hold, and moving a stimulus moves its set. A student and a
+  rival admin read 0 questions and 0 keys and cannot edit. A mentor authors
+  but cannot approve an import, and the refused approval leaves no question.
+  Double approval is refused with no duplicate created.
+- **The bucket migration was not in the dry run.** The CLI connection cannot
+  create `storage.objects` policies (see *Two operational facts worth
+  keeping*). It mirrors the proven documents bucket, and its policies stay
+  **unverified** until an HTTP upload exercises them in PR 2.
+- **53 unit tests** for the numerical normaliser and the question validator,
+  covering 0.5, 1/2, .50, 0.50, whitespace, tolerance, negatives, pasted minus
+  signs, thousands commas and exact big-integer comparison. **288 tests in
+  total**, typecheck and lint clean.
+
+**Remaining PRs:** 2, authoring screens for admins and mentors, plus the
+sections screen and image upload and paste. 3, the paste import with
+side-by-side review. 4, the mock builder with `mocks`, `mock_sections` and
+`mock_questions`.
+
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
 The owner reported the platform feeling slow and unresponsive: a click on a nav
@@ -1066,6 +1143,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PR 1 of 4 (schema, normaliser, validator) written and committed locally; its three migrations are NOT applied** and wait on the owner's go-ahead. See *The question bank, 2026-09-21* | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
@@ -2140,8 +2218,8 @@ time otherwise.
 
 | Severity | Finding | Required mitigation |
 |---|---|---|
-| Critical | Historical mocks can change if attempts reference mutable live questions/configuration | Add publishing/version snapshots before test-engine implementation |
-| Critical | Answer keys share the proposed question row students need to read | Separate protected key data or expose a safe question projection |
+| Critical | Historical mocks can change if attempts reference mutable live questions/configuration | **Decided 2026-09-21: questions stay editable** and a past attempt's review shows the current question. Phase 4 must rescore every attempt affected by a change to a key, option set or marks value, and record it in `rescore_events`. See *The question bank* |
+| Critical | Answer keys share the proposed question row students need to read | **Designed out 2026-09-21:** keys live in `question_keys`, which has no student policy. Phase 4 adds a read only after the student's own attempt is submitted |
 | Critical | Supabase database backups exclude Storage objects | Design and test a separate file backup/restore process |
 | High | Vercel Functions have small request/response payload limits | Use direct authorized uploads/downloads; never proxy media |
 | High | Vercel Cron can overlap or deliver more than once | Durable job records, locks, and idempotency are required |
