@@ -259,19 +259,20 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Nothing is awaiting merge.** Every pull request this project has raised is
-  merged or closed, and `main` is at `2d8abfe`. PR #35 was **closed as
+- **The question bank is awaiting its review pull request.** Every earlier pull
+  request is merged or closed, and `main` is at `5044c0a`. PR #35 was **closed as
   superseded** -- it corrected this file on 2026-09-20 and was overtaken by
   #36-#42, so its corrections were restated against current `main` instead of
   resolved through a stale conflict.
-- **Everything through PR #46 is merged and deployed.** The run of 2026-09-20
+- **Everything through PR #48 is merged and deployed.** The run of 2026-09-20
   and 21, in order: **#36** private multi-file ARS uploads, **#38** the mentor
   review workflow, **#40** the report-template document importer, **#42** the
   first separation of Programmes and ARS administration, **#43** the Phase 5a
   exit gate, **#44** `courses.kind` and the real separation, **#45** deleting
   the duplicated ARS routes #42 left behind, **#46** loading states and pending
-  buttons. Each feature has a documentation follow-up where the context gate
-  required one (#37, #39, #41).
+  buttons. PR #48 makes ARS report-component round links manual. Each feature
+  has a documentation follow-up where the context gate required one (#37, #39,
+  #41).
 - **The hosted project is 4 migrations ahead of `main`**: 19 on `main`, 23
   applied, the extra four being the question bank's, on
   `feat/question-bank` and applied 2026-09-21. They are additive and nothing
