@@ -255,8 +255,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   the duplicated ARS routes #42 left behind, **#46** loading states and pending
   buttons. Each feature has a documentation follow-up where the context gate
   required one (#37, #39, #41).
-- **The hosted project is 3 migrations ahead of `main`**: 19 on `main`, 22
-  applied, the extra three being the question bank's, on
+- **The hosted project is 4 migrations ahead of `main`**: 19 on `main`, 23
+  applied, the extra four being the question bank's, on
   `feat/question-bank` and applied 2026-09-21. They are additive and nothing
   deployed reads them, so this is safe (see *Migration safety*). `main` and
   the database come back into step when that branch merges.
@@ -299,7 +299,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
   and auth configuration are applied. All nineteen migrations on `main` are
-  present on both sides, plus the three question bank migrations from
+  present on both sides, plus the four question bank migrations from
   `feat/question-bank`, applied 2026-09-21 ahead of merge.
 
 ### Tooling available to an agent in this repository
@@ -792,7 +792,7 @@ update, so a refused approval leaves no question behind.
 questions and keys. Sections, imports, approval and hard deletes are
 admin-only.
 
-**The three migrations**, applied 2026-09-21 with `supabase db push --linked` after a `--dry-run` listed exactly these three:
+**The first three migrations**, applied 2026-09-21 with `supabase db push --linked` after a `--dry-run` listed exactly these three:
 `20260921120000_question_bank` (sections, questions, keys, `save_question`),
 `20260921120100_question_images_bucket` (private bucket, 5MiB, images only,
 authors of the org by path, no student policy) and
@@ -822,10 +822,86 @@ once, staged content immutable).
   signs, thousands commas and exact big-integer comparison. **288 tests in
   total**, typecheck and lint clean.
 
-**Remaining PRs:** 2, authoring screens for admins and mentors, plus the
-sections screen and image upload and paste. 3, the paste import with
-side-by-side review. 4, the mock builder with `mocks`, `mock_sections` and
-`mock_questions`.
+**PR 2, authoring, built 2026-09-21.** Routes: `/admin/questions`,
+`/admin/questions/new`, `/admin/questions/[id]` and
+`/admin/questions/sections`, plus mentor copies of the first three under
+`/mentor/questions`. The admin and mentor copies share one loader
+(`components/routes.tsx`); the base path comes from the signed-in role, never
+from the request. The editor handles all four types:
+
+- single- and multiple-correct MCQs, with blank option rows ignored and two
+  spare rows after each save, since there is no "add" button without
+  JavaScript;
+- typed answers, one accepted form per line, with an optional tolerance;
+- DI sets, where a sub-question's section is locked to its set's.
+
+Topics autocomplete from existing ones. Archiving a set archives its
+sub-questions too. The question list shows standalone questions and sets;
+sub-questions are reached through their set. Both Question bank nav items are
+added in `src/features/auth/components/app-nav.tsx` (another feature's file,
+flagged for review). New CSS rules sit at the end of `src/app/globals.css`.
+
+**Images** upload from the browser straight to `question-images` under the
+author's own session, by file or by pasting into the dashed zone. The form
+posts only paths. Editing still works without JavaScript; adding an image
+does not, the same trade the document upload makes. An image removed before
+saving stays in the bucket as an orphan. That is harmless, and nothing
+cleans it up yet.
+
+**A defect found while writing the harness, fixed forward in
+`20260921140000`:** `save_question` snapped a topic to an existing spelling,
+and when editing, that existing spelling was the question's own. So
+correcting "linear equations" to "Linear equations" silently saved the old
+spelling. The snap now skips the question being edited. Applied, and the SQL
+probe re-run at 41/41.
+
+**PR 2 verified, 36 of 36**, by `scripts/verify/question-bank-ui.mjs` against
+a local production build and the hosted database. Every form is posted
+without JavaScript, and rows are counted, not errors trusted. It proves:
+
+- the four roles land where they should, and a mentor cannot reach sections;
+- sections: add, a case-duplicate refused, a mentor's post writes nothing;
+- every type saved with the key stored apart; an edit changes question and
+  key in place; the topic snap works across authors;
+- a missing topic is refused with the typing kept; an uncomparable TITA
+  answer is refused;
+- a crafted post moving a sub-question out of its set's section is refused
+  by the database;
+- a student gets 307 on both copies with none of the text, writes nothing by
+  posting the action, and reads 0 questions and 0 keys through the API;
+- another org's admin sees none of it in the list, by id, or through the key;
+- archiving and restoring a set carries its sub-questions.
+
+**The image bucket's Storage policies are now verified over HTTP**, which
+the SQL probe could not do:
+
+- admin and mentor uploads are accepted;
+- refused: a student's upload, a rival admin's upload into org 1, an admin's
+  upload into org 5, and badly shaped paths;
+- a mentor reads an image; a student, the rival admin and an anonymous
+  caller are refused;
+- a saved image renders through a signed URL;
+- an author's delete removes the object and a student's delete removes
+  nothing.
+
+Cleanup left the live counts at 0 question rows, 0 image objects, 5
+profiles, 7 courses and 2 documents. The screens were also photographed and
+reviewed at 1440px and at phone width. That review found two wording
+defects, since fixed: placeholders that read as pre-filled values, and
+"(tita)" in lower case.
+
+**Two local traps from this session.** Stopping a background `npx next
+start` stops the wrapper and can leave the node server running on its port.
+The next start then fails with EADDRINUSE, and a harness run silently hits
+the old build. Check the port's owning process before trusting a run.
+Separately, older `next start` servers from earlier sessions were found on
+ports 3000 and 3001, left running. A captured page showing only the loading
+skeleton is streaming, not a bug: the content arrives in hidden chunks that
+a script moves into place, so a script-stripped capture has to replay
+`$RC`/`$RS` itself.
+
+**Remaining PRs:** 3, the paste import with side-by-side review. 4, the mock
+builder with `mocks`, `mock_sections` and `mock_questions`.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
@@ -1147,7 +1223,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PR 1 of 4 (schema, normaliser, validator) pushed; its three migrations are APPLIED** to the hosted project and verified 41/41. PR 2 (authoring screens) is next. See *The question bank, 2026-09-21* | 2026-09-21 |
+| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PRs 1 and 2 of 4 are pushed and unmerged**: PR 1 is the schema, normaliser and validator (41/41 SQL); PR 2 is the authoring screens, sections, images and archive (36/36 over HTTP). **All four question bank migrations are APPLIED.** PR 3, the paste import, is next. See *The question bank, 2026-09-21* | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
