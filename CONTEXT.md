@@ -576,6 +576,7 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; Production HTTP check pending deploy |
 | 2026-08-28 | Read agreement, proposal, delivery plan, operating manual, and technical brief | Product, scope, architecture, and source-of-truth hierarchy understood |
 | 2026-08-28 | Delivery and architecture audit | Contractual, scheduling, integrity, media, backup, security, and acceptance risks recorded below |
 | 2026-08-28 | Cross-agent context protocol | Added `CONTEXT.md`, repository `AGENTS.md`/`CLAUDE.md` entrypoints, and the mandatory parent-manual rule |

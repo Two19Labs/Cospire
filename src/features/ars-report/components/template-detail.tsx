@@ -7,6 +7,7 @@ import {
   addComponentAction,
   removeComponentAction,
   saveWeightagesAction,
+  updateComponentRoundAction,
   updateTemplateAction,
 } from "../actions/template-actions";
 import {
@@ -137,7 +138,16 @@ export function TemplateDetailScreen({
                       <p className="muted">{component.weightagePct}%</p>
                     </td>
                     <td>
-                      {component.roundName ?? <span className="muted">No round</span>}
+                      <form action={updateComponentRoundAction} className="stack-form">
+                        <input name="componentId" type="hidden" value={component.id} />
+                        <input name="templateId" type="hidden" value={template.id} />
+                        <label className="visually-hidden" htmlFor={`round-${component.id}`}>Round for {component.title}</label>
+                        <select defaultValue={component.roundId ?? ""} id={`round-${component.id}`} name="roundId">
+                          <option value="">No round</option>
+                          {template.roundOptions.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}
+                        </select>
+                        <SubmitButton variant="secondary" pendingLabel="Linkingâ€¦">Save link</SubmitButton>
+                      </form>
                     </td>
                     <td>
                       <span className="muted">{component.metricLabel}: </span>
