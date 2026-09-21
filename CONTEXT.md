@@ -298,8 +298,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   plan, which does not permit commercial use; the owner has chosen to build on it
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
-  and auth configuration are both applied and in sync with this repository: all
-  nineteen migrations present on both sides, re-checked 2026-09-20.
+  and auth configuration are applied. All nineteen migrations on `main` are
+  present on both sides, plus the three question bank migrations from
+  `feat/question-bank`, applied 2026-09-21 ahead of merge.
 
 ### Tooling available to an agent in this repository
 
