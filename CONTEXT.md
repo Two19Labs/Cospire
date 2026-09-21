@@ -1065,6 +1065,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex, urgent ARS report hotfix | `fix/manual-report-round-links` | Make report-component round linking optional and manual, including imported templates | `src/features/ars-report/**`, `CONTEXT.md` | Built. Imported components now start unlinked; each existing component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass. HTTP behavior is pending the Production deploy. | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report

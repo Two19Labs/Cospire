@@ -187,6 +187,22 @@ export async function removeComponentAction(formData: FormData): Promise<void> {
   redirect(buildTemplateHref({ notice: "component-removed", templateId }));
 }
 
+export async function updateComponentRoundAction(formData: FormData): Promise<void> {
+  await requireRole("admin");
+  const templateId = parseId(formData.get("templateId"));
+  const componentId = parseId(formData.get("componentId"));
+  const round = parseOptionalId(formData.get("roundId"));
+  if (templateId === null || componentId === null || !round.ok) {
+    redirect(buildTemplatesHref({ error: "invalid-request" }));
+  }
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.from("ars_report_template_components")
+    .update({ round_id: round.value }).eq("id", componentId).eq("template_id", templateId).select("id");
+  if (error || (data ?? []).length !== 1) redirect(buildTemplateHref({ error: "save-failed", templateId }));
+  revalidatePath(`/admin/report-templates/${templateId}`);
+  redirect(buildTemplateHref({ notice: "saved", templateId }));
+}
+
 // Rebalancing every weightage at once, in an order that cannot be refused.
 //
 // The constraint trigger is DEFERRABLE INITIALLY DEFERRED, so several changes in

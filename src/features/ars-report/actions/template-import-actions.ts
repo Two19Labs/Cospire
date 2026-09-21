@@ -32,13 +32,9 @@ export async function createImportedTemplateAction(_state: TemplateImportState, 
   if (!course.ok) return { pasted, problems: ["Choose a valid programme."], template: parsed.template };
 
   const supabase = await createServerSupabaseClient();
-  let roundIds = new Map<string, number>();
-  if (course.value !== null) {
-    const { data: rounds, error } = await supabase.from("ars_rounds").select("id, name").eq("course_id", course.value);
-    if (error) return { pasted, problems: ["The programme's rounds could not be read."], template: parsed.template };
-    roundIds = new Map((rounds ?? []).map((round) => [round.name.toLocaleLowerCase(), round.id]));
-  }
-  const unmatched = parsed.template.components.filter((component) => component.roundName && !roundIds.has(component.roundName.toLocaleLowerCase()));
+  // Imported round names are suggestions only. Linking is a separate manual
+  // choice on the template detail screen, so import never guesses a match.
+  const unmatched: typeof parsed.template.components = [];
   if (unmatched.length) return { pasted, problems: unmatched.map((component) => `No round named “${component.roundName}” exists in the selected programme. Remove that round name or choose the matching programme.`), template: parsed.template };
 
   const { data: created, error } = await supabase.from("ars_report_templates").insert({
@@ -50,7 +46,7 @@ export async function createImportedTemplateAction(_state: TemplateImportState, 
   const { error: componentError } = await supabase.from("ars_report_template_components").insert(parsed.template.components.map((component, index) => ({
     metric_has_notes: component.metricHasNotes, metric_has_scores: component.metricHasScores,
     metric_label: component.metricLabel, metric_names: component.metricNames, org_id: admin.orgId,
-    round_id: component.roundName ? roundIds.get(component.roundName.toLocaleLowerCase()) ?? null : null,
+    round_id: null,
     sort_order: index, template_id: created.id, title: component.title,
     uses_action_plan: component.usesActionPlan, uses_development_areas: component.usesDevelopmentAreas,
     uses_strengths: component.usesStrengths, weightage_pct: component.weightagePct,
