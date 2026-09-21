@@ -2,6 +2,13 @@
 
 Last updated: 2026-09-21 (Asia/Calcutta)
 
+**Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
+used to leave the old page fully drawn for over a second with no sign the click
+had landed, so people clicked again. Sixteen `loading.tsx` files now paint the
+real sidebar and title bar with a skeleton of that route's own shape, and submit
+buttons disable and say what they are doing. **The application itself was never
+slow** -- see *Where the 1.3 seconds actually goes*.
+
 **Programmes and ARS are separate sections, 2026-09-20.** `courses.kind` says
 which a row is; each admin list filters on it; ARS creates and grants its own
 processes; Programmes carries the aptitude-prep and video placeholders above its
@@ -731,6 +738,61 @@ worse than no CSS.
 **Headings still resolve to Georgia.** Recoleta Bold is the design's heading face
 and the Client has still not supplied the web licence and woff2, so this is as
 close to the prototype as it can get until they do.
+
+### Where the 1.3 seconds actually goes, 2026-09-21
+
+The owner reported the platform feeling slow and unresponsive: a click on a nav
+item produced nothing for about a second, which reads as an unregistered click,
+so the natural response is to click again. Measured before changing anything,
+four requests per page, median:
+
+| Page | Local production build | Deployed (Vercel) |
+|---|---|---|
+| `/login` (no data) | 43ms | 294ms |
+| `/admin` | 113ms | 1,520ms |
+| `/admin/users` | 278ms | 1,783ms |
+| `/admin/ars` | 186ms | 1,718ms |
+
+**The application is not slow.** It answers in 113-278ms *including every
+database query*. The missing 1.2-1.5 seconds is the hosting: Vercel is in `bom1`
+and Supabase is in Mumbai, so it is not a region mismatch, and the variance
+(541ms to 3,659ms on the same URL) is the signature of cold starts on the
+**Hobby** tier. Vercel Pro is already owed for the commercial-use clause; it is
+also the fix for this number, and nothing in the repository will move it much.
+
+Measured rather than assumed on the way: token verification is **not** a cost.
+The project already uses asymmetric ES256 signing keys, so `getClaims()` checks
+the signature locally in 2-5ms after the first call, and every page's queries
+already run through `Promise.all` where they can.
+
+**So the work was perceived speed, which is the part we control.** Sixteen
+`loading.tsx` files, each drawing the real chrome and a skeleton shaped like
+that route -- a table page shimmers as a table, a form page as fields. They also
+switch link prefetching back on: Next only prefetches a dynamic route's loading
+boundary, so with no loading file there was nothing to prefetch. A prefetched
+skeleton now arrives in 23-157ms, which is what makes the click feel instant.
+
+**Two consequences of streaming, both found by the harnesses rather than by
+reading.** A `loading.tsx` sends headers before the page runs, so:
+
+- **`notFound()` can no longer set the status.** An unassigned mentor opening
+  another mentor's submission gets **200 with the not-found page** rather than a
+  404. Checked directly against a submission carrying a known string: the
+  unassigned mentor's response contains none of it and the assigned mentor's
+  contains all of it, so nothing is disclosed. The gate now asserts on the
+  content instead of the status, which is the property that was always meant.
+- **`redirect()` degraded to a script**, and that one was a real defect. A
+  signed-in student pointed at an admin URL received 200, a skeleton, and a
+  redirect delivered by JavaScript -- so with scripting off they would have
+  watched an admin skeleton shimmer for ever. **Role guards moved into
+  `src/app/{admin,mentor,student}/layout.tsx`**, which render outside their
+  segment's Suspense boundary and therefore still return a real 307. Verified:
+  307 to `/student`, no redirect in the body.
+
+That second one is why `getSessionState` is wrapped in React's per-request
+`cache`. The layout and the page both call `requireRole` now, and without the
+cache every screen would quietly pay for two token verifications and two profile
+queries.
 
 ### Programmes and ARS split apart, 2026-09-20
 
@@ -2192,6 +2254,11 @@ time otherwise.
 | 2026-09-20 | **The re-skin confirmed on the DEPLOYED URL** | PR #33 merged as `1b748fc`; CI green on `main` and Production deployed. `scripts/verify/shot.mjs` re-run against `https://cospire-roan.vercel.app` and the five captures reviewed there rather than locally: the ink rail, the gold active item, the white title bar and the re-laid-out ARS form all render on the deployed site |
 | 2026-09-20 | Three defects the screenshots found that no test would have | `textarea` and `select` were missing from the `font: inherit` rule, so every textarea rendered in the browser's monospace; the sidebar email had an ellipsis with no `white-space: nowrap`, so it wrapped instead; and a `minmax(16rem, 1fr)` grid track could not shrink on a phone. All three were invisible to typecheck, lint, 222 tests and a production build |
 | 2026-09-20 | A capture that looked like a bug and was not | Chrome on Windows will not open a window narrower than about 500px, so a 430px capture renders at ~500 and crops -- which reads exactly like a layout overflowing its viewport. Recaptured at 520 and the layout was correct all along. Phone widths in `shot.mjs` are 520 and above for that reason |
+| 2026-09-21 | **Loading states for every signed-in screen** | Sixteen `loading.tsx` files drawing the real sidebar, the real navigation with the right item current, the page title where the route knows it, and a skeleton shaped like that route. Submit buttons disable and change to a present-tense verb through `useFormStatus`, which also stops the double-submit a person makes when they think the first click missed. Both degrade to exactly today's behaviour without JavaScript |
+| 2026-09-21 | Measured before changing anything: **the application is not the slow part** | Local production build against the hosted database: `/admin` 113ms, `/admin/users` 278ms, `/admin/ars` 186ms, all queries included. The same pages deployed: 1,520ms, 1,783ms, 1,718ms. Vercel is in `bom1` and Supabase in Mumbai, so it is not a region mismatch; the 541ms-to-3,659ms spread on one URL is cold starts on the **Hobby** tier. `getClaims()` verifies locally in 2-5ms because the project already uses asymmetric ES256 keys, and pages already parallelise their queries. **Vercel Pro is the fix for the number**, and it is already owed for the commercial-use clause |
+| 2026-09-21 | **A loading.tsx broke the no-JavaScript role guard, and the harness caught it** | Streaming sends headers before the page runs, so `redirect()` from a page guard could no longer be an HTTP redirect -- Next delivered it through a script instead. A signed-in student pointed at an admin URL got 200, a skeleton, and **no redirect at all without JavaScript**. Fixed by moving the role guard into a layout per role, which renders outside the Suspense boundary: verified back to a real 307 with no redirect in the body. `getSessionState` is now wrapped in React's per-request `cache`, without which the layout and the page would each pay for a token verification and a profile query |
+| 2026-09-21 | The same streaming also changed a `notFound()` to a 200, and that one is accepted | An unassigned mentor opening another mentor's submission now gets 200 with the not-found page rather than a 404. Probed directly with a submission carrying a known string: the unassigned mentor's response contains none of it, the assigned mentor's contains all of it. The gate asserts on the content now, which is stronger than the status code it replaced |
+| 2026-09-21 | All six harnesses re-run after the change | 126 checks: gate 28/28, split 19/19, importer 35/35, rounds 19/19, scheduling 15/15, uploads 10/10 |
 | 2026-09-21 | **Three verification scripts had silently rotted, and the duplicated routes hid it** | PR #42 added `/admin/ars/[id]/import` and `/admin/ars/[id]/rounds/[roundId]` and **left the old `/admin/courses/[id]/...` copies in place**, linked from nothing. So ARS round authoring was still reachable inside the Programmes section by typing a URL -- the conflation the split exists to end -- and `ars-import.mjs`, `ars-rounds.mjs` and `ars-scheduling.mjs` kept driving the old paths and kept passing. Deleting the duplicates made `ars-import.mjs` fail 7 of its 8 reachable checks at once. All three are repointed and green: 35/35, 19/19, 15/15 |
 | 2026-09-21 | Two assertions in `ars-rounds.mjs` were pinning behaviour deliberately changed on 2026-09-18 | Quick-start questions now land in the builder's steps/sections/fields shape rather than a flat `config.fields`, and **an empty form round is accepted on purpose** -- demanding questions up front made the builder unreachable. The checks were inverted rather than deleted, so the behaviour stays pinned either way. Neither had been run since the change |
 | 2026-09-20 | **Programmes and ARS separated: 19 of 19 over HTTP** | `scripts/verify/programmes-ars-split.mjs`. Each section creates its own kind and lands on its own detail page; neither list shows the other's rows; **ARS grants a student its own process** and stays in ARS; Programmes still grants and stays in Programmes; a process moves to Programmes and back; and the student granted through ARS reaches the process and its round. The ARS exit gate was re-run afterwards and still passes 28 of 28, so the split regressed nothing |

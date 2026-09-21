@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SubmitButton,
 } from "@/shared/ui";
 
 import {
@@ -93,9 +94,9 @@ export function DocumentsScreen({
               ))}
             </select>
           </label>
-          <button className="button button--secondary" type="submit">
+          <SubmitButton variant="secondary" pendingLabel="Working…">
             Filter
-          </button>
+          </SubmitButton>
           {search || folder ? (
             <Link className="muted" href="/admin/documents">
               Clear

@@ -18,6 +18,7 @@ import {
 import { countFields, readyForStudents } from "../form-builder";
 import { fieldsForStep, type FormField, type FormSpec, type RoundMode } from "../form-schema";
 import { RoundPreview } from "./round-preview";
+import { SubmitButton } from "@/shared/ui";
 
 // The round builder: an admin composes the form a student will answer, without
 // a developer. Annexure A promises admins can add round types over time, and the
@@ -81,25 +82,17 @@ function FieldRow({
             <Ids courseId={courseId} roundId={roundId} />
             <input name="fieldKey" type="hidden" value={field.key} />
             <input name="direction" type="hidden" value={direction} />
-            <button
-              aria-label={`Move ${field.label} ${direction}`}
-              className="builder__icon"
-              type="submit"
-            >
+            <SubmitButton variant="primary">
               {direction === "up" ? "↑" : "↓"}
-            </button>
+            </SubmitButton>
           </form>
         ))}
         <form action={removeFieldAction}>
           <Ids courseId={courseId} roundId={roundId} />
           <input name="fieldKey" type="hidden" value={field.key} />
-          <button
-            aria-label={`Remove ${field.label}`}
-            className="builder__icon builder__icon--danger"
-            type="submit"
-          >
+          <SubmitButton variant="primary" pendingLabel="Working…">
             ✕
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>
@@ -164,7 +157,7 @@ function AddField({
           <span>Required</span>
         </label>
 
-        <button className="button button--primary" type="submit">Add question</button>
+        <SubmitButton variant="primary" pendingLabel="Adding…">Add question</SubmitButton>
       </form>
     </details>
   );
@@ -252,13 +245,9 @@ export function RoundBuilder({
                         <Ids courseId={courseId} roundId={roundId} />
                         <input name="stepKey" type="hidden" value={step.key} />
                         <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                        <button
-                          aria-label={`Remove section ${section.title ?? sectionIndex + 1}`}
-                          className="builder__icon builder__icon--danger"
-                          type="submit"
-                        >
+                        <SubmitButton variant="primary" pendingLabel="Working…">
                           ✕
-                        </button>
+                        </SubmitButton>
                       </form>
                     ) : null}
                   </div>
@@ -292,7 +281,7 @@ export function RoundBuilder({
                         name="title"
                         type="text"
                       />
-                      <button className="button button--primary" type="submit">Save heading</button>
+                      <SubmitButton variant="primary" pendingLabel="Saving…">Save heading</SubmitButton>
                     </form>
                   </details>
                 </div>
@@ -312,7 +301,7 @@ export function RoundBuilder({
                     required
                     type="text"
                   />
-                  <button className="button button--primary" type="submit">Rename page</button>
+                  <SubmitButton variant="primary" pendingLabel="Working…">Rename page</SubmitButton>
                 </form>
                 <form action={setPageSubtitleAction} className="stack-form">
                   <Ids courseId={courseId} roundId={roundId} />
@@ -325,7 +314,7 @@ export function RoundBuilder({
                     name="subtitle"
                     type="text"
                   />
-                  <button className="button button--secondary" type="submit">Save line</button>
+                  <SubmitButton variant="secondary" pendingLabel="Saving…">Save line</SubmitButton>
                 </form>
                 <form action={addSectionAction} className="stack-form">
                   <Ids courseId={courseId} roundId={roundId} />
@@ -338,13 +327,13 @@ export function RoundBuilder({
                     placeholder="Parent / Guardian Details"
                     type="text"
                   />
-                  <button className="button button--secondary" type="submit">Add section</button>
+                  <SubmitButton variant="secondary" pendingLabel="Adding…">Add section</SubmitButton>
                 </form>
                 {spec.steps.length > 1 ? (
                   <form action={removePageAction} className="stack-form">
                     <Ids courseId={courseId} roundId={roundId} />
                     <input name="stepKey" type="hidden" value={step.key} />
-                    <button className="button button--secondary" type="submit">Delete this page</button>
+                    <SubmitButton variant="secondary" pendingLabel="Removing…">Delete this page</SubmitButton>
                   </form>
                 ) : null}
               </details>
@@ -357,7 +346,7 @@ export function RoundBuilder({
               <Ids courseId={courseId} roundId={roundId} />
               <label htmlFor="new-page">Page name</label>
               <input id="new-page" maxLength={200} name="title" placeholder="Academic Details" required type="text" />
-              <button className="button button--primary" type="submit">Add page</button>
+              <SubmitButton variant="primary" pendingLabel="Adding…">Add page</SubmitButton>
             </form>
           </details>
         </section>

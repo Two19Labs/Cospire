@@ -12,6 +12,7 @@ import {
 } from "@/features/curriculum/list-params";
 
 import type { AdminProcessRow } from "../queries/list-processes";
+import { SubmitButton } from "@/shared/ui";
 
 // The ARS section's own front page.
 //
@@ -105,9 +106,9 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
           </span>
         </label>
 
-        <button className="button button--primary" type="submit">
+        <SubmitButton variant="primary" pendingLabel="Adding…">
           Add process
-        </button>
+        </SubmitButton>
       </form>
     </RoleShell>
   );

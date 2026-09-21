@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { isAppRole, type Profile } from "../types";
@@ -16,7 +18,16 @@ export type SessionState =
   | { status: "orphaned"; userId: string }
   | { status: "active"; profile: Profile };
 
-export async function getSessionState(): Promise<SessionState> {
+// Wrapped in React's per-request `cache`, so asking twice in one render costs
+// one token verification and one profile query rather than two of each.
+//
+// Today every page calls this exactly once through `requireRole`, so it changes
+// nothing measurable. It is here for the moment that stops being true: the
+// natural next step for this app is a layout per role that renders the shell,
+// and at that point the layout and the page both want the profile. Without this
+// that day silently doubles the auth cost of every screen, and nothing would
+// say so.
+export const getSessionState = cache(async function getSessionState(): Promise<SessionState> {
   const supabase = await createServerSupabaseClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
 
@@ -57,4 +68,4 @@ export async function getSessionState(): Promise<SessionState> {
       role: row.role,
     },
   };
-}
+});

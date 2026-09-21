@@ -4,6 +4,7 @@ import { logoutAction } from "../actions/logout";
 import type { Profile } from "../types";
 
 import { AppNav } from "./app-nav";
+import { SubmitButton } from "@/shared/ui";
 
 // The application shell, in the shape of the Client's prototype: a fixed ink
 // rail on the left, and a column on the right carrying a white title bar over a
@@ -61,9 +62,9 @@ export function RoleShell({ children, profile, title }: RoleShellProps) {
           <p className="app-account__name">{profile.name}</p>
           <p className="app-account__email">{profile.email}</p>
           <form action={logoutAction}>
-            <button className="app-account__signout" type="submit">
+            <SubmitButton variant="primary" pendingLabel="Signing out…">
               Sign out
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </aside>

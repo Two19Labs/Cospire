@@ -16,6 +16,7 @@ import {
   type TemplateNotice,
 } from "../list-params";
 import type { TemplateDetail } from "../queries/get-template";
+import { SubmitButton } from "@/shared/ui";
 
 export function TemplateDetailScreen({
   error,
@@ -88,7 +89,7 @@ export function TemplateDetailScreen({
             <span>Active — mentors may start reports from this template</span>
           </label>
 
-          <button className="button button--primary" type="submit">Save template</button>
+          <SubmitButton variant="primary" pendingLabel="Saving…">Save template</SubmitButton>
         </form>
       </section>
 
@@ -159,7 +160,7 @@ export function TemplateDetailScreen({
                       <form action={removeComponentAction}>
                         <input name="componentId" type="hidden" value={component.id} />
                         <input name="templateId" type="hidden" value={template.id} />
-                        <button className="button button--secondary" type="submit">Remove</button>
+                        <SubmitButton variant="secondary" pendingLabel="Removing…">Remove</SubmitButton>
                       </form>
                     </td>
                   </tr>
@@ -193,7 +194,7 @@ export function TemplateDetailScreen({
                   />
                 </div>
               ))}
-              <button className="button button--primary" type="submit">Save weightages</button>
+              <SubmitButton variant="primary" pendingLabel="Saving…">Save weightages</SubmitButton>
             </form>
           </>
         )}
@@ -272,7 +273,7 @@ export function TemplateDetailScreen({
             <span>Action plan</span>
           </label>
 
-          <button className="button button--primary" type="submit">Add component</button>
+          <SubmitButton variant="primary" pendingLabel="Adding…">Add component</SubmitButton>
         </form>
       </section>
     </RoleShell>

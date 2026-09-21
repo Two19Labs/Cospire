@@ -8,6 +8,7 @@ import {
   saveReportComponentAction,
 } from "../actions/report-actions";
 import type { ReportComponentView, ReportView } from "../queries/get-report";
+import { SubmitButton } from "@/shared/ui";
 
 function MetricValues({ component }: { component: ReportComponentView }) {
   return component.metrics.map((metric, index) => {
@@ -77,7 +78,7 @@ export function ReportEditor({ profile, report }: { profile: Profile; report: Re
               {component.usesDevelopmentAreas ? <label>Development areas<textarea defaultValue={component.developmentAreas ?? ""} name="developmentAreas" rows={3} /></label> : null}
               {component.usesActionPlan ? <label>Action plan<textarea defaultValue={component.actionPlan ?? ""} name="actionPlan" rows={3} /></label> : null}
               <div className="field-row"><label>Timeline<input defaultValue={component.timeline ?? ""} name="timeline" /></label><label>Next step<input defaultValue={component.nextStep ?? ""} name="nextStep" /></label></div>
-              <button className="button button--primary" type="submit">Save component</button>
+              <SubmitButton variant="primary" pendingLabel="Saving…">Save component</SubmitButton>
             </form>
           )}
         </section>
@@ -90,7 +91,7 @@ export function ReportEditor({ profile, report }: { profile: Profile; report: Re
             <input name="reportId" type="hidden" value={report.id} />
             <label>Overall level<select defaultValue={report.overallLevel ?? ""} name="overallLevel" required><option disabled value="">Choose</option>{report.overallLevels.map((level) => <option key={level}>{level}</option>)}</select></label>
             <label>Closing note<textarea defaultValue={report.closingNote ?? ""} name="closingNote" rows={5} /></label>
-            <button className="button button--primary" type="submit">Release completed report</button>
+            <SubmitButton variant="primary" pendingLabel="Releasing…">Release completed report</SubmitButton>
           </form>
         </section>
       ) : null}
