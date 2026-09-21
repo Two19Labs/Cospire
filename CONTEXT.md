@@ -2,6 +2,21 @@
 
 Last updated: 2026-09-21 (Asia/Calcutta)
 
+**The question bank (Phase 3) is three quarters built, on `feat/question-bank`,
+pushed and NOT merged, 2026-09-21.**
+
+- PR 1: schema, with answer keys in their own table that has no student
+  policy, and the numerical normaliser. 41/41 SQL.
+- PR 2: authoring for admins and mentors, the sections list, images by
+  upload or paste, archive. 36/36 over HTTP.
+- PR 3: paste-a-prompt import with per-question review and approval.
+  25/25 over HTTP.
+
+**All four question bank migrations are applied** to the hosted project, so
+the database is four migrations ahead of `main`; they are additive. PR 4, the
+mock builder, is next. Nothing in the phase is on the deployed URL until the
+branch merges. See *The question bank, 2026-09-21*.
+
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
 had landed, so people clicked again. Sixteen `loading.tsx` files now paint the
@@ -284,9 +299,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   commit that records the merge, which is what this entry is; the alternative,
   claiming a merge before it happens, would make the gate lie in the worse
   direction.
-- **`origin` carries `main` and `docs/context-truth-0920` only**, the second
-  being PR #35 above. Every other feature branch has been merged and deleted;
-  checked with `git ls-remote --heads origin` on 2026-09-20.
+- **`origin` carries `main` and `feat/question-bank` only**, checked with
+  `git ls-remote --heads origin` on 2026-09-21. The PR #35 branch is gone.
+  `feat/question-bank` holds PRs 1-3 of the question bank, with no pull
+  request opened yet; see *Active work*.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -490,8 +506,9 @@ interviews plus group discussions. The third is off the platform, which is what
 **The aptitude round is a mock**, and its specification maps onto the planned
 schema without change: three sections (QA, LR, DI), 45 questions, two hours
 overall, **no sectional time limits**, sections switchable at will, **no negative
-marking**, solutions shown afterwards. It cannot be delivered here yet, because
-the question bank and test engine are unbuilt. For a demonstration it can be an
+marking**, solutions shown afterwards. It cannot be delivered here yet: the
+question bank is built (unmerged, 2026-09-21), but the mock builder and the test
+engine are not. For a demonstration it can be an
 off-platform round linking to the Client's existing test, labelled honestly.
 
 **Components are not rounds, and their own data proves it.** The MU process has
@@ -634,8 +651,9 @@ institution's admission-process document, and paste the answer back here.
 import: a standard prompt run in a model the Client already pays for, with the
 output pasted into a parser here, rather than an API integration billed per
 call. Pointing it at ARS processes needs no Google account, no LLM account, no
-key in the application and no per-call cost -- all four of which are still owed
-by the Client and still blocking Phase 3.
+key in the application and no per-call cost -- all four of which the Client still
+owes. Question import now uses the same mechanism (2026-09-21), so they no longer
+block Phase 3 either.
 
 Four decisions were taken with the owner **before** any code was written, and
 three of them are not what would have been guessed:
@@ -2129,8 +2147,10 @@ Recorded in the implementation plan, repeated here because they are easy to lose
    The delivery plan commits to the first fortnight. It needs no finished UI, and
    poor accuracy on their older material is a conversation to have with four weeks
    left rather than one.
-2. **Decide how historical attempts are protected from live question and mock
-   edits, before Phase 4 starts.** Recorded as critical below.
+2. **Historical attempts and live edits: decided 2026-09-21.** Questions stay
+   editable. A past attempt's review shows the current question, and Phase 4
+   rescores every attempt a key, option or marks change affects. See the
+   Critical finding below.
 3. **Supabase Pro immediately, and a tested restore before handover.** Pro moved
    from "before Phase 5" to "now" when ARS was brought forward. The deliverable is
    a restore tested, not enabled, and database backups exclude Storage objects.
@@ -2145,7 +2165,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
-| **Google API and LLM** accounts | The Google Doc import in Phase 3. The rest of that phase proceeds without them | Cospire |
+| **A Google account** (Docs API) | Only **automatic image extraction from Google Docs** (clause 3.15). Question import itself is built on paste-a-prompt and needs no Google or LLM account; until this exists, figures are pasted in on the review screen, which is going into the clause 16.1 amendment | Cospire |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
@@ -2520,13 +2540,19 @@ both worse the longer they wait:
 
 1. **Settle the 1 October promise.** The Client was told ARS and the mock test
    would be ready and tested "in the next 15 days", and that the project is
-   otherwise on track. The question bank, the test engine and most of ARS are
-   unbuilt. Decide what "ready" means on that date, and send the revised date in
-   writing under clause 4.4 if it moves.
+   otherwise on track. As of 2026-09-21, ARS is done and deployed. The question
+   bank is built but unmerged. The mock builder is not built, and the test
+   engine, the part a student actually sits, has not started. A tested mock
+   engine by 1 October is not realistic. Decide what "ready" means on that
+   date, and send the revised date in writing under clause 4.4.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
-   items named (feedback, onboarding, offboarding, student journey trackers, and
-   the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
-   written. Both sides want this, so it only needs recording.
+   items named: feedback, onboarding, offboarding, student journey trackers,
+   the ARS report and the process importer. Clause 12 says quote first; clause
+   16.1 says amendments are written. Both sides want this, so it only needs
+   recording. **The same amendment should record that question import runs on
+   paste-a-prompt**, with figures pasted in on review, rather than the
+   automatic Google Docs image extraction clause 3.15 promises. The owner
+   accepted this on 2026-09-21.
 
 **The process importer is built, verified, merged and deployed** (2026-09-20,
 PR #30), together with the form engine it depends on. Two things follow from it
@@ -2554,24 +2580,36 @@ and verified against the deployed URL.
 
 ### What to build next, in the order it should be taken
 
-**1. The question bank (Phase 3).** Nothing in it exists. It is the gate in
-front of everything else: the test engine needs somewhere to take questions
-from, and the aptitude round -- the one visible hole in ARS from the Client's
-side, since their own MESA benchmark puts a timed test in the middle of the
-process -- cannot be delivered without both. The paste-a-prompt importer is
-already proven twice over (ARS processes, report templates), so the Google Docs
-API and the LLM account the Client still owes are **not** on the critical path:
-the same mechanism works for questions.
+**1. The mock builder (Phase 3, PR 4)**, on `feat/question-bank`. It creates
+`mocks`, `mock_sections` (with `mock_section_id` NOT NULL on
+`mock_questions`, and a section duration that may be null for "no sectional
+limit", which is the MU aptitude round), and the per-mock settings: negative
+marking and the types it applies to, the attempt limit, `allow_mobile` and
+`proctoring_enabled`. Questions are picked from the bank; archived ones are
+not offered. The work order is PR 4, then **open the pull request for PRs
+1-4** and merge, which brings `main` back in step with the database.
 
 **2. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the
-phone attempt permanently marked unproctored, warn-and-log proctoring.
+phone attempt permanently marked unproctored, warn-and-log proctoring. Two
+things the question bank has already fixed for it:
+- A student reads a question only through an attempt; `questions` and
+  `question_keys` have no student policy today.
+- Keys become readable only after the student's own attempt is submitted. Any
+  change to a key, option set or marks value must rescore affected attempts
+  and write `rescore_events`, because questions stay editable.
+Then **attach a mock to the ARS aptitude round**, replacing the
+`pendingFeature: "test-engine"` placeholder.
 
-**3. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
+**3. Run one of Cospire's real question documents through the importer**
+as soon as they supply one. Nothing here has seen a real Cospire paper, and
+parse quality depends on the model and the document's layout.
+
+**4. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
 own worktree. If it has not arrived by the start of week four it slips and
 clause 4.4 applies -- notified in writing at the time, not at the end.
 
-**4. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
+**5. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
 
 ### Smaller things, none of them blocking
 
@@ -2590,8 +2628,7 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   seconds actually goes*.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
-is on `main` and is what a reviewer works from. `origin` carries `main` and the
-still-open PR #35 only; there is nothing else to prune.
+is on `main` and is what a reviewer works from.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
