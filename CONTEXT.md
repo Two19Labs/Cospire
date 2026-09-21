@@ -242,22 +242,28 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Everything through PR #42 is merged and `main` is at `0f97157`.** The work of
-  2026-09-20 after the re-skin: **#36** private multi-file ARS uploads, **#38**
-  the mentor review workflow, **#40** the report-template document importer, and
-  **#42** the separation of Programmes and ARS administration, each with a
-  documentation follow-up (#37, #39, #41). **PR #35 remains open**: it corrected
-  this section on 2026-09-20 and was overtaken by those merges, so its
-  corrections are made here instead and it should be closed as superseded rather
-  than merged into a conflict.
+- **Nothing is awaiting merge.** Every pull request this project has raised is
+  merged or closed, and `main` is at `56479e0`. PR #35 was **closed as
+  superseded** -- it corrected this file on 2026-09-20 and was overtaken by
+  #36-#42, so its corrections were restated against current `main` instead of
+  resolved through a stale conflict.
+- **Everything through PR #46 is merged and deployed.** The run of 2026-09-20
+  and 21, in order: **#36** private multi-file ARS uploads, **#38** the mentor
+  review workflow, **#40** the report-template document importer, **#42** the
+  first separation of Programmes and ARS administration, **#43** the Phase 5a
+  exit gate, **#44** `courses.kind` and the real separation, **#45** deleting
+  the duplicated ARS routes #42 left behind, **#46** loading states and pending
+  buttons. Each feature has a documentation follow-up where the context gate
+  required one (#37, #39, #41).
 - **Code and database are in step: 19 migrations on `main` and the same 19
   applied to the hosted project**, versions matching filenames. The most recent
   is `20260920190000_separate_programmes_from_ars_processes`.
-- The older sequence, for the record. **Everything through PR #25 is merged.** #21 carried Phase 5a step 2 (2026-09-10),
-  #22 the context-gate fix and #23 the design foundation (both 2026-09-12). The
-  last two conflicted in this file; #23 was rebased and resolved by hand. #24, this
-  file's cleanup, merged 2026-09-18 as `00a43f3`, and #25, Phase 5a steps 3, 4 and
-  4b, merged the same day as `ce147b3`.
+- Two things worth keeping from the earlier merge history, because both cost
+  time. **Do not delete the base branch of a stacked pull request**: merging #24
+  with `--delete-branch` closed #25 rather than retargeting it, and reopening
+  needed that branch pushed back before the base could move. And **the context
+  gate fails on `main` for any pull request that describes itself as open**,
+  which is why each feature is followed by a commit recording its own merge.
 - **PR #27 merged 2026-09-18** as `6a39649`, adding the documentation-only
   review contract in `docs/review-checklist.md`. #25 was stacked on #24's branch, so
   merging #24 with `--delete-branch` **closed** it rather than retargeting it;
@@ -1267,17 +1273,20 @@ No email addresses, passwords, or other personal data are recorded in this file.
 Profile emails are read from `auth.users` by the bootstrap SQL, so they cannot
 diverge from the Auth identities.
 
-Current live counts, **re-measured 2026-09-20 at the end of that day's work**:
-**2 orgs, 5 profiles (5 active), 1 mentor assignment, 6 courses, 2 documents, 5
-ARS rounds, 1 ARS submission, 1 ARS process run, 1 ARS report template, and 0
-rows in every other ARS table.**
+Current live counts, **re-measured 2026-09-21**: **2 orgs, 5 profiles (5
+active), 2 mentor assignments, 6 content grants, 7 courses, 2 documents, 5 ARS
+rounds, 1 ARS submission, 1 ARS process run, 1 ARS report template, and 0 rows
+in every other ARS table.**
 
-The last three of those courses and rounds, and the submission, are **the
-owner's own**: a programme called "test" with three rounds, created through the
-new importer on 2026-09-20 at 13:43 UTC, and a draft answer started on it at
-13:47 UTC. They are not test residue and must not be deleted. The baseline moved
-twice in one day, which is the point of re-measuring rather than trusting this
-line.
+By `courses.kind`: **3 ARS processes** (Ashoka, MU ARS, test) and **4
+programmes** (Ashoka - Aptitude Test Prep twice, Mesa, testing).
+
+The newest courses, rounds and the submission are **the owner's own**: a process
+called "test" with three rounds created through the importer on 2026-09-20, a
+draft answer started on it the same afternoon, and "testing" created the same
+day. They are not test residue and must not be deleted. This baseline moved
+three times in two days, which is the point of re-measuring it rather than
+trusting this line.
 
 **This baseline had drifted from the one recorded on 2026-09-18**, which said 4
 courses and 0 rows in every ARS table. The difference is the owner's own work on
@@ -2305,25 +2314,46 @@ that are not code:
 the deployed URL**, and the draft/save path that previously lacked a
 browser-level harness is inside it. Nothing in the phase is outstanding.
 
-What is left around it, none of it Phase 5a:
+**Programmes and ARS are separated** (2026-09-20, PR #44/#45) and **every
+signed-in screen has a loading state** (2026-09-21, PR #46). Both are deployed
+and verified against the deployed URL.
 
-- **Programmes and ARS are separated** (2026-09-20, 19 of 19). `courses.kind`
-  divides them, each section creates and grants for itself, and a row can be
-  moved between them. `feat/programmes-placeholder` is superseded by that work
-  and should be deleted rather than merged: as written it removed the only
-  screen that creates a programme and the only route to the only screen that
-  grants access, while ARS could not yet create a process.
-- **The owner should decide where "Ashoka" belongs.** The backfill filed it as
-  an ARS process because it holds one round called "ARS Template". If it is
-  really aptitude-prep content, move it back from its ARS page in one click.
-- **The aptitude test round has no engine behind it**, and it is the visible
-  hole in ARS from the Client's side, since their own MESA benchmark puts a
-  timed test in the middle of the process. It is Phases 3 and 4, not 5a. Until
-  it exists those rounds arrive as placeholders carrying their specification.
-- **The per-screen re-skin of the remaining panels.** The shell and the ARS form
-  are done (2026-09-20) and every screen inherits the new chrome through
-  `RoleShell`, but the panels inside the admin and mentor screens have not been
-  gone through one by one.
+### What to build next, in the order it should be taken
+
+**1. The question bank (Phase 3).** Nothing in it exists. It is the gate in
+front of everything else: the test engine needs somewhere to take questions
+from, and the aptitude round -- the one visible hole in ARS from the Client's
+side, since their own MESA benchmark puts a timed test in the middle of the
+process -- cannot be delivered without both. The paste-a-prompt importer is
+already proven twice over (ARS processes, report templates), so the Google Docs
+API and the LLM account the Client still owes are **not** on the critical path:
+the same mechanism works for questions.
+
+**2. The test engine (Phase 4)**, with everything operating manual §1 insists
+on: the server-authoritative timer, per-question-type negative marking, the
+phone attempt permanently marked unproctored, warn-and-log proctoring.
+
+**3. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
+own worktree. If it has not arrived by the start of week four it slips and
+clause 4.4 applies -- notified in writing at the time, not at the end.
+
+**4. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
+
+### Smaller things, none of them blocking
+
+- **The owner should decide where "Ashoka" belongs.** The `kind` backfill filed
+  it as an ARS process because it holds one round called "ARS Template". If it
+  is really aptitude-prep content, one click on its ARS page moves it back.
+- **The per-screen re-skin of the remaining panels.** The shell, the ARS form
+  and the loading states are done; the panels inside the admin and mentor
+  screens have not been gone through one by one.
+- **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
+  manual §6.1 makes a human's call. It is used by 34 buttons across 16 files.
+  Flagged in PR #46 rather than assumed; confirm or move it.
+- **Vercel Pro.** It is owed for the commercial-use clause and it is also the
+  only thing that will move the 1.3-second page times, which are cold starts on
+  the Hobby tier rather than anything in this repository. See *Where the 1.3
+  seconds actually goes*.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
 is on `main` and is what a reviewer works from. `origin` carries `main` and the
