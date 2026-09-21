@@ -762,6 +762,162 @@ export type Database = {
           },
         ]
       }
+      mock_questions: {
+        Row: {
+          created_at: string
+          mock_id: number
+          mock_section_id: number
+          org_id: number
+          question_id: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          mock_id: number
+          mock_section_id: number
+          org_id: number
+          question_id: number
+          sort_order: number
+        }
+        Update: {
+          created_at?: string
+          mock_id?: number
+          mock_section_id?: number
+          org_id?: number
+          question_id?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mock_questions_question_fk"
+            columns: ["question_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "mock_questions_section_fk"
+            columns: ["mock_section_id", "mock_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "mock_sections"
+            referencedColumns: ["id", "mock_id", "org_id"]
+          },
+        ]
+      }
+      mock_sections: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          id: number
+          mock_id: number
+          org_id: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: never
+          mock_id: number
+          org_id: number
+          sort_order: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: never
+          mock_id?: number
+          org_id?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mock_sections_mock_fk"
+            columns: ["mock_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "mocks"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      mocks: {
+        Row: {
+          allow_mobile: boolean
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          id: number
+          instructions: string
+          max_attempts: number
+          negative_marking: number
+          negative_marking_types: string[]
+          org_id: number
+          proctoring_enabled: boolean
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allow_mobile?: boolean
+          created_at?: string
+          created_by?: string | null
+          duration_minutes: number
+          id?: never
+          instructions?: string
+          max_attempts?: number
+          negative_marking?: number
+          negative_marking_types?: string[]
+          org_id: number
+          proctoring_enabled?: boolean
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allow_mobile?: boolean
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          id?: never
+          instructions?: string
+          max_attempts?: number
+          negative_marking?: number
+          negative_marking_types?: string[]
+          org_id?: number
+          proctoring_enabled?: boolean
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mocks_created_by_fk"
+            columns: ["created_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "mocks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mocks_updated_by_fk"
+            columns: ["updated_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       orgs: {
         Row: {
           created_at: string
@@ -1102,6 +1258,21 @@ export type Database = {
           p_solution: string
           p_topic: string
           p_type: string
+        }
+        Returns: number
+      }
+      save_mock: {
+        Args: {
+          p_allow_mobile: boolean
+          p_duration_minutes: number
+          p_instructions: string
+          p_max_attempts: number
+          p_mock_id: number
+          p_negative_marking: number
+          p_negative_marking_types: string[]
+          p_proctoring_enabled: boolean
+          p_sections: Json
+          p_title: string
         }
         Returns: number
       }

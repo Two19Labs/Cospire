@@ -2,8 +2,8 @@
 
 Last updated: 2026-09-21 (Asia/Calcutta)
 
-**The question bank (Phase 3) is three quarters built, on `feat/question-bank`,
-pushed and NOT merged, 2026-09-21.**
+**The question bank (Phase 3) is built on `feat/question-bank`, pushed through
+PR 3 and NOT merged, 2026-09-21.**
 
 - PR 1: schema, with answer keys in their own table that has no student
   policy, and the numerical normaliser. 41/41 SQL.
@@ -11,11 +11,13 @@ pushed and NOT merged, 2026-09-21.**
   upload or paste, archive. 36/36 over HTTP.
 - PR 3: paste-a-prompt import with per-question review and approval.
   25/25 over HTTP.
+- PR 4: admin-only mock builder, exact-sum sectional timing, per-mock controls
+  and whole-DI selection. 9/9 SQL and 10/10 over HTTP.
 
-**All four question bank migrations are applied** to the hosted project, so
-the database is four migrations ahead of `main`; they are additive. PR 4, the
-mock builder, is next. Nothing in the phase is on the deployed URL until the
-branch merges. See *The question bank, 2026-09-21*.
+**All seven question-bank migrations are applied** to the hosted project, so
+the database is seven migrations ahead of `main`; they are additive. Nothing
+in the phase is on the deployed URL until the branch merges. See *The question
+bank, 2026-09-21*.
 
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
@@ -993,8 +995,23 @@ photographed and reviewed.
 Its parse quality depends on the model and the document, which is the
 pulled-forward "run one real document" item the delivery plan commits to.
 
-**Remaining:** PR 4, the mock builder with `mocks`, `mock_sections` and
-`mock_questions`.
+**PR 4, the mock builder, built 2026-09-21.** It adds `mocks`,
+`mock_sections` and `mock_questions`, with one implicit untimed section for an
+overall-only mock or fully timed sections whose durations add exactly to the
+full duration. Settings cover negative marking and its question types, attempt
+limit, mobile access and proctoring. The admin picker excludes archived
+questions and adds a DI set whole to one section. RLS is admin-only on all
+three tables; no mentor or student policy exists in Phase 3.
+
+The three migrations are applied: `20260921150000_mock_builder`,
+`20260921150100_save_mock_transaction` and the fix-forward
+`20260921150200_fix_mock_structure_trigger_target`. The first database probe
+found that the shared trigger read `mock_id` from a `mocks` row; its transaction
+rolled back, the fix-forward migration corrected it, and the re-run passed 9/9.
+HTTP verification passed 10/10 with real sessions and no-JavaScript form posts;
+cleanup returned to 0 mocks, 0 mock sections, 0 mock questions, 0 questions and
+5 profiles. The authoring regression remains 36/36. Typecheck, lint, 342 tests
+and a clean production build pass.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
@@ -1316,7 +1333,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PRs 1-3 of 4 are pushed and unmerged**: PR 1 is the schema, normaliser and validator (41/41 SQL); PR 2 is the authoring screens (36/36 HTTP); PR 3 is the paste import with per-question review (25/25 HTTP). **All four question bank migrations are APPLIED.** PR 4, the mock builder, is next. See *The question bank, 2026-09-21* | 2026-09-21 |
+| Codex, question bank pickup | `feat/question-bank` | Phase 3 PR 4: admin-only mock builder, then one review PR for question-bank parts 1-4 | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `src/features/auth/components/app-nav.tsx`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*`, `CONTEXT.md` | **Built and verified; preparing the review PR.** Owner decided sectional durations sum exactly to full duration; one implicit section with null duration means no sectional limit. Three additive migrations applied. Mock probe 9/9; mock HTTP 10/10; authoring regression 36/36; typecheck, lint, 342 tests and clean production build pass. The first build attempt failed only because a moved stale `.next` tree remained inside `coverage`; moving it outside the repository produced the clean passing build. Security advisor has only the two pre-existing Auth warnings. | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report

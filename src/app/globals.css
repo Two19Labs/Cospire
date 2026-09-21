@@ -1602,3 +1602,13 @@ a.button {
   box-shadow: none;
   padding: 0;
 }
+.question-picker-row {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.question-picker-row:last-child {
+  border-bottom: 0;
+}
