@@ -84,9 +84,14 @@ export function QuestionsScreen({
               <p className="muted">Every question needs a section, topic, difficulty and marks.</p>
             </div>
             {profile.role === "admin" ? (
-              <Link className="button button--secondary button--compact" href="/admin/questions/sections">
-                Manage sections
-              </Link>
+              <div className="toolbar">
+                <Link className="button button--primary button--compact" href="/admin/questions/import">
+                  Import questions
+                </Link>
+                <Link className="button button--secondary button--compact" href="/admin/questions/sections">
+                  Manage sections
+                </Link>
+              </div>
             ) : null}
           </div>
           <div className="toolbar">

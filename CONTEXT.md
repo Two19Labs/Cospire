@@ -900,8 +900,83 @@ skeleton is streaming, not a bug: the content arrives in hidden chunks that
 a script moves into place, so a script-stripped capture has to replay
 `$RC`/`$RS` itself.
 
-**Remaining PRs:** 3, the paste import with side-by-side review. 4, the mock
-builder with `mocks`, `mock_sections` and `mock_questions`.
+**PR 3, the question importer, built 2026-09-21.** No migration: the
+staging table and `approve_question_import` came with PR 1.
+
+- `/admin/questions/import` has three steps: copy the prompt, paste the
+  model's answer, send it for review. A list of earlier imports sits below.
+  `/admin/questions/import/[batch]` is the review.
+- **Admin-only**, as the `question_imports` policies already are.
+- **Reading a paste writes nothing.** Staging re-parses the pasted text on the
+  server and writes the whole batch in one insert. Each entry becomes one
+  `pending_review` row.
+- **A DI set is staged as its passage plus one row per sub-question**, linked
+  by `parsed.parentPosition`. A sub-question opens for approval only after its
+  passage is approved. It then takes the passage's question as parent and the
+  passage's section, whatever the post says.
+- **The type comes from the staged row, never the form.**
+- **Approval** runs the ordinary editor, pre-filled with the parsed question,
+  against `approveImportAction`. That validates like the editor and calls
+  `approve_question_import`, so the question, its key and the row's decision
+  land in one transaction.
+- **Reject** marks one row. **Discard** deletes what is not approved and keeps
+  every approved row as the record of where a question came from.
+
+**The parser** (`import-spec.ts`) is lenient about names and strict about
+values, like the ARS importer, and reuses its `extractJsonBlock`:
+
+- it accepts a bare list, prose and code fences;
+- MCQ answers can be written as a letter, "(b)", "Option C", the option's own
+  text (tried first) or a 1-based number;
+- multi-answers can be written "A, C", "A and C", "AC" or as a list, and an
+  MCQ given two answers becomes multiple correct, with a note saying so;
+- TITA answers can be a number, a list, or joined by "or".
+
+It never guesses:
+
+- no marks is left blank, unless the admin gives default marks for the batch;
+- no answer is flagged, not worked out;
+- an unknown type is staged as unreadable;
+- a section is matched only by exact name, ignoring case, so "Quant" against
+  a list holding "QA" is left for the admin to choose.
+
+A `[[figure]]` marker from the prompt is removed from the text and becomes a
+note to paste the image in. That is the clause 3.15 compromise recorded above.
+The prompt (`import-prompt.ts`) is built from the parser's limits, and a unit
+test parses the prompt's own example, so the two cannot drift apart silently.
+
+**The shared editor gained three props** (`action`, `hidden`, `submitLabel`)
+and per-instance element ids, because the review page shows several editors
+at once. PR 2's harness re-run after that change: 36/36.
+
+**PR 3 verified, 25 of 25**, by `scripts/verify/question-import.mjs`, on
+the dev server and again on a clean production build. Every refusal is proven
+by counting rows. It proves:
+
+- mentors and students are turned away;
+- a paste in prose and a fence previews all seven entries, and reading writes
+  nothing; a non-JSON paste is refused;
+- a mentor posting the stage action stages nothing, and staging writes 7
+  pending rows in one batch with nothing in the bank;
+- default marks fill only where marks are missing; the essay is staged as
+  unreadable and the unanswered MCQ carries its problem; the figure is flagged
+  and its marker removed;
+- a student and a mentor read 0 staged rows through the API;
+- approval writes the question, its key and the reviewer stamp; a second
+  approval is refused with no duplicate; a mentor's approve changes nothing;
+- a crafted type is ignored; a sub-question is refused before its passage and
+  joins the set in the set's section after it;
+- reject, then a second reject refused; discard keeps all four approved rows.
+
+342 unit tests in total (27 for the parser). The review screen was
+photographed and reviewed.
+
+**Not tested with a real Cospire document**, because none has been supplied.
+Its parse quality depends on the model and the document, which is the
+pulled-forward "run one real document" item the delivery plan commits to.
+
+**Remaining:** PR 4, the mock builder with `mocks`, `mock_sections` and
+`mock_questions`.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
@@ -1223,7 +1298,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PRs 1 and 2 of 4 are pushed and unmerged**: PR 1 is the schema, normaliser and validator (41/41 SQL); PR 2 is the authoring screens, sections, images and archive (36/36 over HTTP). **All four question bank migrations are APPLIED.** PR 3, the paste import, is next. See *The question bank, 2026-09-21* | 2026-09-21 |
+| Claude, question bank chat | `feat/question-bank` | Phase 3: question bank schema (questions, answer keys held apart, import staging, mocks and sections), numerical normaliser, authoring for admins and mentors, paste-a-prompt import with review, mock builder | `src/features/question-bank/**`, `src/app/admin/questions/**`, `src/app/mentor/questions/**`, `src/app/admin/mocks/**`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*` | Plan approved 2026-09-21. **PRs 1-3 of 4 are pushed and unmerged**: PR 1 is the schema, normaliser and validator (41/41 SQL); PR 2 is the authoring screens (36/36 HTTP); PR 3 is the paste import with per-question review (25/25 HTTP). **All four question bank migrations are APPLIED.** PR 4, the mock builder, is next. See *The question bank, 2026-09-21* | 2026-09-21 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report

@@ -8,6 +8,7 @@ import { saveQuestionAction } from "../actions/question-actions";
 import {
   initialQuestionEditorState,
   optionFieldCount,
+  type QuestionEditorState,
   type QuestionFormValues,
 } from "../question-form";
 import { difficulties, questionTypeLabels, type QuestionType } from "../question-input";
@@ -23,6 +24,10 @@ import { ImageField } from "./image-field";
 // would orphan a DI set's sub-questions.
 
 export interface QuestionEditorProps {
+  // The import review screen approves instead of saving. Same form, same
+  // fields; a different Server Action and one more hidden field.
+  action?: (state: QuestionEditorState, formData: FormData) => Promise<QuestionEditorState>;
+  hidden?: Record<string, string>;
   imageUrls: Record<string, string>;
   initialValues: QuestionFormValues;
   orgId: number;
@@ -30,6 +35,7 @@ export interface QuestionEditorProps {
   questionId: number | null;
   sections: QuestionSection[];
   topics: string[];
+  submitLabel?: string;
   type: QuestionType;
 }
 
@@ -48,18 +54,24 @@ export const emptyQuestionValues: QuestionFormValues = {
 };
 
 export function QuestionEditor({
+  action: saveAction = saveQuestionAction,
+  hidden = {},
   imageUrls,
   initialValues,
   orgId,
   parent,
   questionId,
   sections,
+  submitLabel,
   topics,
   type,
 }: QuestionEditorProps) {
-  const [state, action] = useActionState(saveQuestionAction, initialQuestionEditorState);
+  const [state, action] = useActionState(saveAction, initialQuestionEditorState);
   const values = state.values ?? initialValues;
-  const topicListId = useId();
+  // Per-instance ids: the import review screen shows several editors at once.
+  const uid = useId();
+  const id = (name: string) => `${uid}-${name}`;
+  const topicListId = id("topics");
 
   const isSet = type === "di_stimulus";
   const isChoice = type === "mcq" || type === "mcq_multi";
@@ -77,6 +89,9 @@ export function QuestionEditor({
       <input name="type" type="hidden" value={type} />
       {questionId ? <input name="questionId" type="hidden" value={questionId} /> : null}
       {parent ? <input name="parentId" type="hidden" value={parent.id} /> : null}
+      {Object.entries(hidden).map(([name, value]) => (
+        <input key={name} name={name} type="hidden" value={value} />
+      ))}
 
       <div>
         <h2>{questionTypeLabels[type]}</h2>
@@ -108,9 +123,9 @@ export function QuestionEditor({
             <span className="field__hint">A sub-question is always in its set&apos;s section.</span>
           </div>
         ) : (
-          <label className="field" htmlFor="question-section">
+          <label className="field" htmlFor={id("section")}>
             <span className="field__label">Section</span>
-            <select className="input" defaultValue={values.sectionId} id="question-section" name="sectionId" required>
+            <select className="input" defaultValue={values.sectionId} id={id("section")} name="sectionId" required>
               <option value="">Choose a section</option>
               {sections.map((section) => (
                 <option key={section.id} value={section.id}>
@@ -121,12 +136,12 @@ export function QuestionEditor({
           </label>
         )}
 
-        <label className="field" htmlFor="question-topic">
+        <label className="field" htmlFor={id("topic")}>
           <span className="field__label">Topic</span>
           <input
             className="input"
             defaultValue={values.topic}
-            id="question-topic"
+            id={id("topic")}
             list={topicListId}
             maxLength={100}
             name="topic"
@@ -140,12 +155,12 @@ export function QuestionEditor({
           </datalist>
         </label>
 
-        <label className="field" htmlFor="question-difficulty">
+        <label className="field" htmlFor={id("difficulty")}>
           <span className="field__label">Difficulty</span>
           <select
             className="input"
             defaultValue={values.difficulty}
-            id="question-difficulty"
+            id={id("difficulty")}
             name="difficulty"
             required
           >
@@ -159,12 +174,12 @@ export function QuestionEditor({
         </label>
 
         {isSet ? null : (
-          <label className="field" htmlFor="question-marks">
+          <label className="field" htmlFor={id("marks")}>
             <span className="field__label">Marks</span>
             <input
               className="input"
               defaultValue={values.marks}
-              id="question-marks"
+              id={id("marks")}
               inputMode="decimal"
               name="marks"
               placeholder="e.g. 3"
@@ -181,12 +196,12 @@ export function QuestionEditor({
         </div>
       ) : null}
 
-      <label className="field" htmlFor="question-body">
+      <label className="field" htmlFor={id("body")}>
         <span className="field__label">{isSet ? "Passage or chart description" : "Question"}</span>
         <textarea
           className="input input--area"
           defaultValue={values.body}
-          id="question-body"
+          id={id("body")}
           name="body"
           required
           rows={isSet ? 8 : 5}
@@ -231,12 +246,12 @@ export function QuestionEditor({
 
       {type === "numerical" ? (
         <div className="form-fields">
-          <label className="field" htmlFor="question-accepted">
+          <label className="field" htmlFor={id("accepted")}>
             <span className="field__label">Correct answer</span>
             <textarea
               className="input input--area"
               defaultValue={values.accepted}
-              id="question-accepted"
+              id={id("accepted")}
               name="accepted"
               required
               rows={3}
@@ -246,12 +261,12 @@ export function QuestionEditor({
               the same number, so one line is usually enough.
             </span>
           </label>
-          <label className="field" htmlFor="question-tolerance">
+          <label className="field" htmlFor={id("tolerance")}>
             <span className="field__label">Tolerance (optional)</span>
             <input
               className="input"
               defaultValue={values.tolerance}
-              id="question-tolerance"
+              id={id("tolerance")}
               inputMode="decimal"
               name="tolerance"
               placeholder="e.g. 0.01"
@@ -262,12 +277,12 @@ export function QuestionEditor({
       ) : null}
 
       {isSet ? null : (
-        <label className="field" htmlFor="question-solution">
+        <label className="field" htmlFor={id("solution")}>
           <span className="field__label">Solution (optional)</span>
           <textarea
             className="input input--area"
             defaultValue={values.solution}
-            id="question-solution"
+            id={id("solution")}
             name="solution"
             rows={4}
           />
@@ -276,7 +291,9 @@ export function QuestionEditor({
       )}
 
       <div className="form-actions">
-        <SubmitButton pendingLabel="Saving…">{questionId ? "Save changes" : "Save question"}</SubmitButton>
+        <SubmitButton pendingLabel="Saving…">
+          {submitLabel ?? (questionId ? "Save changes" : "Save question")}
+        </SubmitButton>
       </div>
     </form>
   );

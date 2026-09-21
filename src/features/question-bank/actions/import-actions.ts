@@ -1,0 +1,226 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import { requireRole } from "@/features/auth/guards";
+import { createServerSupabaseClient } from "@/shared/db/supabase/server";
+
+import { applyDefaultMarks, matchSection, parseDefaultMarks, reviewProblems } from "../import-review";
+import { parseImportedQuestions, type StagedQuestion } from "../import-spec";
+import { initialQuestionImportState, parseBatchId, type QuestionImportState } from "../import-state";
+import { parseId } from "../list-params";
+import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
+import { toSaveQuestionArgs, validateQuestion } from "../question-input";
+import { listSections } from "../queries/list-sections";
+
+// Importing questions: read a pasted answer, stage it, then approve or reject
+// each question.
+//
+// Admin-only throughout, matching the policies on `question_imports`: Annexure A
+// puts an admin's review between an import and the live bank.
+//
+// Reading a paste writes nothing. Staging re-parses the pasted text on the
+// server rather than trusting the preview the browser sends back, because a
+// Server Action is a public endpoint and the preview is only a form field.
+
+function readPaste(formData: FormData): string {
+  const raw = formData.get("pasted");
+  // Bounded before parsing. Two hundred questions with solutions fit well
+  // inside this; a megabyte of text is not a question paper.
+  return typeof raw === "string" ? raw.slice(0, 500_000) : "";
+}
+
+function readDocumentName(formData: FormData): string {
+  const raw = formData.get("documentName");
+  return typeof raw === "string" ? raw.trim().replace(/\s+/g, " ").slice(0, 200) : "";
+}
+
+export async function previewQuestionImportAction(
+  _state: QuestionImportState,
+  formData: FormData,
+): Promise<QuestionImportState> {
+  await requireRole("admin");
+
+  const pasted = readPaste(formData);
+  const defaultMarks = typeof formData.get("defaultMarks") === "string" ? String(formData.get("defaultMarks")) : "";
+  if (pasted.trim() === "") return { ...initialQuestionImportState, problems: ["Paste the model's answer first."] };
+
+  const { documentName, items, problems } = parseImportedQuestions(pasted);
+  return {
+    defaultMarks,
+    documentName: readDocumentName(formData) || documentName || "",
+    items: problems.length === 0 ? items : null,
+    pasted,
+    problems,
+  };
+}
+
+export async function stageQuestionImportAction(
+  _state: QuestionImportState,
+  formData: FormData,
+): Promise<QuestionImportState> {
+  const admin = await requireRole("admin");
+
+  const pasted = readPaste(formData);
+  const rawDefault = formData.get("defaultMarks");
+  const defaultMarks = parseDefaultMarks(rawDefault);
+  const documentName = readDocumentName(formData);
+  const echo = {
+    defaultMarks: typeof rawDefault === "string" ? rawDefault : "",
+    documentName,
+    items: null,
+    pasted,
+  };
+
+  if (defaultMarks === null) {
+    return { ...echo, problems: ["Default marks must be a number above 0 and at most 100, or left blank."] };
+  }
+
+  const outcome = parseImportedQuestions(pasted);
+  if (outcome.problems.length > 0 || outcome.items.length === 0) {
+    return { ...echo, problems: outcome.problems.length > 0 ? outcome.problems : ["There is nothing to import."] };
+  }
+
+  const sections = await listSections();
+  const batchId = randomUUID();
+
+  const rows = outcome.items.map((item) => {
+    const parsed: StagedQuestion | null = item.parsed ? applyDefaultMarks(item.parsed, defaultMarks) : null;
+    const sectionId = parsed ? matchSection(parsed.sectionName, sections) : null;
+    // The parser's own findings win where it has any; otherwise the same
+    // validator approval uses says what is left to fix, marks included.
+    const problems =
+      item.problems.length > 0 ? item.problems : parsed ? reviewProblems(parsed, sectionId, admin.orgId) : [];
+    return {
+      batch_id: batchId,
+      org_id: admin.orgId,
+      parsed,
+      position: item.position,
+      problems,
+      raw: item.raw,
+      source_ref: documentName || outcome.documentName || null,
+      source_type: "paste",
+    };
+  });
+
+  const supabase = await createServerSupabaseClient();
+  // One statement, so a batch is staged whole or not at all.
+  const { data, error } = await supabase.from("question_imports").insert(rows).select("id");
+
+  if (error || !data || data.length !== rows.length) {
+    return { ...echo, problems: ["The questions could not be staged. Nothing was saved."] };
+  }
+
+  revalidatePath("/admin/questions/import");
+  redirect(`/admin/questions/import/${batchId}`);
+}
+
+function describeApproveError(error: { code?: string; message?: string }): string {
+  if (error.code === "P0002") return "This question has already been decided, or could not be found.";
+  const message = error.message ?? "";
+  if (error.code === "23514" && !/violates check constraint/.test(message)) {
+    return message.charAt(0).toUpperCase() + message.slice(1) + ".";
+  }
+  return "The question could not be approved. Check every field and try again.";
+}
+
+export async function approveImportAction(
+  _state: QuestionEditorState,
+  formData: FormData,
+): Promise<QuestionEditorState> {
+  const admin = await requireRole("admin");
+  const importId = parseId(formData.get("importId"));
+  const { draft } = readQuestionForm(formData);
+  const values = draftToFormValues(draft);
+  if (importId === null) return { problems: ["That request was not valid."], values };
+
+  const supabase = await createServerSupabaseClient();
+  const { data: row, error: readError } = await supabase
+    .from("question_imports")
+    .select("id, batch_id, parsed, status")
+    .eq("id", importId)
+    .maybeSingle();
+
+  if (readError || !row) return { problems: ["That import could not be found."], values };
+  if (row.status !== "pending_review") return { problems: ["This question has already been decided."], values };
+
+  const staged = row.parsed as StagedQuestion | null;
+  if (!staged) return { problems: ["This entry could not be read as a question. Reject it."], values };
+
+  // The type and the set a question belongs to come from the staged row, never
+  // from the form: the editor does not offer either, so a post that changes
+  // them was not made through it.
+  draft.type = staged.type;
+  draft.parentId = null;
+
+  if (staged.parentPosition !== null) {
+    const { data: setRow } = await supabase
+      .from("question_imports")
+      .select("status, question_id")
+      .eq("batch_id", row.batch_id)
+      .eq("position", staged.parentPosition)
+      .maybeSingle();
+    if (!setRow || setRow.status !== "approved" || setRow.question_id === null) {
+      return { problems: ["Approve this question's DI set passage first."], values };
+    }
+    const { data: parent } = await supabase
+      .from("questions")
+      .select("id, section_id")
+      .eq("id", setRow.question_id)
+      .maybeSingle();
+    if (!parent) return { problems: ["The DI set this question belongs to could not be found."], values };
+    draft.parentId = Number(parent.id);
+    draft.sectionId = Number(parent.section_id);
+  }
+
+  const { problems, question } = validateQuestion(draft, admin.orgId);
+  if (!question) return { problems, values };
+
+  // approve_question_import always creates, so it takes no question id.
+  const args: Record<string, unknown> = { ...toSaveQuestionArgs(question, null), p_import_id: importId };
+  delete args.p_question_id;
+  const { error } = await supabase.rpc("approve_question_import", args);
+  if (error) return { problems: [describeApproveError(error)], values };
+
+  revalidatePath("/admin/questions");
+  redirect(`/admin/questions/import/${row.batch_id}?notice=approved#import-${importId}`);
+}
+
+export async function rejectImportAction(formData: FormData): Promise<void> {
+  await requireRole("admin");
+  const importId = parseId(formData.get("importId"));
+  const batchId = parseBatchId(formData.get("batchId"));
+  if (importId === null || batchId === null) redirect("/admin/questions/import");
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("question_imports")
+    .update({ status: "rejected" })
+    .eq("id", importId)
+    .eq("status", "pending_review")
+    .select("id");
+
+  const ok = !error && data && data.length === 1;
+  redirect(`/admin/questions/import/${batchId}?notice=${ok ? "rejected" : "failed"}`);
+}
+
+// Clears what is still undecided. Approved rows stay, as the record of where
+// each imported question came from.
+export async function discardPendingAction(formData: FormData): Promise<void> {
+  await requireRole("admin");
+  const batchId = parseBatchId(formData.get("batchId"));
+  if (batchId === null) redirect("/admin/questions/import");
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("question_imports")
+    .delete()
+    .eq("batch_id", batchId)
+    .in("status", ["pending_review", "rejected"]);
+
+  revalidatePath("/admin/questions/import");
+  redirect(error ? `/admin/questions/import/${batchId}?notice=failed` : "/admin/questions/import?notice=discarded");
+}

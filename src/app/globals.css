@@ -1579,3 +1579,26 @@ a.button {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Import review: the document's text beside the editor it became. Stacks on
+   a narrow screen, where side by side would leave neither readable. */
+.import-row {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.import-row > .import-source {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.import-row > .panel {
+  box-shadow: none;
+  padding: 0;
+}
