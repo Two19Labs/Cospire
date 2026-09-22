@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-21 (Asia/Calcutta)
+Last updated: 2026-09-22 (Asia/Calcutta)
 
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
@@ -1066,7 +1066,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, report round options | `fix/report-round-options` | Report-template round selector offered every round in the organisation, found in the 2026-09-21 client demo | `src/features/ars-report/round-options.ts` (+ test), `src/features/ars-report/queries/get-template.ts`, `scripts/verify/report-round-links.mjs`, `CONTEXT.md` | **Built and verified; PR to be opened.** With a programme set, only its rounds are offered, in process order; with none, each option carries its process name; a round already linked from another process stays listed and labelled so a save cannot silently unlink it. No migration. 3 new unit tests; 238/238 tests, typecheck, lint and production build pass; `report-round-links.mjs` 8/8 against a local production build on the hosted database, counts back to baseline. Not yet on the deployed URL. | 2026-09-22 |
+| Claude, report round options | `fix/report-round-options` | Report-template round selector offered every round in the organisation, found in the 2026-09-21 client demo | `src/features/ars-report/round-options.ts` (+ test), `src/features/ars-report/queries/get-template.ts`, `scripts/verify/report-round-links.mjs`, `CONTEXT.md` | **Built and verified; under review in PR #50.** With a programme set, only its rounds are offered, in process order; with none, each option carries its process name; a round already linked from another process stays listed and labelled so a save cannot silently unlink it. No migration. 3 new unit tests; 238/238 tests, typecheck, lint and production build pass; `report-round-links.mjs` 8/8 against a local production build on the hosted database, counts back to baseline. Not yet on the deployed URL. | 2026-09-22 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
