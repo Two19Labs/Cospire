@@ -110,7 +110,7 @@ node --env-file=.env.local scripts/verify/ars-import.mjs http://127.0.0.1:3001
 Self-contained: it creates its own throwaway admin, student and programme, and
 deletes them in a `finally` block scoped to what it created. It needs a running
 app and prints the live counts afterwards so they can be compared with the
-baseline in `CONTEXT.md`.
+baseline in `docs/context/verification-log.md`.
 
 Two things it knows that the older scripts here do not, both of which cost an
 hour to rediscover:

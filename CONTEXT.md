@@ -5,7 +5,8 @@ Last updated: 2026-09-22 (Asia/Calcutta)
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
 topic, and is read when the task touches that area. A section named elsewhere in
-this file and not found here is in one of these:
+this file and not found here is in one of these; find it with
+`grep -rn "<section name>" docs/context/`:
 
 | File | Holds |
 |---|---|

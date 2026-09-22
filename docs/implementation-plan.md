@@ -112,7 +112,7 @@ security audit with two real defects found and fixed.
 The ARS visibility rule is not built, because `ars_submissions` does not exist yet.
 The pattern it depends on is in place and tested.
 
-Full detail is in `CONTEXT.md`.
+Full detail is in `docs/context/phase-history.md`.
 
 ---
 

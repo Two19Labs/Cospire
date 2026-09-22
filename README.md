@@ -11,7 +11,9 @@ Custom learning and assessment platform for Cospire.
 5. Run `npm run db:reset` to apply migrations locally.
 6. Run `npm run dev`.
 
-Read `CONTEXT.md` and `CLAUDE.md` before making changes.
+Read `CONTEXT.md` and `CLAUDE.md` before making changes. `CONTEXT.md` holds the
+current state; its history is in `docs/context/`, one file per topic, and
+`CONTEXT.md` says which file covers what.
 
 The ordered hosted-project handoff is in
 [`docs/supabase-phase-0-runbook.md`](docs/supabase-phase-0-runbook.md). The

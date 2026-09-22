@@ -67,6 +67,11 @@ here so a reviewer has one file to work from.
 - [ ] No media through the application server.
 - [ ] Server Actions are public endpoints. TypeScript parameter types are erased
       at that boundary, so every argument is validated **at runtime**.
+- [ ] `CONTEXT.md` is true after the change: the branch's **Active work** row is
+      cleared or current, and **Pending** and **Next recommended action** reflect
+      it. The detailed write-up and verification rows are in the right
+      `docs/context/` file, not appended to `CONTEXT.md`, and nothing stale was
+      left beneath a correction.
 - [ ] Every new admin, mentor or student screen has its own `loading.tsx`,
       shaped like that screen, and forms use `SubmitButton` with a pending label.
       `loading-coverage.test.ts` catches a missing file; the reviewer checks

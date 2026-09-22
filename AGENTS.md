@@ -6,7 +6,9 @@ Before planning, editing, reviewing, or running commands, read these files fully
 
 1. `CONTEXT.md`
 2. `CLAUDE.md`
-3. The source documents those files route you to for the task
+3. The file in `docs/context/` for the area your task touches (`CONTEXT.md`
+   lists which file covers what)
+4. The source documents those files route you to for the task
 
 ## The context rule - non-negotiable, every agent, every session
 

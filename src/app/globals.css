@@ -163,7 +163,7 @@ code {
 
 /* The prototype's largest heading is 24px and its body copy is 13px. That is a
    dense admin-tool scale, and it is applied faithfully here rather than
-   quietly enlarged -- but see the note in CONTEXT.md: 13px body text on a
+   quietly enlarged -- but see docs/context/completed.md: 13px body text on a
    phone is a legibility question the Client should answer deliberately, not
    one this file should decide on their behalf. */
 body {
