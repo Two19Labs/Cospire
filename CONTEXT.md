@@ -34,8 +34,9 @@ also told him again that the project is on time. See *The walkthrough call,
   quote question IDs, and parsed with no manual picking. The IDs are the
   database's own `questions.id`, shown as `Q00042`. The build follows PR #49.
 - **Report-template round links:** 7 of 8 checks pass on the deployed URL.
-  Linking works. The selector offers rounds from every process, which is what
-  the demo hit.
+  Linking works. The selector offered rounds from every process, which is
+  what the demo hit. **Fixed in PR #50**: 8/8 against a local production
+  build, CI green. Waiting for owner review and merge.
 - **Schedule:** the owner confirms it holds.
 
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
@@ -433,9 +434,13 @@ supplied it on 2026-09-22 as "the meeting yesterday".
   Group Discussion" appears in two of them, indistinguishable in the list. So
   an admin can link a component to another process's round and not know it.
   **Fix:** when the template has a programme, offer only that programme's
-  rounds; when it has none, label each option with its process name. Small,
-  no migration. Not built yet. The run was a temporary script and was deleted,
-  not committed.
+  rounds; when it has none, label each option with its process name. **Built
+  in PR #50** (`fix/report-round-options`), no migration. A round already
+  linked from another process also stays listed and labelled, so a save
+  cannot silently unlink it. `scripts/verify/report-round-links.mjs` passes
+  8/8 against a local production build on the hosted database, and CI is
+  green. It is not on the deployed URL until the PR merges; rerun the script
+  against it then.
 - **The mentor report screen's layout is broken.** "The UI is messed up, I need
   to [fix] that." Add it to the panel-by-panel re-skin list.
 - **Send the Client access to the build** so their team can sit with the flow.
@@ -2868,9 +2873,6 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   - the watermark as one small mark in the bottom left of each page, in place
     of the rotated tiling
   - a landscape PDF opened in the viewer to check how it fits
-  - the report-template round selector limited to the template's programme,
-    with options labelled by process when the template has none; linking itself
-    was rechecked 2026-09-22 and works
 
   See *The walkthrough call, 2026-09-21*.
 - **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
