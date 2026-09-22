@@ -20,6 +20,14 @@ the database is seven migrations ahead of `main`; they are additive. Nothing
 in the phase is on the deployed URL until the branch merges. See *The question
 bank, 2026-09-21*.
 
+**The owner walked the Client's founder through the build on 2026-09-21.** He
+confirmed the central question bank that PR #49 builds, and approved
+paste-a-prompt again. He raised two new pieces of scope: sub-admins, and a
+parser for the mentor's report. Two19 committed to a full-screen document viewer,
+a lighter watermark, and sending the Client access to review the flow. The owner
+also told him again that the project is on time. See *The walkthrough call,
+2026-09-21*.
+
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
 had landed, so people clicked again. Sixteen `loading.tsx` files now paint the
@@ -345,6 +353,131 @@ Two operational notes that cost time to rediscover:
 - **Migrations go through the CLI**, now that the project is linked. The MCP
   server is for reading. Phase 0 applied two migrations through MCP out of
   necessity and reconciled the history afterwards; that route is no longer needed.
+
+## The walkthrough call, 2026-09-21
+
+The owner demonstrated the build to the Client's founder: the document viewer,
+user and mentor management, the ARS process importer, a student handing in a
+round, the mentor queue and outcome recording, and the report template importer
+and mentor report. The question bank was shown running locally. The transcript is
+at `../Context/2026-09-21 walkthrough call - transcript.md`, outside git. It is an
+automatic transcript, patchy in places, and the date is inferred: the owner
+supplied it on 2026-09-22 as "the meeting yesterday".
+
+### Settled
+
+- **One central question bank.** Mocks, practice tests and anything else that
+  holds questions are built by picking from it. Students never see the bank
+  itself. The owner recommended this and the founder agreed, for a reason that
+  matters later: he wants a student eventually to see every question they have
+  attempted in a topic and how they did, which needs one repository. **This is
+  what PR #49 already builds**, so nothing changes.
+- **Paste-a-prompt confirmed again**, this time for whole ARS processes: "this
+  is good, this is convenient", and he chose it over paying for an API key. He
+  called it a good jugaad at no cost.
+- **The Client reviews flow and logic now, and the look later.** He said the
+  screens "really need to be beautified" but asked his team to comment only on
+  the technical side and the flow for now. The owner told him "the UI is not
+  worked upon at all". That understates it: the shell and the ARS form were
+  re-skinned on 2026-09-20. What is true is that the panels inside the admin and
+  mentor screens have not been reworked one by one.
+- **Autofill in application forms: the founder left it to the owner** ("you can
+  take a call"). The question was whether a student's name, email and similar
+  fields should come from their account or be typed in.
+
+### Two19 committed in the call
+
+- **A full-screen mode for the document viewer.** "That can be done easily." It
+  does not exist today.
+- **A lighter watermark.** The founder wants students to have a good reading
+  experience and said Cospire branding "and that is it" would do, since anyone
+  can put the content into a model and recreate the questions anyway. The owner
+  answered "a watermark will be there, just not this much". Today the viewer
+  tiles the **viewer's own identity** across every page at 0.16 opacity
+  (`src/features/documents/components/document-viewer.tsx`). **Open point for
+  the owner:** a brand-only watermark stops making a leaked page traceable to a
+  student, which is the whole defence the viewer's own comments describe. Fewer,
+  fainter repetitions that keep the viewer's email would meet his request
+  without losing that. Confirm with him before building a brand-only version.
+- **Landscape PDFs.** "A lot of PDFs that we have created right now are
+  horizontal." The owner said it is not a worry. **Not verified:** nobody has
+  opened a landscape PDF in the viewer to check how it fits the frame or how
+  the watermark lies on it. Test with one of their real files when they arrive.
+- **An alternative to one shared chat for question IDs.** See *Still open*.
+- **The report template's round selector failed in the demo.** While linking
+  imported components to the new Ashoka process, the owner said "some error is
+  happening, I'll look into it". PR #48, which made those links manual and
+  per component, merged the same day at 14:10 UTC. It is not clear whether the
+  demo ran before or after it deployed. **Recheck on the deployed URL** that a
+  component on an imported template can be linked to a round in a freshly
+  created process.
+- **The mentor report screen's layout is broken.** "The UI is messed up, I need
+  to [fix] that." Add it to the panel-by-panel re-skin list.
+- **Send the Client access to the build** so their team can sit with the flow.
+  The founder closed on this as the next step.
+
+### New scope, to be recorded rather than absorbed
+
+Both of these go into the clause 12 and 16.1 written amendment beside the items
+already listed under *Next recommended action*.
+
+- **Sub-admins.** Admins who can add processes but not delete anything, so not
+  everyone has master-admin control, possibly in several categories. The owner
+  asked the Client to define what each kind may do. Annexure A has three roles;
+  a fourth touches every policy that checks for an admin, so it is quoted once
+  they send the definition, not absorbed.
+- **A parser for the mentor's report.** The founder said mentors will dictate
+  their assessment into an AI tool and want to paste the result in rather than
+  fill the form by hand. The owner agreed to keep both routes, and added that
+  "wherever there is a manual entry step, we could shift that to a parser". That
+  sentence is an open-ended offer; do not let it be read as a promise covering
+  every screen.
+
+### Still open
+
+- **Question IDs.** The founder agreed each question needs a unique ID but
+  rejected the owner's suggestion of one Claude chat that everyone adds
+  questions through, because the whole team would have to share it. He
+  suggested IDs by working session, such as date, then session number, then
+  question number. The owner promised another way. **The database already
+  issues one:** `questions.id` is a `bigint` identity column, unique and
+  issued on insert, so no person or chat has to allocate numbers. What is
+  missing is a short readable form of it shown in the bank, which a document
+  or prompt could quote to build a mock from existing questions. Propose that
+  to him rather than a human-allocated scheme, which would collide the first
+  time two people work at once.
+- **"Mark as optional."** Reads as marking an application field optional or
+  required. **The form engine already supports it**: every field carries a
+  `required` flag, optional by default (`src/features/ars/form-builder.ts`).
+  Confirm that is what he meant and show him where it is.
+- **Five kinds of content.** The founder named practice documents, class
+  documents, advanced documents, question banks and mocks, and said "everything
+  is question documents" with some theory. Whether practice documents and class
+  documents are protected PDFs in the library or sets of questions built from
+  the bank has not been decided. Their samples will show which.
+
+### Owed by the Client from the call
+
+1. **Two or three documents of each of the five kinds.** A team member was
+   meant to send them already and had not been asked.
+2. **Their question lists for mocks**, so the bank can be filled and the
+   importer tried on real material. "I'll check with the team."
+3. **A definition of sub-admin permissions.**
+4. **One consolidated list of feedback on the flow.** He expects many rounds of
+   changes. The delivery plan's two working days for feedback applies, and
+   change requests beyond Annexure A go through clause 12.
+
+### What the call adds to the 1 October problem
+
+The founder asked twice, near the end, for the project to be finished on time
+and said he wants to recommend Two19 to others. The owner answered "I definitely
+think that we're on time and we will complete it", and promised to raise any
+delay early, "we won't let it happen like it happened at the start". **This is
+the second time the Client has been told verbally that the project is on track**,
+after 2026-09-16, while this file records that a tested mock engine by 1 October
+is not realistic, that the test engine has not started, and that Phase 2 cannot
+start without VdoCipher. The promise made in this call, to flag delays up
+front, is best kept by sending the clause 4.4 notice now.
 
 ## The ARS meeting, 2026-09-16
 
@@ -2562,8 +2695,8 @@ time otherwise.
 
 ## Next recommended action
 
-**First, two things that are not code**, both from the meeting of 2026-09-16 and
-both worse the longer they wait:
+**First, three things that are not code**, from the meetings of 2026-09-16 and
+2026-09-21, all worse the longer they wait:
 
 1. **Settle the 1 October promise.** The Client was told ARS and the mock test
    would be ready and tested "in the next 15 days", and that the project is
@@ -2571,7 +2704,9 @@ both worse the longer they wait:
    bank and the admin mock builder are built but unmerged (PR #49). The test
    engine, the part a student actually sits, has not started. A tested mock
    engine by 1 October is not realistic. Decide what "ready" means on that
-   date, and send the revised date in writing under clause 4.4.
+   date, and send the revised date in writing under clause 4.4. **More urgent
+   since 2026-09-21**, when the Client was told a second time that the project
+   is on time, and was promised that any delay would be raised up front.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
    items named: feedback, onboarding, offboarding, student journey trackers,
    the ARS report and the process importer. Clause 12 says quote first; clause
@@ -2579,7 +2714,12 @@ both worse the longer they wait:
    recording. **The same amendment should record that question import runs on
    paste-a-prompt**, with figures pasted in on review, rather than the
    automatic Google Docs image extraction clause 3.15 promises. The owner
-   accepted this on 2026-09-21.
+   accepted this on 2026-09-21. Add the two items the Client raised in the
+   call that day: **sub-admins**, once they define them, and **a parser for
+   the mentor's report**.
+3. **Send the Client access to the build**, as agreed at the end of the
+   2026-09-21 call, so their team can review the flow. Their feedback clock
+   starts when they have it.
 
 **The process importer is built, verified, merged and deployed** (2026-09-20,
 PR #30), together with the form engine it depends on. Two things follow from it
@@ -2642,7 +2782,14 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   is really aptitude-prep content, one click on its ARS page moves it back.
 - **The per-screen re-skin of the remaining panels.** The shell, the ARS form
   and the loading states are done; the panels inside the admin and mentor
-  screens have not been gone through one by one.
+  screens have not been gone through one by one. Start with the mentor report
+  screen, whose layout the owner called broken in the 2026-09-21 demo.
+- **From the 2026-09-21 call, all small:** a full-screen mode for the document
+  viewer; a lighter watermark, once the owner confirms with the Client whether
+  the viewer's email stays on it; a landscape PDF opened in the viewer to check
+  fit; and a recheck on the deployed URL that a component on an imported report
+  template links to a round in a new process, which failed in the demo. See *The
+  walkthrough call, 2026-09-21*.
 - **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
   manual §6.1 makes a human's call. It is used by 34 buttons across 16 files.
   Flagged in PR #46 rather than assumed; confirm or move it.
@@ -2674,6 +2821,9 @@ Owed by the Client, to chase rather than work around:
 5. **The written list of programmes**, and **what "ARS" stands for**.
 6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has
    the Client's signature date blank; file the countersigned copy if one exists.
+7. **From the 2026-09-21 call:** two or three sample documents of each of the
+   five content kinds, their question lists for mocks, a definition of
+   sub-admin permissions, and one consolidated list of flow feedback.
 
 Owner decisions:
 
