@@ -576,7 +576,8 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | Date | Work | Result / verification |
 |---|---|---|
-| 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; Production HTTP check pending deploy |
+| 2026-09-22 | Report round selector limited to the template's programme (PR #50, merged `9d6364f`, deployed) | Found in the 2026-09-21 client demo: the selector listed every round in the organisation by bare name. Now only the template programme's rounds, process-labelled options when there is no programme, and a round linked from another process kept listed and selected. No migration. `scripts/verify/report-round-links.mjs` **8/8 on the deployed URL**, counts back to baseline |
+| 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; linking and unlinking confirmed on Production on 2026-09-22 by the PR #50 check |
 | 2026-08-28 | Read agreement, proposal, delivery plan, operating manual, and technical brief | Product, scope, architecture, and source-of-truth hierarchy understood |
 | 2026-08-28 | Delivery and architecture audit | Contractual, scheduling, integrity, media, backup, security, and acceptance risks recorded below |
 | 2026-08-28 | Cross-agent context protocol | Added `CONTEXT.md`, repository `AGENTS.md`/`CLAUDE.md` entrypoints, and the mandatory parent-manual rule |
@@ -1066,7 +1067,6 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, report round options | `fix/report-round-options` | Report-template round selector offered every round in the organisation, found in the 2026-09-21 client demo | `src/features/ars-report/round-options.ts` (+ test), `src/features/ars-report/queries/get-template.ts`, `scripts/verify/report-round-links.mjs`, `CONTEXT.md` | **Built and verified; under review in PR #50.** With a programme set, only its rounds are offered, in process order; with none, each option carries its process name; a round already linked from another process stays listed and labelled so a save cannot silently unlink it. No migration. 3 new unit tests; 238/238 tests, typecheck, lint and production build pass; `report-round-links.mjs` 8/8 against a local production build on the hosted database, counts back to baseline. Not yet on the deployed URL. | 2026-09-22 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
@@ -2281,6 +2281,7 @@ time otherwise.
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 | 2026-09-20 | **ARS multi-file uploads merged and verified on Production** | PR #36 merged as `0e0f14f`; `verify` passed and Vercel Production reported success. `scripts/verify/ars-upload.mjs` passed 10/10 against the hosted project. A separate signed-in capture against `https://cospire-roan.vercel.app` returned HTTP 200 and rendered `<input type="file">` with the allowed types and size instead of the old “not available” placeholder; cleanup restored 6 courses, 5 rounds, 5 profiles and 2 documents |
 | 2026-09-22 | `scripts/verify/report-round-links.mjs` against a local production build of `fix/report-round-options`, hosted database | 8/8: process-labelled options with no programme; only the programme's rounds once set; link, unlink, and a stray linked round kept selected. The same path on the deployed URL before the fix was 7/8, failing only on the unscoped list |
+| 2026-09-22 | `scripts/verify/report-round-links.mjs` against `https://cospire-roan.vercel.app` after PR #50 deployed as `9d6364f` | 8/8. Process-labelled options with no programme, only the programme's rounds once set, link, unlink, stray linked round kept selected; counts back to baseline |
 
 ## Next recommended action
 
