@@ -506,6 +506,37 @@ plain-text mock template that is parsed directly and calls the existing
 documents: designed 2026-09-22* in `docs/context/meetings.md`. It needs no test engine, so it can run
 alongside step 2.
 
+**2c. Question import with pictures: two paths, decided by the owner
+2026-09-22.** Builds on PR #49, after it merges.
+- **No pictures in the paper:** the paste-a-prompt importer as built in PR #49,
+  unchanged.
+- **Pictures in the paper:** the platform calls Claude itself (Anthropic API,
+  server-side only, key never reaches the browser). The admin uploads a `.docx`;
+  the platform extracts its images in document order into the existing
+  `question-images` bucket, sends the text with numbered markers
+  (`[[figure:N]]`) to Claude with the same JSON contract, then adds image N's
+  path to the `questions.images` list of whichever question carries marker N.
+  Unused images and markers with no image are flagged. Review and approval
+  are unchanged. Three steps for the admin: upload, review, approve.
+- **Routing:** on upload, a `.docx` with no images goes to the paste path; one
+  with images goes to the API path. PDFs default to the paste path, with the
+  API path as best effort for figures (the agreement already limits PDF figure
+  extraction to best efforts).
+- **Limits:** images attach to the question as a set, not to a position in the
+  text, and an image inside an answer option stays flagged for retyping, as
+  today. EMF/WMF drawings from Word are not accepted by the bucket (PNG, JPEG,
+  GIF, WebP only) and are flagged for pasting by hand. No migration: the bucket
+  and `questions.images` exist in PR #49.
+- **Before the API path can be built:** (1) the Client agrees to the cost,
+  estimated at about ₹20 a paper on Claude Sonnet 5 (₹10-50 depending on model
+  and length); the question has been drafted for the owner to send; (2) an
+  Anthropic account and API key in Cospire's name, server-side env only;
+  (3) owner approval to add `@anthropic-ai/sdk` and `fflate` to
+  `package.json`. If the Client declines the cost, build the `.docx` upload
+  with automatic pictures on the paste path instead: still six steps, pictures
+  still placed. This also narrows the clause 3.15 gap (automatic Google Docs
+  image extraction), which the written amendment should describe as built.
+
 **3. Run one of Cospire's real question documents through the importer**
 as soon as they supply one. Nothing here has seen a real Cospire paper, and
 parse quality depends on the model and the document's layout.
