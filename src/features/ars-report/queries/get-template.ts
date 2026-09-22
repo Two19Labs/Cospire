@@ -2,6 +2,8 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { buildRoundOptions } from "../round-options";
+
 export interface TemplateComponent {
   id: number;
   metricHasNotes: boolean;
@@ -67,10 +69,18 @@ export async function getTemplate(templateId: number): Promise<TemplateDetail | 
   }
 
   // The programmes and rounds an admin may pick from. Both are scoped by their
-  // own policies, so an admin of another organisation sees neither.
+  // own policies, so an admin of another organisation sees neither. With a
+  // programme set, only its rounds plus any already linked are fetched; see
+  // buildRoundOptions for why the linked ones stay.
+  const linkedRoundIds = (components ?? []).flatMap((row) => (row.round_id === null ? [] : [row.round_id]));
+  let roundsQuery = supabase.from("ars_rounds").select("id, name, course_id");
+  if (template.course_id !== null) {
+    const linkedFilter = linkedRoundIds.length > 0 ? `,id.in.(${linkedRoundIds.join(",")})` : "";
+    roundsQuery = roundsQuery.or(`course_id.eq.${template.course_id}${linkedFilter}`);
+  }
   const [coursesResult, roundsResult] = await Promise.all([
     supabase.from("courses").select("id, title").order("title", { ascending: true }).limit(200),
-    supabase.from("ars_rounds").select("id, name").order("name", { ascending: true }).limit(200),
+    roundsQuery.order("sort_order", { ascending: true }).order("id", { ascending: true }).limit(200),
   ]);
 
   if (coursesResult.error) throw new Error(`Unable to load programmes: ${coursesResult.error.message}`);
@@ -103,7 +113,12 @@ export async function getTemplate(templateId: number): Promise<TemplateDetail | 
     name: template.name,
     overallLevels: toStringList(template.overall_levels),
     readinessTags: toStringList(template.readiness_tags),
-    roundOptions: roundsResult.data ?? [],
+    roundOptions: buildRoundOptions(
+      roundsResult.data ?? [],
+      new Map((coursesResult.data ?? []).map((course) => [course.id, course.title])),
+      template.course_id,
+      linkedRoundIds,
+    ),
     weightageTotal: Math.round(rows.reduce((sum, row) => sum + row.weightagePct, 0) * 100) / 100,
   };
 }

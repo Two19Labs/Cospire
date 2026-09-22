@@ -35,8 +35,8 @@ also told him again that the project is on time. See *The walkthrough call,
   database's own `questions.id`, shown as `Q00042`. The build follows PR #49.
 - **Report-template round links:** 7 of 8 checks pass on the deployed URL.
   Linking works. The selector offered rounds from every process, which is
-  what the demo hit. **Fixed in PR #50**: 8/8 against a local production
-  build, CI green. Waiting for owner review and merge.
+  what the demo hit. **Fixed in PR #50**, merged as `9d6364f` and deployed:
+  8/8 on the deployed URL.
 - **Schedule:** the owner confirms it holds.
 
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
@@ -435,12 +435,10 @@ supplied it on 2026-09-22 as "the meeting yesterday".
   an admin can link a component to another process's round and not know it.
   **Fix:** when the template has a programme, offer only that programme's
   rounds; when it has none, label each option with its process name. **Built
-  in PR #50** (`fix/report-round-options`), no migration. A round already
-  linked from another process also stays listed and labelled, so a save
-  cannot silently unlink it. `scripts/verify/report-round-links.mjs` passes
-  8/8 against a local production build on the hosted database, and CI is
-  green. It is not on the deployed URL until the PR merges; rerun the script
-  against it then.
+  in PR #50**, merged 2026-09-22 as `9d6364f` and deployed, no migration. A
+  round already linked from another process also stays listed and labelled,
+  so a save cannot silently unlink it. `scripts/verify/report-round-links.mjs`
+  passes **8/8 on the deployed URL**, counts back to baseline.
 - **The mentor report screen's layout is broken.** "The UI is messed up, I need
   to [fix] that." Add it to the panel-by-panel re-skin list.
 - **Send the Client access to the build** so their team can sit with the flow.
@@ -814,7 +812,8 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | Date | Work | Result / verification |
 |---|---|---|
-| 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; Production HTTP check pending deploy |
+| 2026-09-22 | Report round selector limited to the template's programme (PR #50, merged `9d6364f`, deployed) | Found in the 2026-09-21 client demo: the selector listed every round in the organisation by bare name. Now only the template programme's rounds, process-labelled options when there is no programme, and a round linked from another process kept listed and selected. No migration. `scripts/verify/report-round-links.mjs` **8/8 on the deployed URL**, counts back to baseline |
+| 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; linking and unlinking confirmed on Production on 2026-09-22 by the PR #50 check |
 | 2026-08-28 | Read agreement, proposal, delivery plan, operating manual, and technical brief | Product, scope, architecture, and source-of-truth hierarchy understood |
 | 2026-08-28 | Delivery and architecture audit | Contractual, scheduling, integrity, media, backup, security, and acceptance risks recorded below |
 | 2026-08-28 | Cross-agent context protocol | Added `CONTEXT.md`, repository `AGENTS.md`/`CLAUDE.md` entrypoints, and the mandatory parent-manual rule |
@@ -1556,10 +1555,6 @@ Two things follow, and both are cheap:
 The ARS upload implementation merged as PR #36 and is deployed. The report
 template document importer in PR #40 merged and is deployed. The mentor
 workflow in PR #38 merged; completed work does not remain in the table.
-
-**Stale worktree, 2026-09-22:** `C:\Cospire\Cospire-ars-report-hotfix` on
-`fix/manual-report-round-links` belongs to PR #48, which is merged. Nothing is
-active there; remove it with `scripts/wt-done.sh ars-report-hotfix`.
 
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
@@ -2771,6 +2766,8 @@ time otherwise.
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 | 2026-09-20 | **ARS multi-file uploads merged and verified on Production** | PR #36 merged as `0e0f14f`; `verify` passed and Vercel Production reported success. `scripts/verify/ars-upload.mjs` passed 10/10 against the hosted project. A separate signed-in capture against `https://cospire-roan.vercel.app` returned HTTP 200 and rendered `<input type="file">` with the allowed types and size instead of the old “not available” placeholder; cleanup restored 6 courses, 5 rounds, 5 profiles and 2 documents |
 | 2026-09-22 | Report-template round links on `https://cospire-roan.vercel.app`, throwaway admin, processes and template, deleted after | 7/8. Programme change, activation, per-component link and unlink all persist, read back from the rows. Fail: the round selector offers rounds from every process, not the template's programme. Live counts back to baseline |
+| 2026-09-22 | `scripts/verify/report-round-links.mjs` against a local production build of `fix/report-round-options`, hosted database | 8/8: process-labelled options with no programme; only the programme's rounds once set; link, unlink, and a stray linked round kept selected. The same path on the deployed URL before the fix was 7/8, failing only on the unscoped list |
+| 2026-09-22 | `scripts/verify/report-round-links.mjs` against `https://cospire-roan.vercel.app` after PR #50 deployed as `9d6364f` | 8/8. Process-labelled options with no programme, only the programme's rounds once set, link, unlink, stray linked round kept selected; counts back to baseline |
 
 ## Next recommended action
 
