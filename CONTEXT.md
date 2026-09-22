@@ -439,6 +439,11 @@ supplied it on 2026-09-22 as "the meeting yesterday".
   round already linked from another process also stays listed and labelled,
   so a save cannot silently unlink it. `scripts/verify/report-round-links.mjs`
   passes **8/8 on the deployed URL**, counts back to baseline.
+- **Skeletons looked absent on student and mentor screens** (the owner's own
+  observation during the demo). **Fixed and deployed 2026-09-22 in PR #52**
+  (`39860c6`). Every page already had a skeleton. Seven detail screens borrowed
+  their parent's, under the parent's title, and sign-in went through an extra
+  `/dashboard` round trip. See the Completed row of 2026-09-22.
 - **The mentor report screen's layout is broken.** "The UI is messed up, I need
   to [fix] that." Add it to the panel-by-panel re-skin list.
 - **Send the Client access to the build** so their team can sit with the flow.
@@ -812,6 +817,7 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-09-22 | Skeletons for every signed-in screen, and sign-in straight to the role home (`fix/loading-coverage`) | From the 2026-09-21 client demo: skeletons looked fine on admin screens but not on student and mentor ones. Every page already had a skeleton, and all three roles stream it with the first byte (measured on the deployed URL: about 0.5s to skeleton, 0.75-1.1s to content, the same for each role). The real gaps were on exactly the paths the demo took. (1) Seven detail screens had no `loading.tsx` of their own and borrowed their parent list's, under the list's title, so a click into them looked as if it had not landed: `student/reports/[id]`, `student/documents/[id]`, `mentor/reports/[id]`, `admin/documents/[id]`, `admin/report-templates/[id]`, `admin/report-templates/import`, `admin/ars/[id]/rounds/[roundId]`. Each now has its own. (2) Signing in went login, then `/dashboard`, then the role home: a second full round trip (about 0.5s) with nothing on screen, at the moment of switching to a student or mentor account. `loginAction` now redirects straight to the role home when the profile is active, and falls back to `/dashboard` otherwise; the role layout re-checks either way. `src/features/auth/loading-coverage.test.ts` fails if any admin, mentor or student page lacks its own `loading.tsx`, and was seen to fail when one was removed. `scripts/verify/loading-coverage.mjs` 11/11 on a local production build and 1/11 on the unfixed deployed URL, so it discriminates. 241/241 tests, typecheck, lint and build pass. **Merged as PR #52 (`39860c6`) and 11/11 on the deployed URL.** Not browser-tested: client-side navigation itself cannot be driven here |
 | 2026-09-22 | Report round selector limited to the template's programme (PR #50, merged `9d6364f`, deployed) | Found in the 2026-09-21 client demo: the selector listed every round in the organisation by bare name. Now only the template programme's rounds, process-labelled options when there is no programme, and a round linked from another process kept listed and selected. No migration. `scripts/verify/report-round-links.mjs` **8/8 on the deployed URL**, counts back to baseline |
 | 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; linking and unlinking confirmed on Production on 2026-09-22 by the PR #50 check |
 | 2026-08-28 | Read agreement, proposal, delivery plan, operating manual, and technical brief | Product, scope, architecture, and source-of-truth hierarchy understood |
@@ -2768,6 +2774,8 @@ time otherwise.
 | 2026-09-22 | Report-template round links on `https://cospire-roan.vercel.app`, throwaway admin, processes and template, deleted after | 7/8. Programme change, activation, per-component link and unlink all persist, read back from the rows. Fail: the round selector offers rounds from every process, not the template's programme. Live counts back to baseline |
 | 2026-09-22 | `scripts/verify/report-round-links.mjs` against a local production build of `fix/report-round-options`, hosted database | 8/8: process-labelled options with no programme; only the programme's rounds once set; link, unlink, and a stray linked round kept selected. The same path on the deployed URL before the fix was 7/8, failing only on the unscoped list |
 | 2026-09-22 | `scripts/verify/report-round-links.mjs` against `https://cospire-roan.vercel.app` after PR #50 deployed as `9d6364f` | 8/8. Process-labelled options with no programme, only the programme's rounds once set, link, unlink, stray linked round kept selected; counts back to baseline |
+| 2026-09-22 | `scripts/verify/loading-coverage.mjs`: the seven detail screens' first flushed chunk, and sign-in redirects, throwaway accounts removed after | Local production build of `fix/loading-coverage`: 11/11. Deployed URL without the change: 1/11 (only the disabled-account fallback, which is unchanged), so the check discriminates |
+| 2026-09-22 | `scripts/verify/loading-coverage.mjs` against `https://cospire-roan.vercel.app` after PR #52 deployed as `39860c6` | 11/11: all seven detail screens stream their own skeleton first; admin, mentor and student sign-in land on the role home in one redirect; disabled account still goes through `/dashboard` |
 
 ## Next recommended action
 
