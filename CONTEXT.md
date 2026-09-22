@@ -28,6 +28,16 @@ a lighter watermark, and sending the Client access to review the flow. The owner
 also told him again that the project is on time. See *The walkthrough call,
 2026-09-21*.
 
+**Decided and checked on 2026-09-22.**
+- **Watermark:** one small mark per page, in the bottom left corner.
+- **Mocks from documents:** mocks will be written as plain-text documents that
+  quote question IDs, and parsed with no manual picking. The IDs are the
+  database's own `questions.id`, shown as `Q00042`. The build follows PR #49.
+- **Report-template round links:** 7 of 8 checks pass on the deployed URL.
+  Linking works. The selector offers rounds from every process, which is what
+  the demo hit.
+- **Schedule:** the owner confirms it holds.
+
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
 had landed, so people clicked again. Sixteen `loading.tsx` files now paint the
@@ -389,28 +399,43 @@ supplied it on 2026-09-22 as "the meeting yesterday".
 
 - **A full-screen mode for the document viewer.** "That can be done easily." It
   does not exist today.
-- **A lighter watermark.** The founder wants students to have a good reading
-  experience and said Cospire branding "and that is it" would do, since anyone
-  can put the content into a model and recreate the questions anyway. The owner
-  answered "a watermark will be there, just not this much". Today the viewer
-  tiles the **viewer's own identity** across every page at 0.16 opacity
-  (`src/features/documents/components/document-viewer.tsx`). **Open point for
-  the owner:** a brand-only watermark stops making a leaked page traceable to a
-  student, which is the whole defence the viewer's own comments describe. Fewer,
-  fainter repetitions that keep the viewer's email would meet his request
-  without losing that. Confirm with him before building a brand-only version.
+- **A small watermark: decided by the owner, 2026-09-22.** The founder wants
+  students to have a good reading experience and said Cospire branding "and
+  that is it" would do, since anyone can put the content into a model and
+  recreate the questions anyway. **One small watermark per page, in the bottom
+  left corner, drawn once and not tiled.** Today the viewer tiles the watermark
+  text, rotated, across the whole page at 0.16 opacity
+  (`drawWatermark` in `src/features/documents/components/document-viewer.tsx`),
+  and that is what changes. The text stays what `composeWatermark` produces
+  unless the owner says otherwise. Accepted with the decision: one corner mark
+  can be cropped out of a screenshot, where a tiled one could not. Update the
+  comments above `drawWatermark` when it is rebuilt, since they argue for
+  tiling. Not built yet.
 - **Landscape PDFs.** "A lot of PDFs that we have created right now are
   horizontal." The owner said it is not a worry. **Not verified:** nobody has
   opened a landscape PDF in the viewer to check how it fits the frame or how
   the watermark lies on it. Test with one of their real files when they arrive.
-- **An alternative to one shared chat for question IDs.** See *Still open*.
-- **The report template's round selector failed in the demo.** While linking
-  imported components to the new Ashoka process, the owner said "some error is
-  happening, I'll look into it". PR #48, which made those links manual and
-  per component, merged the same day at 14:10 UTC. It is not clear whether the
-  demo ran before or after it deployed. **Recheck on the deployed URL** that a
-  component on an imported template can be linked to a round in a freshly
-  created process.
+- **An alternative to one shared chat for question IDs.** Designed on
+  2026-09-22; see *Question IDs and mock documents* below.
+- **The report template's round selector: rechecked 2026-09-22, 7 of 8 on the
+  deployed URL.** While linking imported components to the new Ashoka process
+  in the demo, the owner said "some error is happening" and "this should be
+  Ashoka specific". A throwaway run against `https://cospire-roan.vercel.app`
+  reproduced the demo: a template as the importer leaves it (no programme, no
+  links) was moved into a new process and activated, each component was linked
+  to a round, and one was unlinked with "No round". **All of that saves
+  correctly**, confirmed by reading the rows back, and live counts returned to
+  baseline. **The one failure is the defect the demo hit:** the selector offers
+  every round in the organisation, not the template's programme's rounds.
+  `getTemplate` in `src/features/ars-report/queries/get-template.ts` selects
+  `ars_rounds` with no `course_id` filter, and the options show a bare round
+  name. Live data has 8 rounds across 4 processes, and "Personal Interview and
+  Group Discussion" appears in two of them, indistinguishable in the list. So
+  an admin can link a component to another process's round and not know it.
+  **Fix:** when the template has a programme, offer only that programme's
+  rounds; when it has none, label each option with its process name. Small,
+  no migration. Not built yet. The run was a temporary script and was deleted,
+  not committed.
 - **The mentor report screen's layout is broken.** "The UI is messed up, I need
   to [fix] that." Add it to the panel-by-panel re-skin list.
 - **Send the Client access to the build** so their team can sit with the flow.
@@ -435,17 +460,6 @@ already listed under *Next recommended action*.
 
 ### Still open
 
-- **Question IDs.** The founder agreed each question needs a unique ID but
-  rejected the owner's suggestion of one Claude chat that everyone adds
-  questions through, because the whole team would have to share it. He
-  suggested IDs by working session, such as date, then session number, then
-  question number. The owner promised another way. **The database already
-  issues one:** `questions.id` is a `bigint` identity column, unique and
-  issued on insert, so no person or chat has to allocate numbers. What is
-  missing is a short readable form of it shown in the bank, which a document
-  or prompt could quote to build a mock from existing questions. Propose that
-  to him rather than a human-allocated scheme, which would collide the first
-  time two people work at once.
 - **"Mark as optional."** Reads as marking an application field optional or
   required. **The form engine already supports it**: every field carries a
   `required` flag, optional by default (`src/features/ars/form-builder.ts`).
@@ -467,17 +481,76 @@ already listed under *Next recommended action*.
    changes. The delivery plan's two working days for feedback applies, and
    change requests beyond Annexure A go through clause 12.
 
-### What the call adds to the 1 October problem
+### Question IDs and mock documents: designed 2026-09-22
 
-The founder asked twice, near the end, for the project to be finished on time
-and said he wants to recommend Two19 to others. The owner answered "I definitely
-think that we're on time and we will complete it", and promised to raise any
-delay early, "we won't let it happen like it happened at the start". **This is
-the second time the Client has been told verbally that the project is on track**,
-after 2026-09-16, while this file records that a tested mock engine by 1 October
-is not realistic, that the test engine has not started, and that Phase 2 cannot
-start without VdoCipher. The promise made in this call, to flag delays up
-front, is best kept by sending the clause 4.4 notice now.
+**The goal, from the owner:** the Client uses question IDs to write a mock as a
+document, pastes it in, and the mock is built with no manual picking.
+
+The founder agreed each question needs a unique ID but rejected one shared
+Claude chat that allocates them, since the whole team would have to use it,
+and suggested IDs by working session. **Neither is needed. The database
+already issues the ID**: `questions.id` is a `bigint` identity, unique, issued
+on insert and never reused, so no person or chat allocates anything and two
+people importing at once cannot collide.
+
+1. **A readable form, with no migration.** Show every question as `Q` plus its
+   id padded to five digits, such as `Q00042`, computed from `questions.id` and
+   not stored. It appears on each bank row and the question page, and bank
+   search accepts it. The parser accepts `Q42`, `q00042` and `Q-00042` as the
+   same question. An archived question keeps its ID.
+2. **Getting IDs out without copying them one by one.** The question importer's
+   approval step lists the IDs it just created, in paper order, ready to copy;
+   the bank offers "copy IDs" for the current filtered list, such as all hard
+   DILR questions. A DI set is one ID, the stimulus.
+3. **The mock document is a fixed plain-text template, parsed directly with no
+   AI model.** An ID must be matched exactly and there is nothing to interpret,
+   so a model adds only a chance of a mistyped ID. The Client writes it in a
+   Google Doc and pastes it:
+
+   ```text
+   Mock: CAT Full Length 3
+   Duration: 120
+   Negative marking: 1 on mcq, mcq_multi
+   Attempts: 1
+   Allow mobile: no
+   Proctoring: yes
+
+   Section: VARC | 40
+   Q00101, Q00102, Q00103
+   Section: DILR | 40
+   Q00210, Q00215
+   Section: QA | 40
+   Q00301, Q00302
+   ```
+
+   With one section and no minutes, the mock has overall timing only, matching
+   the builder's existing rule. A document in some other layout can still be
+   turned into this template with any model, the same copy-a-prompt habit the
+   Client already uses.
+4. **All or nothing, with a preview, like every importer here.** Refused, with
+   the line number: an ID that does not exist or is archived; a DI child's ID,
+   answered with "use the set's ID, Qnnnnn"; an ID used twice; section minutes
+   that do not add up to the duration; and any setting outside the builder's
+   own limits. A DI stimulus ID brings all its children, in order. On confirm
+   it calls the existing `save_mock` function, so there is **no new write path
+   and no migration**, and the result opens in the ordinary mock editor.
+5. **Later, and only if wanted:** paste a whole new mock paper so the questions
+   go into the bank and a draft mock is made from them in one step. This was
+   the second route discussed in the call. It still uses the central bank.
+
+Where it lives: a parser beside `src/features/question-bank/mock-form.ts`, unit
+tested, and a route at `/admin/mocks/import`. Build it after PR #49 merges, on a
+new branch. **The Client's side of it:** import questions first, then write
+mocks from the IDs the bank shows.
+
+### The schedule
+
+The founder asked twice, near the end, for the project to be finished on time.
+The owner answered "I definitely think that we're on time and we will complete
+it", and promised to raise any delay early. **The owner confirmed on 2026-09-22
+that the schedule holds and the remaining build will land on time.** No clause
+4.4 notice is planned for the build itself. VdoCipher access is a separate,
+client-owned dependency and stays listed under *External blockers*.
 
 ## The ARS meeting, 2026-09-16
 
@@ -2692,21 +2765,20 @@ time otherwise.
 | 2026-09-20 | **The gate's teardown leaked one profile per run, and only the live counts caught it** | `mentor_assignments.assigned_by` is ON DELETE RESTRICT and the accounts were deleted in creation order, so the admin was removed while its own assignment still referenced it. `deleteUser` reports that in a return value the script was not reading, so it failed **silently** and the profile count climbed 5, 6, 7 across runs. Assignments are now deleted first across all three foreign keys and the delete result is checked. The two leaked accounts were removed by hand; the count is back to 5 |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 | 2026-09-20 | **ARS multi-file uploads merged and verified on Production** | PR #36 merged as `0e0f14f`; `verify` passed and Vercel Production reported success. `scripts/verify/ars-upload.mjs` passed 10/10 against the hosted project. A separate signed-in capture against `https://cospire-roan.vercel.app` returned HTTP 200 and rendered `<input type="file">` with the allowed types and size instead of the old “not available” placeholder; cleanup restored 6 courses, 5 rounds, 5 profiles and 2 documents |
+| 2026-09-22 | Report-template round links on `https://cospire-roan.vercel.app`, throwaway admin, processes and template, deleted after | 7/8. Programme change, activation, per-component link and unlink all persist, read back from the rows. Fail: the round selector offers rounds from every process, not the template's programme. Live counts back to baseline |
 
 ## Next recommended action
 
 **First, three things that are not code**, from the meetings of 2026-09-16 and
-2026-09-21, all worse the longer they wait:
+2026-09-21:
 
-1. **Settle the 1 October promise.** The Client was told ARS and the mock test
-   would be ready and tested "in the next 15 days", and that the project is
-   otherwise on track. As of 2026-09-22, ARS is done and deployed. The question
-   bank and the admin mock builder are built but unmerged (PR #49). The test
-   engine, the part a student actually sits, has not started. A tested mock
-   engine by 1 October is not realistic. Decide what "ready" means on that
-   date, and send the revised date in writing under clause 4.4. **More urgent
-   since 2026-09-21**, when the Client was told a second time that the project
-   is on time, and was promised that any delay would be raised up front.
+1. **The 1 October commitment: the owner confirms it holds (2026-09-22).** The
+   Client was told ARS and the mock test would be ready and tested "in the next
+   15 days", and on 2026-09-21 that the project is on time. ARS is done and
+   deployed. The question bank and the admin mock builder are in PR #49. The
+   test engine is next. If that changes, the owner promised the Client on
+   2026-09-21 to raise any delay up front, and clause 4.4 wants it in writing
+   at the time.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
    items named: feedback, onboarding, offboarding, student journey trackers,
    the ARS report and the process importer. Clause 12 says quote first; clause
@@ -2765,6 +2837,13 @@ things the question bank has already fixed for it:
 Then **attach a mock to the ARS aptitude round**, replacing the
 `pendingFeature: "test-engine"` placeholder.
 
+**2b. Build mocks from documents that quote question IDs**, after PR #49
+merges, on a new branch. Readable IDs (`Q00042`), copyable ID lists, and a
+plain-text mock template that is parsed directly and calls the existing
+`save_mock`. No migration. The full design is under *Question IDs and mock
+documents, designed 2026-09-22*. It needs no test engine, so it can run
+alongside step 2.
+
 **3. Run one of Cospire's real question documents through the importer**
 as soon as they supply one. Nothing here has seen a real Cospire paper, and
 parse quality depends on the model and the document's layout.
@@ -2784,12 +2863,16 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   and the loading states are done; the panels inside the admin and mentor
   screens have not been gone through one by one. Start with the mentor report
   screen, whose layout the owner called broken in the 2026-09-21 demo.
-- **From the 2026-09-21 call, all small:** a full-screen mode for the document
-  viewer; a lighter watermark, once the owner confirms with the Client whether
-  the viewer's email stays on it; a landscape PDF opened in the viewer to check
-  fit; and a recheck on the deployed URL that a component on an imported report
-  template links to a round in a new process, which failed in the demo. See *The
-  walkthrough call, 2026-09-21*.
+- **From the 2026-09-21 call, all small, none built yet:**
+  - a full-screen mode for the document viewer
+  - the watermark as one small mark in the bottom left of each page, in place
+    of the rotated tiling
+  - a landscape PDF opened in the viewer to check how it fits
+  - the report-template round selector limited to the template's programme,
+    with options labelled by process when the template has none; linking itself
+    was rechecked 2026-09-22 and works
+
+  See *The walkthrough call, 2026-09-21*.
 - **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
   manual §6.1 makes a human's call. It is used by 34 buttons across 16 files.
   Flagged in PR #46 rather than assumed; confirm or move it.
