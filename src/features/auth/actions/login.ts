@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { isAppRole, roleHomePath } from "../types";
+
 import type { LoginState } from "./login-state";
 
 export async function loginAction(
@@ -28,16 +30,29 @@ export async function loginAction(
   // variables. redirect() stays outside the try because it signals success by
   // throwing, and catching that would break the navigation.
   let failure: string | null = null;
+  let destination = "/dashboard";
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
     });
 
     if (error) {
       failure = "The email or password is incorrect.";
+    } else if (data.user) {
+      // Straight to the role's home rather than through /dashboard, which costs
+      // a second full round trip with nothing on screen. Anything unexpected --
+      // no profile, inactive, unknown role -- still goes through /dashboard, and
+      // the role layout re-checks the session either way, so this is a shortcut
+      // and never the authority.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, status")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (profile?.status === "active" && isAppRole(profile.role)) destination = roleHomePath(profile.role);
     }
   } catch {
     failure =
@@ -49,5 +64,5 @@ export async function loginAction(
     return { error: failure };
   }
 
-  redirect("/dashboard");
+  redirect(destination);
 }
