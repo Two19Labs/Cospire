@@ -67,6 +67,10 @@ here so a reviewer has one file to work from.
 - [ ] No media through the application server.
 - [ ] Server Actions are public endpoints. TypeScript parameter types are erased
       at that boundary, so every argument is validated **at runtime**.
+- [ ] Every new admin, mentor or student screen has its own `loading.tsx`,
+      shaped like that screen, and forms use `SubmitButton` with a pending label.
+      `loading-coverage.test.ts` catches a missing file; the reviewer checks
+      the shape is the screen's own and not a copy of its parent's.
 
 ---
 
