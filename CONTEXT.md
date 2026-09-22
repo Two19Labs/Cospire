@@ -10,6 +10,7 @@ this file and not found here is in one of these; find it with
 
 | File | Holds |
 |---|---|
+| `docs/agent-map.md` | **Start here if unsure where to look.** Diagrams of where everything lives, where to look by task, the route every piece of work takes, and what enforces it |
 | `docs/context/completed.md` | The Completed log and every detailed write-up behind it: the question bank, the process importer, the re-skin, the Phase 5a exit gate, the 1.3-second investigation, mistakes worth keeping |
 | `docs/context/meetings.md` | Client calls and what they settled: 2026-09-21 walkthrough (with the question-ID mock document design), 2026-09-16 ARS meeting, the Masters' Union process, content organisation, the 2026-09-08 sequencing change |
 | `docs/context/supabase.md` | Hosted Supabase state: applied migrations, Auth configuration, users, advisors, traps |

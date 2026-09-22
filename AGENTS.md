@@ -10,6 +10,9 @@ Before planning, editing, reviewing, or running commands, read these files fully
    lists which file covers what)
 4. The source documents those files route you to for the task
 
+`docs/agent-map.md` diagrams where everything lives, where to look by task, and
+the route every piece of work takes. Use it when unsure where to look.
+
 ## The context rule - non-negotiable, every agent, every session
 
 `CONTEXT.md` is the single source of truth for the state of this project. It is

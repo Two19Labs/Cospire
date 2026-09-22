@@ -1,7 +1,8 @@
 # Cospire LMS Repository Entry Point
 
 Read `CONTEXT.md` first, in full, and follow the context rule below at the start
-and the end of every task.
+and the end of every task. `docs/agent-map.md` diagrams where everything lives
+and the route a piece of work takes; use it when unsure where to look.
 
 Then read the full operating manual at `../CLAUDE.md`. The parent manual defines
 how this repository is built; the signed agreement in `../Context/` defines what
