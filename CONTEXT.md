@@ -1346,6 +1346,10 @@ The ARS upload implementation merged as PR #36 and is deployed. The report
 template document importer in PR #40 merged and is deployed. The mentor
 workflow in PR #38 merged; completed work does not remain in the table.
 
+**Stale worktree, 2026-09-22:** `C:\Cospire\Cospire-ars-report-hotfix` on
+`fix/manual-report-round-links` belongs to PR #48, which is merged. Nothing is
+active there; remove it with `scripts/wt-done.sh ars-report-hotfix`.
+
 **What that branch left behind, which the next agent inherits rather than
 discovers:** the student process view and the multi-step round renderer are
 built and merged, and the mentor review queue, review detail, private upload
@@ -2563,8 +2567,8 @@ both worse the longer they wait:
 
 1. **Settle the 1 October promise.** The Client was told ARS and the mock test
    would be ready and tested "in the next 15 days", and that the project is
-   otherwise on track. As of 2026-09-21, ARS is done and deployed. The question
-   bank is built but unmerged. The mock builder is not built, and the test
+   otherwise on track. As of 2026-09-22, ARS is done and deployed. The question
+   bank and the admin mock builder are built but unmerged (PR #49). The test
    engine, the part a student actually sits, has not started. A tested mock
    engine by 1 October is not realistic. Decide what "ready" means on that
    date, and send the revised date in writing under clause 4.4.
@@ -2603,14 +2607,11 @@ and verified against the deployed URL.
 
 ### What to build next, in the order it should be taken
 
-**1. The mock builder (Phase 3, PR 4)**, on `feat/question-bank`. It creates
-`mocks`, `mock_sections` (with `mock_section_id` NOT NULL on
-`mock_questions`, and a section duration that may be null for "no sectional
-limit", which is the MU aptitude round), and the per-mock settings: negative
-marking and the types it applies to, the attempt limit, `allow_mobile` and
-`proctoring_enabled`. Questions are picked from the bank; archived ones are
-not offered. The work order is PR 4, then **open the pull request for PRs
-1-4** and merge, which brings `main` back in step with the database.
+**1. Review and merge PR #49** (Phase 3, parts 1-4, including the mock
+builder). It is mergeable, CI and Vercel are green as of 2026-09-22, and it
+already contains everything on `main`. Merging brings `main` back in step with
+the database, which is seven additive migrations ahead of it. No review has
+been recorded on it yet. Regenerate types after merge per operating manual §4.4.
 
 **2. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the
