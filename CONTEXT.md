@@ -1,9 +1,10 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-21 (Asia/Calcutta)
+Last updated: 2026-09-22 (Asia/Calcutta)
 
-**The question bank (Phase 3) is built on `feat/question-bank`, pushed through
-PR 3 and NOT merged, 2026-09-21.**
+**The question bank (Phase 3) is built on `feat/question-bank` and is under
+review in PR #49, opened 2026-09-21 and not yet merged. All CI and Vercel
+preview checks are green as verified 2026-09-22.**
 
 - PR 1: schema, with answer keys in their own table that has no student
   policy, and the numerical normaliser. 41/41 SQL.
@@ -108,7 +109,8 @@ CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
 `docs/review-checklist.md`. The ARS report merged as PR #28 (`17cc78d`), which is
 the current `main` and is **deployed to Production**: the report database, the
 mentor and student screens, admin template authoring, and the corrections a
-review found. **No pull request is open.**
+review found. That was the state at the time; **PR #49 is now the only open
+feature pull request** and contains the complete question-bank phase.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -259,8 +261,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **The question bank is awaiting its review pull request.** Every earlier pull
-  request is merged or closed, and `main` is at `5044c0a`. PR #35 was **closed as
+- **Question-bank PR #49 is open and awaiting owner review/merge.** It targets
+  `main` from `feat/question-bank`, is currently mergeable, and its context,
+  verify, Vercel preview and Vercel comments checks are green as of 2026-09-22.
+  Every earlier pull request is merged or closed, and `main` is at `5044c0a`.
+  PR #35 was **closed as
   superseded** -- it corrected this file on 2026-09-20 and was overtaken by
   #36-#42, so its corrections were restated against current `main` instead of
   resolved through a stale conflict.
@@ -273,8 +278,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   buttons. PR #48 makes ARS report-component round links manual. Each feature
   has a documentation follow-up where the context gate required one (#37, #39,
   #41).
-- **The hosted project is 4 migrations ahead of `main`**: 19 on `main`, 23
-  applied, the extra four being the question bank's, on
+- **The hosted project is 7 migrations ahead of `main`**: 19 on `main`, 26
+  applied, the extra seven being the question bank's, on
   `feat/question-bank` and applied 2026-09-21. They are additive and nothing
   deployed reads them, so this is safe (see *Migration safety*). `main` and
   the database come back into step when that branch merges.
@@ -304,8 +309,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   direction.
 - **`origin` carries `main` and `feat/question-bank` only**, checked with
   `git ls-remote --heads origin` on 2026-09-21. The PR #35 branch is gone.
-  `feat/question-bank` holds PRs 1-3 of the question bank, with no pull
-  request opened yet; see *Active work*.
+  `feat/question-bank` holds the complete question-bank work from parts 1-4
+  and is the head of open PR #49; see *Active work*.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -318,7 +323,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
   and auth configuration are applied. All nineteen migrations on `main` are
-  present on both sides, plus the four question bank migrations from
+  present on both sides, plus the seven question bank migrations from
   `feat/question-bank`, applied 2026-09-21 ahead of merge.
 
 ### Tooling available to an agent in this repository
@@ -1334,7 +1339,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Codex, question bank pickup | `feat/question-bank` | Phase 3 PR 4: admin-only mock builder, then one review PR for question-bank parts 1-4 | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `src/features/auth/components/app-nav.tsx`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*`, `CONTEXT.md` | **Built and verified; preparing the review PR.** Owner decided sectional durations sum exactly to full duration; one implicit section with null duration means no sectional limit. Three additive migrations applied. Mock probe 9/9; mock HTTP 10/10; authoring regression 36/36; typecheck, lint, 342 tests and clean production build pass. The first build attempt failed only because a moved stale `.next` tree remained inside `coverage`; moving it outside the repository produced the clean passing build. Security advisor has only the two pre-existing Auth warnings. | 2026-09-21 |
+| Codex, question bank pickup | `feat/question-bank` | Phase 3 parts 1-4: question-bank schema, authoring, importer and admin-only mock builder | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `src/features/auth/components/app-nav.tsx`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*`, `CONTEXT.md` | **Built, verified, pushed and under review in PR #49; owner review/merge is the only remaining step.** PR is mergeable and all CI/Vercel checks are green as of 2026-09-22. Owner decided sectional durations sum exactly to full duration; one implicit section with null duration means no sectional limit. Seven additive question-bank migrations are applied, three of them for the mock builder. Mock probe 9/9; mock HTTP 10/10; authoring regression 36/36; importer 25/25; typecheck, lint, 342 tests and clean production build pass. The first build attempt failed only because a moved stale `.next` tree remained inside `coverage`; moving it outside the repository produced the clean passing build. Security advisor has only the two pre-existing Auth warnings. | 2026-09-22 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
