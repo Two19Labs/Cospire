@@ -90,3 +90,21 @@ Context-Exempt: <why this change needs no context update>
 
 Reaching for that trailer to avoid writing three sentences is how the file goes
 stale again. It is there for the change that truly records nothing.
+
+## Every new screen ships with its skeleton
+
+A new `page.tsx` under `src/app/admin`, `src/app/mentor` or `src/app/student`
+gets its own `loading.tsx` in the same folder, **in the same change**. Shape it
+like the screen it stands in for: `ShellSkeleton` from
+`src/features/auth/components/shell-skeleton.tsx`, with the screen's own title
+when the title is fixed, no title when it is the record's name (the title bar
+then shimmers), and panels matching the screen's layout.
+
+Never let a new screen fall back to its parent's skeleton. That was the defect
+the Client saw in the 2026-09-21 demo: a click into a detail screen showed the
+list's skeleton under the list's title, so it looked as though the click had not
+landed. Forms submit through `SubmitButton` from `src/shared/ui/submit-button.tsx`
+with a `pendingLabel`, so a submit never looks ignored either.
+
+`src/features/auth/loading-coverage.test.ts` fails the build when a role page has
+no `loading.tsx` of its own. Do not add an exemption to it; add the skeleton.
