@@ -37,15 +37,14 @@ this file and not found here is in one of these; find it with
     paste-a-prompt import with review, and the admin mock builder. Its seven
     migrations were already applied, so `main` and the database are back in
     step. Details in `docs/context/completed.md`.
-- **The seven review findings on the question bank are fixed** on
-  `fix/mock-builder-review`, all in the mock builder: section slots map by
+- **The seven review findings on the question bank are fixed, merged and
+  deployed** (PR #55, `cc015e0`), all in the mock builder: section slots map by
   slot rather than position; a question archived after selection is listed and
   removable instead of locking its mock; the picker reads the section embed as
   the object PostgREST returns; a missing section field is refused instead of
   filed into section one; childless DI sets are shown and refused instead of
   filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
-  from a question are deleted from Storage. 19/19 over HTTP against a local
-  production build; not on the deployed URL until the pull request merges.
+  from a question are deleted from Storage. **19/19 on the deployed URL.**
 - **Next:** the test engine (Phase 4), then mocks built from documents that
   quote question IDs. See *Next recommended action*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
