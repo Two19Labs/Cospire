@@ -25,7 +25,7 @@ interface NavItem {
   // "/admin/users" and two items light up at once.
   exact?: boolean;
   href: string;
-  icon: "book" | "document" | "grid" | "home" | "people" | "queue" | "template";
+  icon: "book" | "document" | "grid" | "home" | "people" | "question" | "queue" | "template";
   label: string;
 }
 
@@ -36,6 +36,8 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
       { href: "/admin", icon: "home", label: "Overview", exact: true },
       { href: "/admin/courses", icon: "book", label: "Programmes" },
       { href: "/admin/ars", icon: "grid", label: "ARS" },
+      { href: "/admin/questions", icon: "question", label: "Question bank" },
+      { href: "/admin/mocks", icon: "grid", label: "Mock tests" },
       { href: "/admin/users", icon: "people", label: "Users" },
       { href: "/admin/documents", icon: "document", label: "Documents" },
       { href: "/admin/report-templates", icon: "template", label: "Report templates" },
@@ -43,7 +45,10 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
   },
   mentor: {
     title: "Mentor",
-    items: [{ href: "/mentor", icon: "queue", label: "Review queue", exact: true }],
+    items: [
+      { href: "/mentor", icon: "queue", label: "Review queue", exact: true },
+      { href: "/mentor/questions", icon: "question", label: "Question bank" },
+    ],
   },
   student: {
     title: "Student",
@@ -109,6 +114,14 @@ function Icon({ name }: { name: NavItem["icon"] }) {
         <rect height="4.4" rx="1" width="4.4" x="9" y="2.6" />
         <rect height="4.4" rx="1" width="4.4" x="2.6" y="9" />
         <rect height="4.4" rx="1" width="4.4" x="9" y="9" />
+      </svg>
+    );
+  }
+  if (name === "question") {
+    return (
+      <svg {...common}>
+        <circle cx="8" cy="8" r="5.5" />
+        <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4M8 11.3v.1" />
       </svg>
     );
   }

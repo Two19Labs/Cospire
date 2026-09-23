@@ -2,6 +2,43 @@
 
 Last updated: 2026-09-22 (Asia/Calcutta)
 
+**The question bank (Phase 3) is built on `feat/question-bank` and is under
+review in PR #49, opened 2026-09-21 and not yet merged. All CI and Vercel
+preview checks are green as verified 2026-09-22.**
+
+- PR 1: schema, with answer keys in their own table that has no student
+  policy, and the numerical normaliser. 41/41 SQL.
+- PR 2: authoring for admins and mentors, the sections list, images by
+  upload or paste, archive. 36/36 over HTTP.
+- PR 3: paste-a-prompt import with per-question review and approval.
+  25/25 over HTTP.
+- PR 4: admin-only mock builder, exact-sum sectional timing, per-mock controls
+  and whole-DI selection. 9/9 SQL and 10/10 over HTTP.
+
+**All seven question-bank migrations are applied** to the hosted project, so
+the database is seven migrations ahead of `main`; they are additive. Nothing
+in the phase is on the deployed URL until the branch merges. See *The question
+bank, 2026-09-21*.
+
+**The owner walked the Client's founder through the build on 2026-09-21.** He
+confirmed the central question bank that PR #49 builds, and approved
+paste-a-prompt again. He raised two new pieces of scope: sub-admins, and a
+parser for the mentor's report. Two19 committed to a full-screen document viewer,
+a lighter watermark, and sending the Client access to review the flow. The owner
+also told him again that the project is on time. See *The walkthrough call,
+2026-09-21*.
+
+**Decided and checked on 2026-09-22.**
+- **Watermark:** one small mark per page, in the bottom left corner.
+- **Mocks from documents:** mocks will be written as plain-text documents that
+  quote question IDs, and parsed with no manual picking. The IDs are the
+  database's own `questions.id`, shown as `Q00042`. The build follows PR #49.
+- **Report-template round links:** 7 of 8 checks pass on the deployed URL.
+  Linking works. The selector offered rounds from every process, which is
+  what the demo hit. **Fixed in PR #50**, merged as `9d6364f` and deployed:
+  8/8 on the deployed URL.
+- **Schedule:** the owner confirms it holds.
+
 **Every signed-in screen has a loading state, 2026-09-21.** Clicking a nav item
 used to leave the old page fully drawn for over a second with no sign the click
 had landed, so people clicked again. Sixteen `loading.tsx` files now paint the
@@ -91,7 +128,8 @@ CI on it is green. The review contract merged as PR #27 (`6a39649`), adding
 `docs/review-checklist.md`. The ARS report merged as PR #28 (`17cc78d`), which is
 the current `main` and is **deployed to Production**: the report database, the
 mentor and student screens, admin template authoring, and the corrections a
-review found. **No pull request is open.**
+review found. That was the state at the time; **PR #49 is now the only open
+feature pull request** and contains the complete question-bank phase.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -242,22 +280,28 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Nothing is awaiting merge.** Every pull request this project has raised is
-  merged or closed, and `main` is at `56479e0`. PR #35 was **closed as
+- **Question-bank PR #49 is open and awaiting owner review/merge.** It targets
+  `main` from `feat/question-bank`, is currently mergeable, and its context,
+  verify, Vercel preview and Vercel comments checks are green as of 2026-09-22.
+  Every earlier pull request is merged or closed, and `main` is at `5044c0a`.
+  PR #35 was **closed as
   superseded** -- it corrected this file on 2026-09-20 and was overtaken by
   #36-#42, so its corrections were restated against current `main` instead of
   resolved through a stale conflict.
-- **Everything through PR #46 is merged and deployed.** The run of 2026-09-20
+- **Everything through PR #48 is merged and deployed.** The run of 2026-09-20
   and 21, in order: **#36** private multi-file ARS uploads, **#38** the mentor
   review workflow, **#40** the report-template document importer, **#42** the
   first separation of Programmes and ARS administration, **#43** the Phase 5a
   exit gate, **#44** `courses.kind` and the real separation, **#45** deleting
   the duplicated ARS routes #42 left behind, **#46** loading states and pending
-  buttons. Each feature has a documentation follow-up where the context gate
-  required one (#37, #39, #41).
-- **Code and database are in step: 19 migrations on `main` and the same 19
-  applied to the hosted project**, versions matching filenames. The most recent
-  is `20260920190000_separate_programmes_from_ars_processes`.
+  buttons. PR #48 makes ARS report-component round links manual. Each feature
+  has a documentation follow-up where the context gate required one (#37, #39,
+  #41).
+- **The hosted project is 7 migrations ahead of `main`**: 19 on `main`, 26
+  applied, the extra seven being the question bank's, on
+  `feat/question-bank` and applied 2026-09-21. They are additive and nothing
+  deployed reads them, so this is safe (see *Migration safety*). `main` and
+  the database come back into step when that branch merges.
 - Two things worth keeping from the earlier merge history, because both cost
   time. **Do not delete the base branch of a stacked pull request**: merging #24
   with `--delete-branch` closed #25 rather than retargeting it, and reopening
@@ -274,18 +318,18 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 - **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
   the mentor and student screens, **admin template authoring**, pagination, and
   the fix-forward migration `20260918153000`.
-- **Code and database are in step: 18 migrations on `main` and the same 18
-  applied to the hosted project.** PR #36 merged as `0e0f14f` and Production
-  deployed that commit. Its multi-file Storage authorization is live.
+- PR #36 merged as `0e0f14f` and Production deployed that commit. Its
+  multi-file Storage authorization is live.
 - **The context gate fails on `main` for any pull request that describes itself as
   open.** It did so for #24: the file merged saying #24 was open, which by then it
   was not. `verify` passed and only `context` failed. The fix is the follow-up
   commit that records the merge, which is what this entry is; the alternative,
   claiming a merge before it happens, would make the gate lie in the worse
   direction.
-- **`origin` carries `main` and `docs/context-truth-0920` only**, the second
-  being PR #35 above. Every other feature branch has been merged and deleted;
-  checked with `git ls-remote --heads origin` on 2026-09-20.
+- **`origin` carries `main` and `feat/question-bank` only**, checked with
+  `git ls-remote --heads origin` on 2026-09-21. The PR #35 branch is gone.
+  `feat/question-bank` holds the complete question-bank work from parts 1-4
+  and is the head of open PR #49; see *Active work*.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -297,8 +341,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   plan, which does not permit commercial use; the owner has chosen to build on it
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
-  and auth configuration are both applied and in sync with this repository: all
-  eighteen migrations present on both sides, re-checked 2026-09-20.
+  and auth configuration are applied. All nineteen migrations on `main` are
+  present on both sides, plus the seven question bank migrations from
+  `feat/question-bank`, applied 2026-09-21 ahead of merge.
 
 ### Tooling available to an agent in this repository
 
@@ -319,6 +364,201 @@ Two operational notes that cost time to rediscover:
 - **Migrations go through the CLI**, now that the project is linked. The MCP
   server is for reading. Phase 0 applied two migrations through MCP out of
   necessity and reconciled the history afterwards; that route is no longer needed.
+
+## The walkthrough call, 2026-09-21
+
+The owner demonstrated the build to the Client's founder: the document viewer,
+user and mentor management, the ARS process importer, a student handing in a
+round, the mentor queue and outcome recording, and the report template importer
+and mentor report. The question bank was shown running locally. The transcript is
+at `../Context/2026-09-21 walkthrough call - transcript.md`, outside git. It is an
+automatic transcript, patchy in places, and the date is inferred: the owner
+supplied it on 2026-09-22 as "the meeting yesterday".
+
+### Settled
+
+- **One central question bank.** Mocks, practice tests and anything else that
+  holds questions are built by picking from it. Students never see the bank
+  itself. The owner recommended this and the founder agreed, for a reason that
+  matters later: he wants a student eventually to see every question they have
+  attempted in a topic and how they did, which needs one repository. **This is
+  what PR #49 already builds**, so nothing changes.
+- **Paste-a-prompt confirmed again**, this time for whole ARS processes: "this
+  is good, this is convenient", and he chose it over paying for an API key. He
+  called it a good jugaad at no cost.
+- **The Client reviews flow and logic now, and the look later.** He said the
+  screens "really need to be beautified" but asked his team to comment only on
+  the technical side and the flow for now. The owner told him "the UI is not
+  worked upon at all". That understates it: the shell and the ARS form were
+  re-skinned on 2026-09-20. What is true is that the panels inside the admin and
+  mentor screens have not been reworked one by one.
+- **Autofill in application forms: the founder left it to the owner** ("you can
+  take a call"). The question was whether a student's name, email and similar
+  fields should come from their account or be typed in.
+
+### Two19 committed in the call
+
+- **A full-screen mode for the document viewer.** "That can be done easily." It
+  does not exist today.
+- **A small watermark: decided by the owner, 2026-09-22.** The founder wants
+  students to have a good reading experience and said Cospire branding "and
+  that is it" would do, since anyone can put the content into a model and
+  recreate the questions anyway. **One small watermark per page, in the bottom
+  left corner, drawn once and not tiled.** Today the viewer tiles the watermark
+  text, rotated, across the whole page at 0.16 opacity
+  (`drawWatermark` in `src/features/documents/components/document-viewer.tsx`),
+  and that is what changes. The text stays what `composeWatermark` produces
+  unless the owner says otherwise. Accepted with the decision: one corner mark
+  can be cropped out of a screenshot, where a tiled one could not. Update the
+  comments above `drawWatermark` when it is rebuilt, since they argue for
+  tiling. Not built yet.
+- **Landscape PDFs.** "A lot of PDFs that we have created right now are
+  horizontal." The owner said it is not a worry. **Not verified:** nobody has
+  opened a landscape PDF in the viewer to check how it fits the frame or how
+  the watermark lies on it. Test with one of their real files when they arrive.
+- **An alternative to one shared chat for question IDs.** Designed on
+  2026-09-22; see *Question IDs and mock documents* below.
+- **The report template's round selector: rechecked 2026-09-22, 7 of 8 on the
+  deployed URL.** While linking imported components to the new Ashoka process
+  in the demo, the owner said "some error is happening" and "this should be
+  Ashoka specific". A throwaway run against `https://cospire-roan.vercel.app`
+  reproduced the demo: a template as the importer leaves it (no programme, no
+  links) was moved into a new process and activated, each component was linked
+  to a round, and one was unlinked with "No round". **All of that saves
+  correctly**, confirmed by reading the rows back, and live counts returned to
+  baseline. **The one failure is the defect the demo hit:** the selector offers
+  every round in the organisation, not the template's programme's rounds.
+  `getTemplate` in `src/features/ars-report/queries/get-template.ts` selects
+  `ars_rounds` with no `course_id` filter, and the options show a bare round
+  name. Live data has 8 rounds across 4 processes, and "Personal Interview and
+  Group Discussion" appears in two of them, indistinguishable in the list. So
+  an admin can link a component to another process's round and not know it.
+  **Fix:** when the template has a programme, offer only that programme's
+  rounds; when it has none, label each option with its process name. **Built
+  in PR #50**, merged 2026-09-22 as `9d6364f` and deployed, no migration. A
+  round already linked from another process also stays listed and labelled,
+  so a save cannot silently unlink it. `scripts/verify/report-round-links.mjs`
+  passes **8/8 on the deployed URL**, counts back to baseline.
+- **Skeletons looked absent on student and mentor screens** (the owner's own
+  observation during the demo). **Fixed and deployed 2026-09-22 in PR #52**
+  (`39860c6`). Every page already had a skeleton. Seven detail screens borrowed
+  their parent's, under the parent's title, and sign-in went through an extra
+  `/dashboard` round trip. See the Completed row of 2026-09-22.
+- **The mentor report screen's layout is broken.** "The UI is messed up, I need
+  to [fix] that." Add it to the panel-by-panel re-skin list.
+- **Send the Client access to the build** so their team can sit with the flow.
+  The founder closed on this as the next step.
+
+### New scope, to be recorded rather than absorbed
+
+Both of these go into the clause 12 and 16.1 written amendment beside the items
+already listed under *Next recommended action*.
+
+- **Sub-admins.** Admins who can add processes but not delete anything, so not
+  everyone has master-admin control, possibly in several categories. The owner
+  asked the Client to define what each kind may do. Annexure A has three roles;
+  a fourth touches every policy that checks for an admin, so it is quoted once
+  they send the definition, not absorbed.
+- **A parser for the mentor's report.** The founder said mentors will dictate
+  their assessment into an AI tool and want to paste the result in rather than
+  fill the form by hand. The owner agreed to keep both routes, and added that
+  "wherever there is a manual entry step, we could shift that to a parser". That
+  sentence is an open-ended offer; do not let it be read as a promise covering
+  every screen.
+
+### Still open
+
+- **"Mark as optional."** Reads as marking an application field optional or
+  required. **The form engine already supports it**: every field carries a
+  `required` flag, optional by default (`src/features/ars/form-builder.ts`).
+  Confirm that is what he meant and show him where it is.
+- **Five kinds of content.** The founder named practice documents, class
+  documents, advanced documents, question banks and mocks, and said "everything
+  is question documents" with some theory. Whether practice documents and class
+  documents are protected PDFs in the library or sets of questions built from
+  the bank has not been decided. Their samples will show which.
+
+### Owed by the Client from the call
+
+1. **Two or three documents of each of the five kinds.** A team member was
+   meant to send them already and had not been asked.
+2. **Their question lists for mocks**, so the bank can be filled and the
+   importer tried on real material. "I'll check with the team."
+3. **A definition of sub-admin permissions.**
+4. **One consolidated list of feedback on the flow.** He expects many rounds of
+   changes. The delivery plan's two working days for feedback applies, and
+   change requests beyond Annexure A go through clause 12.
+
+### Question IDs and mock documents: designed 2026-09-22
+
+**The goal, from the owner:** the Client uses question IDs to write a mock as a
+document, pastes it in, and the mock is built with no manual picking.
+
+The founder agreed each question needs a unique ID but rejected one shared
+Claude chat that allocates them, since the whole team would have to use it,
+and suggested IDs by working session. **Neither is needed. The database
+already issues the ID**: `questions.id` is a `bigint` identity, unique, issued
+on insert and never reused, so no person or chat allocates anything and two
+people importing at once cannot collide.
+
+1. **A readable form, with no migration.** Show every question as `Q` plus its
+   id padded to five digits, such as `Q00042`, computed from `questions.id` and
+   not stored. It appears on each bank row and the question page, and bank
+   search accepts it. The parser accepts `Q42`, `q00042` and `Q-00042` as the
+   same question. An archived question keeps its ID.
+2. **Getting IDs out without copying them one by one.** The question importer's
+   approval step lists the IDs it just created, in paper order, ready to copy;
+   the bank offers "copy IDs" for the current filtered list, such as all hard
+   DILR questions. A DI set is one ID, the stimulus.
+3. **The mock document is a fixed plain-text template, parsed directly with no
+   AI model.** An ID must be matched exactly and there is nothing to interpret,
+   so a model adds only a chance of a mistyped ID. The Client writes it in a
+   Google Doc and pastes it:
+
+   ```text
+   Mock: CAT Full Length 3
+   Duration: 120
+   Negative marking: 1 on mcq, mcq_multi
+   Attempts: 1
+   Allow mobile: no
+   Proctoring: yes
+
+   Section: VARC | 40
+   Q00101, Q00102, Q00103
+   Section: DILR | 40
+   Q00210, Q00215
+   Section: QA | 40
+   Q00301, Q00302
+   ```
+
+   With one section and no minutes, the mock has overall timing only, matching
+   the builder's existing rule. A document in some other layout can still be
+   turned into this template with any model, the same copy-a-prompt habit the
+   Client already uses.
+4. **All or nothing, with a preview, like every importer here.** Refused, with
+   the line number: an ID that does not exist or is archived; a DI child's ID,
+   answered with "use the set's ID, Qnnnnn"; an ID used twice; section minutes
+   that do not add up to the duration; and any setting outside the builder's
+   own limits. A DI stimulus ID brings all its children, in order. On confirm
+   it calls the existing `save_mock` function, so there is **no new write path
+   and no migration**, and the result opens in the ordinary mock editor.
+5. **Later, and only if wanted:** paste a whole new mock paper so the questions
+   go into the bank and a draft mock is made from them in one step. This was
+   the second route discussed in the call. It still uses the central bank.
+
+Where it lives: a parser beside `src/features/question-bank/mock-form.ts`, unit
+tested, and a route at `/admin/mocks/import`. Build it after PR #49 merges, on a
+new branch. **The Client's side of it:** import questions first, then write
+mocks from the IDs the bank shows.
+
+### The schedule
+
+The founder asked twice, near the end, for the project to be finished on time.
+The owner answered "I definitely think that we're on time and we will complete
+it", and promised to raise any delay early. **The owner confirmed on 2026-09-22
+that the schedule holds and the remaining build will land on time.** No clause
+4.4 notice is planned for the build itself. VdoCipher access is a separate,
+client-owned dependency and stays listed under *External blockers*.
 
 ## The ARS meeting, 2026-09-16
 
@@ -488,8 +728,9 @@ interviews plus group discussions. The third is off the platform, which is what
 **The aptitude round is a mock**, and its specification maps onto the planned
 schema without change: three sections (QA, LR, DI), 45 questions, two hours
 overall, **no sectional time limits**, sections switchable at will, **no negative
-marking**, solutions shown afterwards. It cannot be delivered here yet, because
-the question bank and test engine are unbuilt. For a demonstration it can be an
+marking**, solutions shown afterwards. It cannot be delivered here yet: the
+question bank is built (unmerged, 2026-09-21), but the mock builder and the test
+engine are not. For a demonstration it can be an
 off-platform round linking to the Client's existing test, labelled honestly.
 
 **Components are not rounds, and their own data proves it.** The MU process has
@@ -576,7 +817,7 @@ timing all go to Cospire from the owner rather than being raised from here.
 
 | Date | Work | Result / verification |
 |---|---|---|
-| 2026-09-22 | Skeletons for every signed-in screen, and sign-in straight to the role home (`fix/loading-coverage`) | From the 2026-09-21 client demo: skeletons looked fine on admin screens but not on student and mentor ones. Every page already had a skeleton, and all three roles stream it with the first byte (measured on the deployed URL: about 0.5s to skeleton, 0.75-1.1s to content, the same for each role). The real gaps were on exactly the paths the demo took. (1) Seven detail screens had no `loading.tsx` of their own and borrowed their parent list's, under the list's title, so a click into them looked as if it had not landed: `student/reports/[id]`, `student/documents/[id]`, `mentor/reports/[id]`, `admin/documents/[id]`, `admin/report-templates/[id]`, `admin/report-templates/import`, `admin/ars/[id]/rounds/[roundId]`. Each now has its own. (2) Signing in went login, then `/dashboard`, then the role home: a second full round trip (about 0.5s) with nothing on screen, at the moment of switching to a student or mentor account. `loginAction` now redirects straight to the role home when the profile is active, and falls back to `/dashboard` otherwise; the role layout re-checks either way. `src/features/auth/loading-coverage.test.ts` fails if any admin, mentor or student page lacks its own `loading.tsx`, and was seen to fail when one was removed. `scripts/verify/loading-coverage.mjs` 11/11 on a local production build and 1/11 on the unfixed deployed URL, so it discriminates. 241/241 tests, typecheck, lint and build pass. Not browser-tested: client-side navigation itself cannot be driven here |
+| 2026-09-22 | Skeletons for every signed-in screen, and sign-in straight to the role home (`fix/loading-coverage`) | From the 2026-09-21 client demo: skeletons looked fine on admin screens but not on student and mentor ones. Every page already had a skeleton, and all three roles stream it with the first byte (measured on the deployed URL: about 0.5s to skeleton, 0.75-1.1s to content, the same for each role). The real gaps were on exactly the paths the demo took. (1) Seven detail screens had no `loading.tsx` of their own and borrowed their parent list's, under the list's title, so a click into them looked as if it had not landed: `student/reports/[id]`, `student/documents/[id]`, `mentor/reports/[id]`, `admin/documents/[id]`, `admin/report-templates/[id]`, `admin/report-templates/import`, `admin/ars/[id]/rounds/[roundId]`. Each now has its own. (2) Signing in went login, then `/dashboard`, then the role home: a second full round trip (about 0.5s) with nothing on screen, at the moment of switching to a student or mentor account. `loginAction` now redirects straight to the role home when the profile is active, and falls back to `/dashboard` otherwise; the role layout re-checks either way. `src/features/auth/loading-coverage.test.ts` fails if any admin, mentor or student page lacks its own `loading.tsx`, and was seen to fail when one was removed. `scripts/verify/loading-coverage.mjs` 11/11 on a local production build and 1/11 on the unfixed deployed URL, so it discriminates. 241/241 tests, typecheck, lint and build pass. **Merged as PR #52 (`39860c6`) and 11/11 on the deployed URL.** Not browser-tested: client-side navigation itself cannot be driven here |
 | 2026-09-22 | Report round selector limited to the template's programme (PR #50, merged `9d6364f`, deployed) | Found in the 2026-09-21 client demo: the selector listed every round in the organisation by bare name. Now only the template programme's rounds, process-labelled options when there is no programme, and a round linked from another process kept listed and selected. No migration. `scripts/verify/report-round-links.mjs` **8/8 on the deployed URL**, counts back to baseline |
 | 2026-09-21 | ARS report round links made manual | Imported components start unlinked; each component has an optional manual round selector. No schema change. Typecheck, lint, 235 tests and production build pass; linking and unlinking confirmed on Production on 2026-09-22 by the PR #50 check |
 | 2026-08-28 | Read agreement, proposal, delivery plan, operating manual, and technical brief | Product, scope, architecture, and source-of-truth hierarchy understood |
@@ -634,8 +875,9 @@ institution's admission-process document, and paste the answer back here.
 import: a standard prompt run in a model the Client already pays for, with the
 output pasted into a parser here, rather than an API integration billed per
 call. Pointing it at ARS processes needs no Google account, no LLM account, no
-key in the application and no per-call cost -- all four of which are still owed
-by the Client and still blocking Phase 3.
+key in the application and no per-call cost -- all four of which the Client still
+owes. Question import now uses the same mechanism (2026-09-21), so they no longer
+block Phase 3 either.
 
 Four decisions were taken with the owner **before** any code was written, and
 three of them are not what would have been guessed:
@@ -747,6 +989,251 @@ worse than no CSS.
 **Headings still resolve to Georgia.** Recoleta Bold is the design's heading face
 and the Client has still not supplied the web licence and woff2, so this is as
 close to the prototype as it can get until they do.
+
+### The question bank, 2026-09-21
+
+Phase 3 started on `feat/question-bank`. The owner approved the plan and
+settled four decisions the same day, all of which shape the schema:
+
+- **Questions stay editable, even after a mock using them has been attempted.**
+  The student's review screen shows the question as it reads now. No locking,
+  no version table. A changed key, option set or marks value is left to the
+  contracted rescore in Phase 4. This **supersedes** the "publishing/version
+  snapshots" mitigation in the Critical finding below. That finding now
+  reduces to "rescore on every change that affects a score", which Phase 4 has
+  to do anyway.
+- **Sections are a fixed list per organisation**, on one admin screen
+  (`question_sections`), so the analytics cannot split "QA" from "Quant".
+  Topics stay free text, and `save_question` snaps each one to an existing
+  spelling within the section.
+- **Clause 3.15 images:** import is paste-a-prompt now. Images that a Google
+  Doc import would have extracted are added in the review screen by upload or
+  clipboard paste. That falls short of 3.15's "no manual re-uploading", so it
+  **joins the clause 16.1 written amendment** with the report and the process
+  importer. The prompt will carry `[[image-N]]` markers so that a Google Docs
+  image fetch (a Google account only, no LLM) can be added later without
+  redesign. `question_imports.source_type` already accepts `google_doc`.
+- **Notation is plain text with Unicode** (½, x², √, ≤), line breaks kept. No
+  KaTeX dependency. Anything that needs typesetting goes in as an image.
+
+**How the answer key is kept from students (the Critical finding).** It is
+not on the question row. `question_keys` holds `correct_answer` and
+`solution` and has **no student policy at all**. Column grants could not do
+this, because admins and students both connect as `authenticated`. Phase 4
+adds a student read, and only after the student's own attempt is submitted.
+
+**Every scored question has a valid key, enforced at commit.** A deferred
+constraint trigger checks both tables, so a key naming a removed option is
+refused. The only way to write a question is `public.save_question`, a
+SECURITY INVOKER function, so RLS still decides. It exists because PostgREST
+commits each request separately and the question and its key must commit
+together. `public.approve_question_import` wraps it with the staging-row
+update, so a refused approval leaves no question behind.
+
+**Annexure A says "admins and mentors" author questions.** Mentors can write
+questions and keys. Sections, imports, approval and hard deletes are
+admin-only.
+
+**The first three migrations**, applied 2026-09-21 with `supabase db push --linked` after a `--dry-run` listed exactly these three:
+`20260921120000_question_bank` (sections, questions, keys, `save_question`),
+`20260921120100_question_images_bucket` (private bucket, 5MiB, images only,
+authors of the org by path, no student policy) and
+`20260921120200_question_imports` (staging, admin-only, a decision is made
+once, staged content immutable).
+
+**Verified so far:**
+
+- **Against the applied schema, 41 of 41.** `scripts/verify/question-bank.sql` re-run after the push, rolled back as always. RLS enabled and forced on all four tables, with INSERT and UPDATE policies as well as SELECT; the bucket is private and holds its 4 `storage.objects` policies. Security advisor: the same two pre-existing Auth warnings and nothing new. Types regenerated. Live counts unchanged: 5 profiles, 7 courses, 2 documents, 0 rows in every question table.
+- **Before applying, a dry run, also 41 of 41.** `scripts/verify/question-bank.sql` and migrations 1
+  and 3 were run in one transaction against the hosted project through
+  `supabase db query --linked`, then rolled back. Afterwards
+  `to_regclass('public.questions')` is null, so nothing persisted.
+- **What the dry run proves:** every missing tag is refused; a scored question
+  without a key is refused at commit; a key naming a missing option, two
+  answers on a single-correct MCQ, and removing the keyed option are all
+  refused; DI rules hold, and moving a stimulus moves its set. A student and a
+  rival admin read 0 questions and 0 keys and cannot edit. A mentor authors
+  but cannot approve an import, and the refused approval leaves no question.
+  Double approval is refused with no duplicate created.
+- **The bucket migration was not in the dry run.** The CLI connection cannot
+  create `storage.objects` policies (see *Two operational facts worth
+  keeping*). It mirrors the proven documents bucket, and its policies stay
+  **unverified** until an HTTP upload exercises them in PR 2.
+- **53 unit tests** for the numerical normaliser and the question validator,
+  covering 0.5, 1/2, .50, 0.50, whitespace, tolerance, negatives, pasted minus
+  signs, thousands commas and exact big-integer comparison. **288 tests in
+  total**, typecheck and lint clean.
+
+**PR 2, authoring, built 2026-09-21.** Routes: `/admin/questions`,
+`/admin/questions/new`, `/admin/questions/[id]` and
+`/admin/questions/sections`, plus mentor copies of the first three under
+`/mentor/questions`. The admin and mentor copies share one loader
+(`components/routes.tsx`); the base path comes from the signed-in role, never
+from the request. The editor handles all four types:
+
+- single- and multiple-correct MCQs, with blank option rows ignored and two
+  spare rows after each save, since there is no "add" button without
+  JavaScript;
+- typed answers, one accepted form per line, with an optional tolerance;
+- DI sets, where a sub-question's section is locked to its set's.
+
+Topics autocomplete from existing ones. Archiving a set archives its
+sub-questions too. The question list shows standalone questions and sets;
+sub-questions are reached through their set. Both Question bank nav items are
+added in `src/features/auth/components/app-nav.tsx` (another feature's file,
+flagged for review). New CSS rules sit at the end of `src/app/globals.css`.
+
+**Images** upload from the browser straight to `question-images` under the
+author's own session, by file or by pasting into the dashed zone. The form
+posts only paths. Editing still works without JavaScript; adding an image
+does not, the same trade the document upload makes. An image removed before
+saving stays in the bucket as an orphan. That is harmless, and nothing
+cleans it up yet.
+
+**A defect found while writing the harness, fixed forward in
+`20260921140000`:** `save_question` snapped a topic to an existing spelling,
+and when editing, that existing spelling was the question's own. So
+correcting "linear equations" to "Linear equations" silently saved the old
+spelling. The snap now skips the question being edited. Applied, and the SQL
+probe re-run at 41/41.
+
+**PR 2 verified, 36 of 36**, by `scripts/verify/question-bank-ui.mjs` against
+a local production build and the hosted database. Every form is posted
+without JavaScript, and rows are counted, not errors trusted. It proves:
+
+- the four roles land where they should, and a mentor cannot reach sections;
+- sections: add, a case-duplicate refused, a mentor's post writes nothing;
+- every type saved with the key stored apart; an edit changes question and
+  key in place; the topic snap works across authors;
+- a missing topic is refused with the typing kept; an uncomparable TITA
+  answer is refused;
+- a crafted post moving a sub-question out of its set's section is refused
+  by the database;
+- a student gets 307 on both copies with none of the text, writes nothing by
+  posting the action, and reads 0 questions and 0 keys through the API;
+- another org's admin sees none of it in the list, by id, or through the key;
+- archiving and restoring a set carries its sub-questions.
+
+**The image bucket's Storage policies are now verified over HTTP**, which
+the SQL probe could not do:
+
+- admin and mentor uploads are accepted;
+- refused: a student's upload, a rival admin's upload into org 1, an admin's
+  upload into org 5, and badly shaped paths;
+- a mentor reads an image; a student, the rival admin and an anonymous
+  caller are refused;
+- a saved image renders through a signed URL;
+- an author's delete removes the object and a student's delete removes
+  nothing.
+
+Cleanup left the live counts at 0 question rows, 0 image objects, 5
+profiles, 7 courses and 2 documents. The screens were also photographed and
+reviewed at 1440px and at phone width. That review found two wording
+defects, since fixed: placeholders that read as pre-filled values, and
+"(tita)" in lower case.
+
+**Two local traps from this session.** Stopping a background `npx next
+start` stops the wrapper and can leave the node server running on its port.
+The next start then fails with EADDRINUSE, and a harness run silently hits
+the old build. Check the port's owning process before trusting a run.
+Separately, older `next start` servers from earlier sessions were found on
+ports 3000 and 3001, left running. A captured page showing only the loading
+skeleton is streaming, not a bug: the content arrives in hidden chunks that
+a script moves into place, so a script-stripped capture has to replay
+`$RC`/`$RS` itself.
+
+**PR 3, the question importer, built 2026-09-21.** No migration: the
+staging table and `approve_question_import` came with PR 1.
+
+- `/admin/questions/import` has three steps: copy the prompt, paste the
+  model's answer, send it for review. A list of earlier imports sits below.
+  `/admin/questions/import/[batch]` is the review.
+- **Admin-only**, as the `question_imports` policies already are.
+- **Reading a paste writes nothing.** Staging re-parses the pasted text on the
+  server and writes the whole batch in one insert. Each entry becomes one
+  `pending_review` row.
+- **A DI set is staged as its passage plus one row per sub-question**, linked
+  by `parsed.parentPosition`. A sub-question opens for approval only after its
+  passage is approved. It then takes the passage's question as parent and the
+  passage's section, whatever the post says.
+- **The type comes from the staged row, never the form.**
+- **Approval** runs the ordinary editor, pre-filled with the parsed question,
+  against `approveImportAction`. That validates like the editor and calls
+  `approve_question_import`, so the question, its key and the row's decision
+  land in one transaction.
+- **Reject** marks one row. **Discard** deletes what is not approved and keeps
+  every approved row as the record of where a question came from.
+
+**The parser** (`import-spec.ts`) is lenient about names and strict about
+values, like the ARS importer, and reuses its `extractJsonBlock`:
+
+- it accepts a bare list, prose and code fences;
+- MCQ answers can be written as a letter, "(b)", "Option C", the option's own
+  text (tried first) or a 1-based number;
+- multi-answers can be written "A, C", "A and C", "AC" or as a list, and an
+  MCQ given two answers becomes multiple correct, with a note saying so;
+- TITA answers can be a number, a list, or joined by "or".
+
+It never guesses:
+
+- no marks is left blank, unless the admin gives default marks for the batch;
+- no answer is flagged, not worked out;
+- an unknown type is staged as unreadable;
+- a section is matched only by exact name, ignoring case, so "Quant" against
+  a list holding "QA" is left for the admin to choose.
+
+A `[[figure]]` marker from the prompt is removed from the text and becomes a
+note to paste the image in. That is the clause 3.15 compromise recorded above.
+The prompt (`import-prompt.ts`) is built from the parser's limits, and a unit
+test parses the prompt's own example, so the two cannot drift apart silently.
+
+**The shared editor gained three props** (`action`, `hidden`, `submitLabel`)
+and per-instance element ids, because the review page shows several editors
+at once. PR 2's harness re-run after that change: 36/36.
+
+**PR 3 verified, 25 of 25**, by `scripts/verify/question-import.mjs`, on
+the dev server and again on a clean production build. Every refusal is proven
+by counting rows. It proves:
+
+- mentors and students are turned away;
+- a paste in prose and a fence previews all seven entries, and reading writes
+  nothing; a non-JSON paste is refused;
+- a mentor posting the stage action stages nothing, and staging writes 7
+  pending rows in one batch with nothing in the bank;
+- default marks fill only where marks are missing; the essay is staged as
+  unreadable and the unanswered MCQ carries its problem; the figure is flagged
+  and its marker removed;
+- a student and a mentor read 0 staged rows through the API;
+- approval writes the question, its key and the reviewer stamp; a second
+  approval is refused with no duplicate; a mentor's approve changes nothing;
+- a crafted type is ignored; a sub-question is refused before its passage and
+  joins the set in the set's section after it;
+- reject, then a second reject refused; discard keeps all four approved rows.
+
+342 unit tests in total (27 for the parser). The review screen was
+photographed and reviewed.
+
+**Not tested with a real Cospire document**, because none has been supplied.
+Its parse quality depends on the model and the document, which is the
+pulled-forward "run one real document" item the delivery plan commits to.
+
+**PR 4, the mock builder, built 2026-09-21.** It adds `mocks`,
+`mock_sections` and `mock_questions`, with one implicit untimed section for an
+overall-only mock or fully timed sections whose durations add exactly to the
+full duration. Settings cover negative marking and its question types, attempt
+limit, mobile access and proctoring. The admin picker excludes archived
+questions and adds a DI set whole to one section. RLS is admin-only on all
+three tables; no mentor or student policy exists in Phase 3.
+
+The three migrations are applied: `20260921150000_mock_builder`,
+`20260921150100_save_mock_transaction` and the fix-forward
+`20260921150200_fix_mock_structure_trigger_target`. The first database probe
+found that the shared trigger read `mock_id` from a `mocks` row; its transaction
+rolled back, the fix-forward migration corrected it, and the re-run passed 9/9.
+HTTP verification passed 10/10 with real sessions and no-JavaScript form posts;
+cleanup returned to 0 mocks, 0 mock sections, 0 mock questions, 0 questions and
+5 profiles. The authoring regression remains 36/36. Typecheck, lint, 342 tests
+and a clean production build pass.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
@@ -1068,6 +1555,7 @@ Two things follow, and both are cheap:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Codex, question bank pickup | `feat/question-bank` | Phase 3 parts 1-4: question-bank schema, authoring, importer and admin-only mock builder | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `src/features/auth/components/app-nav.tsx`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*`, `CONTEXT.md` | **Built, verified, pushed and under review in PR #49; owner review/merge is the only remaining step.** PR is mergeable and all CI/Vercel checks are green as of 2026-09-22. Owner decided sectional durations sum exactly to full duration; one implicit section with null duration means no sectional limit. Seven additive question-bank migrations are applied, three of them for the mock builder. Mock probe 9/9; mock HTTP 10/10; authoring regression 36/36; importer 25/25; typecheck, lint, 342 tests and clean production build pass. The first build attempt failed only because a moved stale `.next` tree remained inside `coverage`; moving it outside the repository produced the clean passing build. Security advisor has only the two pre-existing Auth warnings. | 2026-09-22 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
@@ -1898,8 +2386,10 @@ Recorded in the implementation plan, repeated here because they are easy to lose
    The delivery plan commits to the first fortnight. It needs no finished UI, and
    poor accuracy on their older material is a conversation to have with four weeks
    left rather than one.
-2. **Decide how historical attempts are protected from live question and mock
-   edits, before Phase 4 starts.** Recorded as critical below.
+2. **Historical attempts and live edits: decided 2026-09-21.** Questions stay
+   editable. A past attempt's review shows the current question, and Phase 4
+   rescores every attempt a key, option or marks change affects. See the
+   Critical finding below.
 3. **Supabase Pro immediately, and a tested restore before handover.** Pro moved
    from "before Phase 5" to "now" when ARS was brought forward. The deliverable is
    a restore tested, not enabled, and database backups exclude Storage objects.
@@ -1914,7 +2404,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
-| **Google API and LLM** accounts | The Google Doc import in Phase 3. The rest of that phase proceeds without them | Cospire |
+| **A Google account** (Docs API) | Only **automatic image extraction from Google Docs** (clause 3.15). Question import itself is built on paste-a-prompt and needs no Google or LLM account; until this exists, figures are pasted in on the review screen, which is going into the clause 16.1 amendment | Cospire |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
@@ -2142,8 +2632,8 @@ time otherwise.
 
 | Severity | Finding | Required mitigation |
 |---|---|---|
-| Critical | Historical mocks can change if attempts reference mutable live questions/configuration | Add publishing/version snapshots before test-engine implementation |
-| Critical | Answer keys share the proposed question row students need to read | Separate protected key data or expose a safe question projection |
+| Critical | Historical mocks can change if attempts reference mutable live questions/configuration | **Decided 2026-09-21: questions stay editable** and a past attempt's review shows the current question. Phase 4 must rescore every attempt affected by a change to a key, option set or marks value, and record it in `rescore_events`. See *The question bank* |
+| Critical | Answer keys share the proposed question row students need to read | **Designed out 2026-09-21:** keys live in `question_keys`, which has no student policy. Phase 4 adds a read only after the student's own attempt is submitted |
 | Critical | Supabase database backups exclude Storage objects | Design and test a separate file backup/restore process |
 | High | Vercel Functions have small request/response payload limits | Use direct authorized uploads/downloads; never proxy media |
 | High | Vercel Cron can overlap or deliver more than once | Durable job records, locks, and idempotency are required |
@@ -2281,24 +2771,37 @@ time otherwise.
 | 2026-09-20 | **The gate's teardown leaked one profile per run, and only the live counts caught it** | `mentor_assignments.assigned_by` is ON DELETE RESTRICT and the accounts were deleted in creation order, so the admin was removed while its own assignment still referenced it. `deleteUser` reports that in a return value the script was not reading, so it failed **silently** and the profile count climbed 5, 6, 7 across runs. Assignments are now deleted first across all three foreign keys and the delete result is checked. The two leaked accounts were removed by hand; the count is back to 5 |
 | 2026-09-20 | Live baseline corrected | Re-measured against the hosted database: 2 orgs, 5 profiles, 1 assignment, 5 courses, 5 grants, 2 documents, **2 ARS rounds, 1 report template**. The file had recorded 4 courses and zero rows in every ARS table. The extra rows are the owner's own work of 2026-09-18, not residue |
 | 2026-09-20 | **ARS multi-file uploads merged and verified on Production** | PR #36 merged as `0e0f14f`; `verify` passed and Vercel Production reported success. `scripts/verify/ars-upload.mjs` passed 10/10 against the hosted project. A separate signed-in capture against `https://cospire-roan.vercel.app` returned HTTP 200 and rendered `<input type="file">` with the allowed types and size instead of the old “not available” placeholder; cleanup restored 6 courses, 5 rounds, 5 profiles and 2 documents |
+| 2026-09-22 | Report-template round links on `https://cospire-roan.vercel.app`, throwaway admin, processes and template, deleted after | 7/8. Programme change, activation, per-component link and unlink all persist, read back from the rows. Fail: the round selector offers rounds from every process, not the template's programme. Live counts back to baseline |
 | 2026-09-22 | `scripts/verify/report-round-links.mjs` against a local production build of `fix/report-round-options`, hosted database | 8/8: process-labelled options with no programme; only the programme's rounds once set; link, unlink, and a stray linked round kept selected. The same path on the deployed URL before the fix was 7/8, failing only on the unscoped list |
 | 2026-09-22 | `scripts/verify/report-round-links.mjs` against `https://cospire-roan.vercel.app` after PR #50 deployed as `9d6364f` | 8/8. Process-labelled options with no programme, only the programme's rounds once set, link, unlink, stray linked round kept selected; counts back to baseline |
 | 2026-09-22 | `scripts/verify/loading-coverage.mjs`: the seven detail screens' first flushed chunk, and sign-in redirects, throwaway accounts removed after | Local production build of `fix/loading-coverage`: 11/11. Deployed URL without the change: 1/11 (only the disabled-account fallback, which is unchanged), so the check discriminates |
+| 2026-09-22 | `scripts/verify/loading-coverage.mjs` against `https://cospire-roan.vercel.app` after PR #52 deployed as `39860c6` | 11/11: all seven detail screens stream their own skeleton first; admin, mentor and student sign-in land on the role home in one redirect; disabled account still goes through `/dashboard` |
 
 ## Next recommended action
 
-**First, two things that are not code**, both from the meeting of 2026-09-16 and
-both worse the longer they wait:
+**First, three things that are not code**, from the meetings of 2026-09-16 and
+2026-09-21:
 
-1. **Settle the 1 October promise.** The Client was told ARS and the mock test
-   would be ready and tested "in the next 15 days", and that the project is
-   otherwise on track. The question bank, the test engine and most of ARS are
-   unbuilt. Decide what "ready" means on that date, and send the revised date in
-   writing under clause 4.4 if it moves.
+1. **The 1 October commitment: the owner confirms it holds (2026-09-22).** The
+   Client was told ARS and the mock test would be ready and tested "in the next
+   15 days", and on 2026-09-21 that the project is on time. ARS is done and
+   deployed. The question bank and the admin mock builder are in PR #49. The
+   test engine is next. If that changes, the owner promised the Client on
+   2026-09-21 to raise any delay up front, and clause 4.4 wants it in writing
+   at the time.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
-   items named (feedback, onboarding, offboarding, student journey trackers, and
-   the ARS report). Clause 12 says quote first; clause 16.1 says amendments are
-   written. Both sides want this, so it only needs recording.
+   items named: feedback, onboarding, offboarding, student journey trackers,
+   the ARS report and the process importer. Clause 12 says quote first; clause
+   16.1 says amendments are written. Both sides want this, so it only needs
+   recording. **The same amendment should record that question import runs on
+   paste-a-prompt**, with figures pasted in on review, rather than the
+   automatic Google Docs image extraction clause 3.15 promises. The owner
+   accepted this on 2026-09-21. Add the two items the Client raised in the
+   call that day: **sub-admins**, once they define them, and **a parser for
+   the mentor's report**.
+3. **Send the Client access to the build**, as agreed at the end of the
+   2026-09-21 call, so their team can review the flow. Their feedback clock
+   starts when they have it.
 
 **The process importer is built, verified, merged and deployed** (2026-09-20,
 PR #30), together with the form engine it depends on. Two things follow from it
@@ -2326,24 +2829,40 @@ and verified against the deployed URL.
 
 ### What to build next, in the order it should be taken
 
-**1. The question bank (Phase 3).** Nothing in it exists. It is the gate in
-front of everything else: the test engine needs somewhere to take questions
-from, and the aptitude round -- the one visible hole in ARS from the Client's
-side, since their own MESA benchmark puts a timed test in the middle of the
-process -- cannot be delivered without both. The paste-a-prompt importer is
-already proven twice over (ARS processes, report templates), so the Google Docs
-API and the LLM account the Client still owes are **not** on the critical path:
-the same mechanism works for questions.
+**1. Review and merge PR #49** (Phase 3, parts 1-4, including the mock
+builder). It is mergeable, CI and Vercel are green as of 2026-09-22, and it
+already contains everything on `main`. Merging brings `main` back in step with
+the database, which is seven additive migrations ahead of it. No review has
+been recorded on it yet. Regenerate types after merge per operating manual §4.4.
 
 **2. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the
-phone attempt permanently marked unproctored, warn-and-log proctoring.
+phone attempt permanently marked unproctored, warn-and-log proctoring. Two
+things the question bank has already fixed for it:
+- A student reads a question only through an attempt; `questions` and
+  `question_keys` have no student policy today.
+- Keys become readable only after the student's own attempt is submitted. Any
+  change to a key, option set or marks value must rescore affected attempts
+  and write `rescore_events`, because questions stay editable.
+Then **attach a mock to the ARS aptitude round**, replacing the
+`pendingFeature: "test-engine"` placeholder.
 
-**3. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
+**2b. Build mocks from documents that quote question IDs**, after PR #49
+merges, on a new branch. Readable IDs (`Q00042`), copyable ID lists, and a
+plain-text mock template that is parsed directly and calls the existing
+`save_mock`. No migration. The full design is under *Question IDs and mock
+documents, designed 2026-09-22*. It needs no test engine, so it can run
+alongside step 2.
+
+**3. Run one of Cospire's real question documents through the importer**
+as soon as they supply one. Nothing here has seen a real Cospire paper, and
+parse quality depends on the model and the document's layout.
+
+**4. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
 own worktree. If it has not arrived by the start of week four it slips and
 clause 4.4 applies -- notified in writing at the time, not at the end.
 
-**4. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
+**5. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
 
 ### Smaller things, none of them blocking
 
@@ -2352,7 +2871,15 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   is really aptitude-prep content, one click on its ARS page moves it back.
 - **The per-screen re-skin of the remaining panels.** The shell, the ARS form
   and the loading states are done; the panels inside the admin and mentor
-  screens have not been gone through one by one.
+  screens have not been gone through one by one. Start with the mentor report
+  screen, whose layout the owner called broken in the 2026-09-21 demo.
+- **From the 2026-09-21 call, all small, none built yet:**
+  - a full-screen mode for the document viewer
+  - the watermark as one small mark in the bottom left of each page, in place
+    of the rotated tiling
+  - a landscape PDF opened in the viewer to check how it fits
+
+  See *The walkthrough call, 2026-09-21*.
 - **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
   manual §6.1 makes a human's call. It is used by 34 buttons across 16 files.
   Flagged in PR #46 rather than assumed; confirm or move it.
@@ -2362,8 +2889,7 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
   seconds actually goes*.
 
 **The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
-is on `main` and is what a reviewer works from. `origin` carries `main` and the
-still-open PR #35 only; there is nothing else to prune.
+is on `main` and is what a reviewer works from.
 
 **Put the MESA question-type fork to the Client.** Their benchmark process puts
 email writing and a video essay inside one timed test; Annexure A fixes the four
@@ -2385,6 +2911,9 @@ Owed by the Client, to chase rather than work around:
 5. **The written list of programmes**, and **what "ARS" stands for**.
 6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has
    the Client's signature date blank; file the countersigned copy if one exists.
+7. **From the 2026-09-21 call:** two or three sample documents of each of the
+   five content kinds, their question lists for mocks, a definition of
+   sub-admin permissions, and one consolidated list of flow feedback.
 
 Owner decisions:
 

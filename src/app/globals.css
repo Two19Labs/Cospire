@@ -1519,3 +1519,96 @@ a.button {
   cursor: progress;
   opacity: 0.72;
 }
+
+/* The question bank. A question is plain text with its line breaks kept, so a
+   worked passage or a two-line equation reads as the author typed it. */
+.question-text {
+  white-space: pre-wrap;
+}
+
+/* An option: the correct-answer tick beside its text box. */
+.option-row {
+  align-items: center;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: auto 1fr;
+}
+
+.option-row input[type="radio"],
+.option-row input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.image-tile {
+  align-items: start;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.image-tile img {
+  display: block;
+  max-height: 10rem;
+  max-width: min(16rem, 100%);
+  object-fit: contain;
+}
+
+/* Focusable so a paste lands here; the dashed edge says "drop things here". */
+.paste-zone {
+  align-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.paste-zone:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Import review: the document's text beside the editor it became. Stacks on
+   a narrow screen, where side by side would leave neither readable. */
+.import-row {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.import-row > .import-source {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.import-row > .panel {
+  box-shadow: none;
+  padding: 0;
+}
+.question-picker-row {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.question-picker-row:last-child {
+  border-bottom: 0;
+}
