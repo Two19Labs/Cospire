@@ -45,8 +45,9 @@ this file and not found here is in one of these; find it with
   filed into section one; childless DI sets are shown and refused instead of
   filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
   from a question are deleted from Storage. **19/19 on the deployed URL.**
-- **Next:** the test engine (Phase 4), then mocks built from documents that
-  quote question IDs. See *Next recommended action*.
+- **Next, in this order (owner, 2026-09-23):** Word upload with pictures
+  extracted, then the Gemini import path, then mocks built from documents that
+  quote question IDs, then the test engine (Phase 4). See *What to build next*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
@@ -285,6 +286,19 @@ Two operational notes that cost time to rediscover:
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
+**Nobody holds a branch as of 2026-09-23.** Two things a new session should
+know before touching anything:
+
+- **A dev server is running on port 3000** from the main checkout
+  (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
+  reading the code and working on UI there. **Never run `npm run build` in that
+  checkout while it is up** -- they share `.next`, and the build corrupts the
+  running server, which then answers 500 to everything. Do your own work in a
+  worktree (`scripts/wt-new.sh NAME PORT`).
+- **Tell the owner at once if anything changes that you did not do** -- a file
+  in the working tree, a branch, a commit, the dev server going down. They have
+  remote access and can intervene, but only if it is surfaced immediately.
+
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
 template document importer in PR #40 merged and is deployed. The mentor
@@ -442,13 +456,15 @@ time otherwise.
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
 
-1. **The 1 October commitment: the owner confirms it holds (2026-09-22).** The
-   Client was told ARS and the mock test would be ready and tested "in the next
-   15 days", and on 2026-09-21 that the project is on time. ARS is done and
-   deployed. The question bank and the admin mock builder are in PR #49. The
-   test engine is next. If that changes, the owner promised the Client on
-   2026-09-21 to raise any delay up front, and clause 4.4 wants it in writing
-   at the time.
+1. **The 1 October commitment.** The Client was told ARS and the mock test
+   would be ready and tested "in the next 15 days", and on 2026-09-21 that the
+   project is on time; the owner confirmed on 2026-09-22 that the schedule
+   holds. ARS is done and deployed, and so are the question bank and the mock
+   builder. **On 2026-09-23 the owner put the import work ahead of the test
+   engine**, so what a student sits is now the last of the four items above.
+   A tested mock engine by 1 October is the part at risk. The owner promised
+   the Client on 2026-09-21 to raise any delay up front, and clause 4.4 wants
+   that in writing at the time rather than at the end.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
    items named: feedback, onboarding, offboarding, student journey trackers,
    the ARS report and the process importer. Clause 12 says quote first; clause
@@ -489,16 +505,49 @@ and verified against the deployed URL.
 
 ### What to build next, in the order it should be taken
 
-**1. Review and merge PR #49** (Phase 3, parts 1-4, including the mock
-builder). It is mergeable, CI and Vercel are green as of 2026-09-22, and it
-already contains everything on `main`. Merging brings `main` back in step with
-the database, which is seven additive migrations ahead of it. No review has
-been recorded on it yet. Regenerate types after merge per operating manual §4.4.
+**Order changed by the owner on 2026-09-23: the import work comes before the
+test engine.** Question import and mock assembly are what the Client can use
+immediately on the material they already have; the test engine is the larger
+build and now follows them. The 1 October commitment covers a tested mock
+engine, so this order makes the written revision under clause 4.4 more likely
+to be needed, not less -- see *Next recommended action*, item 1.
 
-**2. The test engine (Phase 4)**, with everything operating manual §1 insists
+**1. Word upload: pictures out, numbered markers in.** No model call, so it
+works whatever the Client decides about cost. The admin uploads a `.docx`; the
+platform opens it (a zip), extracts each image in document order into the
+existing `question-images` bucket, and produces the paper's text with
+`[[figure:N]]` where each image sat. The admin copies that text into any model
+with the existing prompt, pastes the JSON back, and the platform resolves each
+marker to image N before the usual review and approval. Word tables become text
+tables. Flagged rather than guessed: an image inside an answer option, EMF/WMF
+drawings Word stores as vector art, and native Word charts.
+**Dependency: `fflate` only, approved by the owner 2026-09-23** -- Node cannot
+open a zip on its own, and a hand-written zip reader is the kind of code that
+works on one file and fails on the next. `@google/genai` was **declined in
+favour of plain `fetch`**, which was proven against the live key on 2026-09-23.
+
+**2. The Gemini path: three steps instead of six.** The platform sends the
+prepared text to Gemini itself and places the images, so the admin uploads,
+reviews and approves. Everything technical is in hand: the key works, returns
+schema-valid JSON, and is on the paid tier. Two things to settle first, neither
+of them code: the Client's agreement to the cost (about Rs 5 a paper, billed to
+their own Google account -- the drafted question still quotes Claude and Rs 20
+and needs redrafting before it is sent), and thinking turned low or off in the
+call, because thinking tokens bill as output. Details, limits and routing are
+under *Question import with pictures* below.
+
+**3. Mocks built from documents that quote question IDs.** Readable IDs
+(`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
+the bank and at the end of an import, and a plain-text mock template parsed
+directly -- no model, because an ID must match exactly -- which resolves to the
+existing `save_mock`. Full design under *Question IDs and mock documents:
+designed 2026-09-22* in `docs/context/meetings.md`.
+
+**4. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the
-phone attempt permanently marked unproctored, warn-and-log proctoring. Two
-things the question bank has already fixed for it:
+phone attempt permanently marked unproctored, warn-and-log proctoring, and
+auto-submit of expired attempts through Vercel Cron. Two things the question
+bank has already fixed for it:
 - A student reads a question only through an attempt; `questions` and
   `question_keys` have no student policy today.
 - Keys become readable only after the student's own attempt is submitted. Any
@@ -507,78 +556,15 @@ things the question bank has already fixed for it:
 Then **attach a mock to the ARS aptitude round**, replacing the
 `pendingFeature: "test-engine"` placeholder.
 
-**2b. Build mocks from documents that quote question IDs**, after PR #49
-merges, on a new branch. Readable IDs (`Q00042`), copyable ID lists, and a
-plain-text mock template that is parsed directly and calls the existing
-`save_mock`. No migration. The full design is under *Question IDs and mock
-documents: designed 2026-09-22* in `docs/context/meetings.md`. It needs no test engine, so it can run
-alongside step 2.
+**5. Run Cospire's real question documents through the importer** as soon as
+they supply them, and settle the model choice with the accuracy test described
+below rather than on price.
 
-**2c. Question import with pictures: two paths, decided by the owner
-2026-09-22.** Builds on PR #49, after it merges.
-- **No pictures in the paper:** the paste-a-prompt importer as built in PR #49,
-  unchanged.
-- **Pictures in the paper:** the platform calls the model itself.
-  **Provider: Google Gemini, chosen by the owner 2026-09-23** -- cheapest
-  credible option (~Rs 5 a paper on Gemini 3.8 Flash against ~Rs 13 on Claude
-  Sonnet 5), it reads PDFs natively and cheaply, and Cospire already owes a
-  Google account for clause 3.15, so one account covers both. The key is
-  server-side only and never reaches the browser. Nothing in the design is
-  provider-specific beyond "send text, get this JSON back", so a swap after a
-  bad accuracy test is a contained change. Note Gemini 3.8 Flash's price
-  doubles on 2027-01-01, to roughly Rs 10 a paper. The admin uploads a `.docx`;
-  the platform extracts its images in document order into the existing
-  `question-images` bucket, sends the text with numbered markers
-  (`[[figure:N]]`) to Claude with the same JSON contract, then adds image N's
-  path to the `questions.images` list of whichever question carries marker N.
-  Unused images and markers with no image are flagged. Review and approval
-  are unchanged. Three steps for the admin: upload, review, approve.
-- **Routing:** on upload, a `.docx` with no images goes to the paste path; one
-  with images goes to the API path. PDFs default to the paste path, with the
-  API path as best effort for figures (the agreement already limits PDF figure
-  extraction to best efforts).
-- **Limits:** images attach to the question as a set, not to a position in the
-  text, and an image inside an answer option stays flagged for retyping, as
-  today. EMF/WMF drawings from Word are not accepted by the bucket (PNG, JPEG,
-  GIF, WebP only) and are flagged for pasting by hand. No migration: the bucket
-  and `questions.images` exist in PR #49.
-- **Accuracy is untested.** No model has seen a Cospire paper. When 2-3 real
-  papers arrive, run the same papers through Gemini 3.8 Flash and one or two
-  rivals, and compare wrong questions, wrong answer keys and tagging against a
-  checked key; the whole test costs under Rs 100. Price is not the deciding
-  factor at this volume -- a wrong answer key costs more than the entire import
-  bill. Prices compared 2026-09-22 from each provider's own pricing page.
-- **Before the API path can be built:** (1) the Client agrees to the cost,
-  estimated at about Rs 5 a paper on Gemini 3.8 Flash for the Word path,
-  halved again by batch for the one-time bulk import; the question has been
-  drafted for the owner to send; (2) **the Google account is in hand as of
-  2026-09-23**; what remains on it is a Gemini API key with billing enabled
-  (paid tier, so the Client's papers are not used to improve Google's
-  products), held server-side only, never in the repository and never in a
-  client component -- the same account clause 3.15 needs;
-  **Key in place and checked 2026-09-23:** `GEMINI_API_KEY` is set in
-  `.env.local` (gitignored; still to be added to Vercel and to
-  `.env.example` when the feature lands). `gemini-3.8-flash` answers, returns
-  schema-valid JSON, and reports `serviceTier: "standard"`, so it is the paid
-  tier. **Thinking tokens are billed as output and are on by default** -- a
-  33-token prompt spent 189 thinking tokens -- so the import call sets thinking
-  low or off and the per-paper cost is measured on a real paper before any
-  figure is quoted to the Client;
-  (3) owner approval to add `@google/genai` and `fflate` to
-  `package.json`. If the Client declines the cost, build the `.docx` upload
-  with automatic pictures on the paste path instead: still six steps, pictures
-  still placed. This also narrows the clause 3.15 gap (automatic Google Docs
-  image extraction), which the written amendment should describe as built.
-
-**3. Run one of Cospire's real question documents through the importer**
-as soon as they supply one. Nothing here has seen a real Cospire paper, and
-parse quality depends on the model and the document's layout.
-
-**4. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
+**6. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
 own worktree. If it has not arrived by the start of week four it slips and
 clause 4.4 applies -- notified in writing at the time, not at the end.
 
-**5. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
+**7. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
 
 ### Smaller things, none of them blocking
 
