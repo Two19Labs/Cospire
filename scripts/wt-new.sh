@@ -42,3 +42,5 @@ printf '\nPORT=%s\n' "$port" >> "$target/.env.local"
 npm --prefix "$target" ci
 
 echo "Created $target on $branch (port $port)."
+echo "Before editing: read CONTEXT.md in full, then the docs/context/ file for your area,"
+echo "and add your branch to Active work in CONTEXT.md."

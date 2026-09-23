@@ -6,7 +6,12 @@ Before planning, editing, reviewing, or running commands, read these files fully
 
 1. `CONTEXT.md`
 2. `CLAUDE.md`
-3. The source documents those files route you to for the task
+3. The file in `docs/context/` for the area your task touches (`CONTEXT.md`
+   lists which file covers what)
+4. The source documents those files route you to for the task
+
+`docs/agent-map.md` diagrams where everything lives, where to look by task, and
+the route every piece of work takes. Use it when unsure where to look.
 
 ## The context rule - non-negotiable, every agent, every session
 
@@ -18,6 +23,9 @@ at the end.
 **Before planning or editing anything**
 
 1. Read `CONTEXT.md` in full. Not skimmed, not searched for a keyword.
+   Then read the file in `docs/context/` for the area your task touches: the
+   history lives there, one file per topic, and `CONTEXT.md` lists which is
+   which. Reading all of them is not required.
 2. Add your entry to **Active work** - branch, scope, the files you will own -
    before your first material change, so a parallel agent can see the collision
    coming.
@@ -32,6 +40,9 @@ at the end.
 **Before ending any turn, handing off, or going quiet**
 
 4. Move finished items out of **Active work**.
+   Put the detailed write-up of finished work in the right `docs/context/`
+   file, and leave `CONTEXT.md` a line or two plus a pointer. It holds what is
+   true now, so a new session can read it whole without cost.
 5. Record what you verified and how, **including what failed**. Never record an
    assumption as a fact, and never record "should work" as "works".
 6. Update **Pending**, the blockers, and **Next recommended action**.

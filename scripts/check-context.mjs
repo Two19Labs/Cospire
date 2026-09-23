@@ -16,7 +16,7 @@
 // and no database.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 const contextPath = "CONTEXT.md";
 const problems = [];
@@ -32,6 +32,20 @@ function git(args) {
 
 const context = readFileSync(contextPath, "utf8");
 const lines = context.split(/\r?\n/);
+
+// History moved out of CONTEXT.md on 2026-09-22 into one file per topic. Check 1
+// reads those too: a merged pull request still described as open is as wrong in
+// a history file as in the main one, and easier to miss because fewer people
+// read it.
+const historyDir = "docs/context";
+let historyFiles = [];
+try {
+  historyFiles = readdirSync(historyDir)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => `${historyDir}/${name}`);
+} catch {
+  historyFiles = [];
+}
 
 // The base to compare against. On a pull request the runner checks out a merge
 // ref, so origin/main is the honest base; locally it is the same thing.
@@ -62,7 +76,7 @@ const openWords =
 // convicted #19 of #21's word. Table rows are exempt and read alone -- a row is
 // self-contained, and joining a table would let one row's "open" convict its
 // neighbour.
-function claimText(index, number) {
+function claimText(lines, index, number) {
   const isRow = (line) => line.trimStart().startsWith("|");
   if (isRow(lines[index])) return lines[index];
 
@@ -114,15 +128,18 @@ async function fetchPrState(slug, number, token) {
 
 async function checkPullRequests() {
   const mentions = new Map();
-  lines.forEach((line, index) => {
-    for (const match of line.matchAll(/\bPR #(\d+)/g)) {
-      const number = match[1];
-      if (!mentions.has(number)) mentions.set(number, []);
-      mentions
-        .get(number)
-        .push({ claim: claimText(index, number), line, number: index + 1 });
-    }
-  });
+  for (const path of [contextPath, ...historyFiles]) {
+    const fileLines = path === contextPath ? lines : readFileSync(path, "utf8").split(/\r?\n/);
+    fileLines.forEach((line, index) => {
+      for (const match of line.matchAll(/\bPR #(\d+)/g)) {
+        const number = match[1];
+        if (!mentions.has(number)) mentions.set(number, []);
+        mentions
+          .get(number)
+          .push({ claim: claimText(fileLines, index, number), line, number: index + 1, path });
+      }
+    });
+  }
 
   if (mentions.size === 0) return;
 
@@ -156,7 +173,7 @@ async function checkPullRequests() {
     if (state === "MERGED") {
       for (const occurrence of claiming) {
         problems.push(
-          `${contextPath}:${occurrence.number} calls PR #${number} open, but it is merged.\n` +
+          `${occurrence.path}:${occurrence.number} calls PR #${number} open, but it is merged.\n` +
             `    ${occurrence.line.trim().slice(0, 140)}`,
         );
       }
