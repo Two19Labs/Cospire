@@ -548,6 +548,14 @@ alongside step 2.
   (paid tier, so the Client's papers are not used to improve Google's
   products), held server-side only, never in the repository and never in a
   client component -- the same account clause 3.15 needs;
+  **Key in place and checked 2026-09-23:** `GEMINI_API_KEY` is set in
+  `.env.local` (gitignored; still to be added to Vercel and to
+  `.env.example` when the feature lands). `gemini-3.8-flash` answers, returns
+  schema-valid JSON, and reports `serviceTier: "standard"`, so it is the paid
+  tier. **Thinking tokens are billed as output and are on by default** -- a
+  33-token prompt spent 189 thinking tokens -- so the import call sets thinking
+  low or off and the per-paper cost is measured on a real paper before any
+  figure is quoted to the Client;
   (3) owner approval to add `@google/genai` and `fflate` to
   `package.json`. If the Client declines the cost, build the `.docx` upload
   with automatic pictures on the paste path instead: still six steps, pictures
