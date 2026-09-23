@@ -11,7 +11,9 @@ import type { MockEditorValue, PickerQuestion } from "../queries/mock-builder";
 const errors: Record<string, string> = {
   duration: "Section durations must add up exactly to the full mock duration.",
   failed: "The mock could not be saved.", invalid: "Check the mock settings.",
+  archived: "A selected question has been archived. Untick it below, then save again.",
   questions: "One or more selected questions are unavailable.",
+  "section-missing": "Every selected question needs a section that still exists. Check the section dropdowns.",
   sections: "Every named section needs a valid duration.", structure: "The database refused that mock structure.",
 };
 
@@ -20,16 +22,31 @@ function excerpt(body: string): string {
   return value.length > 100 ? `${value.slice(0, 97)}…` : value;
 }
 
-export function MockEditor({ profile, value, picker, error, notice }: {
+export function MockEditor({ profile, value, picker, offPage = [], error, notice }: {
   profile: Profile; value: MockEditorValue | null;
   picker: { rows: PickerQuestion[]; page: number; pageCount: number };
+  offPage?: PickerQuestion[];
   error?: string; notice?: string;
 }) {
   const existingSections = value?.sections ?? [];
   const sectional = existingSections.length > 1 || (existingSections[0]?.durationMinutes ?? null) !== null;
   const selectedSection = new Map<number, number>();
   existingSections.forEach((section, index) => section.questionIds.forEach((id) => selectedSection.set(id, index)));
-  const visibleIds = new Set(picker.rows.map((question) => question.id));
+  const offPageIds = new Set(offPage.map((question) => question.id));
+
+  // One renderer for both lists. A row that cannot be selected -- archived, or a
+  // DI set with no sub-questions -- still renders, unticked and disabled when it
+  // was never in the mock, and tickable-off when it was. Hiding it was what left
+  // an archived question posted invisibly on every save.
+  function row(question: PickerQuestion, selected: boolean) {
+    const locked = !question.selectable && !selected;
+    return <div className="question-picker-row" key={question.id}>
+      <label><input defaultChecked={selected} disabled={locked} name="questionId" type="checkbox" value={question.id} /> <strong>{excerpt(question.body)}</strong></label>
+      <span className="muted">{question.sectionName} · {question.topic} · {question.difficulty}{question.type === "di_stimulus" ? ` · DI set (${question.childCount} questions)` : ` · ${question.marks} marks`}{question.unselectableReason ? ` · ${question.unselectableReason}` : ""}</span>
+      <label><span className="field__label">Put in section</span><select className="input input--compact" defaultValue={selectedSection.get(question.id) ?? 0} name={`questionSection_${question.id}`}>{Array.from({ length: maxMockSections }, (_, index) => <option key={index} value={index}>Section {index + 1}</option>)}</select></label>
+    </div>;
+  }
+
   return (
     <RoleShell profile={profile} title={value ? "Edit mock" : "New mock"}>
       <form action={saveMockAction}>
@@ -60,15 +77,8 @@ export function MockEditor({ profile, value, picker, error, notice }: {
           ))}</div>
         </section>
         <section className="panel"><h2>Questions</h2><p className="muted">Only active questions are offered. Selecting a DI set adds its passage and every sub-question.</p>
-          {[...selectedSection].filter(([id]) => !visibleIds.has(id)).map(([id, section]) => <span key={id}><input name="questionId" type="hidden" value={id} /><input name={`questionSection_${id}`} type="hidden" value={section} /></span>)}
-          {picker.rows.length === 0 ? <p className="muted">No active questions on this page.</p> : picker.rows.map((question) => {
-            const selected = selectedSection.has(question.id);
-            return <div className="question-picker-row" key={question.id}>
-              <label><input defaultChecked={selected} name="questionId" type="checkbox" value={question.id} /> <strong>{excerpt(question.body)}</strong></label>
-              <span className="muted">{question.sectionName} · {question.topic} · {question.difficulty}{question.type === "di_stimulus" ? ` · DI set (${question.childCount} questions)` : ` · ${question.marks} marks`}</span>
-              <label><span className="field__label">Put in section</span><select className="input input--compact" defaultValue={selectedSection.get(question.id) ?? 0} name={`questionSection_${question.id}`}>{Array.from({ length: maxMockSections }, (_, index) => <option key={index} value={index}>Section {index + 1}</option>)}</select></label>
-            </div>;
-          })}
+          {offPage.length > 0 ? <><h3 className="field__label">Already in this mock, from other pages</h3>{offPage.map((question) => row(question, true))}</> : null}
+          {picker.rows.length === 0 ? <p className="muted">No active questions on this page.</p> : picker.rows.filter((question) => !offPageIds.has(question.id)).map((question) => row(question, selectedSection.has(question.id)))}
           {picker.pageCount > 1 ? <nav aria-label="Question picker pagination" className="pagination">
             {picker.page > 1 ? <Link href={`${value ? `/admin/mocks/${value.id}` : "/admin/mocks/new"}?page=${picker.page - 1}`}>Previous</Link> : <span className="muted">Previous</span>}
             <span className="muted">Question page {picker.page} of {picker.pageCount}. Save before changing pages.</span>

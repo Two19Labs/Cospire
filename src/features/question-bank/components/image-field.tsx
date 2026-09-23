@@ -23,6 +23,13 @@ import {
 interface ImageEntry {
   path: string;
   url: string | null;
+  // Uploaded in this sitting and not yet saved on the question. Removing one of
+  // these deletes the object straight away: nothing references it, and left
+  // alone it would sit in the bucket for ever against the 1GB Free-plan budget
+  // (operating manual §4.6). An image the question already carries is left
+  // alone here -- the save deletes it, because an abandoned edit must not
+  // destroy what the saved question still points at.
+  unsaved?: boolean;
 }
 
 export function ImageField({
@@ -70,7 +77,7 @@ export function ImageField({
           setError(`The image could not be uploaded: ${uploadError.message}`);
           break;
         }
-        added.push({ path, url: URL.createObjectURL(file) });
+        added.push({ path, unsaved: true, url: URL.createObjectURL(file) });
       }
       setImages((current) => [...current, ...added]);
     } finally {
@@ -107,7 +114,13 @@ export function ImageField({
               )}
               <button
                 className="button button--secondary button--compact"
-                onClick={() => setImages((current) => current.filter((entry) => entry.path !== image.path))}
+                onClick={() => {
+                  setImages((current) => current.filter((entry) => entry.path !== image.path));
+                  if (image.url?.startsWith("blob:")) URL.revokeObjectURL(image.url);
+                  if (image.unsaved) {
+                    void createBrowserSupabaseClient().storage.from(questionImagesBucket).remove([image.path]);
+                  }
+                }}
                 type="button"
               >
                 Remove
