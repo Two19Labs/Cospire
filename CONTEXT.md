@@ -286,6 +286,19 @@ Two operational notes that cost time to rediscover:
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
+**Nobody holds a branch as of 2026-09-23.** Two things a new session should
+know before touching anything:
+
+- **A dev server is running on port 3000** from the main checkout
+  (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
+  reading the code and working on UI there. **Never run `npm run build` in that
+  checkout while it is up** -- they share `.next`, and the build corrupts the
+  running server, which then answers 500 to everything. Do your own work in a
+  worktree (`scripts/wt-new.sh NAME PORT`).
+- **Tell the owner at once if anything changes that you did not do** -- a file
+  in the working tree, a branch, a commit, the dev server going down. They have
+  remote access and can intervene, but only if it is surfaced immediately.
+
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
 template document importer in PR #40 merged and is deployed. The mentor
