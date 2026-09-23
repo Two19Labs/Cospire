@@ -49,6 +49,13 @@ this file and not found here is in one of these; find it with
   verified 25/25 against a local production build and the hosted database
   (2026-09-23). Not merged and not deployed. It needs no migration and calls no
   model. Details in `docs/context/completed.md`.
+- **The Gemini path and the automatic routing are built on the same branch.**
+  A `.docx` with no pictures shows the prompt to copy, as before; one with
+  pictures is sent to Gemini with its pictures, and the platform places each
+  figure. **Its live round trip is UNVERIFIED**: every Gemini model on the
+  Client's key answered `503 UNAVAILABLE` all session, though the key is valid
+  and lists 42 models. Run `scripts/verify/gemini-import.mjs` when the API is
+  back; that is the one thing outstanding.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
   extracted (now built, awaiting merge), then the Gemini import path, then mocks
   built from documents that quote question IDs, then the test engine (Phase 4).
@@ -290,12 +297,22 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Built and verified 25/25 locally; pull request open | 2026-09-23 |
+| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Items 1 and 2 built. Item 1 verified 25/25; item 2's live round trip **UNVERIFIED**, Gemini 503 all session. PR #58 | 2026-09-23 |
 
 Worktree `C:\Cospire\Cospire-doc-import` on port 3030. **No migration**: the
 `question-images` bucket and `questions.images` already exist, and `source_type`
 stays `'paste'` because the JSON still arrives by paste -- only the figures now
 come out of the document.
+
+**Scope grew on 2026-09-23, on the owner's instruction:** item 2, the Gemini
+path, is being built on the same branch rather than stacked behind PR #58, to
+avoid the stacked-pull-request trap this project has already hit twice. The
+owner reported that **the Client has agreed the cost**, which clears the one
+blocker `CONTEXT.md` recorded against item 2. Two things the owner should still
+confirm, recorded because neither is settled by being told the cost is agreed:
+which figure they agreed (the drafted question quoted **Claude at about Rs 20**,
+not Gemini at about Rs 5), and that sending the pictures as well as the text --
+the option chosen -- runs somewhat above the Rs 5 text-only estimate.
 
 Two things a new session should know before touching anything:
 
@@ -539,7 +556,9 @@ open a zip on its own, and a hand-written zip reader is the kind of code that
 works on one file and fails on the next. `@google/genai` was **declined in
 favour of plain `fetch`**, which was proven against the live key on 2026-09-23.
 
-**2. The Gemini path: three steps instead of six.** The platform sends the
+**2. The Gemini path: three steps instead of six. BUILT on `feat/doc-import`,
+2026-09-23. The Client has agreed the cost, per the owner. The live round trip
+is still UNVERIFIED because Gemini answered 503 throughout the session.** The platform sends the
 prepared text to Gemini itself and places the images, so the admin uploads,
 reviews and approves. Everything technical is in hand: the key works, returns
 schema-valid JSON, and is on the paid tier. Two things to settle first, neither

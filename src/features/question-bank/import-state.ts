@@ -9,6 +9,10 @@ export interface QuestionImportState {
   // Kept so the paste box keeps what the admin pasted when something is wrong.
   pasted: string;
   problems: string[];
+  // What the Gemini call cost, when it was the Gemini path that filled `pasted`.
+  // Shown to the admin because the Client is paying per paper and a number they
+  // can see is worth more than an assurance they cannot check.
+  usage?: { answer: number; prompt: number; thinking: number } | null;
 }
 
 export const initialQuestionImportState: QuestionImportState = {

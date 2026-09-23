@@ -27,6 +27,9 @@ import { buildQuestionImagePath, questionImagesBucket } from "../storage";
 
 export interface ExtractedPaper {
   documentName: string;
+  // Every figure the document held, exportable or not. `figurePaths` holds only
+  // the ones that came out, so the two together say what was left behind.
+  figureCount: number;
   // Figure number to the object path it was stored at. Numbers whose picture
   // could not be exported are absent, on purpose: the marker stays in the text
   // and the admin is told to paste that one in.
@@ -120,6 +123,7 @@ export function WordUploadField({
       setPrevious(stored);
       onExtracted({
         documentName: file.name.replace(/\.docx$/i, "").replace(/[\s_]+/g, " ").trim().slice(0, 200),
+        figureCount: paper.figures.length,
         figurePaths,
         notes,
         text: paper.text,

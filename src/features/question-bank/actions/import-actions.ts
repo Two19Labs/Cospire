@@ -14,8 +14,9 @@ import { initialQuestionImportState, parseBatchId, type QuestionImportState } fr
 import { parseId } from "../list-params";
 import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
 import { toSaveQuestionArgs, validateQuestion } from "../question-input";
+import { readQuestionsWithGemini, type GeminiFigure } from "../gemini";
 import { listSections } from "../queries/list-sections";
-import { isQuestionImagePath } from "../storage";
+import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
 // Importing questions: read a pasted answer, stage it, then approve or reject
 // each question.
@@ -87,6 +88,95 @@ export async function previewQuestionImportAction(
         : null,
     pasted,
     problems,
+  };
+}
+
+// The Gemini path: the platform reads the paper itself.
+//
+// What the browser sends is small -- the extracted text and the figure *paths*,
+// never the pictures. The bytes are already in Storage, so the server fetches
+// them from there under the admin's own session. That keeps the whole feature
+// clear of the Vercel request-body cap, and it means the
+// `question_images_select_author` policy is what decides whether this admin may
+// read the picture at all.
+//
+// The answer lands in the same paste box the manual path fills, so preview,
+// staging, review and approval are all the code that already exists and is
+// already verified. This adds a way of filling that box, not a second pipeline.
+const imageTypeByExtension: Record<string, string> = {
+  gif: "image/gif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+export async function askGeminiAction(
+  _state: QuestionImportState,
+  formData: FormData,
+): Promise<QuestionImportState> {
+  const admin = await requireRole("admin");
+
+  const raw = formData.get("documentText");
+  const text = typeof raw === "string" ? raw.slice(0, 500_000) : "";
+  const rawDefault = formData.get("defaultMarks");
+  const documentName = readDocumentName(formData);
+  const figurePaths = readFigurePaths(formData, admin.orgId);
+  const echo = {
+    defaultMarks: typeof rawDefault === "string" ? rawDefault : "",
+    documentName,
+    items: null,
+    pasted: "",
+  };
+
+  if (text.trim() === "") {
+    return { ...echo, problems: ["There is no document text to send. Open a Word file first."], usage: null };
+  }
+  const defaultMarks = parseDefaultMarks(rawDefault);
+  if (defaultMarks === null) {
+    return { ...echo, problems: ["Default marks must be a number above 0 and at most 100, or left blank."], usage: null };
+  }
+
+  // The pictures, read back out of the bucket as this admin.
+  const supabase = await createServerSupabaseClient();
+  const figures: GeminiFigure[] = [];
+  for (const [n, path] of Object.entries(figurePaths).sort((a, b) => Number(a[0]) - Number(b[0]))) {
+    const { data, error } = await supabase.storage.from(questionImagesBucket).download(path);
+    if (error || !data) continue;
+    const mimeType = imageTypeByExtension[path.split(".").pop() ?? ""];
+    if (!mimeType) continue;
+    figures.push({
+      base64: Buffer.from(await data.arrayBuffer()).toString("base64"),
+      mimeType,
+      n: Number(n),
+    });
+  }
+
+  const { json, problems, usage } = await readQuestionsWithGemini({
+    // The only place the key is read. This file is "use server", so it cannot
+    // reach a client bundle and the key cannot travel with it.
+    apiKey: process.env.GEMINI_API_KEY,
+    figures,
+    model: process.env.GEMINI_MODEL || undefined,
+    text,
+  });
+  if (!json) return { ...echo, problems, usage };
+
+  const outcome = parseImportedQuestions(json);
+  if (outcome.problems.length > 0) {
+    // The answer is handed back even so, because the admin can read it, fix it
+    // and send it through the ordinary paste box rather than pay for a second
+    // call.
+    return { ...echo, pasted: json, problems: outcome.problems, usage };
+  }
+
+  return {
+    defaultMarks: typeof rawDefault === "string" ? rawDefault : "",
+    documentName: documentName || outcome.documentName || "",
+    items: outcome.items.map((item) => (item.parsed ? { ...item, parsed: attachFigures(item.parsed, figurePaths) } : item)),
+    pasted: json,
+    problems: [],
+    usage,
   };
 }
 

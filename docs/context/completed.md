@@ -499,6 +499,75 @@ would prove only that the copy agrees with itself.
 run in the `Cospire-doc-import` worktree so the dev server on port 3000 was never
 touched.
 
+### The Gemini path, and automatic routing, 2026-09-23
+
+*What to build next*, item 2, built on the same branch as item 1 rather than
+stacked behind it. **The owner reported that the Client has agreed the cost**,
+which cleared the only blocker recorded against it.
+
+**The routing the owner specified.** When a `.docx` is opened, the platform looks
+at whether it has pictures and chooses:
+
+- **No pictures**: the prompt to copy, exactly as before. Text costs nothing to
+  paste, so there is nothing to pay a model for.
+- **Pictures**: the platform sends the prepared text *and the pictures* to Gemini
+  and places each figure itself.
+
+The routing is automatic; the sending is one click. An API call spends the
+Client's money, so it is not made merely because a file was selected.
+
+**Why the text and the pictures, rather than the file.** Sending the whole
+document would put the model back to guessing which question each picture
+belongs to. The extracted text already carries `[[figure:N]]` exactly where each
+picture sat, so the model only has to leave the markers alone and the platform
+places them deterministically. Sending the pictures as well -- the owner's choice
+of the three options put to them -- means the model can still read a scanned
+table or an equation that exists only inside a picture.
+
+**Where the answer lands.** In the same box the manual paste fills. Preview,
+staging, review and approval are the code that already existed and was already
+verified; this adds a way of filling that box, not a second pipeline. The admin
+can also edit what Gemini returned before sending it on.
+
+**The key is passed in, never read in `gemini.ts`.** `GEMINI_API_KEY` is read
+only by the `"use server"` action, which cannot reach a client bundle. Keeping
+`process.env` out of the module means there is no secret in it to leak even if it
+were imported somewhere careless, and it leaves the module pure enough to test
+without a running server. A unit test asserts the module's own source contains no
+`process.env`, comments excluded. The alternative -- `import "server-only"` --
+would have needed a `vitest.config.mts` alias, and config files are a human's
+call under operating manual §6.1.
+
+**Three things the module exists to get right**, each of which costs money or
+accuracy otherwise: thinking is turned off (`thinkingBudget: 0`, because thinking
+bills as output and the recorded probe spent 189 thinking tokens to answer in
+14); the answer shape is forced by `responseSchema`, though it is still handed to
+`parseImportedQuestions` afterwards, because a schema constrains shape and says
+nothing about whether an answer key is right; and 503 is retried four times with
+backoff, because it is the normal failure rather than the rare one.
+
+**The schema is deliberately flat.** Gemini's schema has no union type, so
+`answer` is always a string. The model is told to write "A, C" for two correct
+options and "0.5 or 1/2" for two accepted typed answers -- both spellings the
+parser already reads, so nothing new had to understand them.
+
+**415 unit tests**, up from 398, seventeen of them for the Gemini client against
+a stubbed `fetch`. Typecheck, lint and a clean production build.
+
+**The live round trip is UNVERIFIED, and this is the honest state.** Every Gemini
+model on the Client's key answered `503 UNAVAILABLE` for the whole session --
+four retries over 27 seconds, and repeated attempts over an hour. The key itself
+is valid: `GET /v1beta/models` returns 200 and lists 42 models, and a successful
+call on this key is recorded earlier the same day. So this is a Google-side
+outage rather than a configuration fault, and `scripts/verify/gemini-import.mjs`
+is written to say so rather than to fail. What that outage did prove, as a check
+of its own, is that an unavailable model reaches the admin as a sentence they can
+act on rather than as an exception.
+
+**Run `node --env-file=.env.local scripts/verify/gemini-import.mjs` when the API
+is back.** That is the outstanding verification, and it is the one thing between
+this and a finished item 2.
+
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
 The owner reported the platform feeling slow and unresponsive: a click on a nav

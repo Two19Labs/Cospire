@@ -5,24 +5,26 @@ import { useActionState, useState } from "react";
 
 import { SubmitButton } from "@/shared/ui";
 
-import { previewQuestionImportAction, stageQuestionImportAction } from "../actions/import-actions";
+import { askGeminiAction, previewQuestionImportAction, stageQuestionImportAction } from "../actions/import-actions";
 import type { ImportedItem } from "../import-spec";
 import { initialQuestionImportState } from "../import-state";
 import { questionTypeLabels } from "../question-input";
 import type { ImportBatchSummary } from "../queries/list-imports";
 import { WordUploadField, type ExtractedPaper } from "./word-upload-field";
 
-// Import questions: open a Word file if there is one, copy the prompt and the
-// text into a model, paste the answer back, send it for review.
+// Import questions: open a Word file, and then either let the platform read it
+// or copy the prompt into a model by hand.
 //
-// A Client Component for `useActionState`, so the preview renders in place
-// rather than through the URL, and for the Word step, which runs in the browser.
-// It still posts natively with scripting off; without JavaScript there is no
-// Word step and the paste box is the whole flow, as it was before.
+// **The platform chooses which, on the owner's design of 2026-09-23.** A paper
+// with no pictures is text, and text costs nothing to copy and paste, so that
+// path stays as it was. A paper with pictures is where a model earns its fee,
+// because the pictures go with the text and the markers place them exactly.
 //
-// The prompt and the extracted text sit in read-only boxes rather than behind a
-// copy button so they can be selected and copied either way -- the ARS
-// importer's reasoning.
+// The routing is automatic; the *sending* is one click. An API call spends the
+// Client's money, so it is not made because a file was selected.
+//
+// Whichever path runs, the answer lands in the same box, and staging, review and
+// approval are the code that was already there.
 
 function preview(text: string): string {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -69,9 +71,9 @@ function ItemSummary({ item }: { item: ImportedItem }) {
   );
 }
 
-// The figure map travels on both posts -- reading a paste and staging it -- so
-// each is resolved by the same server code. One hidden input per figure, which
-// is what a form can carry without inventing an encoding.
+// The figure map travels on every post that needs it, so each is resolved by the
+// same server code. One hidden input per figure, which is what a form can carry
+// without inventing an encoding.
 function FigureInputs({ figurePaths }: { figurePaths: Record<number, string> }) {
   return (
     <>
@@ -84,23 +86,37 @@ function FigureInputs({ figurePaths }: { figurePaths: Record<number, string> }) 
 
 export function QuestionImportScreen({
   batches,
+  geminiAvailable,
   notice,
   orgId,
   prompt,
 }: {
   batches: ImportBatchSummary[];
+  // Whether the server holds a Gemini key. The key itself never comes near this
+  // component; only whether there is one.
+  geminiAvailable: boolean;
   notice: string | null;
   orgId: number;
   prompt: string;
 }) {
   const [state, previewAction] = useActionState(previewQuestionImportAction, initialQuestionImportState);
+  const [geminiState, geminiAction] = useActionState(askGeminiAction, initialQuestionImportState);
   const [stageState, stageAction] = useActionState(stageQuestionImportAction, initialQuestionImportState);
   const [paper, setPaper] = useState<ExtractedPaper | null>(null);
-  const problems = stageState.problems.length > 0 ? stageState.problems : state.problems;
-  const items = state.items;
+  // Which path last ran. Set when the form is submitted, so the two results
+  // cannot fight over which one is showing.
+  const [source, setSource] = useState<"gemini" | "paste">("paste");
+
+  const active = source === "gemini" ? geminiState : state;
+  const items = active.items;
+  const problems = stageState.problems.length > 0 ? stageState.problems : active.problems;
   const withProblems = items?.filter((item) => item.problems.length > 0).length ?? 0;
+
   const figurePaths = paper?.figurePaths ?? {};
   const attached = Object.keys(figurePaths).length;
+  const hasPictures = attached > 0;
+  const useGemini = geminiAvailable && hasPictures;
+  const usage = geminiState.usage;
 
   return (
     <>
@@ -111,13 +127,12 @@ export function QuestionImportScreen({
       {notice ? <p className="muted">{notice}</p> : null}
 
       <section className="panel stack-form">
-        <h2>Step 1 — open a Word file (optional)</h2>
+        <h2>Step 1 — open the Word file</h2>
         <p className="muted">
-          Choose the question paper as a <code>.docx</code> and its pictures are
-          taken out here, into the question bank&apos;s own image store. The text
-          comes back with <code>[[figure:1]]</code>, <code>[[figure:2]]</code> and
-          so on where each picture sat, so the model can say which question each
-          one belongs to. Nothing is sent to a model from this page.
+          Choose the question paper as a <code>.docx</code>. Its pictures are taken
+          out here, into the question bank&apos;s own image store, and the text comes
+          back with <code>[[figure:1]]</code>, <code>[[figure:2]]</code> and so on
+          where each one sat.
         </p>
         <WordUploadField onExtracted={setPaper} orgId={orgId} />
 
@@ -125,9 +140,12 @@ export function QuestionImportScreen({
           <>
             <p className="muted">
               {attached === 0
-                ? "No pictures were taken out of this document."
-                : `${attached === 1 ? "1 picture" : `${attached} pictures`} taken out and numbered.`}{" "}
-              Copy the text below and paste it under the prompt in step 2.
+                ? paper.figureCount === 0
+                  ? "This document has no pictures in it."
+                  : `${paper.figureCount === 1 ? "1 figure" : `${paper.figureCount} figures`} found, none of which could be taken out.`
+                : `${attached === 1 ? "1 picture" : `${attached} pictures`} taken out and numbered${
+                    paper.figureCount > attached ? `, out of ${paper.figureCount} found` : ""
+                  }.`}
             </p>
             {paper.notes.length > 0 ? (
               <ul className="muted">
@@ -138,34 +156,90 @@ export function QuestionImportScreen({
             ) : null}
             <label className="field">
               <span className="field__label">The document&apos;s text, with figure markers</span>
-              <textarea
-                className="input input--area input--code"
-                readOnly
-                rows={14}
-                value={paper.text}
-              />
+              <textarea className="input input--area input--code" readOnly rows={12} value={paper.text} />
             </label>
           </>
         ) : null}
       </section>
 
-      <section className="panel">
-        <h2>Step 2 — copy this prompt</h2>
-        <p className="muted">
-          Paste it into Claude or any model, then paste the text from step 1
-          underneath it — or attach the document itself if you skipped step 1 —
-          and send. Nothing here calls the model for you.
-        </p>
-        <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={10} value={prompt} />
-        <p className="muted">
-          {attached > 0
-            ? "Keep the [[figure:N]] markers exactly as they are. Each one is matched back to the picture it names when the questions are sent for review."
-            : "Charts and pictures in the document come back as a note on the question. Paste the image in on the review screen before approving it."}
-        </p>
-      </section>
+      {paper ? (
+        useGemini ? (
+          <form
+            action={geminiAction}
+            className="panel stack-form"
+            onSubmit={() => setSource("gemini")}
+          >
+            <h2>Step 2 — let the platform read it</h2>
+            <p className="muted">
+              This paper has pictures, so the platform sends the text and the
+              pictures to Gemini and places each figure itself. You review and
+              approve as usual. Nothing enters the bank without you.
+            </p>
+            <input name="documentText" type="hidden" value={paper.text} />
+            <input name="documentName" type="hidden" value={paper.documentName} />
+            <FigureInputs figurePaths={figurePaths} />
+            <div className="form-fields">
+              <label className="field">
+                <span className="field__label">Default marks (optional)</span>
+                <input className="input" defaultValue="" inputMode="decimal" name="defaultMarks" placeholder="e.g. 3" />
+                <span className="field__hint">Used only where the document does not state marks.</span>
+              </label>
+            </div>
+            <p className="muted">
+              This call is billed to the Client&apos;s own Google account. The
+              token count is shown once it answers.
+            </p>
+            <div className="form-actions">
+              <SubmitButton pendingLabel="Reading the paper…">Read it with Gemini</SubmitButton>
+            </div>
+            {usage ? (
+              <p className="muted">
+                Last call: {usage.prompt.toLocaleString()} prompt tokens,{" "}
+                {usage.answer.toLocaleString()} answer tokens
+                {usage.thinking > 0 ? `, ${usage.thinking.toLocaleString()} thinking tokens` : ", no thinking tokens"}.
+              </p>
+            ) : null}
+          </form>
+        ) : (
+          <section className="panel">
+            <h2>Step 2 — copy this prompt</h2>
+            <p className="muted">
+              {hasPictures
+                ? "This paper has pictures, but no Gemini key is configured on the server, so it has to go through a model by hand."
+                : "This paper has no pictures, so there is nothing to pay a model for. Copy the prompt, paste the text from step 1 underneath it, and send."}
+            </p>
+            <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={10} value={prompt} />
+            {attached > 0 ? (
+              <p className="muted">
+                Keep the <code>[[figure:N]]</code> markers exactly as they are. Each
+                one is matched back to the picture it names.
+              </p>
+            ) : null}
+          </section>
+        )
+      ) : (
+        <section className="panel">
+          <h2>Step 2 — copy this prompt</h2>
+          <p className="muted">
+            Or skip step 1 and attach the document to the model yourself. Paste the
+            prompt in, attach or paste the paper underneath it, and send. Nothing
+            here calls a model unless you ask it to.
+          </p>
+          <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={10} value={prompt} />
+          <p className="muted">
+            Charts and pictures come back as a note on the question. Paste the
+            image in on the review screen before approving it.
+          </p>
+        </section>
+      )}
 
-      <form action={previewAction} className="panel stack-form">
+      <form action={previewAction} className="panel stack-form" onSubmit={() => setSource("paste")}>
         <h2>Step 3 — paste the answer</h2>
+        <p className="muted">
+          {useGemini
+            ? "Only needed if you ran the prompt yourself, or if you want to correct what Gemini returned before sending it for review."
+            : "Paste the model's whole answer here."}
+        </p>
         <FigureInputs figurePaths={figurePaths} />
         <div className="form-fields">
           <label className="field">
@@ -193,7 +267,13 @@ export function QuestionImportScreen({
         </div>
         <label className="field">
           <span className="field__label">The model&apos;s answer</span>
-          <textarea className="input input--area input--code" defaultValue={state.pasted} name="pasted" rows={12} />
+          <textarea
+            className="input input--area input--code"
+            defaultValue={active.pasted}
+            key={active.pasted.slice(0, 40)}
+            name="pasted"
+            rows={12}
+          />
         </label>
         {problems.length > 0 ? (
           <div className="form-error" role="alert">
@@ -225,9 +305,9 @@ export function QuestionImportScreen({
             ))}
           </ol>
           <form action={stageAction}>
-            <input name="pasted" type="hidden" value={state.pasted} />
-            <input name="documentName" type="hidden" value={state.documentName} />
-            <input name="defaultMarks" type="hidden" value={state.defaultMarks} />
+            <input name="pasted" type="hidden" value={active.pasted} />
+            <input name="documentName" type="hidden" value={active.documentName} />
+            <input name="defaultMarks" type="hidden" value={active.defaultMarks} />
             <FigureInputs figurePaths={figurePaths} />
             <SubmitButton pendingLabel="Sending…">{`Send ${items.length} for review`}</SubmitButton>
           </form>

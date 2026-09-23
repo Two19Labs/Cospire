@@ -255,3 +255,37 @@ After cleanup: **0 questions, 0 question keys, 0 staged imports, 0 objects under
 `org/1/questions`, 5 profiles, 2 documents** — and **1 question section** (id 39,
 "QA", created 2026-09-21) and **8 courses**, neither of which this run created
 and neither of which it may delete.
+
+## gemini-import.mjs — the model path
+
+```bash
+# the round trip, billed to the Client's Google account
+node --env-file=.env.local scripts/verify/gemini-import.mjs
+
+# and, given a running build, that the key is in nothing the browser is served
+node --env-file=.env.local scripts/verify/gemini-import.mjs http://127.0.0.1:3030
+```
+
+Builds a small Word paper, extracts it with the **real** `readDocx`, sends the
+text and its picture to Gemini with the **real** `readQuestionsWithGemini`, and
+reads the answer back through the **real** `parseImportedQuestions`. It writes
+nothing to the database: the call and the parse are the whole subject.
+
+It reports three verdicts, not two. `UNVERIFIED` is used where a check could not
+be completed, and it is not rounded up to a pass.
+
+**The picture is one pixel, deliberately.** What this proves is that a picture
+travels and that its marker comes back on the right question. How well Gemini
+reads a real chart is Google's problem, and measuring it needs one of Cospire's
+own papers — the pulled-forward accuracy item in `CONTEXT.md`.
+
+Two things it knows:
+
+- **`503 UNAVAILABLE` is a normal answer, not a rare one.** Every model on this
+  account returned it for the whole of the 2026-09-23 build session. So the
+  script treats a failed call as a check of its own — that the admin is given a
+  sentence they can act on — and marks the round trip `UNVERIFIED` rather than
+  failing the run.
+- **The resolve hook handles `@/` as well as extensionless imports.** Without the
+  alias, `import-spec.ts` fails to load and the failure reads like a missing npm
+  package rather than a path alias.

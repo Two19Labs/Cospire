@@ -38,9 +38,16 @@ import { zipSync } from "fflate";
 // ones: a harness that reimplements the thing it checks proves only that the
 // copy agrees with itself. Node strips the types on its own; all it needs is the
 // extension the application's imports leave off.
+// `@/...` is the tsconfig path alias, and an extensionless relative import is
+// what the application writes everywhere. Node resolves neither on its own, and
+// it strips the types itself once it can find the file.
+const srcDir = new URL("../../src/", import.meta.url).href;
+
 registerHooks({
   resolve(specifier, context, next) {
-    if (specifier.startsWith(".") && !/\.[a-z]+$/i.test(specifier)) return next(`${specifier}.ts`, context);
+    const withExtension = (target) => (/\.[a-z]+$/i.test(target) ? target : `${target}.ts`);
+    if (specifier.startsWith("@/")) return next(withExtension(`${srcDir}${specifier.slice(2)}`), context);
+    if (specifier.startsWith(".")) return next(withExtension(specifier), context);
     return next(specifier, context);
   },
 });
