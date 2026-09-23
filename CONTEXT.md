@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-22 (Asia/Calcutta)
+Last updated: 2026-09-23 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -17,7 +17,7 @@ this file and not found here is in one of these; find it with
 | `docs/context/phase-history.md` | Phase 0, 1 and 5a progress records, exit gates and security audits |
 | `docs/context/verification-log.md` | Every check run, with its result |
 
-## Status, 2026-09-22
+## Status, 2026-09-23
 
 - **On `main` and deployed** at `https://cospire-roan.vercel.app`:
   - Phase 0 and Phase 1: users, access granting, the document library and the
@@ -351,7 +351,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
-| **A Google account** (Docs API) | Only **automatic image extraction from Google Docs** (clause 3.15). Question import itself is built on paste-a-prompt and needs no Google or LLM account; until this exists, figures are pasted in on the review screen, which is going into the clause 16.1 amendment | Cospire |
+| ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
@@ -543,8 +543,11 @@ alongside step 2.
 - **Before the API path can be built:** (1) the Client agrees to the cost,
   estimated at about Rs 5 a paper on Gemini 3.8 Flash for the Word path,
   halved again by batch for the one-time bulk import; the question has been
-  drafted for the owner to send; (2) a Google account and Gemini API key in
-  Cospire's name, server-side env only -- the same account clause 3.15 needs;
+  drafted for the owner to send; (2) **the Google account is in hand as of
+  2026-09-23**; what remains on it is a Gemini API key with billing enabled
+  (paid tier, so the Client's papers are not used to improve Google's
+  products), held server-side only, never in the repository and never in a
+  client component -- the same account clause 3.15 needs;
   (3) owner approval to add `@google/genai` and `fflate` to
   `package.json`. If the Client declines the cost, build the `.docx` upload
   with automatic pictures on the paste path instead: still six steps, pictures
