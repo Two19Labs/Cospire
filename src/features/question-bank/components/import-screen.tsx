@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { SubmitButton } from "@/shared/ui";
 
@@ -10,13 +10,19 @@ import type { ImportedItem } from "../import-spec";
 import { initialQuestionImportState } from "../import-state";
 import { questionTypeLabels } from "../question-input";
 import type { ImportBatchSummary } from "../queries/list-imports";
+import { WordUploadField, type ExtractedPaper } from "./word-upload-field";
 
-// Paste a model's answer and send it for review.
+// Import questions: open a Word file if there is one, copy the prompt and the
+// text into a model, paste the answer back, send it for review.
 //
-// A Client Component only for `useActionState`, so the preview renders in place
-// rather than through the URL. It still posts natively with scripting off. The
-// prompt sits in a read-only box rather than behind a copy button so it can be
-// selected and copied either way -- the ARS importer's reasoning.
+// A Client Component for `useActionState`, so the preview renders in place
+// rather than through the URL, and for the Word step, which runs in the browser.
+// It still posts natively with scripting off; without JavaScript there is no
+// Word step and the paste box is the whole flow, as it was before.
+//
+// The prompt and the extracted text sit in read-only boxes rather than behind a
+// copy button so they can be selected and copied either way -- the ARS
+// importer's reasoning.
 
 function preview(text: string): string {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -25,6 +31,7 @@ function preview(text: string): string {
 
 function ItemSummary({ item }: { item: ImportedItem }) {
   const parsed = item.parsed;
+  const images = parsed?.images ?? [];
   return (
     <li className="report-list__item">
       <p>
@@ -36,6 +43,7 @@ function ItemSummary({ item }: { item: ImportedItem }) {
               {parsed.parentPosition !== null ? ` · part of set ${parsed.parentPosition + 1}` : ""}
               {parsed.sectionName ? ` · ${parsed.sectionName}` : ""}
               {parsed.topic ? ` · ${parsed.topic}` : ""}
+              {images.length > 0 ? ` · ${images.length === 1 ? "1 figure" : `${images.length} figures`} attached` : ""}
             </span>{" "}
             {preview(parsed.body) || <em className="muted">(figure only)</em>}
           </>
@@ -61,20 +69,38 @@ function ItemSummary({ item }: { item: ImportedItem }) {
   );
 }
 
+// The figure map travels on both posts -- reading a paste and staging it -- so
+// each is resolved by the same server code. One hidden input per figure, which
+// is what a form can carry without inventing an encoding.
+function FigureInputs({ figurePaths }: { figurePaths: Record<number, string> }) {
+  return (
+    <>
+      {Object.entries(figurePaths).map(([n, path]) => (
+        <input key={n} name="figures" type="hidden" value={`${n}:${path}`} />
+      ))}
+    </>
+  );
+}
+
 export function QuestionImportScreen({
   batches,
   notice,
+  orgId,
   prompt,
 }: {
   batches: ImportBatchSummary[];
   notice: string | null;
+  orgId: number;
   prompt: string;
 }) {
   const [state, previewAction] = useActionState(previewQuestionImportAction, initialQuestionImportState);
   const [stageState, stageAction] = useActionState(stageQuestionImportAction, initialQuestionImportState);
+  const [paper, setPaper] = useState<ExtractedPaper | null>(null);
   const problems = stageState.problems.length > 0 ? stageState.problems : state.problems;
   const items = state.items;
   const withProblems = items?.filter((item) => item.problems.length > 0).length ?? 0;
+  const figurePaths = paper?.figurePaths ?? {};
+  const attached = Object.keys(figurePaths).length;
 
   return (
     <>
@@ -84,27 +110,70 @@ export function QuestionImportScreen({
 
       {notice ? <p className="muted">{notice}</p> : null}
 
-      <section className="panel">
-        <h2>Step 1 — copy this prompt</h2>
+      <section className="panel stack-form">
+        <h2>Step 1 — open a Word file (optional)</h2>
         <p className="muted">
-          Paste it into Claude or any model, attach or paste the question document
-          underneath it, and send. Nothing here calls the model for you.
+          Choose the question paper as a <code>.docx</code> and its pictures are
+          taken out here, into the question bank&apos;s own image store. The text
+          comes back with <code>[[figure:1]]</code>, <code>[[figure:2]]</code> and
+          so on where each picture sat, so the model can say which question each
+          one belongs to. Nothing is sent to a model from this page.
+        </p>
+        <WordUploadField onExtracted={setPaper} orgId={orgId} />
+
+        {paper ? (
+          <>
+            <p className="muted">
+              {attached === 0
+                ? "No pictures were taken out of this document."
+                : `${attached === 1 ? "1 picture" : `${attached} pictures`} taken out and numbered.`}{" "}
+              Copy the text below and paste it under the prompt in step 2.
+            </p>
+            {paper.notes.length > 0 ? (
+              <ul className="muted">
+                {paper.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : null}
+            <label className="field">
+              <span className="field__label">The document&apos;s text, with figure markers</span>
+              <textarea
+                className="input input--area input--code"
+                readOnly
+                rows={14}
+                value={paper.text}
+              />
+            </label>
+          </>
+        ) : null}
+      </section>
+
+      <section className="panel">
+        <h2>Step 2 — copy this prompt</h2>
+        <p className="muted">
+          Paste it into Claude or any model, then paste the text from step 1
+          underneath it — or attach the document itself if you skipped step 1 —
+          and send. Nothing here calls the model for you.
         </p>
         <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={10} value={prompt} />
         <p className="muted">
-          Charts and pictures in the document come back as a note on the question.
-          Paste the image in on the review screen before approving it.
+          {attached > 0
+            ? "Keep the [[figure:N]] markers exactly as they are. Each one is matched back to the picture it names when the questions are sent for review."
+            : "Charts and pictures in the document come back as a note on the question. Paste the image in on the review screen before approving it."}
         </p>
       </section>
 
       <form action={previewAction} className="panel stack-form">
-        <h2>Step 2 — paste the answer</h2>
+        <h2>Step 3 — paste the answer</h2>
+        <FigureInputs figurePaths={figurePaths} />
         <div className="form-fields">
           <label className="field">
             <span className="field__label">Document name (optional)</span>
             <input
               className="input"
-              defaultValue={state.documentName}
+              defaultValue={state.documentName || paper?.documentName || ""}
+              key={paper?.documentName ?? "none"}
               maxLength={200}
               name="documentName"
               placeholder="e.g. QA practice set 4"
@@ -144,7 +213,7 @@ export function QuestionImportScreen({
 
       {items ? (
         <section className="panel stack-form">
-          <h2>Step 3 — send for review</h2>
+          <h2>Step 4 — send for review</h2>
           <p className="muted">
             {items.length} {items.length === 1 ? "question" : "questions"} read
             {withProblems > 0 ? `; ${withProblems} need fixing on the review screen before they can be approved` : ""}.
@@ -159,6 +228,7 @@ export function QuestionImportScreen({
             <input name="pasted" type="hidden" value={state.pasted} />
             <input name="documentName" type="hidden" value={state.documentName} />
             <input name="defaultMarks" type="hidden" value={state.defaultMarks} />
+            <FigureInputs figurePaths={figurePaths} />
             <SubmitButton pendingLabel="Sending…">{`Send ${items.length} for review`}</SubmitButton>
           </form>
         </section>

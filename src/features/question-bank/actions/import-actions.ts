@@ -8,13 +8,14 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { applyDefaultMarks, matchSection, parseDefaultMarks, reviewProblems } from "../import-review";
+import { applyDefaultMarks, attachFigures, matchSection, parseDefaultMarks, reviewProblems } from "../import-review";
 import { parseImportedQuestions, type StagedQuestion } from "../import-spec";
 import { initialQuestionImportState, parseBatchId, type QuestionImportState } from "../import-state";
 import { parseId } from "../list-params";
 import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
 import { toSaveQuestionArgs, validateQuestion } from "../question-input";
 import { listSections } from "../queries/list-sections";
+import { isQuestionImagePath } from "../storage";
 
 // Importing questions: read a pasted answer, stage it, then approve or reject
 // each question.
@@ -33,6 +34,33 @@ function readPaste(formData: FormData): string {
   return typeof raw === "string" ? raw.slice(0, 500_000) : "";
 }
 
+// The images the Word step put in the bucket, as "3:org/1/questions/<uuid>.png".
+//
+// A Server Action is a public endpoint, so this is a post like any other and
+// none of it is trusted: a number outside the range is dropped, and a path is
+// kept only if it is one this organisation could legally hold. That is the same
+// check `validateQuestion` applies at approval, run early so a crafted post
+// cannot put another organisation's path on a staged row in the first place.
+//
+// It cannot prove the object exists -- only that the path is well formed and in
+// the caller's own organisation. The Storage policies are what stop a path being
+// readable, and a path naming nothing simply shows no image.
+const maxFigureNumber = 300;
+
+function readFigurePaths(formData: FormData, orgId: number): Record<number, string> {
+  const paths: Record<number, string> = {};
+  for (const value of formData.getAll("figures")) {
+    if (typeof value !== "string") continue;
+    const match = value.match(/^([0-9]{1,3}):(.+)$/);
+    if (!match) continue;
+    const n = Number(match[1]);
+    if (!Number.isInteger(n) || n < 1 || n > maxFigureNumber) continue;
+    if (!isQuestionImagePath(match[2], orgId)) continue;
+    paths[n] = match[2];
+  }
+  return paths;
+}
+
 function readDocumentName(formData: FormData): string {
   const raw = formData.get("documentName");
   return typeof raw === "string" ? raw.trim().replace(/\s+/g, " ").slice(0, 200) : "";
@@ -42,17 +70,21 @@ export async function previewQuestionImportAction(
   _state: QuestionImportState,
   formData: FormData,
 ): Promise<QuestionImportState> {
-  await requireRole("admin");
+  const admin = await requireRole("admin");
 
   const pasted = readPaste(formData);
   const defaultMarks = typeof formData.get("defaultMarks") === "string" ? String(formData.get("defaultMarks")) : "";
   if (pasted.trim() === "") return { ...initialQuestionImportState, problems: ["Paste the model's answer first."] };
 
+  const figurePaths = readFigurePaths(formData, admin.orgId);
   const { documentName, items, problems } = parseImportedQuestions(pasted);
   return {
     defaultMarks,
     documentName: readDocumentName(formData) || documentName || "",
-    items: problems.length === 0 ? items : null,
+    items:
+      problems.length === 0
+        ? items.map((item) => (item.parsed ? { ...item, parsed: attachFigures(item.parsed, figurePaths) } : item))
+        : null,
     pasted,
     problems,
   };
@@ -85,10 +117,13 @@ export async function stageQuestionImportAction(
   }
 
   const sections = await listSections();
+  const figurePaths = readFigurePaths(formData, admin.orgId);
   const batchId = randomUUID();
 
   const rows = outcome.items.map((item) => {
-    const parsed: StagedQuestion | null = item.parsed ? applyDefaultMarks(item.parsed, defaultMarks) : null;
+    const parsed: StagedQuestion | null = item.parsed
+      ? attachFigures(applyDefaultMarks(item.parsed, defaultMarks), figurePaths)
+      : null;
     const sectionId = parsed ? matchSection(parsed.sectionName, sections) : null;
     // The parser's own findings win where it has any; otherwise the same
     // validator approval uses says what is left to fix, marks included.

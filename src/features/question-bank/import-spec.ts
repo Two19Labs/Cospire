@@ -40,6 +40,12 @@ export interface StagedQuestion {
   body: string;
   correctOptions: number[];
   difficulty: string;
+  // The figure numbers this question referred to, in the order they appeared.
+  // What the text asked for; `images` is what it got.
+  figures: number[];
+  // Image paths resolved from `figures` when the document was a Word upload.
+  // Empty for a plain paste, where there is nothing on this side to resolve to.
+  images: string[];
   marks: string;
   // Notes the admin should read but that do not stop approval.
   notes: string[];
@@ -152,15 +158,52 @@ const difficultyWords: Record<string, string> = {
   tough: "hard",
 };
 
-// The prompt asks the model to write [[figure]] wherever the document has a
-// chart or picture. The marker is taken out of the text and the question is
-// flagged, so the admin knows to paste the image in on the review screen.
-const figureMarker = /\[\[\s*(figure|image|chart|diagram|graph|table)[^\]]*\]\]/gi;
+// Figure markers, in both shapes the prompt allows.
+//
+// `[[figure:3]]` is what the Word importer writes, having already taken picture
+// 3 out of the document. The number is the only link between the two, so it is
+// carried through to staging and resolved to an image path there. A bare
+// `[[figure]]` is what a model writes when it reads a document directly, with no
+// picture on this side to link to, so it stays what it always was: a note
+// telling the admin to paste the image in on the review screen.
+//
+// The marker itself never reaches the question. It is scaffolding between the
+// document and the bank, and a question body reading "[[figure:3]]" in front of
+// a student would be a defect.
+// The alternation is ordered longest first, and must stay that way. With
+// `fig` before `figure`, `[[figure:3]]` matches on `fig`, the `ure:3` is then
+// eaten by the trailing `[^\]]*`, and the number is silently lost: the marker
+// still disappears from the text, so the only visible symptom is a figure that
+// never attaches to anything.
+const figureMarker = /\[\[\s*(?:figure|diagram|picture|image|graph|chart|table|fig)\s*[:#-]?\s*(\d{1,3})?[^\]]*\]\]/gi;
 
-function takeFigures(text: string): { hadFigure: boolean; text: string } {
-  const hadFigure = figureMarker.test(text);
-  figureMarker.lastIndex = 0;
-  return { hadFigure, text: text.replace(figureMarker, "").replace(/\n{3,}/g, "\n\n").trim() };
+interface FigureScan {
+  // The numbers this text referred to, in order, deduplicated.
+  numbers: number[];
+  text: string;
+  // A marker carrying no number.
+  unnumbered: boolean;
+}
+
+function takeFigures(text: string): FigureScan {
+  const numbers: number[] = [];
+  let unnumbered = false;
+
+  const stripped = text.replace(figureMarker, (_whole: string, digits: string | undefined) => {
+    if (digits === undefined) {
+      unnumbered = true;
+      return "";
+    }
+    const n = Number(digits);
+    if (Number.isInteger(n) && n >= 1 && !numbers.includes(n)) numbers.push(n);
+    return "";
+  });
+
+  return {
+    numbers,
+    text: stripped.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim(),
+    unnumbered,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -239,12 +282,30 @@ function readQuestion(
   }
 
   const rawBody = readText(raw, "question", "body", "stem", "text", "prompt");
-  const { hadFigure, text: body } = takeFigures(rawBody);
-  if (body === "" && !hadFigure) problems.push(`${where}: the question text is missing.`);
+  const bodyScan = takeFigures(rawBody);
+  const body = bodyScan.text;
+  const figures = [...bodyScan.numbers];
+  let unnumbered = bodyScan.unnumbered;
+  if (body === "" && figures.length === 0 && !unnumbered) problems.push(`${where}: the question text is missing.`);
   if (body.length > questionBodyMaxLength) problems.push(`${where}: the question is longer than ${questionBodyMaxLength} characters.`);
 
+  // A figure inside an answer option: kept, because the bytes exist and losing
+  // them would be worse, but always flagged. Images attach to a question as a
+  // set, so an image that belongs in one option cannot be shown in its place,
+  // and the honest fix is for the admin to retype the option.
   const cleanOptions = options.map((option) => takeFigures(option));
-  if (cleanOptions.some((option) => option.hadFigure)) notes.push("An option contains a figure. Add it as an image, or retype the option.");
+  for (const option of cleanOptions) {
+    for (const n of option.numbers) if (!figures.includes(n)) figures.push(n);
+    if (option.unnumbered) unnumbered = true;
+  }
+  const optionFigures = cleanOptions.flatMap((option) => option.numbers);
+  if (cleanOptions.some((option) => option.numbers.length > 0 || option.unnumbered)) {
+    notes.push(
+      optionFigures.length > 0
+        ? `An option contains ${optionFigures.length === 1 ? `figure ${optionFigures[0]}` : `figures ${optionFigures.join(", ")}`}. It is attached to the question; retype the option so it reads on its own.`
+        : "An option contains a figure. Add it as an image, or retype the option.",
+    );
+  }
 
   let correctOptions: number[] = [];
   let accepted: string[] = [];
@@ -309,7 +370,7 @@ function readQuestion(
 
   const solution = readText(raw, "solution", "explanation", "workings", "working").slice(0, solutionMaxLength);
   const source = readText(raw, "source", "original", "sourceText", "source_text").slice(0, sourceMaxLength);
-  if (hadFigure) notes.push("The document has a figure here. Paste or upload it before approving.");
+  if (unnumbered) notes.push("The document has a figure here. Paste or upload it before approving.");
 
   if (!type) return { parsed: null, problems };
 
@@ -319,6 +380,8 @@ function readQuestion(
       body: body.slice(0, questionBodyMaxLength),
       correctOptions,
       difficulty,
+      figures,
+      images: [],
       marks,
       notes,
       options: cleanOptions.map((option) => option.text).slice(0, maxOptions),
@@ -341,9 +404,12 @@ function readSet(
   const problems: string[] = [];
   const notes: string[] = [];
 
-  const { hadFigure, text: body } = takeFigures(readText(raw, "passage", "stimulus", "body", "question", "text", "data"));
-  if (body === "" && !hadFigure) problems.push(`${where}: the set's passage or chart description is missing.`);
-  if (hadFigure) notes.push("The set's chart or table is a figure. Paste or upload it before approving.");
+  const scan = takeFigures(readText(raw, "passage", "stimulus", "body", "question", "text", "data"));
+  const body = scan.text;
+  if (body === "" && scan.numbers.length === 0 && !scan.unnumbered) {
+    problems.push(`${where}: the set's passage or chart description is missing.`);
+  }
+  if (scan.unnumbered) notes.push("The set's chart or table is a figure. Paste or upload it before approving.");
 
   const children = readList(raw, "questions", "subQuestions", "sub_questions", "items", "children").filter(isRecord);
   if (children.length === 0) problems.push(`${where}: the set has no sub-questions.`);
@@ -364,6 +430,8 @@ function readSet(
       body: body.slice(0, questionBodyMaxLength),
       correctOptions: [],
       difficulty,
+      figures: scan.numbers,
+      images: [],
       marks: "0",
       notes,
       options: [],

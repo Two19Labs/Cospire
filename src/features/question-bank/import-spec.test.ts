@@ -21,8 +21,85 @@ describe("parseImportedQuestions", () => {
     expect(items.every((item) => item.problems.length === 0)).toBe(true);
     expect(items[0].parsed?.correctOptions).toEqual([0]);
     expect(items[3].parsed).toMatchObject({ parentPosition: 2, sectionName: "DILR", topic: "Tables" });
-    expect(items[2].parsed?.notes.join(" ")).toMatch(/figure/);
+    // The example's DI passage carries [[figure:3]]. The prompt and the parser
+    // are checked against each other here on purpose: a marker shape changed in
+    // one and not the other would leave every imported figure unattached, and
+    // nothing else would notice.
+    expect(items[2].parsed?.figures).toEqual([3]);
+    expect(items[2].parsed?.notes).toEqual([]);
     expect(items[2].parsed?.body).not.toMatch(/\[\[/);
+  });
+
+  describe("figure markers", () => {
+    it("records a numbered marker against the question and takes it out of the text", () => {
+      const { items } = parseImportedQuestions(
+        paste([{ ...base, answer: "1", question: "Study [[figure:2]] and answer.", type: "tita" }]),
+      );
+      expect(items[0].parsed?.figures).toEqual([2]);
+      expect(items[0].parsed?.body).toBe("Study and answer.");
+      // A number is resolved to an image at staging, so there is nothing for the
+      // admin to do and nothing to tell them.
+      expect(items[0].parsed?.notes).toEqual([]);
+    });
+
+    it("keeps an unnumbered marker as the note it has always been", () => {
+      const { items } = parseImportedQuestions(
+        paste([{ ...base, answer: "1", question: "Study [[figure]] and answer.", type: "tita" }]),
+      );
+      expect(items[0].parsed?.figures).toEqual([]);
+      expect(items[0].parsed?.notes.join(" ")).toMatch(/Paste or upload it before approving/);
+    });
+
+    it("reads every spelling of a marker the prompt or a model might produce", () => {
+      const { items } = parseImportedQuestions(
+        paste([
+          { ...base, answer: "1", question: "[[figure:1]] [[Figure: 2]] [[image 3]] [[fig:4]] [[chart:5]]", type: "tita" },
+        ]),
+      );
+      expect(items[0].parsed?.figures).toEqual([1, 2, 3, 4, 5]);
+      expect(items[0].parsed?.body).toBe("");
+    });
+
+    it("counts one figure once however often a question names it", () => {
+      const { items } = parseImportedQuestions(
+        paste([{ ...base, answer: "1", question: "[[figure:2]] and again [[figure:2]]", type: "tita" }]),
+      );
+      expect(items[0].parsed?.figures).toEqual([2]);
+    });
+
+    it("keeps a figure that sits inside an option, and still flags the option", () => {
+      const { items } = parseImportedQuestions(
+        paste([{ ...base, answer: "A", options: ["[[figure:4]]", "none of these"], question: "Which shape?" }]),
+      );
+      expect(items[0].parsed?.figures).toEqual([4]);
+      expect(items[0].parsed?.options).toEqual(["", "none of these"]);
+      expect(items[0].parsed?.notes.join(" ")).toMatch(/An option contains figure 4.*retype the option/);
+    });
+
+    it("reads a question that is nothing but a figure", () => {
+      const { items } = parseImportedQuestions(
+        paste([{ ...base, answer: "7", question: "[[figure:1]]", type: "tita" }]),
+      );
+      expect(items[0].parsed?.body).toBe("");
+      expect(items[0].parsed?.figures).toEqual([1]);
+      expect(items[0].problems).toEqual([]);
+    });
+
+    it("carries a set's figure on the set, not on its sub-questions", () => {
+      const { items } = parseImportedQuestions(
+        paste([
+          {
+            ...base,
+            passage: "The table below. [[figure:9]]",
+            questions: [{ answer: "4", marks: 3, question: "Total?", type: "tita" }],
+            type: "di_set",
+          },
+        ]),
+      );
+      expect(items[0].parsed?.figures).toEqual([9]);
+      expect(items[1].parsed?.figures).toEqual([]);
+      expect(items[1].parsed?.parentPosition).toBe(0);
+    });
   });
 
   it("takes the JSON out of prose and code fences", () => {

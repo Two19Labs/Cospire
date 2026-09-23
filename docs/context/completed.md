@@ -426,6 +426,79 @@ cleanup returned to 0 mocks, 0 mock sections, 0 mock questions, 0 questions and
 5 profiles. The authoring regression remains 36/36. Typecheck, lint, 342 tests
 and a clean production build pass.
 
+### Word upload: pictures out, numbered markers in, 2026-09-23
+
+*What to build next*, item 1, built on `feat/doc-import`. An admin opens a
+`.docx`; its pictures go into the existing `question-images` bucket; the paper's
+text comes back with `[[figure:N]]` where each one sat. The admin pastes that
+text into any model with the existing prompt, pastes the JSON back, and each
+marker is resolved to image N before the usual review and approval.
+
+**No model call anywhere in it**, so it works whatever the Client decides about
+the Gemini cost. **No migration**: the bucket and `questions.images` already
+exist, and `source_type` stays `'paste'` because the JSON still arrives by paste
+-- only the figures now come out of the document.
+
+**Extraction runs in the browser, and that is the load-bearing decision.** Every
+upload in this project goes from the browser straight to Storage under the
+author's own session, so the Storage policies decide and no file passes through
+the application server (operating manual §8). Sending a 12 MB Word file to a
+Server Action instead would proxy media through a Vercel function, whose request
+body is capped at 1 MB by default and 4.5 MB by the platform -- which is the High
+finding about payload limits, met head on. Raising that cap would also have meant
+editing `next.config.ts`, a human's call under §6.1. So the Word step needs
+JavaScript, the same trade the image field and the document upload already make;
+without it the paste box still works and there is simply no Word step.
+
+**What is flagged rather than guessed at**, as the owner settled on 2026-09-23:
+EMF and WMF drawings, native Word charts, embedded objects, formats the bucket
+does not accept, and anything over 5 MB. Each is still *numbered*, so the marker
+in the text keeps its meaning and the admin is told which numbers to paste in by
+hand. An image inside an answer option is attached to the question and the option
+is still flagged for retyping -- images attach to a question as a set, so an image
+that belongs in one option cannot be shown in its place.
+
+**Three defects the tests found, none of which a build would have caught:**
+
+- A table nested inside a table cell came out empty. `row` was one variable
+  rather than one per table, so an inner `</w:tr>` cleared the outer table's row
+  and the whole outer table was lost.
+- `fig` sat before `figure` in the marker alternation, so `[[figure:3]]` matched
+  on `fig` and the trailing `[^\]]*` ate the number. The marker still vanished
+  from the text, so the only symptom was a figure that never attached to
+  anything. The alternation is now ordered longest-first, with a comment saying
+  why it must stay that way.
+- Text was being collected from between tags as well as from `<w:t>`. Word writes
+  no whitespace between elements, but a file that has been through any other tool
+  does, and every line would have arrived indented with the XML's own
+  indentation.
+
+**Verified 25 of 25** by `scripts/verify/docx-import.mjs` against a local
+production build and the hosted database. It builds its own `.docx` with
+`zipSync` rather than carrying a binary fixture, and that document is awkward on
+purpose: two PNGs, an EMF, a native chart, a data table and a paragraph left in
+with track changes on. It proves the markers are numbered in document order, the
+table becomes a text table, the deleted paragraph is absent, the EMF and the
+chart are flagged; that an admin's upload lands and a student's and a rival
+organisation's are refused with zero objects created; that each marker resolves
+to the picture it named; that **a crafted post naming org 5's path or a traversal
+path attaches nothing**; that a missing figure is a note and not a problem, so the
+question can still be approved; and that approval carries the picture onto
+`questions.images` while a student, a rival admin and an anonymous caller are all
+refused the object.
+
+**What it does not prove, stated rather than implied:** the React click handler
+that joins the browser half to the server half. There is no browser automation in
+this repository, so the harness imports the *real* `readDocx` -- through a
+six-line `module.registerHooks` resolver that adds the `.ts` the application's
+imports leave off -- and uploads byte-identically to the browser, then drives
+everything downstream over HTTP. A harness that reimplemented the extraction
+would prove only that the copy agrees with itself.
+
+**398 unit tests**, up from 354. Typecheck, lint and a clean production build,
+run in the `Cospire-doc-import` worktree so the dev server on port 3000 was never
+touched.
+
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
 The owner reported the platform feeling slow and unresponsive: a click on a nav

@@ -45,9 +45,14 @@ this file and not found here is in one of these; find it with
   filed into section one; childless DI sets are shown and refused instead of
   filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
   from a question are deleted from Storage. **19/19 on the deployed URL.**
+- **Word upload with pictures extracted is built on `feat/doc-import`** and
+  verified 25/25 against a local production build and the hosted database
+  (2026-09-23). Not merged and not deployed. It needs no migration and calls no
+  model. Details in `docs/context/completed.md`.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
-  extracted, then the Gemini import path, then mocks built from documents that
-  quote question IDs, then the test engine (Phase 4). See *What to build next*.
+  extracted (now built, awaiting merge), then the Gemini import path, then mocks
+  built from documents that quote question IDs, then the test engine (Phase 4).
+  See *What to build next*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
@@ -285,7 +290,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | In progress | 2026-09-23 |
+| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Built and verified 25/25 locally; pull request open | 2026-09-23 |
 
 Worktree `C:\Cospire\Cospire-doc-import` on port 3030. **No migration**: the
 `question-images` bucket and `questions.images` already exist, and `source_type`
@@ -517,7 +522,9 @@ build and now follows them. The 1 October commitment covers a tested mock
 engine, so this order makes the written revision under clause 4.4 more likely
 to be needed, not less -- see *Next recommended action*, item 1.
 
-**1. Word upload: pictures out, numbered markers in.** No model call, so it
+**1. Word upload: pictures out, numbered markers in. BUILT on
+`feat/doc-import`, 2026-09-23, verified 25/25 locally, not yet merged or
+deployed.** No model call, so it
 works whatever the Client decides about cost. The admin uploads a `.docx`; the
 platform opens it (a zip), extracts each image in document order into the
 existing `question-images` bucket, and produces the paper's text with
@@ -526,7 +533,8 @@ with the existing prompt, pastes the JSON back, and the platform resolves each
 marker to image N before the usual review and approval. Word tables become text
 tables. Flagged rather than guessed: an image inside an answer option, EMF/WMF
 drawings Word stores as vector art, and native Word charts.
-**Dependency: `fflate` only, approved by the owner 2026-09-23** -- Node cannot
+**Dependency: `fflate` 0.8.2, approved by the owner 2026-09-23 and now in
+`package.json`** -- Node cannot
 open a zip on its own, and a hand-written zip reader is the kind of code that
 works on one file and fails on the next. `@google/genai` was **declined in
 favour of plain `fetch`**, which was proven against the live key on 2026-09-23.

@@ -9,6 +9,7 @@
 // so there is one shape for a question on its way to `save_question`.
 
 import { numericalAnswerMaxLength, parseNumericalAnswer } from "./numerical";
+import { isQuestionImagePath } from "./storage";
 
 export const questionTypes = ["mcq", "mcq_multi", "numerical", "di_stimulus"] as const;
 export type QuestionType = (typeof questionTypes)[number];
@@ -102,12 +103,6 @@ function parseTolerance(raw: string): number | null | undefined {
   return Number(text);
 }
 
-function isImagePath(path: string, orgId: number): boolean {
-  return new RegExp(
-    `^org/${orgId}/questions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(png|jpg|jpeg|gif|webp)$`,
-  ).test(path);
-}
-
 export function validateQuestion(draft: QuestionDraft, orgId: number): QuestionValidation {
   const problems: string[] = [];
 
@@ -144,7 +139,7 @@ export function validateQuestion(draft: QuestionDraft, orgId: number): QuestionV
 
   const images = [...new Set(draft.images.map((path) => path.trim()).filter((path) => path !== ""))];
   if (images.length > maxImages) problems.push(`A question can carry at most ${maxImages} images.`);
-  if (images.some((path) => !isImagePath(path, orgId))) problems.push("One of the images could not be recognised. Remove it and add it again.");
+  if (images.some((path) => !isQuestionImagePath(path, orgId))) problems.push("One of the images could not be recognised. Remove it and add it again.");
 
   let options: QuestionOption[] = [];
   let correctAnswer: CorrectAnswer = null;

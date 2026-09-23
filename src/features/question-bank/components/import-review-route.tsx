@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { parseBatchId } from "../import-state";
 import { parsePageNumber } from "../list-params";
+import { signQuestionImages } from "../queries/get-question";
 import { getImportBatch } from "../queries/list-imports";
 import { listSections, listTopics } from "../queries/list-sections";
 import { ImportReviewScreen } from "./import-review-screen";
@@ -27,6 +28,14 @@ export async function ImportReviewRoute({
 
   const [batch, sections, topics] = await Promise.all([getImportBatch(batchId), listSections(), listTopics()]);
   if (!batch) notFound();
+
+  // The figures the Word upload attached, so the admin sees each one beside the
+  // question rather than a path. Signed with the admin's own session, which is
+  // what proves `question_images_select_author` rather than stepping round it.
+  const imagePaths = [
+    ...new Set(batch.rows.flatMap((row) => (row.status === "pending_review" ? row.parsed?.images ?? [] : []))),
+  ];
+  const imageUrls = await signQuestionImages(imagePaths);
 
   const approvedSets = batch.rows.filter(
     (row) => row.status === "approved" && row.questionId !== null && row.parsed?.type === "di_stimulus",
@@ -59,6 +68,7 @@ export async function ImportReviewRoute({
     <ImportReviewScreen
       batch={batch}
       batchId={batchId}
+      imageUrls={imageUrls}
       notice={notice}
       orgId={orgId}
       page={parsePageNumber(page)}
