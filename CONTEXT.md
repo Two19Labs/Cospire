@@ -32,13 +32,24 @@ this file and not found here is in one of these; find it with
     the role home (PR #52, 11/11 on the deployed URL).
   - Report-template round selector limited to the template's programme (PR #50,
     8/8 on the deployed URL).
-- **PR #49, the question bank (Phase 3), is not yet merged.** Schema with
-  answer keys held apart, the numerical normaliser, authoring, paste-a-prompt
-  import with review, and the admin mock builder. Its seven migrations are
-  already applied to the hosted project, so the database is ahead of `main`;
-  they are additive. Details in `docs/context/completed.md`.
-- **Next:** merge PR #49, then the test engine (Phase 4), and mocks built from
-  documents that quote question IDs. See *Next recommended action*.
+  - The question bank (Phase 3), **merged 2026-09-23 as `1c7073d`** (PR #49):
+    schema with answer keys held apart, the numerical normaliser, authoring,
+    paste-a-prompt import with review, and the admin mock builder. Its seven
+    migrations were already applied, so `main` and the database are back in
+    step. Details in `docs/context/completed.md`.
+- **Seven review findings on the question bank are outstanding**, all in the mock
+  builder, none student-facing and none reachable until mocks are built: a
+  blank section slot misfiles questions (`mock-actions.ts:36`); a question
+  archived after selection makes its mock uneditable (`mock-editor.tsx:63`);
+  the picker's section column always shows "-" because a many-to-one embed is
+  read as an array (`mock-builder.ts:136`); a missing section field silently
+  files into section one (`mock-actions.ts:72`); childless DI stimuli are
+  filtered after paging, giving short pages (`mock-builder.ts:128`);
+  `/admin/mocks/[id]` 500s instead of 404 on an unsafe integer id; and removed
+  image uploads are never deleted from the bucket. **Fix before any real mock
+  is built.**
+- **Next:** the seven review findings above, then the test engine (Phase 4),
+  and mocks built from documents that quote question IDs. See *Next recommended action*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
@@ -186,10 +197,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 ## Current repository state
 
 - Repository: `C:\Cospire\Cospire`.
-- **Question-bank PR #49 is open and awaiting owner review/merge.** It targets
-  `main` from `feat/question-bank`, is currently mergeable, and its context,
-  verify, Vercel preview and Vercel comments checks are green as of 2026-09-22.
-  Every earlier pull request is merged or closed, and `main` is at `5044c0a`.
+- **The question bank merged on 2026-09-23 as `1c7073d`** (PR #49), squashed
+  from `feat/question-bank` with all four checks green. Every earlier pull
+  request is merged or closed. The docs split (PR #54) is the only pull
+  request still to land.
   PR #35 was **closed as
   superseded** -- it corrected this file on 2026-09-20 and was overtaken by
   #36-#42, so its corrections were restated against current `main` instead of
@@ -234,8 +245,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   direction.
 - **`origin` carries `main` and `feat/question-bank` only**, checked with
   `git ls-remote --heads origin` on 2026-09-21. The PR #35 branch is gone.
-  `feat/question-bank` holds the complete question-bank work from parts 1-4
-  and is the head of open PR #49; see *Active work*.
+  `feat/question-bank` held the question-bank work from parts 1-4 and was
+  squashed into `main` on 2026-09-23; the branch is deleted once PR #54 is
+  retargeted off it.
 - `main` is protected by an active ruleset: pull request required, `verify` status
   check required, branches must be up to date, force pushes and deletions blocked.
   Required approvals are deliberately `0` while the team is one person, since
@@ -275,7 +287,6 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Codex, question bank pickup | `feat/question-bank` | Phase 3 parts 1-4: question-bank schema, authoring, importer and admin-only mock builder | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `src/features/auth/components/app-nav.tsx`, new files in `supabase/migrations/**`, `scripts/verify/question-bank*`, `CONTEXT.md` | **Built, verified, pushed and under review in PR #49; owner review/merge is the only remaining step.** PR is mergeable and all CI/Vercel checks are green as of 2026-09-22. Owner decided sectional durations sum exactly to full duration; one implicit section with null duration means no sectional limit. Seven additive question-bank migrations are applied, three of them for the mock builder. Mock probe 9/9; mock HTTP 10/10; authoring regression 36/36; importer 25/25; typecheck, lint, 342 tests and clean production build pass. The first build attempt failed only because a moved stale `.next` tree remained inside `coverage`; moving it outside the repository produced the clean passing build. Security advisor has only the two pre-existing Auth warnings. | 2026-09-22 |
 
 `feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
 The ARS upload implementation merged as PR #36 and is deployed. The report
