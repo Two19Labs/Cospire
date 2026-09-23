@@ -9,6 +9,7 @@ import { buildQuestionHref, parseId, questionBankBase } from "../list-params";
 import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
 import { toSaveQuestionArgs, validateQuestion } from "../question-input";
 import { requireAuthor } from "../queries/require-author";
+import { questionImagesBucket } from "../storage";
 
 // Turning a database refusal into a sentence. The triggers raise their own
 // readable messages (a sub-question in the wrong section, a stimulus changed
@@ -39,6 +40,15 @@ export async function saveQuestionAction(
   if (!question) return { problems, values };
 
   const supabase = await createServerSupabaseClient();
+
+  // What the question carries now, read before the save so the images it drops
+  // can be deleted after. Storage is not covered by the row policies and an
+  // orphaned object is invisible: nothing lists it, and it counts against the
+  // 1GB Free-plan budget until someone goes looking in the dashboard.
+  const previousImages = questionId === null
+    ? []
+    : ((await supabase.from("questions").select("images").eq("id", questionId).maybeSingle()).data?.images ?? []);
+
   const { data, error } = await supabase.rpc("save_question", toSaveQuestionArgs(question, questionId));
 
   if (error) return { problems: [describeSaveError(error)], values };
@@ -47,6 +57,14 @@ export async function saveQuestionAction(
   if (!Number.isSafeInteger(savedId) || savedId <= 0) {
     return { problems: ["The question could not be saved. Nothing was changed."], values };
   }
+
+  // Deleted only once the row that referenced them is saved, so a failed save
+  // leaves every image where the question still expects it. A failure to delete
+  // is not worth failing the save over: the question is correct either way.
+  const dropped = (Array.isArray(previousImages) ? previousImages : [])
+    .filter((path): path is string => typeof path === "string")
+    .filter((path) => !question.images.includes(path));
+  if (dropped.length > 0) await supabase.storage.from(questionImagesBucket).remove(dropped);
 
   revalidatePath(base);
   // A new sub-question goes back to its set, where it is read in context.

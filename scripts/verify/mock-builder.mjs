@@ -49,6 +49,51 @@ try {
   check("sectional durations add exactly to the full duration",sections?.length===2&&sections.reduce((s,r)=>s+r.duration_minutes,0)===120);
   const diSection=sections?.find(s=>s.title==="DI")?.id;check("selecting a DI set adds passage and every child to one section",links?.length===2&&links.every(r=>r.mock_section_id===diSection)&&links.some(r=>r.question_id===child));
 
+  // Regressions found in the review of PR #49, fixed on fix/mock-builder-review.
+
+  // 1. A blank "Section 1" slot. The dropdown posts the slot, the saved mock
+  //    has no section at that slot, and mapping by position misfiled the
+  //    question or failed the save.
+  edit=await get(`/admin/mocks/${id}`,"admin");editForm=forms(edit.body).find(f=>f.includes('name="mockId"'));
+  const skipped=await post(`/admin/mocks/${id}`,"admin",editForm,[["mockId",id],["title",`Verify mock ${stamp}`],["durationMinutes","120"],["maxAttempts","3"],["negativeMarking","0"],["timingMode","sectional"],["sectionTitle_0",""],["sectionDuration_0",""],["sectionTitle_1","Skipped QA"],["sectionDuration_1","70"],["sectionTitle_2","Skipped DI"],["sectionDuration_2","50"],["questionId",q],[`questionSection_${q}`,"1"],["questionId",stimulus],[`questionSection_${stimulus}`,"2"]]);
+  check("a blank first section slot still saves",skipped.location===`/admin/mocks/${id}?notice=saved`,skipped.location??"");
+  ({data:sections}=await service.from("mock_sections").select("id,title,sort_order").eq("mock_id",id).order("sort_order"));
+  ({data:links}=await service.from("mock_questions").select("question_id,mock_section_id").eq("mock_id",id));
+  const qaSection=sections?.find(s=>s.title==="Skipped QA")?.id;const diSkipped=sections?.find(s=>s.title==="Skipped DI")?.id;
+  check("the question posted against slot 1 lands in the section that slot built",links?.find(r=>r.question_id===q)?.mock_section_id===qaSection);
+  check("the DI set posted against slot 2 lands in its own section",links?.filter(r=>r.mock_section_id===diSkipped).length===2);
+
+  // 2. A question posted with no section field at all: refused, never filed
+  //    into section one.
+  edit=await get(`/admin/mocks/${id}`,"admin");editForm=forms(edit.body).find(f=>f.includes('name="mockId"'));
+  const noSection=await post(`/admin/mocks/${id}`,"admin",editForm,[["mockId",id],["title",`Verify mock ${stamp}`],["durationMinutes","120"],["maxAttempts","3"],["negativeMarking","0"],["timingMode","sectional"],["sectionTitle_0","QA"],["sectionDuration_0","60"],["sectionTitle_1","DI"],["sectionDuration_1","60"],["questionId",q]]);
+  check("a question with no section field is refused",noSection.location===`/admin/mocks/${id}?error=section-missing`,noSection.location??"");
+
+  // 3. The picker names the section a question belongs to.
+  check("the picker shows the question's section name, not a dash",edit.body.includes(`Mock QA ${stamp}`));
+
+  // 4. A question archived after it was picked: shown, removable, and refused
+  //    while it is still selected. It used to be posted invisibly for ever.
+  // Archived through the admin's own session, as the screen does. The service
+  // key cannot write `questions` directly: the row's CHECK calls
+  // private.question_images_valid, which is granted to `authenticated` only.
+  {const {data:arch,error:ae}=await people.admin.client.from("questions").update({archived_at:new Date().toISOString()}).eq("id",q).select("id");if(ae||arch?.length!==1)throw new Error(`could not archive: ${ae?.message??"0 rows"}`);}
+  edit=await get(`/admin/mocks/${id}`,"admin");editForm=forms(edit.body).find(f=>f.includes('name="mockId"'));
+  check("the archived question is still listed, labelled",edit.body.includes("Archived")&&edit.body.includes(`value="${q}"`));
+  const stillArchived=await post(`/admin/mocks/${id}`,"admin",editForm,[["mockId",id],["title",`Verify mock ${stamp}`],["durationMinutes","120"],["maxAttempts","3"],["negativeMarking","0"],["timingMode","sectional"],["sectionTitle_0","QA"],["sectionDuration_0","60"],["sectionTitle_1","DI"],["sectionDuration_1","60"],["questionId",q],[`questionSection_${q}`,"0"],["questionId",stimulus],[`questionSection_${stimulus}`,"1"]]);
+  check("saving with the archived question still ticked says so",stillArchived.location===`/admin/mocks/${id}?error=archived`,stillArchived.location??"");
+  const unticked=await post(`/admin/mocks/${id}`,"admin",editForm,[["mockId",id],["title",`Verify mock ${stamp}`],["durationMinutes","120"],["maxAttempts","3"],["negativeMarking","0"],["timingMode","sectional"],["sectionTitle_0","QA"],["sectionDuration_0","60"],["sectionTitle_1","DI"],["sectionDuration_1","60"],["questionId",stimulus],[`questionSection_${stimulus}`,"1"]]);
+  check("unticking it saves, so the mock is not locked",unticked.location===`/admin/mocks/${id}?notice=saved`,unticked.location??"");
+  await people.admin.client.from("questions").update({archived_at:null}).eq("id",q);
+
+  // 5. An id past Number's safe range reaches the not-found page instead of
+  //    losing precision and erroring in the query. The status stays 200: the
+  //    route streams its loading skeleton first, so the headers are already
+  //    sent by the time the page calls notFound() -- the same trade-off the
+  //    role layouts record for redirect().
+  const huge=await get("/admin/mocks/99999999999999999999","admin");
+  check("an out-of-range mock id renders not found, not an error page",/not found/i.test(huge.body)&&!/went wrong|error/i.test(huge.body.slice(huge.body.indexOf("<main"),huge.body.indexOf("<main")+800)),String(huge.status));
+
   const {data:studentRows}=await people.student.client.from("mocks").select("id").eq("id",id);check("student reads zero mock-builder rows through the API",(studentRows??[]).length===0);
   console.log(`\n${passes} of ${passes} passed`);
 } finally {

@@ -31,6 +31,17 @@ export interface MockEditorValue {
   sections: Array<{ id: number; title: string; durationMinutes: number | null; questionIds: number[] }>;
 }
 
+// PostgREST returns a many-to-one embed as an object, not a one-element array:
+// `questions.section_id` points at one section. Reading it as an array left the
+// picker's section column permanently "-". Both shapes are handled because the
+// generated types describe the relationship, not the runtime payload, and one
+// wrong guess here is silent.
+function embeddedName(value: unknown): string {
+  const row = Array.isArray(value) ? value[0] : value;
+  const name = (row as { name?: unknown } | null | undefined)?.name;
+  return typeof name === "string" && name.length > 0 ? name : "—";
+}
+
 export interface PickerQuestion {
   id: number;
   body: string;
@@ -40,6 +51,51 @@ export interface PickerQuestion {
   marks: string;
   sectionName: string;
   childCount: number;
+  // A DI stimulus with no sub-questions cannot go into a mock, and a question
+  // archived after it was picked has to be removable from the one screen that
+  // shows it. Both are offered, and both are refused selection.
+  selectable: boolean;
+  unselectableReason: string | null;
+  archived: boolean;
+}
+
+function toPickerQuestion(
+  row: { id: number; body: string; type: PickerQuestion["type"]; topic: string; difficulty: string; marks: number | string; question_sections: unknown; archived_at?: string | null },
+  childCount: number,
+): PickerQuestion {
+  const archived = Boolean(row.archived_at);
+  const childless = row.type === "di_stimulus" && childCount === 0;
+  return {
+    id: row.id,
+    body: row.body,
+    type: row.type,
+    topic: row.topic,
+    difficulty: row.difficulty,
+    marks: String(row.marks),
+    sectionName: embeddedName(row.question_sections),
+    childCount,
+    selectable: !archived && !childless,
+    unselectableReason: archived ? "Archived" : childless ? "DI set with no sub-questions yet" : null,
+    archived,
+  };
+}
+
+async function countChildren(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  stimulusIds: number[],
+): Promise<Map<number, number>> {
+  const counts = new Map<number, number>();
+  if (stimulusIds.length === 0) return counts;
+  const { data, error } = await supabase
+    .from("questions")
+    .select("parent_id")
+    .in("parent_id", stimulusIds)
+    .is("archived_at", null);
+  if (error) throw error;
+  for (const child of data ?? []) {
+    if (child.parent_id !== null) counts.set(child.parent_id, (counts.get(child.parent_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export async function listMocks(page: number): Promise<{ rows: MockSummary[]; page: number; pageCount: number }> {
@@ -109,34 +165,33 @@ export async function listPickerQuestions(page: number): Promise<{ rows: PickerQ
     .range(from, from + mockPageSize - 1);
   if (error) throw error;
   const roots = data ?? [];
-  const stimulusIds = roots.filter((row) => row.type === "di_stimulus").map((row) => row.id);
-  const childCounts = new Map<number, number>();
-  if (stimulusIds.length > 0) {
-    const { data: children, error: childError } = await supabase
-      .from("questions")
-      .select("parent_id")
-      .in("parent_id", stimulusIds)
-      .is("archived_at", null);
-    if (childError) throw childError;
-    for (const child of children ?? []) {
-      if (child.parent_id !== null) childCounts.set(child.parent_id, (childCounts.get(child.parent_id) ?? 0) + 1);
-    }
-  }
-  const total = count ?? 0;
+  const childCounts = await countChildren(supabase, roots.filter((row) => row.type === "di_stimulus").map((row) => row.id));
+  // Childless DI sets are shown and refused rather than filtered out. Filtering
+  // happened after `.range()` had already paged, so `pageCount` counted rows the
+  // page then dropped and pages came up short.
   return {
-    rows: roots
-      .filter((row) => row.type !== "di_stimulus" || (childCounts.get(row.id) ?? 0) > 0)
-      .map((row) => ({
-        id: row.id,
-        body: row.body,
-        type: row.type,
-        topic: row.topic,
-        difficulty: row.difficulty,
-        marks: String(row.marks),
-        sectionName: row.question_sections[0]?.name ?? "—",
-        childCount: childCounts.get(row.id) ?? 0,
-      })),
+    rows: roots.map((row) => toPickerQuestion(row, childCounts.get(row.id) ?? 0)),
     page,
-    pageCount: Math.max(1, Math.ceil(total / mockPageSize)),
+    pageCount: Math.max(1, Math.ceil((count ?? 0) / mockPageSize)),
   };
+}
+
+// The questions already in this mock that the current picker page does not
+// show, including archived ones. They are rendered as ordinary rows so a
+// selection can be removed from the screen that refuses it; as hidden inputs
+// they were re-posted on every save and an archived one locked the mock.
+export async function listSelectedQuestions(ids: number[]): Promise<PickerQuestion[]> {
+  if (ids.length === 0) return [];
+  await requireRole("admin");
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("questions")
+    .select("id,body,type,topic,difficulty,marks,archived_at,question_sections(name)")
+    .in("id", ids)
+    .is("parent_id", null)
+    .order("id", { ascending: false });
+  if (error) throw error;
+  const roots = data ?? [];
+  const childCounts = await countChildren(supabase, roots.filter((row) => row.type === "di_stimulus").map((row) => row.id));
+  return roots.map((row) => toPickerQuestion(row, childCounts.get(row.id) ?? 0));
 }

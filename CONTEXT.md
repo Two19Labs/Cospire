@@ -37,19 +37,17 @@ this file and not found here is in one of these; find it with
     paste-a-prompt import with review, and the admin mock builder. Its seven
     migrations were already applied, so `main` and the database are back in
     step. Details in `docs/context/completed.md`.
-- **Seven review findings on the question bank are outstanding**, all in the mock
-  builder, none student-facing and none reachable until mocks are built: a
-  blank section slot misfiles questions (`mock-actions.ts:36`); a question
-  archived after selection makes its mock uneditable (`mock-editor.tsx:63`);
-  the picker's section column always shows "-" because a many-to-one embed is
-  read as an array (`mock-builder.ts:136`); a missing section field silently
-  files into section one (`mock-actions.ts:72`); childless DI stimuli are
-  filtered after paging, giving short pages (`mock-builder.ts:128`);
-  `/admin/mocks/[id]` 500s instead of 404 on an unsafe integer id; and removed
-  image uploads are never deleted from the bucket. **Fix before any real mock
-  is built.**
-- **Next:** the seven review findings above, then the test engine (Phase 4),
-  and mocks built from documents that quote question IDs. See *Next recommended action*.
+- **The seven review findings on the question bank are fixed** on
+  `fix/mock-builder-review`, all in the mock builder: section slots map by
+  slot rather than position; a question archived after selection is listed and
+  removable instead of locking its mock; the picker reads the section embed as
+  the object PostgREST returns; a missing section field is refused instead of
+  filed into section one; childless DI sets are shown and refused instead of
+  filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
+  from a question are deleted from Storage. 19/19 over HTTP against a local
+  production build; not on the deployed URL until the pull request merges.
+- **Next:** the test engine (Phase 4), then mocks built from documents that
+  quote question IDs. See *Next recommended action*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
