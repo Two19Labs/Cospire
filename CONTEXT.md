@@ -510,8 +510,15 @@ alongside step 2.
 2026-09-22.** Builds on PR #49, after it merges.
 - **No pictures in the paper:** the paste-a-prompt importer as built in PR #49,
   unchanged.
-- **Pictures in the paper:** the platform calls Claude itself (Anthropic API,
-  server-side only, key never reaches the browser). The admin uploads a `.docx`;
+- **Pictures in the paper:** the platform calls the model itself.
+  **Provider: Google Gemini, chosen by the owner 2026-09-23** -- cheapest
+  credible option (~Rs 5 a paper on Gemini 3.8 Flash against ~Rs 13 on Claude
+  Sonnet 5), it reads PDFs natively and cheaply, and Cospire already owes a
+  Google account for clause 3.15, so one account covers both. The key is
+  server-side only and never reaches the browser. Nothing in the design is
+  provider-specific beyond "send text, get this JSON back", so a swap after a
+  bad accuracy test is a contained change. Note Gemini 3.8 Flash's price
+  doubles on 2027-01-01, to roughly Rs 10 a paper. The admin uploads a `.docx`;
   the platform extracts its images in document order into the existing
   `question-images` bucket, sends the text with numbered markers
   (`[[figure:N]]`) to Claude with the same JSON contract, then adds image N's
@@ -527,11 +534,18 @@ alongside step 2.
   today. EMF/WMF drawings from Word are not accepted by the bucket (PNG, JPEG,
   GIF, WebP only) and are flagged for pasting by hand. No migration: the bucket
   and `questions.images` exist in PR #49.
+- **Accuracy is untested.** No model has seen a Cospire paper. When 2-3 real
+  papers arrive, run the same papers through Gemini 3.8 Flash and one or two
+  rivals, and compare wrong questions, wrong answer keys and tagging against a
+  checked key; the whole test costs under Rs 100. Price is not the deciding
+  factor at this volume -- a wrong answer key costs more than the entire import
+  bill. Prices compared 2026-09-22 from each provider's own pricing page.
 - **Before the API path can be built:** (1) the Client agrees to the cost,
-  estimated at about ₹20 a paper on Claude Sonnet 5 (₹10-50 depending on model
-  and length); the question has been drafted for the owner to send; (2) an
-  Anthropic account and API key in Cospire's name, server-side env only;
-  (3) owner approval to add `@anthropic-ai/sdk` and `fflate` to
+  estimated at about Rs 5 a paper on Gemini 3.8 Flash for the Word path,
+  halved again by batch for the one-time bulk import; the question has been
+  drafted for the owner to send; (2) a Google account and Gemini API key in
+  Cospire's name, server-side env only -- the same account clause 3.15 needs;
+  (3) owner approval to add `@google/genai` and `fflate` to
   `package.json`. If the Client declines the cost, build the `.docx` upload
   with automatic pictures on the paste path instead: still six steps, pictures
   still placed. This also narrows the clause 3.15 gap (automatic Google Docs
