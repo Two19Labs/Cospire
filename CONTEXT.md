@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-23 (Asia/Calcutta)
+Last updated: 2026-09-24 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -53,9 +53,11 @@ this file and not found here is in one of these; find it with
   A `.docx` with no pictures shows the prompt to copy, as before; one with
   pictures is sent to Gemini with its pictures, and the platform places each
   figure. **Its live round trip is UNVERIFIED**: every Gemini model on the
-  Client's key answered `503 UNAVAILABLE` all session, though the key is valid
-  and lists 42 models. Run `scripts/verify/gemini-import.mjs` when the API is
-  back; that is the one thing outstanding.
+  Client's key answered `503 UNAVAILABLE` all session and again on 2026-09-24,
+  though the key is valid and lists 42 models. Everything else about the path is
+  checked, including that the key is in none of the chunks the browser is served.
+  Run `scripts/verify/gemini-import.mjs` when the API is back; that is the one
+  thing outstanding.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
   extracted (now built, awaiting merge), then the Gemini import path, then mocks
   built from documents that quote question IDs, then the test engine (Phase 4).

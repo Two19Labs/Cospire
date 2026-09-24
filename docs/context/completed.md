@@ -564,9 +564,14 @@ is written to say so rather than to fail. What that outage did prove, as a check
 of its own, is that an unavailable model reaches the admin as a sentence they can
 act on rather than as an exception.
 
+**The key is in nothing the browser is served**, checked on 2026-09-24 against a
+local production build: none of the seven `_next/static` chunks contains the key
+value. That was the other thing the script could not settle on its first run.
+
 **Run `node --env-file=.env.local scripts/verify/gemini-import.mjs` when the API
-is back.** That is the outstanding verification, and it is the one thing between
-this and a finished item 2.
+is back.** That is the one outstanding verification, and the one thing between
+this and a finished item 2. Re-checked on 2026-09-24, more than two hours after
+the first attempt: still 503.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
