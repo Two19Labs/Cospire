@@ -45,21 +45,15 @@ this file and not found here is in one of these; find it with
   filed into section one; childless DI sets are shown and refused instead of
   filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
   from a question are deleted from Storage. **19/19 on the deployed URL.**
-- **PR #58 is approved and ready to merge.** The owner approved it on
-  2026-09-25; the merge itself is the owner's click. Four checks green, no
-  migration, and the Gemini path degrades to the copy-and-paste path when the
-  model is unavailable, which is what it has been doing for three days. **After
-  merging, re-run `scripts/verify/docx-import.mjs` against the deployed URL and
-  record the result**, as every other feature here has been.
-- **Word upload with pictures extracted is built on `feat/doc-import`** and
-  verified 25/25 against a local production build and the hosted database
-  (2026-09-23). Not merged and not deployed. It needs no migration and calls no
-  model. Details in `docs/context/completed.md`.
-- **The Gemini path and the automatic routing are built on the same branch.**
-  A `.docx` with no pictures shows the prompt to copy, as before; one with
+- **Word upload with pictures extracted is merged and deployed** (PR #58,
+  `b2a4fb8`, 2026-09-25) and verified **25/25 against the deployed URL**. It
+  needs no migration and calls no model. Details in
+  `docs/context/completed.md`.
+- **The Gemini path and the automatic routing are merged and deployed too**, in
+  the same pull request. A `.docx` with no pictures shows the prompt to copy, as before; one with
   pictures is sent to Gemini with its pictures, and the platform places each
   figure. **Its live round trip is UNVERIFIED**: every Gemini model on the
-  Client's key answered `503 UNAVAILABLE` all session and again on 2026-09-24,
+  Client's key answered `503 UNAVAILABLE` from 2026-09-23 and still on 2026-09-25,
   though the key is valid and lists 42 models. Everything else about the path is
   checked, including that the key is in none of the chunks the browser is served.
   Run `scripts/verify/gemini-import.mjs` when the API is back; that is the one
@@ -305,28 +299,10 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Items 1 and 2 built and pushed. **PR #58 is approved by the owner (2026-09-25) and waiting only on the merge click.** Item 1 verified 25/25; item 2's live round trip **UNVERIFIED**, Gemini 503 for three days | 2026-09-25 |
 
-Worktree `C:\Cospire\Cospire-doc-import` on port 3030. **No migration**: the
-`question-images` bucket and `questions.images` already exist, and `source_type`
-stays `'paste'` because the JSON still arrives by paste -- only the figures now
-come out of the document.
-
-**Scope grew on 2026-09-23, on the owner's instruction:** item 2, the Gemini
-path, was built on the same branch rather than stacked behind PR #58, to avoid
-the stacked-pull-request trap this project has already hit twice.
-
-**Cost: settled. The owner confirmed on 2026-09-25 that the Client has agreed to
-all costs**, which closes the question raised when the figure was first agreed --
-the drafted question quoted Claude at about Rs 20, and sending the pictures as
-well as the text runs above the Rs 5 text-only estimate for Gemini. Neither is
-now a blocker. The token count is shown on screen after every call, so real spend
-can be checked against the agreement rather than assumed.
-
-**`fflate` 0.8.2 in `package.json` is confirmed by the owner (2026-09-25)**, which
-is the §6.1 human decision a dependency needs.
-
-Two things a new session should know before touching anything:
+**Nobody holds a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
+(`b2a4fb8`) and its branch is deleted. Two things a new session should know
+before touching anything:
 
 - **A dev server is running on port 3000** from the main checkout
   (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
@@ -338,21 +314,16 @@ Two things a new session should know before touching anything:
   in the working tree, a branch, a commit, the dev server going down. They have
   remote access and can intervene, but only if it is surfaced immediately.
 
-`feat/ars-form-engine` merged as PR #30 on 2026-09-20 and its branch is deleted.
-The ARS upload implementation merged as PR #36 and is deployed. The report
-template document importer in PR #40 merged and is deployed. The mentor
-workflow in PR #38 merged; completed work does not remain in the table.
-
-**What that branch left behind, which the next agent inherits rather than
-discovers:** the student process view and the multi-step round renderer are
-built and merged, and the mentor review queue, review detail, private upload
-links and off-platform outcome recording in PR #38 merged. File upload is
-merged and deployed. The admin round builder and the process importer were driven
-over HTTP; the student route's ordinary draft/save action is still not covered
-by a browser-level harness.
-
-An agent picking up Phase 1 should claim it here first, naming the branch and the
-files it will own, before editing anything.
+**The Vercel preview deployments do not work.** `/dashboard` on a preview URL
+renders the application's error boundary while the same route on production
+answers 307 to `/login`. The application throws exactly one error of that shape,
+from `requirePublicSupabaseConfig`, so the likely cause is that
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are set for
+the Production environment only and not for Preview. **Unconfirmed**: nobody has
+looked at the Vercel environment-variable settings yet. It matters because this
+file claims every pull request gets a clickable URL, and it appears none of them
+ever has -- every verification row here is either a local production build or the
+deployed URL, never a preview.
 
 ## Pending
 

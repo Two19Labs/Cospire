@@ -573,6 +573,31 @@ is back.** That is the one outstanding verification, and the one thing between
 this and a finished item 2. Re-checked on 2026-09-24, more than two hours after
 the first attempt: still 503.
 
+### The harness that went stale in one rewording, 2026-09-25
+
+PR #58 merged as `b2a4fb8` and `scripts/verify/docx-import.mjs` was re-run
+against the deployed URL, as every feature here is. **24 of 25**, and the one
+failure was the harness rather than the product: it asserted that the import
+screen contained the words "open a Word file", and the step-1 heading had been
+reworded to "open the Word file" when the screen was restructured for the Gemini
+path in the same branch.
+
+Two things worth keeping from it:
+
+- **Assert on what a screen does, not on what it says.** The assertion now looks
+  for `accept=".docx` -- the file input really offering a Word file -- which
+  survives any amount of rewording and fails only if the control disappears.
+  Prose in an assertion is a trap that springs later, on someone else.
+- **Nothing would have caught this earlier.** CI never runs anything in
+  `scripts/verify/`, and the second half of that branch re-ran only the new
+  Gemini script, not the older Word one. **When a branch changes a screen, re-run
+  every harness that touches that screen, not just the one written for the new
+  work.** The failure was harmless here because the harness was run before
+  anyone relied on it; the next one might not be.
+
+Re-run after the fix: **25 of 25 against `https://cospire-roan.vercel.app`**,
+live counts back to baseline.
+
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
 The owner reported the platform feeling slow and unresponsive: a click on a nav
