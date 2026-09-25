@@ -55,6 +55,7 @@ function SourceColumn({ row }: { row: ImportRow }) {
 export function ImportReviewScreen({
   batch,
   batchId,
+  imageUrls,
   notice,
   orgId,
   page,
@@ -64,6 +65,8 @@ export function ImportReviewScreen({
 }: {
   batch: ImportBatch;
   batchId: string;
+  // Signed URLs for the figures taken out of a Word upload, by object path.
+  imageUrls: Record<string, string>;
   notice: string | null;
   orgId: number;
   page: number;
@@ -106,8 +109,11 @@ export function ImportReviewScreen({
         {notice && notices[notice] ? <p className="muted">{notices[notice]}</p> : null}
         <p className="muted">
           Check each question against the document, correct anything the model got
-          wrong, add any figure it flagged, then approve. Nothing enters the bank
-          until you do. A DI set&apos;s passage is approved before its questions.
+          wrong, add any figure it flagged, then approve. A figure taken out of a
+          Word upload is already attached; one the document could not give up is
+          named in the notes and has to be pasted in. Nothing enters the bank
+          until you approve it, and a DI set&apos;s passage is approved before its
+          questions.
         </p>
       </section>
 
@@ -145,7 +151,7 @@ export function ImportReviewScreen({
                 <QuestionEditor
                   action={approveImportAction}
                   hidden={{ importId: String(row.id) }}
-                  imageUrls={{}}
+                  imageUrls={imageUrls}
                   initialValues={stagedToFormValues(parsed, matchSection(parsed.sectionName, sections))}
                   orgId={orgId}
                   parent={parentSet}

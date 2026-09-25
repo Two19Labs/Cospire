@@ -22,6 +22,8 @@ export default async function ImportQuestionsPage({
       <QuestionImportScreen
         batches={batches}
         notice={params.notice === "discarded" ? "The questions that were not approved were discarded." : null}
+        geminiAvailable={Boolean(process.env.GEMINI_API_KEY)}
+        orgId={profile.orgId}
         prompt={buildQuestionImportPrompt()}
       />
     </RoleShell>

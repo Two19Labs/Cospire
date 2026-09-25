@@ -29,6 +29,18 @@ export function describeImageRejection(file: { size: number; type: string }): st
   return null;
 }
 
+// The same shape `buildQuestionImagePath` writes, read back. It is also what
+// `private.question_images_valid` and `private.can_access_question_image`
+// enforce, so a path this accepts is one the bucket and the questions table both
+// accept -- and a path that reaches a Server Action from a form post is checked
+// against it before anything is done with it.
+export function isQuestionImagePath(path: string, orgId: number): boolean {
+  if (!Number.isSafeInteger(orgId) || orgId <= 0) return false;
+  return new RegExp(
+    `^org/${orgId}/questions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(png|jpg|jpeg|gif|webp)$`,
+  ).test(path);
+}
+
 export function buildQuestionImagePath({
   objectId,
   orgId,

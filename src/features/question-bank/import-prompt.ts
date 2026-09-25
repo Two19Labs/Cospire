@@ -39,7 +39,7 @@ const example = `{
       "section": "DILR",
       "topic": "Tables",
       "difficulty": "medium",
-      "passage": "The table below shows quarterly sales (₹ lakh) of four stores A–D.\\n[[figure]]",
+      "passage": "The table below shows quarterly sales (₹ lakh) of four stores A–D.\\n[[figure:3]]",
       "source": "Directions for questions 6-7: The table below ...",
       "questions": [
         {
@@ -92,9 +92,17 @@ Rules:
    document, leave "answer" out rather than working one out.
 9. Include "solution" when the document gives a worked solution or explanation.
 10. Write maths as plain text with Unicode: x², √, π, ≤, ≥, ½, ×, ÷. Keep line breaks as \\n.
-11. Wherever the document shows a chart, graph, table image, diagram or picture that the
-    question needs, write [[figure]] in the text at that point. Do not describe the
-    figure's numbers unless they are also written out in the text.
+11. Figures. The text may already carry markers such as [[figure:1]], [[figure:2]],
+    numbered in the order the pictures appear in the document. If it does:
+    - keep each marker exactly as written, in the question it belongs to, including
+      inside a "passage";
+    - never renumber one, never invent one, and never write a marker for a picture
+      the text does not already mark;
+    - a marker belonging to a whole DI set goes in that set's "passage".
+    If the text carries no markers and you are reading the document itself, write
+    [[figure]] at each point where it shows a chart, graph, table image, diagram or
+    picture the question needs. Either way, do not describe the figure's numbers
+    unless they are also written out in the text.
 12. "source" is the question exactly as it appears in the document, copied word for word,
     so a reviewer can compare the two.
 13. Do NOT invent ids, keys or numbering fields.

@@ -206,3 +206,86 @@ really reaches the process and its round.
 The last one is deliberate: an earlier version of that check passed against a
 process with **no rounds**, where there was nothing to see either way. A check
 that cannot fail is worse than no check.
+
+## docx-import.mjs — the Word upload
+
+```bash
+node --env-file=.env.local scripts/verify/docx-import.mjs http://127.0.0.1:3030
+```
+
+Drives the sentence the feature exists for: an admin opens a `.docx`, its
+pictures land in `question-images`, the text comes back with `[[figure:N]]`
+where each one sat, and after the model's JSON is pasted back each marker
+resolves to the right picture on the approved question.
+
+It builds its own `.docx` with `zipSync` rather than carrying a binary fixture,
+so the document under test is readable in a diff. That document is deliberately
+awkward in the ways a real paper is: two PNGs, an EMF drawing, a native Word
+chart, a data table, and a paragraph left in with track changes on.
+
+**The one thing it does not drive.** Extraction runs in the browser, because no
+file may pass through the application server (operating manual §8) and a Vercel
+function's request body is capped far below a question paper. There is no
+browser automation here, so the script does what the browser does: it imports
+the **real** `readDocx` and uploads each picture under a real admin session,
+byte-identically. Everything after that — the paste, the marker resolution,
+staging, the review screen and approval — is driven over HTTP against the
+running build. So the React click handler joining the two halves is the part no
+check covers, and that is stated rather than implied.
+
+To import the feature's TypeScript from a plain `.mjs`, it registers a six-line
+`module.registerHooks` resolver that adds the `.ts` the application's imports
+leave off; Node strips the types itself. That is there so the harness runs the
+same code the product runs — a harness that reimplements what it checks proves
+only that the copy agrees with itself.
+
+Two things it knows:
+
+- **A repeated form field must replace every hidden copy of itself.** The figure
+  map is one `figures` input per figure, so `postForm` treats an overridden name
+  as replacing all of them rather than appending to them. Get that wrong and the
+  crafted-post check silently passes because the honest fields are still there.
+- **The crafted post stages a real batch.** Proving that a hostile figure path
+  attaches nothing means letting the post through and counting images on the
+  rows it wrote, so the script deletes that batch before staging the honest one.
+
+### The baseline this run measured, 2026-09-23
+
+After cleanup: **0 questions, 0 question keys, 0 staged imports, 0 objects under
+`org/1/questions`, 5 profiles, 2 documents** — and **1 question section** (id 39,
+"QA", created 2026-09-21) and **8 courses**, neither of which this run created
+and neither of which it may delete.
+
+## gemini-import.mjs — the model path
+
+```bash
+# the round trip, billed to the Client's Google account
+node --env-file=.env.local scripts/verify/gemini-import.mjs
+
+# and, given a running build, that the key is in nothing the browser is served
+node --env-file=.env.local scripts/verify/gemini-import.mjs http://127.0.0.1:3030
+```
+
+Builds a small Word paper, extracts it with the **real** `readDocx`, sends the
+text and its picture to Gemini with the **real** `readQuestionsWithGemini`, and
+reads the answer back through the **real** `parseImportedQuestions`. It writes
+nothing to the database: the call and the parse are the whole subject.
+
+It reports three verdicts, not two. `UNVERIFIED` is used where a check could not
+be completed, and it is not rounded up to a pass.
+
+**The picture is one pixel, deliberately.** What this proves is that a picture
+travels and that its marker comes back on the right question. How well Gemini
+reads a real chart is Google's problem, and measuring it needs one of Cospire's
+own papers — the pulled-forward accuracy item in `CONTEXT.md`.
+
+Two things it knows:
+
+- **`503 UNAVAILABLE` is a normal answer, not a rare one.** Every model on this
+  account returned it for the whole of the 2026-09-23 build session. So the
+  script treats a failed call as a check of its own — that the admin is given a
+  sentence they can act on — and marks the round trip `UNVERIFIED` rather than
+  failing the run.
+- **The resolve hook handles `@/` as well as extensionless imports.** Without the
+  alias, `import-spec.ts` fails to load and the failure reads like a missing npm
+  package rather than a path alias.

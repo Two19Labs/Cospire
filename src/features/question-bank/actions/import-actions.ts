@@ -8,13 +8,15 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { applyDefaultMarks, matchSection, parseDefaultMarks, reviewProblems } from "../import-review";
+import { applyDefaultMarks, attachFigures, matchSection, parseDefaultMarks, reviewProblems } from "../import-review";
 import { parseImportedQuestions, type StagedQuestion } from "../import-spec";
 import { initialQuestionImportState, parseBatchId, type QuestionImportState } from "../import-state";
 import { parseId } from "../list-params";
 import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
 import { toSaveQuestionArgs, validateQuestion } from "../question-input";
+import { readQuestionsWithGemini, type GeminiFigure } from "../gemini";
 import { listSections } from "../queries/list-sections";
+import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
 // Importing questions: read a pasted answer, stage it, then approve or reject
 // each question.
@@ -33,6 +35,33 @@ function readPaste(formData: FormData): string {
   return typeof raw === "string" ? raw.slice(0, 500_000) : "";
 }
 
+// The images the Word step put in the bucket, as "3:org/1/questions/<uuid>.png".
+//
+// A Server Action is a public endpoint, so this is a post like any other and
+// none of it is trusted: a number outside the range is dropped, and a path is
+// kept only if it is one this organisation could legally hold. That is the same
+// check `validateQuestion` applies at approval, run early so a crafted post
+// cannot put another organisation's path on a staged row in the first place.
+//
+// It cannot prove the object exists -- only that the path is well formed and in
+// the caller's own organisation. The Storage policies are what stop a path being
+// readable, and a path naming nothing simply shows no image.
+const maxFigureNumber = 300;
+
+function readFigurePaths(formData: FormData, orgId: number): Record<number, string> {
+  const paths: Record<number, string> = {};
+  for (const value of formData.getAll("figures")) {
+    if (typeof value !== "string") continue;
+    const match = value.match(/^([0-9]{1,3}):(.+)$/);
+    if (!match) continue;
+    const n = Number(match[1]);
+    if (!Number.isInteger(n) || n < 1 || n > maxFigureNumber) continue;
+    if (!isQuestionImagePath(match[2], orgId)) continue;
+    paths[n] = match[2];
+  }
+  return paths;
+}
+
 function readDocumentName(formData: FormData): string {
   const raw = formData.get("documentName");
   return typeof raw === "string" ? raw.trim().replace(/\s+/g, " ").slice(0, 200) : "";
@@ -42,19 +71,112 @@ export async function previewQuestionImportAction(
   _state: QuestionImportState,
   formData: FormData,
 ): Promise<QuestionImportState> {
-  await requireRole("admin");
+  const admin = await requireRole("admin");
 
   const pasted = readPaste(formData);
   const defaultMarks = typeof formData.get("defaultMarks") === "string" ? String(formData.get("defaultMarks")) : "";
   if (pasted.trim() === "") return { ...initialQuestionImportState, problems: ["Paste the model's answer first."] };
 
+  const figurePaths = readFigurePaths(formData, admin.orgId);
   const { documentName, items, problems } = parseImportedQuestions(pasted);
   return {
     defaultMarks,
     documentName: readDocumentName(formData) || documentName || "",
-    items: problems.length === 0 ? items : null,
+    items:
+      problems.length === 0
+        ? items.map((item) => (item.parsed ? { ...item, parsed: attachFigures(item.parsed, figurePaths) } : item))
+        : null,
     pasted,
     problems,
+  };
+}
+
+// The Gemini path: the platform reads the paper itself.
+//
+// What the browser sends is small -- the extracted text and the figure *paths*,
+// never the pictures. The bytes are already in Storage, so the server fetches
+// them from there under the admin's own session. That keeps the whole feature
+// clear of the Vercel request-body cap, and it means the
+// `question_images_select_author` policy is what decides whether this admin may
+// read the picture at all.
+//
+// The answer lands in the same paste box the manual path fills, so preview,
+// staging, review and approval are all the code that already exists and is
+// already verified. This adds a way of filling that box, not a second pipeline.
+const imageTypeByExtension: Record<string, string> = {
+  gif: "image/gif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+export async function askGeminiAction(
+  _state: QuestionImportState,
+  formData: FormData,
+): Promise<QuestionImportState> {
+  const admin = await requireRole("admin");
+
+  const raw = formData.get("documentText");
+  const text = typeof raw === "string" ? raw.slice(0, 500_000) : "";
+  const rawDefault = formData.get("defaultMarks");
+  const documentName = readDocumentName(formData);
+  const figurePaths = readFigurePaths(formData, admin.orgId);
+  const echo = {
+    defaultMarks: typeof rawDefault === "string" ? rawDefault : "",
+    documentName,
+    items: null,
+    pasted: "",
+  };
+
+  if (text.trim() === "") {
+    return { ...echo, problems: ["There is no document text to send. Open a Word file first."], usage: null };
+  }
+  const defaultMarks = parseDefaultMarks(rawDefault);
+  if (defaultMarks === null) {
+    return { ...echo, problems: ["Default marks must be a number above 0 and at most 100, or left blank."], usage: null };
+  }
+
+  // The pictures, read back out of the bucket as this admin.
+  const supabase = await createServerSupabaseClient();
+  const figures: GeminiFigure[] = [];
+  for (const [n, path] of Object.entries(figurePaths).sort((a, b) => Number(a[0]) - Number(b[0]))) {
+    const { data, error } = await supabase.storage.from(questionImagesBucket).download(path);
+    if (error || !data) continue;
+    const mimeType = imageTypeByExtension[path.split(".").pop() ?? ""];
+    if (!mimeType) continue;
+    figures.push({
+      base64: Buffer.from(await data.arrayBuffer()).toString("base64"),
+      mimeType,
+      n: Number(n),
+    });
+  }
+
+  const { json, problems, usage } = await readQuestionsWithGemini({
+    // The only place the key is read. This file is "use server", so it cannot
+    // reach a client bundle and the key cannot travel with it.
+    apiKey: process.env.GEMINI_API_KEY,
+    figures,
+    model: process.env.GEMINI_MODEL || undefined,
+    text,
+  });
+  if (!json) return { ...echo, problems, usage };
+
+  const outcome = parseImportedQuestions(json);
+  if (outcome.problems.length > 0) {
+    // The answer is handed back even so, because the admin can read it, fix it
+    // and send it through the ordinary paste box rather than pay for a second
+    // call.
+    return { ...echo, pasted: json, problems: outcome.problems, usage };
+  }
+
+  return {
+    defaultMarks: typeof rawDefault === "string" ? rawDefault : "",
+    documentName: documentName || outcome.documentName || "",
+    items: outcome.items.map((item) => (item.parsed ? { ...item, parsed: attachFigures(item.parsed, figurePaths) } : item)),
+    pasted: json,
+    problems: [],
+    usage,
   };
 }
 
@@ -85,10 +207,13 @@ export async function stageQuestionImportAction(
   }
 
   const sections = await listSections();
+  const figurePaths = readFigurePaths(formData, admin.orgId);
   const batchId = randomUUID();
 
   const rows = outcome.items.map((item) => {
-    const parsed: StagedQuestion | null = item.parsed ? applyDefaultMarks(item.parsed, defaultMarks) : null;
+    const parsed: StagedQuestion | null = item.parsed
+      ? attachFigures(applyDefaultMarks(item.parsed, defaultMarks), figurePaths)
+      : null;
     const sectionId = parsed ? matchSection(parsed.sectionName, sections) : null;
     // The parser's own findings win where it has any; otherwise the same
     // validator approval uses says what is left to fix, marks included.
