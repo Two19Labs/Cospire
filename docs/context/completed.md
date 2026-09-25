@@ -598,6 +598,73 @@ Two things worth keeping from it:
 Re-run after the fix: **25 of 25 against `https://cospire-roan.vercel.app`**,
 live counts back to baseline.
 
+### The 503 that was a billing checkbox, 2026-09-25
+
+For three days every Gemini model on the Client's key answered
+`503 UNAVAILABLE / "This model is currently experiencing high demand"`. It was
+recorded here as a Google-side outage, and that was **wrong**.
+
+Bursting the endpoint until it named its own quota settled it:
+
+```
+quotaMetric: generativelanguage.googleapis.com/generate_content_free_tier_requests
+quotaId:     GenerateRequestsPerMinutePerProjectPerModel-FreeTier
+quotaValue:  5
+```
+
+**The Google Cloud project behind the key has no billing enabled.** An unbilled
+project is served on leftover capacity: it gets five requests a minute, and
+whenever there is no spare capacity it is handed a 503 whose wording describes
+Google's supply rather than the caller's account. One burst of seven calls
+returned four 200s, one 429 and two 503s -- intermittent, not an outage, and
+`status.cloud.google.com` lists no matching incident.
+
+Three things worth keeping:
+
+- **A 503 can be a billing problem wearing an outage's clothes.** The tells are
+  429s interleaved with the 503s, and the quota metric naming `free_tier`. A
+  genuinely bad key gives 400 or 403; a restricted key gives 403 with
+  `API_KEY_*_BLOCKED`; a disabled API gives 403 `SERVICE_DISABLED`. None of those
+  appeared.
+- **`serviceTier: "standard"` does not mean paid.** Successful free-tier calls
+  report `standard` in both the body and the `x-gemini-service-tier` header,
+  while 429s from the same minute cite the free-tier quota. The earlier note that
+  a 2026-09-23 success proved paid tier was reading the wrong field.
+- **A new API key would have fixed nothing.** The key authenticates, lists models
+  and generates content several times a minute. The fault is the project's
+  billing, not the credential, so the key stays as it is.
+
+**The fix is Cospire's to make**: link a billing account to the project that owns
+the key, which `aistudio.google.com/apikey` names. Verify it by forcing a 429 and
+reading the quota metric -- it must say `paid_tier`. The absence of 503s is not
+proof, because 503s come and go by luck.
+
+### A second provider, for testing only, 2026-09-25
+
+Because the paid path could not be exercised, the model call was made
+provider-agnostic. `MODEL_BASE_URL` switches the import to anything speaking the
+OpenAI chat-completions shape -- Groq, OpenRouter, Mistral, Together -- and
+leaving it unset keeps Gemini exactly as it was.
+
+**It exists for testing and for nothing else, and that is a confidentiality rule
+rather than a preference.** Free usage is free because the provider may train on
+what it is given, and clause 13.1 makes the Client's content confidential. A real
+Cospire question paper goes through the paid Gemini path or through no API at
+all. The rule is written at the top of `model-call.ts`, where anyone adding a
+third provider will read it, because no amount of configuration can enforce what
+is *sent*.
+
+What is shared, so the two cannot drift: the instruction, the figure order, the
+limits, the retry policy and the failure wording, all in `model-call.ts`. What
+stays provider-specific: Gemini's `responseSchema` and `thinkingBudget: 0`, which
+the other providers do not have, and the OpenAI path's `json_object`, which they
+all honour. A test asserts both providers send byte-identical instructions.
+
+**430 unit tests**, up from 415. **The OpenAI-compatible round trip is
+UNVERIFIED**: no free-tier key was available to this session. What *is* proven is
+the dispatch -- pointing `MODEL_BASE_URL` at an unreachable host routes to the new
+path and reports the configured provider's name rather than Gemini's.
+
 ### Where the 1.3 seconds actually goes, 2026-09-21
 
 The owner reported the platform feeling slow and unresponsive: a click on a nav

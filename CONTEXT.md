@@ -50,14 +50,20 @@ this file and not found here is in one of these; find it with
   needs no migration and calls no model. Details in
   `docs/context/completed.md`.
 - **The Gemini path and the automatic routing are merged and deployed too**, in
-  the same pull request. A `.docx` with no pictures shows the prompt to copy, as before; one with
-  pictures is sent to Gemini with its pictures, and the platform places each
-  figure. **Its live round trip is UNVERIFIED**: every Gemini model on the
-  Client's key answered `503 UNAVAILABLE` from 2026-09-23 and still on 2026-09-25,
-  though the key is valid and lists 42 models. Everything else about the path is
-  checked, including that the key is in none of the chunks the browser is served.
-  Run `scripts/verify/gemini-import.mjs` when the API is back; that is the one
-  thing outstanding.
+  the same pull request. A `.docx` with no pictures shows the prompt to copy, as
+  before; one with pictures is sent to the model with its pictures, and the
+  platform places each figure. Everything about the path is checked except the
+  live round trip, including that the key is in none of the chunks the browser is
+  served.
+- **The three days of Gemini `503` were a billing fault, not an outage.** The
+  Google Cloud project behind the Client's key has **no billing enabled**, so it
+  is served on leftover capacity at five requests a minute. The API named its own
+  quota when pushed: `generate_content_free_tier_requests`, limit 5. **A new API
+  key would fix nothing**; linking a billing account to the project that
+  `aistudio.google.com/apikey` names is the whole fix, and it is Cospire's to
+  make. Verify it by forcing a 429 and reading the quota metric, which must say
+  `paid_tier` -- the absence of 503s proves nothing, because they come and go.
+  See *The 503 that was a billing checkbox* in `docs/context/completed.md`.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
   extracted (now built, awaiting merge), then the Gemini import path, then mocks
   built from documents that quote question IDs, then the test engine (Phase 4).
@@ -205,6 +211,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and renames happen in a later release, once nothing reads the old thing. See
   `docs/implementation-plan.md`.
 - `src/shared/db/types.ts` is generated from the database and never hand-edited.
+- **Never send a real Cospire question paper to a free model tier.** Free usage
+  is free because the provider may train on what it is given, and clause 13.1
+  makes the Client's content confidential. The second, OpenAI-compatible provider
+  exists to exercise the code against synthetic fixtures. Real papers go through
+  the paid Gemini path or through no API at all.
 
 ## Current repository state
 
@@ -299,8 +310,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude (doc-import chat) | `feat/model-provider` | A second, OpenAI-compatible model provider, for testing against a free tier while Gemini stays the production path | `src/features/question-bank/model-call.ts`, `openai-compatible.ts`, `gemini.ts`, `actions/import-actions.ts`, `components/import-screen.tsx`, `src/app/admin/questions/import/page.tsx`, `scripts/verify/gemini-import.mjs`, `.env.example` | Built, 430 tests; the OpenAI round trip **UNVERIFIED**, no free-tier key available | 2026-09-25 |
 
-**Nobody holds a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
+**`feat/doc-import` merged as PR #58 and `fix/docx-harness-assertion` as PR #59.** `feat/doc-import` merged as PR #58
 (`b2a4fb8`) and its branch is deleted. Two things a new session should know
 before touching anything:
 
@@ -383,6 +395,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
+| **Billing on the Gemini project** | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |

@@ -44,10 +44,33 @@ const featureUrl = (name) =>
 
 const { readDocx } = await import(featureUrl("docx.ts"));
 const { readQuestionsWithGemini } = await import(featureUrl("gemini.ts"));
+const { readQuestionsWithOpenAiCompatible } = await import(featureUrl("openai-compatible.ts"));
 const { parseImportedQuestions } = await import(featureUrl("import-spec.ts"));
 
 const BASE = process.argv[2] ?? null;
-const KEY = process.env.GEMINI_API_KEY;
+
+// Whichever provider the environment configures, so this checks the path that
+// will actually run rather than the one that used to.
+//
+// MODEL_BASE_URL points at a free tier for testing. **Never run this with a real
+// Cospire question paper against a free tier** -- free usage may be trained on,
+// and clause 13.1 makes the Client's content confidential. The fixture below is
+// synthetic, which is why it is safe.
+const VIA_OPENAI = Boolean(process.env.MODEL_BASE_URL);
+const PROVIDER = VIA_OPENAI ? process.env.MODEL_LABEL || "the configured provider" : "Gemini";
+const KEY = VIA_OPENAI ? process.env.MODEL_API_KEY : process.env.GEMINI_API_KEY;
+
+const askTheModel = (figures, text) =>
+  VIA_OPENAI
+    ? readQuestionsWithOpenAiCompatible({
+        apiKey: KEY,
+        baseUrl: process.env.MODEL_BASE_URL,
+        figures,
+        label: process.env.MODEL_LABEL || undefined,
+        model: process.env.MODEL_NAME || undefined,
+        text,
+      })
+    : readQuestionsWithGemini({ apiKey: KEY, figures, text });
 
 const results = [];
 function record(name, pass, detail) {
@@ -117,7 +140,7 @@ try {
   );
 
   if (!KEY) {
-    unverified("the live Gemini round trip", "GEMINI_API_KEY is not set in this environment");
+    unverified(`the live ${PROVIDER} round trip`, "no key is set in this environment for the configured provider");
   } else {
     // ------------------------------------------------------- B. the live call
     const figures = exportable.map((figure) => ({
@@ -127,7 +150,7 @@ try {
     }));
 
     const started = Date.now();
-    const outcome = await readQuestionsWithGemini({ apiKey: KEY, figures, text: paper.text });
+    const outcome = await askTheModel(figures, paper.text);
     const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
     if (!outcome.json) {
@@ -139,14 +162,20 @@ try {
         outcome.problems.length === 1 && /copy-and-paste path|billing|Split/.test(outcome.problems[0]),
         outcome.problems[0],
       );
-      unverified("the live Gemini round trip", `Gemini did not answer after retries in ${seconds}s: ${outcome.problems[0]}`);
+      unverified(`the live ${PROVIDER} round trip`, `${PROVIDER} did not answer after retries in ${seconds}s: ${outcome.problems[0]}`);
     } else {
-      record("Gemini answered", true, `${seconds}s`);
-      record(
-        "thinking was off, so no thinking tokens were billed",
-        (outcome.usage?.thinking ?? 0) === 0,
-        JSON.stringify(outcome.usage),
-      );
+      record(`${PROVIDER} answered`, true, `${seconds}s`);
+      if (VIA_OPENAI) {
+        // There is no portable way to turn reasoning off across providers, and
+        // it does not matter on a free tier that is not being billed for.
+        record("token usage was reported", outcome.usage !== null, JSON.stringify(outcome.usage));
+      } else {
+        record(
+          "thinking was off, so no thinking tokens were billed",
+          (outcome.usage?.thinking ?? 0) === 0,
+          JSON.stringify(outcome.usage),
+        );
+      }
 
       // ------------------------------------------------- C. the answer parses
       const parsed = parseImportedQuestions(outcome.json);
@@ -173,7 +202,8 @@ try {
         JSON.stringify(parsed.items[0]?.parsed?.correctOptions),
       );
 
-      console.log("\n  tokens:", JSON.stringify(outcome.usage));
+      console.log(`\n  provider: ${PROVIDER}`);
+      console.log("  tokens:", JSON.stringify(outcome.usage));
     }
   }
 
@@ -187,12 +217,12 @@ try {
       if (body.includes(KEY)) leaked = true;
     }
     record(
-      "the Gemini key is in nothing the browser is served",
+      "the model key is in nothing the browser is served",
       !leaked,
       `${chunks.length} chunk(s) checked on ${BASE}`,
     );
   } else if (!BASE) {
-    unverified("the Gemini key is in nothing the browser is served", "no base URL given; pass one to check it");
+    unverified("the model key is in nothing the browser is served", "no base URL given; pass one to check it");
   }
 } catch (error) {
   record("run completed without throwing", false, String(error));
