@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-24 (Asia/Calcutta)
+Last updated: 2026-09-25 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -45,6 +45,12 @@ this file and not found here is in one of these; find it with
   filed into section one; childless DI sets are shown and refused instead of
   filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
   from a question are deleted from Storage. **19/19 on the deployed URL.**
+- **PR #58 is approved and ready to merge.** The owner approved it on
+  2026-09-25; the merge itself is the owner's click. Four checks green, no
+  migration, and the Gemini path degrades to the copy-and-paste path when the
+  model is unavailable, which is what it has been doing for three days. **After
+  merging, re-run `scripts/verify/docx-import.mjs` against the deployed URL and
+  record the result**, as every other feature here has been.
 - **Word upload with pictures extracted is built on `feat/doc-import`** and
   verified 25/25 against a local production build and the hosted database
   (2026-09-23). Not merged and not deployed. It needs no migration and calls no
@@ -299,7 +305,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Items 1 and 2 built. Item 1 verified 25/25; item 2's live round trip **UNVERIFIED**, Gemini 503 all session. PR #58 | 2026-09-23 |
+| Claude (doc-import chat) | `feat/doc-import` | Word upload: pictures out of a `.docx`, `[[figure:N]]` markers into the text, markers resolved to images at staging. *What to build next*, item 1 | `src/features/question-bank/docx*.ts`, `import-spec.ts`, `import-prompt.ts`, `import-review.ts`, `import-state.ts`, `components/import-screen.tsx`, `components/import-review-screen.tsx`, `components/import-review-route.tsx`, `actions/import-actions.ts`, `queries/list-imports.ts`, `src/app/admin/questions/import/**`, `scripts/verify/docx-import.mjs`, `package.json` (`fflate`) | Items 1 and 2 built and pushed. **PR #58 is approved by the owner (2026-09-25) and waiting only on the merge click.** Item 1 verified 25/25; item 2's live round trip **UNVERIFIED**, Gemini 503 for three days | 2026-09-25 |
 
 Worktree `C:\Cospire\Cospire-doc-import` on port 3030. **No migration**: the
 `question-images` bucket and `questions.images` already exist, and `source_type`
@@ -307,14 +313,18 @@ stays `'paste'` because the JSON still arrives by paste -- only the figures now
 come out of the document.
 
 **Scope grew on 2026-09-23, on the owner's instruction:** item 2, the Gemini
-path, is being built on the same branch rather than stacked behind PR #58, to
-avoid the stacked-pull-request trap this project has already hit twice. The
-owner reported that **the Client has agreed the cost**, which clears the one
-blocker `CONTEXT.md` recorded against item 2. Two things the owner should still
-confirm, recorded because neither is settled by being told the cost is agreed:
-which figure they agreed (the drafted question quoted **Claude at about Rs 20**,
-not Gemini at about Rs 5), and that sending the pictures as well as the text --
-the option chosen -- runs somewhat above the Rs 5 text-only estimate.
+path, was built on the same branch rather than stacked behind PR #58, to avoid
+the stacked-pull-request trap this project has already hit twice.
+
+**Cost: settled. The owner confirmed on 2026-09-25 that the Client has agreed to
+all costs**, which closes the question raised when the figure was first agreed --
+the drafted question quoted Claude at about Rs 20, and sending the pictures as
+well as the text runs above the Rs 5 text-only estimate for Gemini. Neither is
+now a blocker. The token count is shown on screen after every call, so real spend
+can be checked against the agreement rather than assumed.
+
+**`fflate` 0.8.2 in `package.json` is confirmed by the owner (2026-09-25)**, which
+is the §6.1 human decision a dependency needs.
 
 Two things a new session should know before touching anything:
 
@@ -405,7 +415,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
-| **One real question document** | The import accuracy test the delivery plan commits to in the first fortnight | Cospire |
+| ~~**One real question document**~~ **Offered 2026-09-25** | The owner will supply real question papers on request. The importer and the Word path are built and waiting for them, so this is now a matter of asking rather than a blocker. It remains the accuracy test the delivery plan commits to in the first fortnight | Two19 to ask |
 | **Supabase Pro** | Real ARS video uploads (capacity, not building), plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
 | **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
