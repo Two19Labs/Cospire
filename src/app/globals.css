@@ -1136,6 +1136,10 @@ a.button {
   border-radius: var(--r-card);
   display: grid;
   gap: 1.25rem;
+  /* One column that may shrink. Without it the implicit track sizes to a wide
+     table's full width and the whole page scrolls sideways on a phone, instead
+     of the table scrolling inside its panel. */
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   padding: var(--panel-pad);
 }
@@ -1219,6 +1223,10 @@ form.panel > h2:first-child {
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
+  /* Positioned, so the visually hidden labels inside a wide table are clipped
+     with it. Without this they are placed against the page, sit outside the
+     scroll box, and push the whole page sideways on a phone. */
+  position: relative;
 }
 
 .table {
@@ -1361,6 +1369,18 @@ form.panel > h2:first-child {
 
 .empty-state .button {
   margin: 0 auto;
+}
+
+/* The error and not-found pages: the empty state as a card on its own. */
+.state-card {
+  box-shadow: 0 1.5rem 4rem rgb(24 43 80 / 8%);
+  max-width: 30rem;
+  width: 100%;
+}
+
+.state-card h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.625rem;
 }
 
 /* An empty table or list inside a panel: said quietly, centred. */
