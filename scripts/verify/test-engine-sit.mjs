@@ -261,6 +261,27 @@ try {
   const { data: afterSubmit } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
   check("no answer changes after submitting", afterSubmit.answer.options[0] === "b");
 
+  // ---- Rescoring: the admin corrects q1's key to B through the question editor.
+  const editPage = await get(`/admin/questions/${q1}`, "admin");
+  const editorForm = formWith(editPage.body, 'name="body"');
+  await post(`/admin/questions/${q1}`, "admin", editorForm, [
+    ["body", `Pick A ${stamp}`], ["type", "mcq"], ["marks", "3"], ["difficulty", "easy"], ["sectionId", section.id], ["topic", "Sit"],
+    ["option-0", "Alpha"], ["option-1", "Beta"], ["correct", "1"], ["solution", "Beta, after the correction."], ["questionId", q1],
+  ]);
+  const { data: correctedKey } = await service.from("question_keys").select("correct_answer").eq("question_id", q1).single();
+  check("the admin's correction saves the new key", correctedKey.correct_answer?.options?.[0] === "b", JSON.stringify(correctedKey));
+  const { data: events } = await service.from("rescore_events").select("attempts_affected, reason, changed_by").eq("question_id", q1);
+  check("one rescore event records the change, the count and the admin", events.length === 1 && events[0].attempts_affected === 1 && events[0].reason === "answer key changed" && events[0].changed_by === people.admin.id, JSON.stringify(events));
+  let rescored = null;
+  for (let i = 0; i < 20 && rescored === null; i += 1) {
+    const { data } = await service.from("attempts").select("score").eq("id", attemptId).single();
+    if (data.score !== null) rescored = Number(data.score);
+    else await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  check("the attempt is rescored after the save: B is now right, +3 +3 = 6", rescored === 6, String(rescored));
+  const rescoredResult = await get(`/student/attempts/${attemptId}`, "student");
+  check("the student's result shows the new key", rescoredResult.body.includes("B. Beta") && rescoredResult.body.includes("Beta, after the correction."));
+
   // ---- An attempted mock is frozen for the builder.
   const edit = await get(`/admin/mocks/${free}`, "admin");
   const editForm = formWith(edit.body, 'name="timingMode"');
@@ -327,6 +348,7 @@ try {
     await service.from("content_access").delete().eq("resource_type", "mock").in("resource_id", made.mocks);
     await service.from("mocks").delete().in("id", made.mocks);
   }
+  if (made.questions.length) await service.from("rescore_events").delete().in("question_id", made.questions);
   for (const id of made.questions) {
     await service.from("question_keys").delete().eq("question_id", id);
     await service.from("questions").delete().eq("id", id);

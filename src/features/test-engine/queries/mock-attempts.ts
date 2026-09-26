@@ -3,6 +3,7 @@ import "server-only";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { proctorEventTypes, type ProctorEventType } from "../proctor";
+import { scoreAndStore } from "../score-attempt";
 
 export interface MockAttemptRow {
   events: Partial<Record<ProctorEventType, number>>;
@@ -30,6 +31,13 @@ export async function listMockAttempts(mockId: number): Promise<MockAttemptRow[]
     .limit(attemptLimit);
   if (error) throw new Error(`Unable to list attempts: ${error.message}`);
   if (!attempts?.length) return [];
+
+  // Attempts awaiting a score (a question edit cleared them) are scored before
+  // they are shown. RLS has just returned them to this admin, which is the
+  // check the server-key write relies on.
+  for (const row of attempts) {
+    if (row.status === "submitted" && row.score === null) row.score = await scoreAndStore(row.id);
+  }
 
   const ids = attempts.map((row) => row.id);
   const [profiles, events] = await Promise.all([
