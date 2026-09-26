@@ -22,9 +22,11 @@ import {
   type QuestionFilters,
   type QuestionNotice,
 } from "../list-params";
+import { formatQuestionId, formatQuestionIdList } from "../question-id";
 import { difficulties, questionTypeLabels, questionTypes } from "../question-input";
-import type { QuestionListPage } from "../queries/list-questions";
+import { questionIdCopyLimit, type QuestionListPage } from "../queries/list-questions";
 import type { QuestionSection } from "../queries/list-sections";
+import { CopyIds } from "./copy-ids";
 
 function preview(body: string): string {
   const flat = body.replace(/\s+/g, " ").trim();
@@ -36,6 +38,7 @@ export function QuestionsScreen({
   filters,
   notice,
   profile,
+  questionIds,
   questions,
   sections,
   topics,
@@ -44,6 +47,8 @@ export function QuestionsScreen({
   filters: QuestionFilters;
   notice: QuestionNotice | null;
   profile: Profile;
+  // Every ID behind the current filter, bounded, for the copy box.
+  questionIds: { ids: number[]; truncated: boolean };
   questions: QuestionListPage;
   sections: QuestionSection[];
   topics: string[];
@@ -120,6 +125,7 @@ export function QuestionsScreen({
           <label className="field field--inline" htmlFor="question-search">
             <span className="field__label">Search</span>
             <input className="input" defaultValue={filters.search} id="question-search" name="q" type="search" />
+            <span className="field__hint">Words in the question, or a question ID such as Q00042.</span>
           </label>
           <label className="field field--inline" htmlFor="filter-section">
             <span className="field__label">Section</span>
@@ -204,6 +210,7 @@ export function QuestionsScreen({
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableHeaderCell>ID</TableHeaderCell>
                   <TableHeaderCell>Question</TableHeaderCell>
                   <TableHeaderCell>Type</TableHeaderCell>
                   <TableHeaderCell>Section</TableHeaderCell>
@@ -215,6 +222,9 @@ export function QuestionsScreen({
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.id}>
+                    <TableCell>
+                      <code>{formatQuestionId(row.id)}</code>
+                    </TableCell>
                     <TableCell>
                       <Link href={buildQuestionHref(base, row.id)}>{preview(row.body)}</Link>
                     </TableCell>
@@ -258,6 +268,18 @@ export function QuestionsScreen({
               <span className="muted">Next</span>
             )}
           </nav>
+        ) : null}
+
+        {questionIds.ids.length > 0 ? (
+          <CopyIds
+            hint={`${questionIds.ids.length} ${
+              questionIds.ids.length === 1 ? "question" : "questions"
+            } match this filter${
+              questionIds.truncated ? `, of which these are the first ${questionIdCopyLimit}` : ""
+            }. A DI set counts once, as its passage, which is the ID that brings the whole set into a mock.`}
+            ids={formatQuestionIdList(questionIds.ids)}
+            label="Question IDs for this list, to paste into a mock document"
+          />
         ) : null}
       </section>
     </RoleShell>

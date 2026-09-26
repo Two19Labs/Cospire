@@ -14,7 +14,9 @@ import { initialQuestionImportState, parseBatchId, type QuestionImportState } fr
 import { parseId } from "../list-params";
 import { draftToFormValues, readQuestionForm, type QuestionEditorState } from "../question-form";
 import { toSaveQuestionArgs, validateQuestion } from "../question-input";
-import { readQuestionsWithGemini, type GeminiFigure } from "../gemini";
+import { readQuestionsWithGemini } from "../gemini";
+import { type ModelFigure } from "../model-call";
+import { readQuestionsWithOpenAiCompatible } from "../openai-compatible";
 import { listSections } from "../queries/list-sections";
 import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
@@ -139,7 +141,7 @@ export async function askGeminiAction(
 
   // The pictures, read back out of the bucket as this admin.
   const supabase = await createServerSupabaseClient();
-  const figures: GeminiFigure[] = [];
+  const figures: ModelFigure[] = [];
   for (const [n, path] of Object.entries(figurePaths).sort((a, b) => Number(a[0]) - Number(b[0]))) {
     const { data, error } = await supabase.storage.from(questionImagesBucket).download(path);
     if (error || !data) continue;
@@ -152,14 +154,28 @@ export async function askGeminiAction(
     });
   }
 
-  const { json, problems, usage } = await readQuestionsWithGemini({
-    // The only place the key is read. This file is "use server", so it cannot
-    // reach a client bundle and the key cannot travel with it.
-    apiKey: process.env.GEMINI_API_KEY,
-    figures,
-    model: process.env.GEMINI_MODEL || undefined,
-    text,
-  });
+  // The only place a model key is read. This file is "use server", so it cannot
+  // reach a client bundle and no key can travel with it.
+  //
+  // Gemini is the production path. MODEL_BASE_URL switches to any provider
+  // speaking the OpenAI chat-completions shape, which exists so the code can be
+  // exercised against a free tier -- and a free tier must never see a real
+  // Cospire paper, for the reason set out in model-call.ts.
+  const { json, problems, usage } = process.env.MODEL_BASE_URL
+    ? await readQuestionsWithOpenAiCompatible({
+        apiKey: process.env.MODEL_API_KEY,
+        baseUrl: process.env.MODEL_BASE_URL,
+        figures,
+        label: process.env.MODEL_LABEL || undefined,
+        model: process.env.MODEL_NAME || undefined,
+        text,
+      })
+    : await readQuestionsWithGemini({
+        apiKey: process.env.GEMINI_API_KEY,
+        figures,
+        model: process.env.GEMINI_MODEL || undefined,
+        text,
+      });
   if (!json) return { ...echo, problems, usage };
 
   const outcome = parseImportedQuestions(json);

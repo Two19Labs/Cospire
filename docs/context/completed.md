@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-09-26 | **Mocks built from documents that quote question IDs** (`feat/mock-docs`, pull request raised, not merged) | Readable IDs (`Q00042`, computed from `questions.id`, **no migration**), the ID on every bank row, on the question page and searchable there; copyable ID lists for the current bank filter and at the end of an import; and a plain-text mock template parsed directly -- **no model call**, because an ID must match exactly -- resolving to the existing `save_mock`. `scripts/verify/mock-document.mjs` **29/29** against a local production build and the hosted database, every refusal proven by counting mock rows; 39 new unit tests, 454 in all; typecheck, lint and build pass. Counts back to baseline. See *Mocks built from documents that quote question IDs* |
 | 2026-09-23 | The seven PR #49 review findings fixed (`fix/mock-builder-review`) | Section slots map by slot, not position (`mapSectionSlots`, unit tested); a question archived after selection renders as a removable row rather than a hidden input, and the save says "archived" rather than "unavailable"; the section embed is read as the object PostgREST returns for a many-to-one; a missing section field is refused; childless DI sets are listed and refused instead of filtered after `.range()` had paged, which shortened picker pages; `/admin/mocks/[id]` uses `parseId`; images dropped from a saved question are deleted from Storage after the save, and an upload removed before saving is deleted immediately. 19/19 over HTTP, 354 tests, typecheck, lint and build. **Two facts worth keeping:** the service key cannot write `questions` rows directly -- the row CHECK calls `private.question_images_valid`, granted to `authenticated` only -- so a verify script must archive through the admin's own session; and `notFound()` on a route carrying a `loading.tsx` renders the not-found page with status 200, because the skeleton has already streamed the headers, the same trade-off the role layouts record for `redirect()` |
 | 2026-09-23 | Question bank, Phase 3 parts 1-4, merged as `1c7073d` (PR #49) | Schema with answer keys in their own table, the numerical normaliser, authoring for admins and mentors, paste-a-prompt import with per-question review, and the admin-only mock builder. Seven migrations were already applied, so `main` and the database came back into step on merge. Verified before merge: 41/41 SQL, 36/36 authoring over HTTP, 25/25 importer, 9/9 mock SQL and 10/10 mock HTTP, 342 tests, typecheck, lint and build. A high-effort review at merge time raised seven findings, all in the mock builder and none student-facing: blank section slot misfiles questions; a question archived after selection makes its mock uneditable; the picker's section column always shows "-" (many-to-one embed read as an array, confirmed against the schema); a missing section field files into section one; childless DI stimuli filtered after paging; `/admin/mocks/[id]` 500s on an unsafe integer id; removed image uploads are never deleted from the bucket. To be fixed before any real mock is built |
 | 2026-09-22 | Skeletons for every signed-in screen, and sign-in straight to the role home (`fix/loading-coverage`) | From the 2026-09-21 client demo: skeletons looked fine on admin screens but not on student and mentor ones. Every page already had a skeleton, and all three roles stream it with the first byte (measured on the deployed URL: about 0.5s to skeleton, 0.75-1.1s to content, the same for each role). The real gaps were on exactly the paths the demo took. (1) Seven detail screens had no `loading.tsx` of their own and borrowed their parent list's, under the list's title, so a click into them looked as if it had not landed: `student/reports/[id]`, `student/documents/[id]`, `mentor/reports/[id]`, `admin/documents/[id]`, `admin/report-templates/[id]`, `admin/report-templates/import`, `admin/ars/[id]/rounds/[roundId]`. Each now has its own. (2) Signing in went login, then `/dashboard`, then the role home: a second full round trip (about 0.5s) with nothing on screen, at the moment of switching to a student or mentor account. `loginAction` now redirects straight to the role home when the profile is active, and falls back to `/dashboard` otherwise; the role layout re-checks either way. `src/features/auth/loading-coverage.test.ts` fails if any admin, mentor or student page lacks its own `loading.tsx`, and was seen to fail when one was removed. `scripts/verify/loading-coverage.mjs` 11/11 on a local production build and 1/11 on the unfixed deployed URL, so it discriminates. 241/241 tests, typecheck, lint and build pass. **Merged as PR #52 (`39860c6`) and 11/11 on the deployed URL.** Not browser-tested: client-side navigation itself cannot be driven here |
@@ -573,6 +574,97 @@ is back.** That is the one outstanding verification, and the one thing between
 this and a finished item 2. Re-checked on 2026-09-24, more than two hours after
 the first attempt: still 503.
 
+### Mocks built from documents that quote question IDs, 2026-09-26
+
+Item 3 of *What to build next*, on `feat/mock-docs`, built to the design of
+2026-09-22 in `meetings.md` rather than to a fresh one. **No migration**, and no
+model call anywhere in it.
+
+**The ID is a rendering of `questions.id`, not a new column.** It is a `bigint`
+identity: the database issues it, never reuses it, and two admins importing at
+once cannot collide, which is what made the founder's worry about a shared
+allocation chat unnecessary. `src/features/question-bank/question-id.ts` formats
+it as `Q` plus five digits and parses `Q42`, `q00042` and `Q-00042` as the same
+question. It deliberately **refuses a bare `42`**: in a mock document a bare
+number is a duration or a count, and in bank search it is a number inside a
+question's own text. An id past `Number.MAX_SAFE_INTEGER` is refused rather than
+silently rounded.
+
+**Getting the IDs out.** The bank shows each question's ID in its own column, and
+a copy box under the list holds every ID behind the *current filter* -- not just
+the current page -- so "all hard DILR questions" is one copy. That query is
+bounded at 2,000 and **says when it has hit the bound**, because an unbounded id
+query is the screen that is fine at 500 questions and dies at 50,000, and a
+silent truncation would build a mock quietly missing the rest. The end of an
+import lists the IDs it created in the paper's order. A DI set appears once, as
+its passage, which is the ID that brings the whole set into a mock. The copy
+button is the only part needing JavaScript; the box itself can be selected and
+copied, which is what the Client does out of a Google Doc today.
+
+**The document is parsed directly.** `mock-document.ts` reads the fixed template
+-- `Mock:`, `Duration:`, `Negative marking:`, `Attempts:`, `Allow mobile:`,
+`Proctoring:`, then `Section: VARC | 40` lines with ID lists under them. It is
+lenient about how a setting is written and strict about what it means, the same
+bargain `import-spec.ts` makes: blank lines and rules of dashes are ignored,
+labels are read in any case, `40 minutes` is 40, and `tita` is accepted as the
+Client's own word for a numerical answer. Defaults match the builder's own
+(one attempt, phones allowed, proctoring off, no penalty), and a penalty with no
+types named takes real CAT's `{mcq, mcq_multi}` -- which the database also
+requires, since it refuses a penalty with an empty type list.
+
+**Every refusal carries its line number**, because "an ID does not exist" is
+useless against a 60-line document: an unknown label, a setting written below the
+first section or given twice, IDs above the first section, a section with no IDs,
+two sections with one name, a malformed ID, the same question twice, minutes that
+do not add up, and anything outside the builder's own limits. What the parser
+cannot know is settled in `queries/resolve-mock-document.ts` against the bank: an
+ID that names nothing (which is also what another organisation's ID reads as,
+because `questions_select_author` scopes the query and nothing here re-implements
+that scope), an archived question, a DI child's own ID -- answered by naming the
+set's ID -- and a DI set with no sub-questions yet.
+
+**One thing the first draft got wrong and the tests caught.** A refused section
+line used to cascade: its questions then "came before the first Section line" and
+its minutes no longer added up, so one typo produced three complaints, two of
+them derived. A rejected section is now kept in place and excluded from the later
+checks, and the timing arithmetic is skipped entirely while any section line is
+still broken.
+
+**It is all or nothing, and the preview writes nothing.** Reading a paste
+resolves and shows the mock; confirming **re-reads the pasted document on the
+server** rather than trusting the preview the browser posts back, because a
+Server Action is a public endpoint. The confirm ends in the existing
+`public.save_mock`, so there is no new write path, no new policy and no
+migration, and every structural rule the builder is already held to is enforced
+by the same deferred trigger. The result opens in the ordinary mock editor.
+
+Where it lives: `/admin/mocks/import`, with its own `loading.tsx`, reached from a
+second button on the mocks list.
+
+**Verified 29 of 29** by `scripts/verify/mock-document.mjs` against a local
+production build on port 3020 and the hosted database, with real session cookies
+and every form posted through the no-JavaScript path. Each of the ten refusals is
+proven by **counting mock rows before and after**, never by the absence of an
+error. Cleanup returned the live counts to baseline: 0 mocks, 0 mock sections, 0
+mock questions, 0 questions, 0 question keys, 0 staged imports, 1 question
+section (id 39, pre-existing), 5 profiles, 8 courses, 2 documents.
+
+**Two things the harness had to learn, both already recorded here and both hit
+again.** The service key cannot write `questions` rows, so the archived-question
+check archives through the admin's own session and asserts one row changed.
+And a staged import row **cannot be seeded as approved at all**:
+`private.guard_question_import_write()` forces every insert to `pending_review`
+with no question and no reviewer, so an approved row exists only by being
+decided. The first attempt seeded one with the service key, the row landed
+pending, and the screen honestly reported 0 approved -- the check failed for the
+right reason. It now inserts and then decides, through the admin's session.
+
+**Not verified:** nothing has been driven against the deployed URL, because the
+branch is not merged and preview deployments do not work (see *Active work* in
+`CONTEXT.md`). Nobody has looked at the screen in a browser, so its layout is
+unreviewed. And no real Cospire mock document has been through it, because none
+has been supplied -- the same outstanding item as for the question importer.
+
 ### The harness that went stale in one rewording, 2026-09-25
 
 PR #58 merged as `b2a4fb8` and `scripts/verify/docx-import.mjs` was re-run
@@ -597,6 +689,73 @@ Two things worth keeping from it:
 
 Re-run after the fix: **25 of 25 against `https://cospire-roan.vercel.app`**,
 live counts back to baseline.
+
+### The 503 that was a billing checkbox, 2026-09-25
+
+For three days every Gemini model on the Client's key answered
+`503 UNAVAILABLE / "This model is currently experiencing high demand"`. It was
+recorded here as a Google-side outage, and that was **wrong**.
+
+Bursting the endpoint until it named its own quota settled it:
+
+```
+quotaMetric: generativelanguage.googleapis.com/generate_content_free_tier_requests
+quotaId:     GenerateRequestsPerMinutePerProjectPerModel-FreeTier
+quotaValue:  5
+```
+
+**The Google Cloud project behind the key has no billing enabled.** An unbilled
+project is served on leftover capacity: it gets five requests a minute, and
+whenever there is no spare capacity it is handed a 503 whose wording describes
+Google's supply rather than the caller's account. One burst of seven calls
+returned four 200s, one 429 and two 503s -- intermittent, not an outage, and
+`status.cloud.google.com` lists no matching incident.
+
+Three things worth keeping:
+
+- **A 503 can be a billing problem wearing an outage's clothes.** The tells are
+  429s interleaved with the 503s, and the quota metric naming `free_tier`. A
+  genuinely bad key gives 400 or 403; a restricted key gives 403 with
+  `API_KEY_*_BLOCKED`; a disabled API gives 403 `SERVICE_DISABLED`. None of those
+  appeared.
+- **`serviceTier: "standard"` does not mean paid.** Successful free-tier calls
+  report `standard` in both the body and the `x-gemini-service-tier` header,
+  while 429s from the same minute cite the free-tier quota. The earlier note that
+  a 2026-09-23 success proved paid tier was reading the wrong field.
+- **A new API key would have fixed nothing.** The key authenticates, lists models
+  and generates content several times a minute. The fault is the project's
+  billing, not the credential, so the key stays as it is.
+
+**The fix is Cospire's to make**: link a billing account to the project that owns
+the key, which `aistudio.google.com/apikey` names. Verify it by forcing a 429 and
+reading the quota metric -- it must say `paid_tier`. The absence of 503s is not
+proof, because 503s come and go by luck.
+
+### A second provider, for testing only, 2026-09-25
+
+Because the paid path could not be exercised, the model call was made
+provider-agnostic. `MODEL_BASE_URL` switches the import to anything speaking the
+OpenAI chat-completions shape -- Groq, OpenRouter, Mistral, Together -- and
+leaving it unset keeps Gemini exactly as it was.
+
+**It exists for testing and for nothing else, and that is a confidentiality rule
+rather than a preference.** Free usage is free because the provider may train on
+what it is given, and clause 13.1 makes the Client's content confidential. A real
+Cospire question paper goes through the paid Gemini path or through no API at
+all. The rule is written at the top of `model-call.ts`, where anyone adding a
+third provider will read it, because no amount of configuration can enforce what
+is *sent*.
+
+What is shared, so the two cannot drift: the instruction, the figure order, the
+limits, the retry policy and the failure wording, all in `model-call.ts`. What
+stays provider-specific: Gemini's `responseSchema` and `thinkingBudget: 0`, which
+the other providers do not have, and the OpenAI path's `json_object`, which they
+all honour. A test asserts both providers send byte-identical instructions.
+
+**430 unit tests**, up from 415. **The OpenAI-compatible round trip is
+UNVERIFIED**: no free-tier key was available to this session. What *is* proven is
+the dispatch -- pointing `MODEL_BASE_URL` at an unreachable host routes to the new
+path and reports the configured provider's name rather than Gemini's.
 
 ### Where the 1.3 seconds actually goes, 2026-09-21
 

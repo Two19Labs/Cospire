@@ -50,18 +50,33 @@ this file and not found here is in one of these; find it with
   needs no migration and calls no model. Details in
   `docs/context/completed.md`.
 - **The Gemini path and the automatic routing are merged and deployed too**, in
-  the same pull request. A `.docx` with no pictures shows the prompt to copy, as before; one with
-  pictures is sent to Gemini with its pictures, and the platform places each
-  figure. **Its live round trip is UNVERIFIED**: every Gemini model on the
-  Client's key answered `503 UNAVAILABLE` from 2026-09-23 and still on 2026-09-25,
-  though the key is valid and lists 42 models. Everything else about the path is
-  checked, including that the key is in none of the chunks the browser is served.
-  Run `scripts/verify/gemini-import.mjs` when the API is back; that is the one
-  thing outstanding.
+  the same pull request. A `.docx` with no pictures shows the prompt to copy, as
+  before; one with pictures is sent to the model with its pictures, and the
+  platform places each figure. Everything about the path is checked except the
+  live round trip, including that the key is in none of the chunks the browser is
+  served.
+- **The three days of Gemini `503` were a billing fault, not an outage.** The
+  Google Cloud project behind the Client's key has **no billing enabled**, so it
+  is served on leftover capacity at five requests a minute. The API named its own
+  quota when pushed: `generate_content_free_tier_requests`, limit 5. **A new API
+  key would fix nothing**; linking a billing account to the project that
+  `aistudio.google.com/apikey` names is the whole fix, and it is Cospire's to
+  make. Verify it by forcing a 429 and reading the quota metric, which must say
+  `paid_tier` -- the absence of 503s proves nothing, because they come and go.
+  See *The 503 that was a billing checkbox* in `docs/context/completed.md`.
+- **Mocks built from documents that quote question IDs are built on
+  `feat/mock-docs`**, with a pull request raised and not merged. Readable IDs
+  (`Q00042`, computed from `questions.id`), copyable ID lists on the bank and at
+  the end of an import, and a plain-text mock template parsed directly into the
+  existing `save_mock`. **No migration and no model call.** Verified **29/29**
+  against a local production build and the hosted database, every refusal proven
+  by counting rows; nothing has been run against the deployed URL, because the
+  branch is not merged and previews do not work. Details in
+  `docs/context/completed.md`.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
-  extracted (now built, awaiting merge), then the Gemini import path, then mocks
-  built from documents that quote question IDs, then the test engine (Phase 4).
-  See *What to build next*.
+  extracted (merged, PR #58), then the Gemini import path (merged, same pull
+  request), then mocks built from documents that quote question IDs (built, not
+  merged), then the test engine (Phase 4). See *What to build next*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
@@ -205,6 +220,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   and renames happen in a later release, once nothing reads the old thing. See
   `docs/implementation-plan.md`.
 - `src/shared/db/types.ts` is generated from the database and never hand-edited.
+- **Never send a real Cospire question paper to a free model tier.** Free usage
+  is free because the provider may train on what it is given, and clause 13.1
+  makes the Client's content confidential. The second, OpenAI-compatible provider
+  exists to exercise the code against synthetic fixtures. Real papers go through
+  the paid Gemini path or through no API at all.
 
 ## Current repository state
 
@@ -299,29 +319,16 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4 slice 4.1: the attempt tables, and the access model that lets a student reach a mock at all | `supabase/migrations/2026092*_test_engine_*.sql`, `src/features/test-engine/**`, `src/features/admin/**` (granting mocks), `scripts/verify/test-engine-access.sql` | In progress | 2026-09-26 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: slice 4.1 corrected (the attempt tables and the student's door to a mock), then 4.2 sitting the test and 4.3 scoring | `supabase/migrations/20260926T1030_test_engine_attempts.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, the mock grant panel in `src/features/question-bank/components/` and `src/app/admin/mocks/[id]/**`, `scripts/verify/test-engine-*` | In progress. 4.1 is being corrected before it is applied: a student could set their own score, write answers after the deadline, beat the attempt limit with two tabs, and answer questions outside their paper | 2026-09-26 |
 
-A second agent is working on **item 3, mocks from documents quoting question
-IDs**, in `C:\Cospire\Cospire-mock-docs`. It claims its own row in its own
-branch's copy of this file rather than being claimed here, so that a claim and
-the branch it names always travel together.
+**One branch is held as of 2026-09-26**: `feat/test-engine`, in the worktree
+`C:\Cospire\Cospire-test-engine` on port 3010. `feat/mock-docs` merged as
+PR #61 (`092d878`).
 
-Three streams are running at once, which is the ceiling operating manual §5.5
-sets. **They share one database**, so every migration is additive and nobody
-drops or renames anything (§5.6). Only `feat/test-engine` writes a migration in
-this round; `feat/mock-docs` writes none by design.
-
-`feat/model-provider` is open as **PR #60** and green, awaiting the owner's
-merge.
-
-**As of 2026-09-26 the main checkout is two merges behind `origin/main`** -- it
-sits at `e749521` while origin is at `6cc00f6`. The dev server on port 3000 is
-therefore serving code without the Word upload or the Gemini path. Harmless for
-Codex's UI work, misleading for anything else.
-
-**Nobody held a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
-(`b2a4fb8`) and its branch is deleted. Two things a new session should know
-before touching anything:
+`feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
+PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`); all three
+branches are deleted. Three things a new session should know before touching
+anything:
 
 - **A dev server is running on port 3000** from the main checkout
   (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
@@ -332,6 +339,13 @@ before touching anything:
 - **Tell the owner at once if anything changes that you did not do** -- a file
   in the working tree, a branch, a commit, the dev server going down. They have
   remote access and can intervene, but only if it is surfaced immediately.
+- **A new worktree may arrive without its dependencies.** `Cospire-mock-docs`
+  was handed over as ready and held one stray `next` directory in
+  `node_modules` and no `.bin`, so every script failed with "'vitest' is not
+  recognized" -- which reads like a broken install of vitest rather than an
+  absent `npm ci`. Check `node_modules/.bin` exists before concluding anything
+  about a tool. Its `.env.local` also has an empty `DATABASE_URL`; nothing the
+  application or the verify scripts do reads it, so it blocked nothing.
 
 **The Vercel preview deployments do not work.** `/dashboard` on a preview URL
 renders the application's error boundary while the same route on production
@@ -343,6 +357,17 @@ looked at the Vercel environment-variable settings yet. It matters because this
 file claims every pull request gets a clickable URL, and it appears none of them
 ever has -- every verification row here is either a local production build or the
 deployed URL, never a preview.
+
+**And a second reason, measured on 2026-09-26:** a preview URL is behind
+**Vercel deployment protection**. Every path on
+`https://cospire-git-feat-mock-docs-cospire.vercel.app` -- `/login`,
+`/dashboard`, `/admin/mocks/import` alike -- answers `302` to
+`https://vercel.com/sso-api?...`, so **no verify script can drive a preview at
+all** without a protection-bypass token, whatever the environment variables say.
+A browser signed in to the Vercel account passes that gate, which is why the
+error boundary was what a person saw. Two separate things to fix, then: the
+Preview environment variables, and either a bypass token for the harness or
+disabling protection on previews.
 
 ## Pending
 
@@ -402,6 +427,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
+| **Billing on the Gemini project** | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
@@ -572,12 +598,18 @@ and needs redrafting before it is sent), and thinking turned low or off in the
 call, because thinking tokens bill as output. Details, limits and routing are
 under *Question import with pictures* below.
 
-**3. Mocks built from documents that quote question IDs.** Readable IDs
+**3. Mocks built from documents that quote question IDs. BUILT on
+`feat/mock-docs`, 2026-09-26, verified 29/29 locally against the hosted
+database. The pull request is raised and not merged.** Readable IDs
 (`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
 the bank and at the end of an import, and a plain-text mock template parsed
 directly -- no model, because an ID must match exactly -- which resolves to the
-existing `save_mock`. Full design under *Question IDs and mock documents:
-designed 2026-09-22* in `docs/context/meetings.md`.
+existing `save_mock`. Built to the design under *Question IDs and mock
+documents: designed 2026-09-22* in `docs/context/meetings.md`; the write-up and
+what is still unverified are in `docs/context/completed.md`. **Item 5 of the
+design, pasting a whole new paper so the questions enter the bank and a draft
+mock is made in one step, is deliberately not built** -- the design marks it
+"later, and only if wanted".
 
 **4. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the

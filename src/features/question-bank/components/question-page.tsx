@@ -12,6 +12,7 @@ import {
   type QuestionBankBase,
   type QuestionNotice,
 } from "../list-params";
+import { formatQuestionId } from "../question-id";
 import { questionTypeLabels, type QuestionType } from "../question-input";
 import type { QuestionForEditing } from "../queries/get-question";
 import type { QuestionSection } from "../queries/list-sections";
@@ -51,6 +52,14 @@ export function QuestionPage({
           ← {parent ? "Back to the DI set" : "Back to the question bank"}
         </Link>
       </p>
+
+      {question ? (
+        <p className="muted">
+          Question ID <code>{formatQuestionId(question.id)}</code>. Quote it in a
+          mock document to put this question in a mock. An archived question keeps
+          its ID.
+        </p>
+      ) : null}
 
       {notice ? <p className="muted">{questionNotices[notice]}</p> : null}
       {archiveFailed ? (

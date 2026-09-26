@@ -10,7 +10,7 @@ import {
   questionBankBase,
 } from "../list-params";
 import { getParentSet, getQuestion } from "../queries/get-question";
-import { listQuestions } from "../queries/list-questions";
+import { listQuestionIds, listQuestions } from "../queries/list-questions";
 import { listSections, listTopics } from "../queries/list-sections";
 import { QuestionPage } from "./question-page";
 import { QuestionsScreen } from "./questions-screen";
@@ -31,7 +31,12 @@ function flatten(params: SearchParams): Record<string, string | undefined> {
 export async function QuestionsRoute({ profile, searchParams }: { profile: Profile; searchParams: SearchParams }) {
   const params = flatten(searchParams);
   const filters = parseQuestionFilters(params);
-  const [questions, sections, topics] = await Promise.all([listQuestions(filters), listSections(), listTopics()]);
+  const [questions, questionIds, sections, topics] = await Promise.all([
+    listQuestions(filters),
+    listQuestionIds(filters),
+    listSections(),
+    listTopics(),
+  ]);
 
   return (
     <QuestionsScreen
@@ -39,6 +44,7 @@ export async function QuestionsRoute({ profile, searchParams }: { profile: Profi
       filters={filters}
       notice={parseQuestionNotice(params.notice)}
       profile={profile}
+      questionIds={questionIds}
       questions={questions}
       sections={sections}
       topics={topics}
