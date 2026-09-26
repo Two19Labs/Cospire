@@ -319,7 +319,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4: slice 4.1 corrected (the attempt tables and the student's door to a mock), then 4.2 sitting the test and 4.3 scoring | `supabase/migrations/20260926T1030_test_engine_attempts.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, the mock grant panel in `src/features/question-bank/components/` and `src/app/admin/mocks/[id]/**`, `scripts/verify/test-engine-*` | In progress. 4.1 is being corrected before it is applied: a student could set their own score, write answers after the deadline, beat the attempt limit with two tabs, and answer questions outside their paper | 2026-09-26 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: slice 4.1 corrected (the attempt tables and the student's door to a mock), then 4.2 sitting the test and 4.3 scoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, the mock grant panel in `src/features/question-bank/components/` and `src/app/admin/mocks/[id]/**`, `scripts/verify/test-engine-*` | In progress. 4.1 is being corrected before it is applied: a student could set their own score, write answers after the deadline, beat the attempt limit with two tabs, and answer questions outside their paper | 2026-09-26 |
 
 **One branch is held as of 2026-09-26**: `feat/test-engine`, in the worktree
 `C:\Cospire\Cospire-test-engine` on port 3010. `feat/mock-docs` merged as

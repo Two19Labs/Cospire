@@ -24,7 +24,8 @@
 -- insert and frozen. `allow_mobile = false` on the mock refuses the attempt
 -- outright, in the database, not in a route.
 --
--- Additive: five new tables, six helpers, one redefined trigger function. It
+-- Additive: five new tables, six helpers, three guard triggers, one redefined
+-- trigger function, and student read policies on five existing tables. It
 -- drops and renames nothing, so the currently deployed code keeps working.
 
 begin;
@@ -160,6 +161,10 @@ create index attempts_org_status_idx on public.attempts (org_id, status);
 -- the table grows for ever and the open set stays small.
 create index attempts_open_idx on public.attempts (started_at)
   where status = 'in_progress';
+-- One open attempt per student per mock. A second tab resumes the first
+-- attempt; it never starts a parallel one with its own clock.
+create unique index attempts_one_open_idx on public.attempts (mock_id, student_id)
+  where status = 'in_progress';
 
 -- ---------------------------------------------------------------------------
 -- attempt_sections
@@ -264,6 +269,38 @@ create index rescore_events_org_idx on public.rescore_events (org_id, occurred_a
 -- Row policies cannot limit *which columns* a role changes, so a trigger does
 -- it, and the trigger is what the tests aim at.
 --
+-- Every write rule below applies to a signed-in caller. Two callers are trusted
+-- past them: the server's own secret key (scoring in slice 4.3, the expiry sweep
+-- in 4.5), and a direct database connection carrying no request at all
+-- (migrations, the SQL console). A student's request always carries claims with
+-- role 'authenticated', and no request can set those claims itself.
+create or replace function private.is_trusted_writer()
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select case
+    when nullif(current_setting('request.jwt.claims', true), '') is null then true
+    else (current_setting('request.jwt.claims', true)::jsonb ->> 'role')
+         is not distinct from 'service_role'
+  end
+$$;
+
+revoke execute on function private.is_trusted_writer() from public, anon, authenticated;
+
+-- How long after the clock runs out an answer is still accepted: a save sent in
+-- the last second must not be lost to network latency. Kept short, because
+-- anything longer is extra time.
+create or replace function private.attempt_grace()
+returns interval
+language sql
+immutable
+set search_path = ''
+as $$ select interval '30 seconds' $$;
+
+revoke execute on function private.attempt_grace() from public, anon, authenticated;
+--
 -- On insert the server decides everything that matters: the clock starts at
 -- now(), the attempt is open, it is unscored. `proctored` is the one field a
 -- caller may set, because only the caller knows it is a phone -- and it may only
@@ -293,7 +330,13 @@ begin
 
     -- `mocks.max_attempts` means nothing unless something counts. Counted here
     -- rather than in a route, because two tabs opened at once would each pass an
-    -- application check and both insert.
+    -- application check and both insert. Counting alone does not stop that
+    -- either -- two transactions each see the other's row as absent -- so the
+    -- count is taken under a lock on this student and this mock.
+    perform pg_advisory_xact_lock(
+      hashtextextended('attempts:' || new.mock_id::text || ':' || new.student_id::text, 0)
+    );
+
     select count(*)
       into taken
       from public.attempts
@@ -328,11 +371,32 @@ begin
     raise exception 'a submitted attempt cannot be reopened' using errcode = '42501';
   end if;
 
-  if old.status = 'in_progress' and new.status = 'submitted' then
-    new.submitted_at := now();
-    if new.submitted_by is null then
+  new.created_at := old.created_at;
+
+  if old.status = 'submitted' then
+    -- When and how it ended are history.
+    new.submitted_at := old.submitted_at;
+    new.submitted_by := old.submitted_by;
+  elsif new.status = 'submitted' then
+    if private.is_trusted_writer() then
+      -- The expiry sweep may say the timer ended it, and when the clock ran
+      -- out, which is earlier than the sweep ran. Never before the start, never
+      -- in the future.
+      new.submitted_by := coalesce(new.submitted_by, 'student');
+      new.submitted_at := least(greatest(coalesce(new.submitted_at, now()), old.started_at), now());
+    else
+      -- A student submits by hand, now. They cannot claim the timer did it.
       new.submitted_by := 'student';
+      new.submitted_at := now();
     end if;
+  else
+    new.submitted_at := null;
+    new.submitted_by := null;
+  end if;
+
+  -- The score is scoring's to write, never a student's.
+  if not private.is_trusted_writer() then
+    new.score := old.score;
   end if;
 
   new.updated_at := now();
@@ -356,31 +420,99 @@ set search_path = ''
 as $$
 declare
   attempt_status text;
+  attempt_mock_id bigint;
+  attempt_started timestamptz;
+  mock_minutes integer;
+  question_section_id bigint;
+  section_minutes integer;
+  section_started timestamptz;
+  section_closed timestamptz;
 begin
-  select status into attempt_status from public.attempts where id = new.attempt_id;
+  select a.status, a.mock_id, a.started_at, m.duration_minutes
+    into attempt_status, attempt_mock_id, attempt_started, mock_minutes
+    from public.attempts as a
+    join public.mocks as m on m.id = a.mock_id
+   where a.id = new.attempt_id;
 
   if attempt_status is null then
     raise exception 'that attempt does not exist' using errcode = '42501';
   end if;
 
-  -- Scoring writes through a SECURITY DEFINER function of its own in slice 4.3,
-  -- which sets these after the attempt closes. Nothing a student posts may.
+  if tg_op = 'UPDATE'
+     and (new.attempt_id is distinct from old.attempt_id
+          or new.question_id is distinct from old.question_id) then
+    raise exception 'a response cannot be moved to another attempt or question'
+      using errcode = '42501';
+  end if;
+
+  -- Scoring (slice 4.3) writes is_correct and marks_awarded with the server's
+  -- key, after the attempt has closed. That is the only write allowed then.
+  if private.is_trusted_writer() then
+    if tg_op = 'UPDATE' then
+      new.updated_at := now();
+    end if;
+    return new;
+  end if;
+
+  -- Nothing a student posts may set the scoring columns.
   if tg_op = 'INSERT' then
     new.is_correct := null;
     new.marks_awarded := null;
   else
     new.is_correct := old.is_correct;
     new.marks_awarded := old.marks_awarded;
-    if new.attempt_id is distinct from old.attempt_id
-       or new.question_id is distinct from old.question_id then
-      raise exception 'a response cannot be moved to another attempt or question'
-        using errcode = '42501';
-    end if;
+    new.created_at := old.created_at;
     new.updated_at := now();
   end if;
 
   if attempt_status <> 'in_progress' then
     raise exception 'this attempt has been submitted' using errcode = '42501';
+  end if;
+
+  -- **The server's clock decides** (operating manual §1.1). A student who never
+  -- presses submit still cannot answer after the time is up; the attempt simply
+  -- waits for the sweep to close it.
+  if now() > attempt_started + make_interval(mins => mock_minutes) + private.attempt_grace() then
+    raise exception 'time is up for this attempt' using errcode = '42501';
+  end if;
+
+  if new.answer is not null and octet_length(new.answer::text) > 4000 then
+    raise exception 'that answer is too long' using errcode = '22001';
+  end if;
+
+  -- Only a question in this paper: one placed in the mock, or a sub-question of
+  -- a set that is.
+  select mq.mock_section_id
+    into question_section_id
+    from public.mock_questions as mq
+   where mq.mock_id = attempt_mock_id
+     and (
+       mq.question_id = new.question_id
+       or mq.question_id = (select q.parent_id from public.questions as q where q.id = new.question_id)
+     )
+   limit 1;
+
+  if question_section_id is null then
+    raise exception 'that question is not in this paper' using errcode = '42501';
+  end if;
+
+  -- In a timed section, only while that section is open and its own clock has
+  -- not run out. An untimed section follows the paper's clock alone.
+  select duration_minutes into section_minutes
+    from public.mock_sections where id = question_section_id;
+
+  if section_minutes is not null then
+    select started_at, submitted_at
+      into section_started, section_closed
+      from public.attempt_sections
+     where attempt_id = new.attempt_id
+       and mock_section_id = question_section_id;
+
+    if section_started is null
+       or section_closed is not null
+       or now() > section_started + make_interval(mins => section_minutes) + private.attempt_grace() then
+      raise exception 'that section is not open' using errcode = '42501';
+    end if;
   end if;
 
   return new;
@@ -400,10 +532,67 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  attempt_status text;
+  attempt_mock_id bigint;
+  attempt_started timestamptz;
+  mock_minutes integer;
+  section_mock_id bigint;
+  section_order integer;
+  blocking integer;
 begin
   if tg_op = 'INSERT' then
     new.started_at := now();
     new.submitted_at := null;
+
+    if private.is_trusted_writer() then
+      return new;
+    end if;
+
+    select a.status, a.mock_id, a.started_at, m.duration_minutes
+      into attempt_status, attempt_mock_id, attempt_started, mock_minutes
+      from public.attempts as a
+      join public.mocks as m on m.id = a.mock_id
+     where a.id = new.attempt_id;
+
+    select mock_id, sort_order into section_mock_id, section_order
+      from public.mock_sections where id = new.mock_section_id;
+
+    if section_mock_id is distinct from attempt_mock_id then
+      raise exception 'that section is not in this paper' using errcode = '42501';
+    end if;
+
+    if attempt_status is distinct from 'in_progress'
+       or now() > attempt_started + make_interval(mins => mock_minutes) + private.attempt_grace() then
+      raise exception 'this attempt is over' using errcode = '42501';
+    end if;
+
+    -- Sections are sat in order. Every earlier section must have been entered
+    -- and must be over: left by the student, or its own clock run out. An
+    -- untimed section is over only when left.
+    select count(*)
+      into blocking
+      from public.mock_sections as earlier
+      left join public.attempt_sections as entered
+        on entered.attempt_id = new.attempt_id
+       and entered.mock_section_id = earlier.id
+     where earlier.mock_id = attempt_mock_id
+       and earlier.sort_order < section_order
+       and (
+         entered.id is null
+         or (
+           entered.submitted_at is null
+           and (
+             earlier.duration_minutes is null
+             or now() <= entered.started_at + make_interval(mins => earlier.duration_minutes)
+           )
+         )
+       );
+
+    if blocking > 0 then
+      raise exception 'finish the earlier section first' using errcode = '42501';
+    end if;
+
     return new;
   end if;
 
@@ -431,6 +620,43 @@ create trigger attempt_sections_guard_write
 before insert or update on public.attempt_sections
 for each row execute function private.guard_attempt_section_write();
 
+-- A paper that has been sat keeps its shape. `save_mock` rewrites every section
+-- and question row on each save, which would change the paper under a student
+-- mid-attempt and orphan the answers and section clocks of past ones. Because
+-- `save_mock` always rewrites the sections, this refuses any builder save of an
+-- attempted mock, settings included -- a duration changed under a student
+-- mid-attempt is its own dispute. Corrected keys and marks are the rescore's
+-- business, and questions stay editable.
+create or replace function private.guard_sat_mock_structure()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_mock_id bigint;
+begin
+  target_mock_id := case when tg_op = 'DELETE' then old.mock_id else new.mock_id end;
+
+  if exists (select 1 from public.attempts where mock_id = target_mock_id) then
+    raise exception 'this mock has been attempted, so its sections and questions can no longer change'
+      using errcode = '42501';
+  end if;
+
+  return case when tg_op = 'DELETE' then old else new end;
+end;
+$$;
+
+revoke execute on function private.guard_sat_mock_structure() from public, anon, authenticated;
+
+create trigger mock_sections_guard_sat
+before insert or update or delete on public.mock_sections
+for each row execute function private.guard_sat_mock_structure();
+
+create trigger mock_questions_guard_sat
+before insert or update or delete on public.mock_questions
+for each row execute function private.guard_sat_mock_structure();
+
 -- ---------------------------------------------------------------------------
 -- Reading helpers
 -- ---------------------------------------------------------------------------
@@ -442,10 +668,14 @@ stable
 security definer
 set search_path = ''
 as $$
+  -- A disabled account owns nothing it can act on, like every other helper.
   select exists (
-    select 1 from public.attempts as a
+    select 1
+    from public.attempts as a
+    join public.profiles as student on student.id = a.student_id
     where a.id = target_attempt_id
       and a.student_id = (select auth.uid())
+      and student.status = 'active'
   );
 $$;
 
@@ -500,6 +730,13 @@ as $$
     join public.mock_questions as mq on mq.mock_id = a.mock_id
     where a.student_id = (select auth.uid())
       and a.status = 'submitted'
+      -- Not while a retake of the same paper is open: the key would be a crib.
+      and not exists (
+        select 1 from public.attempts as open_attempt
+        where open_attempt.student_id = a.student_id
+          and open_attempt.mock_id = a.mock_id
+          and open_attempt.status = 'in_progress'
+      )
       and (
         target_question_id = mq.question_id
         or target_question_id in (
@@ -535,7 +772,7 @@ alter table public.rescore_events force row level security;
 
 create policy attempts_select_own on public.attempts
 for select to authenticated
-using (student_id = (select auth.uid()));
+using (student_id = (select auth.uid()) and (select private.current_app_role()) = 'student');
 
 create policy attempts_select_admin on public.attempts
 for select to authenticated
@@ -559,8 +796,8 @@ with check (
 -- Submitting. The trigger decides what may actually change.
 create policy attempts_update_own on public.attempts
 for update to authenticated
-using (student_id = (select auth.uid()))
-with check (student_id = (select auth.uid()));
+using (student_id = (select auth.uid()) and (select private.current_app_role()) = 'student')
+with check (student_id = (select auth.uid()) and (select private.current_app_role()) = 'student');
 
 create policy attempts_delete_admin on public.attempts
 for delete to authenticated
