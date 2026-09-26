@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-25 (Asia/Calcutta)
+Last updated: 2026-09-26 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -300,7 +300,11 @@ Two operational notes that cost time to rediscover:
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 | Claude (test-engine chat) | `feat/test-engine` | Phase 4 slice 4.1: the attempt tables, and the access model that lets a student reach a mock at all | `supabase/migrations/2026092*_test_engine_*.sql`, `src/features/test-engine/**`, `src/features/admin/**` (granting mocks), `scripts/verify/test-engine-access.sql` | In progress | 2026-09-26 |
-| Claude (mock-docs agent) | `feat/mock-docs` | Item 3: mocks built from documents quoting question IDs. No migration | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `scripts/verify/` | In progress | 2026-09-26 |
+
+A second agent is working on **item 3, mocks from documents quoting question
+IDs**, in `C:\Cospire\Cospire-mock-docs`. It claims its own row in its own
+branch's copy of this file rather than being claimed here, so that a claim and
+the branch it names always travel together.
 
 Three streams are running at once, which is the ceiling operating manual §5.5
 sets. **They share one database**, so every migration is additive and nobody
