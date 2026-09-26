@@ -537,9 +537,8 @@ build and now follows them. The 1 October commitment covers a tested mock
 engine, so this order makes the written revision under clause 4.4 more likely
 to be needed, not less -- see *Next recommended action*, item 1.
 
-**1. Word upload: pictures out, numbered markers in. BUILT on
-`feat/doc-import`, 2026-09-23, verified 25/25 locally, not yet merged or
-deployed.** No model call, so it
+**1. Word upload: pictures out, numbered markers in. DONE.** Merged as PR #58
+(`b2a4fb8`) and verified **25/25 against the deployed URL** on 2026-09-25. No model call, so it
 works whatever the Client decides about cost. The admin uploads a `.docx`; the
 platform opens it (a zip), extracts each image in document order into the
 existing `question-images` bucket, and produces the paper's text with
@@ -554,9 +553,12 @@ open a zip on its own, and a hand-written zip reader is the kind of code that
 works on one file and fails on the next. `@google/genai` was **declined in
 favour of plain `fetch`**, which was proven against the live key on 2026-09-23.
 
-**2. The Gemini path: three steps instead of six. BUILT on `feat/doc-import`,
-2026-09-23. The Client has agreed the cost, per the owner. The live round trip
-is still UNVERIFIED because Gemini answered 503 throughout the session.** The platform sends the
+**2. The Gemini path: three steps instead of six. MERGED AND DEPLOYED** in the
+same pull request. The Client has agreed all costs (owner, 2026-09-25). **The
+live round trip is still UNVERIFIED**, and the reason is known: the Google Cloud
+project behind the Client's key has no billing enabled, so it is served on
+leftover capacity at five requests a minute. A new key would fix nothing; see
+*The 503 that was a billing checkbox* in `docs/context/completed.md`. The platform sends the
 prepared text to Gemini itself and places the images, so the admin uploads,
 reviews and approves. Everything technical is in hand: the key works, returns
 schema-valid JSON, and is on the paid tier. Two things to settle first, neither
