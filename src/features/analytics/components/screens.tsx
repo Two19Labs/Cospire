@@ -4,7 +4,7 @@ import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
-import { formatMarks, percent } from "../aggregate";
+import { percent } from "../aggregate";
 import type {
   AttemptAnalytics,
   MentorAttemptRow,
@@ -13,14 +13,33 @@ import type {
   StudentListRow,
   StudentOverview,
 } from "../queries/views";
-import { analyticsPageSize } from "../queries/views";
+import { analyticsPageSize, type Capped } from "../queries/views";
 import styles from "./analytics.module.css";
-import { Bar, BreakdownPanels, dateFormat, Pager, Stat, Stats, TallyTable } from "./parts";
+import { Bar, BreakdownPanels, dateFormat, Pager, showMarks, Stat, Stats, TallyTable } from "./parts";
 
 const share = (value: number | null, max: number) => (value === null || max <= 0 ? null : value / max);
 
 function scoreOutOf(score: number | null, max: number | null): string {
-  return `${formatMarks(score)} / ${max === null ? "—" : formatMarks(max)}`;
+  return score === null ? "Awaiting score" : `${showMarks(score)} / ${showMarks(max)}`;
+}
+
+// Said out loud rather than left to be noticed: an attempt with no score yet is
+// not counted in any figure, and a capped read is never presented as the whole.
+function Notices({ awaiting, capped }: { awaiting: number; capped: Capped | null }) {
+  return (
+    <>
+      {awaiting ? (
+        <p className="notice">
+          {awaiting} submitted attempt{awaiting === 1 ? " is" : "s are"} awaiting a score and not counted in these figures.
+        </p>
+      ) : null}
+      {capped ? (
+        <p className="notice">
+          These figures cover the latest {capped.shown} of {capped.total} submitted attempts.
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 function proctoring(proctored: boolean): string {
@@ -51,17 +70,23 @@ export function AttemptAnalyticsScreen({
             </p>
           </div>
         </div>
-        <Stats>
-          <Stat label={`score out of ${formatMarks(maxMarks)}`} value={formatMarks(attempt.score)} />
-          <Stat label="attempted" value={breakdown.total.attempted} />
-          <Stat label="correct" value={breakdown.total.correct} />
-          <Stat label="wrong" value={breakdown.total.wrong} />
-          <Stat label="not answered" value={breakdown.total.unattempted} />
-          <Stat label="accuracy" value={percent(breakdown.total.accuracy)} />
-        </Stats>
-        <p className="muted">Accuracy is correct answers out of those attempted. Time per question is not recorded.</p>
+        {breakdown ? (
+          <>
+            <Stats>
+              <Stat label={`score out of ${showMarks(maxMarks)}`} value={showMarks(attempt.score)} />
+              <Stat label="attempted" value={breakdown.total.attempted} />
+              <Stat label="correct" value={breakdown.total.correct} />
+              <Stat label="wrong" value={breakdown.total.wrong} />
+              <Stat label="not answered" value={breakdown.total.unattempted} />
+              <Stat label="accuracy" value={percent(breakdown.total.accuracy)} />
+            </Stats>
+            <p className="muted">Accuracy is correct answers out of those attempted. Time per question is not recorded.</p>
+          </>
+        ) : (
+          <p className="notice">This attempt is awaiting its score. The breakdown appears once it has been scored.</p>
+        )}
       </section>
-      <BreakdownPanels breakdown={breakdown} />
+      {breakdown ? <BreakdownPanels breakdown={breakdown} /> : null}
       <div className="toolbar">
         <Link className="button button--secondary" href={back.href}>
           {back.label}
@@ -90,11 +115,12 @@ export function StudentOverviewScreen({
     <RoleShell profile={profile} title={title}>
       <section className="panel">
         <h2>{heading}</h2>
-        {overview.attempts === 0 ? (
+        <Notices awaiting={overview.awaiting} capped={overview.capped} />
+        {overview.scored === 0 ? (
           <p className="muted">No submitted mock yet. Results appear here once a mock is submitted.</p>
         ) : (
           <Stats>
-            <Stat label="mocks submitted" value={overview.attempts} />
+            <Stat label="mocks scored" value={overview.scored} />
             <Stat label="questions attempted" value={overview.total.attempted} />
             <Stat label="correct" value={overview.total.correct} />
             <Stat label="overall accuracy" value={percent(overview.total.accuracy)} />
@@ -180,7 +206,8 @@ export function AdminAnalyticsHome({
             <TableHead>
               <TableRow>
                 <TableHeaderCell>Mock</TableHeaderCell>
-                <TableHeaderCell>Submitted attempts</TableHeaderCell>
+                <TableHeaderCell>Scored attempts</TableHeaderCell>
+                <TableHeaderCell>Awaiting score</TableHeaderCell>
                 <TableHeaderCell>Students</TableHeaderCell>
                 <TableHeaderCell>Average score</TableHeaderCell>
               </TableRow>
@@ -191,9 +218,10 @@ export function AdminAnalyticsHome({
                   <TableCell>
                     <Link href={`/admin/analytics/mocks/${row.id}`}>{row.title}</Link>
                   </TableCell>
-                  <TableCell className={styles.num}>{row.attempts}</TableCell>
+                  <TableCell className={styles.num}>{row.scored}</TableCell>
+                  <TableCell className={styles.num}>{row.awaiting}</TableCell>
                   <TableCell className={styles.num}>{row.students}</TableCell>
-                  <TableCell className={styles.num}>{formatMarks(row.average)}</TableCell>
+                  <TableCell className={styles.num}>{showMarks(row.average)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -243,13 +271,14 @@ export function MockAnalyticsScreen({ data, profile }: { data: MockAnalytics; pr
     <RoleShell profile={profile} title={data.title}>
       <section className="panel">
         <h2>Summary</h2>
-        {stats.count === 0 ? <p className="muted">No submitted attempt yet.</p> : null}
+        <Notices awaiting={data.awaiting} capped={data.capped} />
+        {stats.count === 0 ? <p className="muted">No scored attempt yet.</p> : null}
         <Stats>
-          <Stat label="submitted attempts" value={data.attempts.length} />
+          <Stat label="scored attempts" value={data.scored} />
           <Stat label="students" value={data.students} />
-          <Stat label={`average of ${formatMarks(data.maxMarks)}`} value={formatMarks(stats.average)} />
-          <Stat label="median" value={formatMarks(stats.median)} />
-          <Stat label="top score" value={formatMarks(stats.top)} />
+          <Stat label={`average of ${showMarks(data.maxMarks)}`} value={showMarks(stats.average)} />
+          <Stat label="median" value={showMarks(stats.median)} />
+          <Stat label="top score" value={showMarks(stats.top)} />
           <Stat label="proctored" value={data.proctored} />
           <Stat label="unproctored (phone)" value={data.unproctored} />
         </Stats>
@@ -269,7 +298,7 @@ export function MockAnalyticsScreen({ data, profile }: { data: MockAnalytics; pr
               {data.buckets.map((bucket, index) => (
                 <TableRow key={bucket.from}>
                   <TableCell className={styles.num}>
-                    {bucket.from} to {index === data.buckets.length - 1 ? `${bucket.to}` : `under ${bucket.to}`}
+                    {showMarks(bucket.from)} to {index === data.buckets.length - 1 ? showMarks(bucket.to) : `under ${showMarks(bucket.to)}`}
                   </TableCell>
                   <TableCell>
                     <Bar label={String(bucket.count)} share={bucket.count / most} />
@@ -285,7 +314,7 @@ export function MockAnalyticsScreen({ data, profile }: { data: MockAnalytics; pr
 
       <section className="panel">
         <h2>Question by question</h2>
-        <p className="muted">Share of all submitted attempts that got each question right, and that left it unanswered.</p>
+        <p className="muted">Share of scored attempts that got each question right, and that left it unanswered, numbered as the paper numbers them.</p>
         <Table>
           <TableHead>
             <TableRow>
@@ -296,13 +325,13 @@ export function MockAnalyticsScreen({ data, profile }: { data: MockAnalytics; pr
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.questions.map(({ number, question, tally }) => {
+            {data.questions.map(({ question, tally }) => {
               const right = tally.questions ? tally.correct / tally.questions : null;
               const skipped = tally.questions ? tally.unattempted / tally.questions : null;
               return (
                 <TableRow key={question.id}>
                   <TableCell>
-                    <Link href={`/admin/questions/${question.id}`}>Question {number}</Link>
+                    <Link href={`/admin/questions/${question.id}`}>Question {question.number}</Link>
                   </TableCell>
                   <TableCell>
                     {question.section} · {question.topic} · {question.difficulty}

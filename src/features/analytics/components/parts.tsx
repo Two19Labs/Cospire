@@ -3,9 +3,16 @@ import type { ReactNode } from "react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
-import { formatMarks, percent, type Tally } from "../aggregate";
+import { formatMarks } from "@/features/test-engine/marks";
+
+import { percent, type Tally } from "../aggregate";
 import type { Breakdown } from "../queries/views";
 import styles from "./analytics.module.css";
+
+// Marks, or a dash where there is no number: the engine's formatter, not a copy.
+export function showMarks(value: number | null): string {
+  return value === null ? "—" : formatMarks(value);
+}
 
 export const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 
@@ -62,7 +69,7 @@ export function TallyTable({ heading, rows }: { heading: string; rows: Tally[] }
               <Bar label={percent(row.accuracy)} share={row.accuracy} />
             </TableCell>
             <TableCell className={styles.num}>
-              {formatMarks(row.marksScored)} / {formatMarks(row.marksAvailable)}
+              {showMarks(row.marksScored)} / {showMarks(row.marksAvailable)}
             </TableCell>
           </TableRow>
         ))}

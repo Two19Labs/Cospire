@@ -9,6 +9,12 @@
 // them; a mock's analytics is every attempt's list joined together. The same
 // `tally` then answers "by topic for this attempt", "by topic across this
 // mock", and "per question across this mock" alike.
+//
+// **Only scored attempts reach this code.** An attempt submitted but awaiting
+// its score (closed by the timer and not yet opened, or cleared by a question
+// edit for rescoring) has answers with no verdict yet. Counting those as wrong
+// would be a false figure, so callers split them off with `splitAwaiting` and
+// say how many are waiting instead.
 
 export type Dimension = "difficulty" | "section" | "topic";
 
@@ -16,6 +22,8 @@ export interface PaperQuestion {
   difficulty: string;
   id: number;
   marks: number;
+  // 1-based, in the order the student met it: exactly the attempt screen's numbering.
+  number: number;
   section: string;
   topic: string;
 }
@@ -46,6 +54,12 @@ export interface Tally {
   wrong: number;
 }
 
+// Attempts with a score, and how many are still awaiting one.
+export function splitAwaiting<T extends { score: number | null }>(attempts: T[]): { awaiting: number; scored: (T & { score: number })[] } {
+  const scored = attempts.filter((attempt): attempt is T & { score: number } => attempt.score !== null);
+  return { awaiting: attempts.length - scored.length, scored };
+}
+
 // Summed in hundredths, as scoring does, so 0.1 + 0.2 never shows as 0.30000000000000004.
 const hundredths = (value: number) => Math.round(value * 100);
 
@@ -57,19 +71,9 @@ function empty(label: string): Tally {
   return { accuracy: null, attempted: 0, correct: 0, label, marksAvailable: 0, marksScored: 0, questions: 0, unattempted: 0, wrong: 0 };
 }
 
-function finish(tally: Tally & { scored: number; available: number }): Tally {
-  const { available, scored, ...rest } = tally;
-  return {
-    ...rest,
-    accuracy: rest.attempted ? rest.correct / rest.attempted : null,
-    marksAvailable: available / 100,
-    marksScored: scored / 100,
-  };
-}
-
-// Grouped by `keyOf`, in the order each label first appears unless `order` says otherwise.
+// Grouped by `keyOf`, in the order each label first appears.
 export function tally(sittings: Sitting[], keyOf: (question: PaperQuestion) => string): Tally[] {
-  const groups = new Map<string, Tally & { scored: number; available: number }>();
+  const groups = new Map<string, Tally & { available: number; scored: number }>();
   for (const { question, response } of sittings) {
     const label = keyOf(question);
     const group = groups.get(label) ?? { ...empty(label), available: 0, scored: 0 };
@@ -85,7 +89,12 @@ export function tally(sittings: Sitting[], keyOf: (question: PaperQuestion) => s
     group.scored += hundredths(response?.marksAwarded ?? 0);
     groups.set(label, group);
   }
-  return [...groups.values()].map(finish);
+  return [...groups.values()].map(({ available, scored, ...rest }) => ({
+    ...rest,
+    accuracy: rest.attempted ? rest.correct / rest.attempted : null,
+    marksAvailable: available / 100,
+    marksScored: scored / 100,
+  }));
 }
 
 export function tallyBy(sittings: Sitting[], dimension: Dimension): Tally[] {
@@ -141,21 +150,22 @@ export function scoreStats(scores: number[]): ScoreStats {
 
 export interface Bucket {
   count: number;
-  // Lower bound included, upper bound excluded -- except the last, which includes it.
+  // Lower edge included, upper edge excluded -- except the last, which includes it.
   from: number;
   to: number;
 }
 
-// Equal-width buckets from the lower of 0 and the worst score (negative marking
-// can take a score below zero) to the paper's full marks, whole-number widths.
+// `bucketCount` equal buckets with exact edges, from 0 (or the worst score,
+// when negative marking takes one below zero) to the paper's full marks. Edges
+// are rounded to two places for display only; placement uses the exact width.
 export function scoreBuckets(scores: number[], maxMarks: number, bucketCount = 5): Bucket[] {
-  const low = Math.min(0, Math.floor(Math.min(...scores, 0)));
-  const high = Math.max(Math.ceil(maxMarks), Math.ceil(Math.max(...scores, 0)), low + 1);
-  const width = Math.max(1, Math.ceil((high - low) / bucketCount));
-  const buckets: Bucket[] = [];
-  for (let from = low; from < high; from += width) buckets.push({ count: 0, from, to: Math.min(from + width, high) });
+  const low = Math.min(0, ...scores);
+  const high = Math.max(maxMarks, ...scores, low + 1);
+  const width = (high - low) / bucketCount;
+  const edge = (index: number) => round2(low + ((high - low) * index) / bucketCount);
+  const buckets: Bucket[] = Array.from({ length: bucketCount }, (_, index) => ({ count: 0, from: edge(index), to: edge(index + 1) }));
   for (const score of scores) {
-    const index = Math.min(Math.floor((score - low) / width), buckets.length - 1);
+    const index = Math.min(Math.max(Math.floor((score - low) / width), 0), bucketCount - 1);
     buckets[index].count += 1;
   }
   return buckets;
@@ -168,9 +178,4 @@ export function paperMarks(paper: PaperQuestion[]): number {
 // A share as a whole percentage for display; a dash when there is nothing to divide.
 export function percent(value: number | null): string {
   return value === null ? "—" : `${Math.round(value * 100)}%`;
-}
-
-export function formatMarks(value: number | null): string {
-  if (value === null) return "—";
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0$/, "");
 }

@@ -176,12 +176,13 @@ try {
   made.questions.sort((a, b) => (a === child ? -1 : b === child ? 1 : 0));
   const T = { algebra: `Algebra ${stamp}`, reading: `Reading ${stamp}`, tables: `Tables ${stamp}`, qa: `An QA ${stamp}`, va: `An VA ${stamp}` };
 
-  // Mock M: 4 answerable questions, 12 marks, MCQ penalty 1. Mock N: q1 alone.
-  const M = await saveMock("An main", [{ durationMinutes: null, questions: [q1, q2, q3, passage, child], title: "All questions" }], 2);
+  // Mock M: 4 answerable questions, 12 marks, MCQ penalty 1, placed out of id
+  // order so the paper numbers them q3, child, q1, q2. Mock N: q1 alone.
+  const M = await saveMock("An main", [{ durationMinutes: null, questions: [q3, passage, child, q1, q2], title: "All questions" }], 2);
   const N = await saveMock("An short", [{ durationMinutes: null, questions: [q1], title: "All questions" }], 1);
   const titleM = `An main ${stamp}`;
   const titleN = `An short ${stamp}`;
-  for (const [student, mock] of [["s1", M], ["s1", N], ["s2", M]]) {
+  for (const [student, mock] of [["s1", M], ["s1", N], ["s2", M], ["s2", N]]) {
     const { error } = await people.admin.client.from("content_access").insert({ granted_by: people.admin.id, org_id: 1, resource_id: mock, resource_type: "mock", student_id: people[student].id });
     if (error) throw error;
   }
@@ -195,6 +196,20 @@ try {
   const A2 = await sit("s1", M, [[q1, { options: ["b"] }], [q3, { options: ["a"] }]]);
   const B1 = await sit("s2", M, [[q1, { options: ["a"] }], [q2, { value: "0.50" }], [q3, { options: ["a"] }], [child, { value: "7" }]], PHONE);
   const N1 = await sit("s1", N, [[q1, { options: ["a"] }]]);
+  // W1 (s2, N): submitted through the student's own session, so the app never
+  // scores it -- an attempt awaiting its score, as a rescore leaves one.
+  const W1 = await (async () => {
+    const intro = await get(`/student/mocks/${N}`, "s2");
+    const started = await post(`/student/mocks/${N}`, "s2", formWith(intro.body, 'name="mockId"'));
+    const id = Number(new globalThis.URL(started.location ?? "/", BASE).pathname.match(/\/student\/attempts\/(\d+)/)?.[1]);
+    const { error: answerError } = await people.s2.client.from("attempt_responses").insert({ answer: { options: ["a"] }, attempt_id: id, question_id: q1 });
+    if (answerError) throw answerError;
+    const { error: submitError } = await people.s2.client.from("attempts").update({ status: "submitted" }).eq("id", id);
+    if (submitError) throw submitError;
+    return id;
+  })();
+  const { data: waiting } = await service.from("attempts").select("status, score").eq("id", W1).single();
+  check("W1 is submitted and awaiting its score", waiting.status === "submitted" && waiting.score === null, JSON.stringify(waiting));
   const { data: scored } = await service.from("attempts").select("id, score, status, proctored").in("id", [A1, A2, B1, N1]).order("id");
   check("the fixtures were submitted and scored by the app as worked by hand (5, 2, 12, 3), the phone one unproctored",
     same(scored.map((r) => [Number(r.score), r.status, r.proctored]), [[5, "submitted", true], [2, "submitted", true], [12, "submitted", false], [3, "submitted", true]]),
@@ -216,7 +231,7 @@ try {
   // ---- The student's overview.
   {
     const page = await get("/student/analytics", "s1");
-    check("student overview: 3 mocks submitted, 6 attempted, 4 correct, 67% accuracy", page.status === 200 && stat(page.body, "3", "mocks submitted") && stat(page.body, "6", "questions attempted") && stat(page.body, "4", "correct") && stat(page.body, "67%", "overall accuracy"));
+    check("student overview: 3 mocks submitted, 6 attempted, 4 correct, 67% accuracy", page.status === 200 && stat(page.body, "3", "mocks scored") && stat(page.body, "6", "questions attempted") && stat(page.body, "4", "correct") && stat(page.body, "67%", "overall accuracy"));
     checkRow("student overview: trend, M first attempt 5 / 12 = 42%", page.body, titleM, [titleM, "1", row(page.body, titleM)?.[2], "5 / 12", "42%", "Breakdown"]);
     check("student overview: trend, M second attempt 2 / 12 = 17%, and N 3 / 3 = 100%", page.body.includes("2 / 12") && page.body.includes("17%") && same(row(page.body, titleN)?.slice(3, 5), ["3 / 3", "100%"]));
     const weakest = [...page.body.matchAll(new RegExp(`<td[^>]*>((?:Algebra|Reading|Tables) ${stamp})</td>`, "g"))].map((m) => m[1]);
@@ -230,7 +245,10 @@ try {
     const page = await get(`/student/analytics/attempts/${A1}`, "s2");
     check("another student gets not-found on s1's attempt", isNotFound(page) && !page.body.includes("score out of"));
     const own = await get("/student/analytics", "s2");
-    check("another student's overview holds only their own attempt", own.body.includes(`/student/analytics/attempts/${B1}`) && ![A1, A2, N1].some((id) => own.body.includes(`/analytics/attempts/${id}"`)) && !own.body.includes(titleN) && stat(own.body, "1", "mocks submitted"));
+    check("another student's overview holds only their own attempt", own.body.includes(`/student/analytics/attempts/${B1}`) && ![A1, A2, N1].some((id) => own.body.includes(`/analytics/attempts/${id}"`)) && !own.body.includes(titleN) && stat(own.body, "1", "mocks scored"));
+    check("awaiting: s2's overview says one attempt awaits a score, and counts none of it", own.body.includes("1 submitted attempt is awaiting a score") && !own.body.includes(titleN) && stat(own.body, "4", "questions attempted"));
+    const w1 = await get(`/student/analytics/attempts/${W1}`, "s2");
+    check("awaiting: its breakdown says so and shows no figures", w1.status === 200 && w1.body.includes("awaiting its score") && !w1.body.includes("score out of") && !w1.body.includes("By topic"));
     const b1 = await get(`/student/analytics/attempts/${B1}`, "s2");
     check("the phone attempt says unproctored on the student's breakdown", b1.body.includes("Unproctored (phone)") && stat(b1.body, "12", "score out of 12"));
   }
@@ -238,27 +256,38 @@ try {
   // ---- Admin.
   {
     const home = await get("/admin/analytics", "admin");
-    checkRow("admin home: M with 3 attempts, 2 students, average 6.33", home.body, titleM, [titleM, "3", "2", "6.33"]);
-    checkRow("admin home: N with 1 attempt", home.body, titleN, [titleN, "1", "1", "3"]);
+    checkRow("admin home: M with 3 scored attempts, none awaiting, 2 students, average 6.33", home.body, titleM, [titleM, "3", "0", "2", "6.33"]);
+    checkRow("admin home: N with 1 scored, 1 awaiting, average 3 from the scored one only", home.body, titleN, [titleN, "1", "1", "1", "3"]);
+    const n = await get(`/admin/analytics/mocks/${N}`, "admin");
+    check("admin mock N: the awaiting attempt is announced, listed as awaiting, and left out of every figure",
+      n.body.includes("1 submitted attempt is awaiting a score") && stat(n.body, "1", "scored attempts") && stat(n.body, "3", "average of 3") && stat(n.body, "1", "students") && n.body.includes("Awaiting score") && same(row(n.body, T.algebra), [T.algebra, "1", "1", "0", "0", "100%", "3 / 3"]));
     check("admin home: the students list links to s1", home.body.includes(`/admin/analytics/students/${people.s1.id}`));
 
     const page = await get(`/admin/analytics/mocks/${M}`, "admin");
     check("admin mock: 3 attempts, 2 students, average 6.33, median 5, top 12",
-      page.status === 200 && stat(page.body, "3", "submitted attempts") && stat(page.body, "2", "students") && stat(page.body, "6.33", "average of 12") && stat(page.body, "5", "median") && stat(page.body, "12", "top score"));
+      page.status === 200 && stat(page.body, "3", "scored attempts") && stat(page.body, "2", "students") && stat(page.body, "6.33", "average of 12") && stat(page.body, "5", "median") && stat(page.body, "12", "top score"));
     check("admin mock: 2 proctored, 1 unproctored (phone)", stat(page.body, "2", "proctored") && stat(page.body, "1", "unproctored (phone)"));
     check("admin mock: distribution, 1 in 0-3, 1 in 3-6, 0 in 6-9, 1 in 9-12",
       same(row(page.body, "0 to under 3"), ["0 to under 3", "1"]) && same(row(page.body, "3 to under 6"), ["3 to under 6", "1"]) && same(row(page.body, "6 to under 9"), ["6 to under 9", "0"]) && same(row(page.body, "9 to 12"), ["9 to 12", "1"]));
     checkRow("admin mock: by section, QA across attempts", page.body, T.qa, [T.qa, "6", "4", "1", "1", "80%", "11 / 18"]);
     checkRow("admin mock: by section, VA across attempts", page.body, T.va, [T.va, "6", "3", "1", "2", "75%", "8 / 18"]);
     checkRow("admin mock: by topic, Tables", page.body, T.tables, [T.tables, "3", "1", "0", "2", "100%", "3 / 9"]);
-    checkRow("admin mock: question 1, 67% right, none unanswered", page.body, "Question 1", ["Question 1", `${T.qa} · ${T.algebra} · easy`, "67%", "0%"]);
-    checkRow("admin mock: question 2, 67% right, 33% unanswered", page.body, "Question 2", ["Question 2", `${T.qa} · ${T.algebra} · hard`, "67%", "33%"]);
-    checkRow("admin mock: question 4 (the DI sub-question), 33% right, 67% unanswered", page.body, "Question 4", ["Question 4", `${T.va} · ${T.tables} · medium`, "33%", "67%"]);
+    checkRow("admin mock: question 1 is q3 in paper order, 67% right, none unanswered", page.body, "Question 1", ["Question 1", `${T.va} · ${T.reading} · medium`, "67%", "0%"]);
+    checkRow("admin mock: question 2 is the DI sub-question, 33% right, 67% unanswered", page.body, "Question 2", ["Question 2", `${T.va} · ${T.tables} · medium`, "33%", "67%"]);
+    checkRow("admin mock: question 3 is q1, 67% right, none unanswered", page.body, "Question 3", ["Question 3", `${T.qa} · ${T.algebra} · easy`, "67%", "0%"]);
+    checkRow("admin mock: question 4 is q2, 67% right, 33% unanswered", page.body, "Question 4", ["Question 4", `${T.qa} · ${T.algebra} · hard`, "67%", "33%"]);
+    {
+      // The engine's own numbering, from the student's result screen.
+      const result = (await get(`/student/attempts/${A1}`, "s1")).body;
+      const numberOf = (body) => Number(result.match(new RegExp(`<strong>Question (\\d+)</strong>(?:(?!<strong>Question)[\\s\\S]){0,600}?${body}`))?.[1]);
+      check("admin mock: numbering matches the result screen (q3 is 1, q1 is 3, q2 is 4)", numberOf(`An q3 ${stamp}`) === 1 && numberOf(`An q1 ${stamp}`) === 3 && numberOf(`An q2 ${stamp}`) === 4 && numberOf(`An child ${stamp}`) === 2);
+      check("the student's result screen links to the full breakdown", result.includes(`href="/student/analytics/attempts/${A1}"`) && result.includes("See the full breakdown"));
+    }
     check("admin mock: the DI passage is not counted as a question", !page.body.includes(">Question 5<"));
     check("admin mock: each attempt is listed with its score and proctoring", page.body.includes("12 / 12") && page.body.includes("Unproctored (phone)") && [A1, A2, B1].every((id) => page.body.includes(`/admin/analytics/attempts/${id}`)));
 
     const student = await get(`/admin/analytics/students/${people.s1.id}`, "admin");
-    check("admin student: s1's overview matches the student's own", stat(student.body, "3", "mocks submitted") && stat(student.body, "67%", "overall accuracy") && same(row(student.body, T.algebra), [T.algebra, "5", "3", "1", "1", "75%", "8 / 15"]));
+    check("admin student: s1's overview matches the student's own", stat(student.body, "3", "mocks scored") && stat(student.body, "67%", "overall accuracy") && same(row(student.body, T.algebra), [T.algebra, "5", "3", "1", "1", "75%", "8 / 15"]));
     const attempt = await get(`/admin/analytics/attempts/${A1}`, "admin");
     check("admin attempt: A1 names its student and matches the student's breakdown", attempt.body.includes(`Analytics s1 ${stamp}`) && stat(attempt.body, "5", "score out of 12") && same(row(attempt.body, T.va), [T.va, "2", "0", "1", "1", "0%", "-1 / 6"]));
   }

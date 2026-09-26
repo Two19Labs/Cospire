@@ -7,6 +7,7 @@ import {
   scoreBuckets,
   scoreStats,
   sittingsFor,
+  splitAwaiting,
   tally,
   tallyBy,
   weakestTopics,
@@ -15,10 +16,10 @@ import {
 } from "./aggregate";
 
 const paper: PaperQuestion[] = [
-  { difficulty: "easy", id: 1, marks: 3, section: "QA", topic: "Algebra" },
-  { difficulty: "hard", id: 2, marks: 3, section: "QA", topic: "Algebra" },
-  { difficulty: "medium", id: 3, marks: 3, section: "QA", topic: "Geometry" },
-  { difficulty: "easy", id: 4, marks: 3, section: "VARC", topic: "Reading" },
+  { difficulty: "easy", id: 1, marks: 3, number: 1, section: "QA", topic: "Algebra" },
+  { difficulty: "hard", id: 2, marks: 3, number: 2, section: "QA", topic: "Algebra" },
+  { difficulty: "medium", id: 3, marks: 3, number: 3, section: "QA", topic: "Geometry" },
+  { difficulty: "easy", id: 4, marks: 3, number: 4, section: "VARC", topic: "Reading" },
 ];
 const right: ResponseFact = { answered: true, isCorrect: true, marksAwarded: 3 };
 const wrong: ResponseFact = { answered: true, isCorrect: false, marksAwarded: -1 };
@@ -109,12 +110,46 @@ describe("score statistics", () => {
 
   it("stretches below zero when negative marking takes a score there", () => {
     const buckets = scoreBuckets([-2, 5], 6, 4);
-    expect(buckets[0].from).toBe(-2);
-    expect(buckets.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(2);
-    expect(buckets[buckets.length - 1].to).toBe(6);
+    expect(buckets.map((bucket) => [bucket.from, bucket.to, bucket.count])).toEqual([
+      [-2, 0, 1],
+      [0, 2, 0],
+      [2, 4, 0],
+      [4, 6, 1],
+    ]);
+  });
+
+  it("fractional full marks: exact edges, every bucket kept, the top edge is the real maximum", () => {
+    const buckets = scoreBuckets([0, 3.5, 7.5], 7.5, 5);
+    expect(buckets.map((bucket) => [bucket.from, bucket.to])).toEqual([
+      [0, 1.5],
+      [1.5, 3],
+      [3, 4.5],
+      [4.5, 6],
+      [6, 7.5],
+    ]);
+    expect(buckets.map((bucket) => bucket.count)).toEqual([1, 0, 1, 0, 1]);
+  });
+
+  it("uneven widths round only for display, and a score on an edge goes up", () => {
+    const buckets = scoreBuckets([10 / 3, 10], 10, 3);
+    expect(buckets.map((bucket) => bucket.from)).toEqual([0, 3.33, 6.67]);
+    expect(buckets.map((bucket) => bucket.count)).toEqual([0, 1, 1]);
   });
 
   it("the paper's full marks", () => {
     expect(paperMarks(paper)).toBe(12);
+  });
+});
+
+describe("attempts awaiting a score", () => {
+  it("are split off, never counted, and counted as waiting", () => {
+    const { awaiting, scored } = splitAwaiting([
+      { id: 1, score: 5 },
+      { id: 2, score: null },
+      { id: 3, score: 0 },
+    ]);
+    expect(awaiting).toBe(1);
+    // A score of zero is a score, not a missing one.
+    expect(scored.map((row) => row.id)).toEqual([1, 3]);
   });
 });

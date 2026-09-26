@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { AppRole } from "@/features/auth/types";
+import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import {
   overall,
@@ -10,6 +11,7 @@ import {
   scoreBuckets,
   scoreStats,
   sittingsFor,
+  splitAwaiting,
   tally,
   tallyBy,
   weakestTopics,
@@ -21,21 +23,27 @@ import {
 } from "../aggregate";
 import {
   attemptColumns,
+  groupBy,
   paperClient,
   readAll,
   readNames,
   readPapers,
   readResponses,
-  sessionClient,
   toAttempt,
   type AttemptRow,
 } from "./load";
 
 export const analyticsPageSize = 25;
-// The most attempts one overview reads. A student sits a handful of mocks.
-const attemptLimit = 200;
-// The most attempts one mock's analytics reads: 100 students, a few sittings each.
-const mockAttemptLimit = 1000;
+// The most attempts one overview reads, newest first. A student sits a handful of mocks.
+export const overviewAttemptLimit = 200;
+// The most attempts one mock's analytics reads, newest first: 100 students, a few sittings each.
+export const mockAttemptLimit = 1000;
+
+// When a view read fewer attempts than exist, how many it read of how many.
+export interface Capped {
+  shown: number;
+  total: number;
+}
 
 export interface Breakdown {
   bySection: Tally[];
@@ -53,13 +61,18 @@ function breakdown(sittings: Sitting[]): Breakdown {
   };
 }
 
+function capped(shown: number, total: number | null): Capped | null {
+  return total !== null && total > shown ? { shown, total } : null;
+}
+
 // ---------------------------------------------------------------------------
 // One submitted attempt, for its student, an admin, or the assigned mentor.
 // ---------------------------------------------------------------------------
 
 export interface AttemptAnalytics {
   attempt: AttemptRow;
-  breakdown: Breakdown;
+  // Null while the attempt awaits its score: nothing is counted until it has one.
+  breakdown: Breakdown | null;
   maxMarks: number;
   studentName: string | null;
   title: string;
@@ -68,7 +81,7 @@ export interface AttemptAnalytics {
 // Null when the caller's own session is not shown the attempt (RLS), or it is
 // not submitted yet: nothing is analysed while the clock is still running.
 export async function getAttemptAnalytics(attemptId: number, role: AppRole): Promise<AttemptAnalytics | null> {
-  const db = await sessionClient();
+  const db = await createServerSupabaseClient();
   const { data, error } = await db.from("attempts").select(attemptColumns).eq("id", attemptId).eq("status", "submitted").maybeSingle();
   if (error) throw new Error(`Unable to read the attempt: ${error.message}`);
   if (!data) return null;
@@ -76,14 +89,14 @@ export async function getAttemptAnalytics(attemptId: number, role: AppRole): Pro
 
   const [papers, responses, names] = await Promise.all([
     readPapers(await paperClient(role), [attempt.mockId]),
-    readResponses(db, [attempt.id]),
+    attempt.score === null ? Promise.resolve(new Map()) : readResponses(db, [attempt.id]),
     role === "student" ? Promise.resolve(new Map<string, string>()) : readNames(db, [attempt.studentId]),
   ]);
   const paper = papers.get(attempt.mockId);
   if (!paper) return null;
   return {
     attempt,
-    breakdown: breakdown(sittingsFor(paper.questions, responses.get(attempt.id) ?? new Map())),
+    breakdown: attempt.score === null ? null : breakdown(sittingsFor(paper.questions, responses.get(attempt.id) ?? new Map())),
     maxMarks: paperMarks(paper.questions),
     studentName: role === "student" ? null : (names.get(attempt.studentId) ?? "Unknown student"),
     title: paper.title,
@@ -103,18 +116,26 @@ export interface MockTrend {
 }
 
 export interface StudentOverview {
-  attempts: number;
+  awaiting: number;
+  capped: Capped | null;
+  scored: number;
   total: Tally;
   trends: MockTrend[];
   weakest: Tally[];
 }
 
 async function overviewOf(db: SupabaseClient, role: AppRole, studentId: string | null): Promise<StudentOverview> {
-  let query = db.from("attempts").select(attemptColumns).eq("status", "submitted");
+  let query = db.from("attempts").select(attemptColumns, { count: "exact" }).eq("status", "submitted");
   if (studentId) query = query.eq("student_id", studentId);
-  const { data, error } = await query.order("submitted_at", { ascending: true }).limit(attemptLimit);
+  const { count, data, error } = await query
+    .order("submitted_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(overviewAttemptLimit);
   if (error) throw new Error(`Unable to read attempts: ${error.message}`);
-  const attempts = (data ?? []).map(toAttempt);
+  const newest = (data ?? []).map(toAttempt);
+  const { awaiting, scored } = splitAwaiting(newest);
+  // Oldest first from here on, so each mock's trend reads left to right in time.
+  const attempts = [...scored].reverse();
 
   const [papers, responses] = await Promise.all([
     readPapers(await paperClient(role), attempts.map((row) => row.mockId)),
@@ -131,12 +152,19 @@ async function overviewOf(db: SupabaseClient, role: AppRole, studentId: string |
     trend.attempts.push(attempt);
     trends.set(paper.mockId, trend);
   }
-  return { attempts: attempts.length, total: overall(sittings), trends: [...trends.values()], weakest: weakestTopics(sittings) };
+  return {
+    awaiting,
+    capped: capped(newest.length, count),
+    scored: attempts.length,
+    total: overall(sittings),
+    trends: [...trends.values()],
+    weakest: weakestTopics(sittings),
+  };
 }
 
 // The signed-in student's own. RLS returns only their attempts.
 export async function getStudentOverview(): Promise<StudentOverview> {
-  return overviewOf(await sessionClient(), "student", null);
+  return overviewOf(await createServerSupabaseClient(), "student", null);
 }
 
 export interface AdminStudentView {
@@ -146,7 +174,7 @@ export interface AdminStudentView {
 
 // Null when the admin's session is not shown this student.
 export async function getStudentForAdmin(studentId: string): Promise<AdminStudentView | null> {
-  const db = await sessionClient();
+  const db = await createServerSupabaseClient();
   const { data, error } = await db.from("profiles").select("id, name").eq("id", studentId).eq("role", "student").maybeSingle();
   if (error) throw new Error(`Unable to read the student: ${error.message}`);
   if (!data) return null;
@@ -158,15 +186,16 @@ export async function getStudentForAdmin(studentId: string): Promise<AdminStuden
 // ---------------------------------------------------------------------------
 
 export interface MockListRow {
-  attempts: number;
+  awaiting: number;
   average: number | null;
   id: number;
+  scored: number;
   students: number;
   title: string;
 }
 
 export async function listMocksForAnalytics(page: number): Promise<{ rows: MockListRow[]; total: number }> {
-  const db = await sessionClient();
+  const db = await createServerSupabaseClient();
   const from = (page - 1) * analyticsPageSize;
   const { count, data, error } = await db
     .from("mocks")
@@ -182,16 +211,17 @@ export async function listMocksForAnalytics(page: number): Promise<{ rows: MockL
         db.from("attempts").select("id, mock_id, student_id, score").eq("status", "submitted").in("mock_id", ids).order("id").range(start, end),
       )
     : [];
+  const byMock = groupBy(attempts, (row) => row.mock_id);
 
   return {
     rows: mocks.map((mock) => {
-      const mine = attempts.filter((row) => row.mock_id === mock.id);
-      const scores = mine.flatMap((row) => (row.score === null ? [] : [Number(row.score)]));
+      const { awaiting, scored } = splitAwaiting((byMock.get(mock.id) ?? []).map((row) => ({ ...row, score: row.score === null ? null : Number(row.score) })));
       return {
-        attempts: mine.length,
-        average: scoreStats(scores).average,
+        awaiting,
+        average: scoreStats(scored.map((row) => row.score)).average,
         id: mock.id,
-        students: new Set(mine.map((row) => row.student_id)).size,
+        scored: scored.length,
+        students: new Set(scored.map((row) => row.student_id)).size,
         title: mock.title,
       };
     }),
@@ -206,7 +236,7 @@ export interface StudentListRow {
 }
 
 export async function listStudentsForAnalytics(page: number): Promise<{ rows: StudentListRow[]; total: number }> {
-  const db = await sessionClient();
+  const db = await createServerSupabaseClient();
   const from = (page - 1) * analyticsPageSize;
   const { count, data, error } = await db
     .from("profiles")
@@ -223,25 +253,29 @@ export async function listStudentsForAnalytics(page: number): Promise<{ rows: St
         db.from("attempts").select("id, student_id").eq("status", "submitted").in("student_id", ids).order("id").range(start, end),
       )
     : [];
+  const byStudent = groupBy(attempts, (row) => row.student_id);
   return {
-    rows: students.map((row) => ({ attempts: attempts.filter((a) => a.student_id === row.id).length, id: row.id, name: row.name })),
+    rows: students.map((row) => ({ attempts: byStudent.get(row.id)?.length ?? 0, id: row.id, name: row.name })),
     total: count ?? 0,
   };
 }
 
 export interface QuestionStat {
-  number: number;
   question: PaperQuestion;
   tally: Tally;
 }
 
 export interface MockAnalytics {
+  // Every attempt read, awaiting ones included, for the list.
   attempts: (AttemptRow & { studentName: string })[];
+  awaiting: number;
   breakdown: Breakdown;
   buckets: Bucket[];
+  capped: Capped | null;
   maxMarks: number;
   proctored: number;
   questions: QuestionStat[];
+  scored: number;
   stats: ScoreStats;
   students: number;
   title: string;
@@ -250,48 +284,53 @@ export interface MockAnalytics {
 
 // Null when the admin's session is not shown the mock.
 export async function getMockAnalytics(mockId: number): Promise<MockAnalytics | null> {
-  const db = await sessionClient();
-  const { data: mock, error } = await db.from("mocks").select("id").eq("id", mockId).maybeSingle();
-  if (error) throw new Error(`Unable to read the mock: ${error.message}`);
-  if (!mock) return null;
-
-  const { data, error: attemptError } = await db
-    .from("attempts")
-    .select(attemptColumns)
-    .eq("mock_id", mockId)
-    .eq("status", "submitted")
-    .order("submitted_at", { ascending: false })
-    .limit(mockAttemptLimit);
-  if (attemptError) throw new Error(`Unable to read attempts: ${attemptError.message}`);
-  const attempts = (data ?? []).map(toAttempt);
-
-  const [papers, responses, names] = await Promise.all([
+  const db = await createServerSupabaseClient();
+  const [mockResult, attemptResult, papers] = await Promise.all([
+    db.from("mocks").select("id").eq("id", mockId).maybeSingle(),
+    db
+      .from("attempts")
+      .select(attemptColumns, { count: "exact" })
+      .eq("mock_id", mockId)
+      .eq("status", "submitted")
+      .order("submitted_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(mockAttemptLimit),
     readPapers(db, [mockId]),
-    readResponses(db, attempts.map((row) => row.id)),
+  ]);
+  if (mockResult.error) throw new Error(`Unable to read the mock: ${mockResult.error.message}`);
+  if (attemptResult.error) throw new Error(`Unable to read attempts: ${attemptResult.error.message}`);
+  const paper = papers.get(mockId);
+  if (!mockResult.data || !paper) return null;
+
+  const attempts = (attemptResult.data ?? []).map(toAttempt);
+  const { awaiting, scored } = splitAwaiting(attempts);
+  const [responses, names] = await Promise.all([
+    readResponses(db, scored.map((row) => row.id)),
     readNames(db, attempts.map((row) => row.studentId)),
   ]);
-  const paper = papers.get(mockId);
-  if (!paper) return null;
 
-  const sittings = attempts.flatMap((attempt) => sittingsFor(paper.questions, responses.get(attempt.id) ?? new Map()));
+  const sittings = scored.flatMap((attempt) => sittingsFor(paper.questions, responses.get(attempt.id) ?? new Map()));
   const perQuestion = new Map(tally(sittings, (question) => String(question.id)).map((row) => [row.label, row]));
-  const scores = attempts.flatMap((row) => (row.score === null ? [] : [row.score]));
+  const scores = scored.map((row) => row.score);
   const maxMarks = paperMarks(paper.questions);
 
   return {
     attempts: attempts.map((row) => ({ ...row, studentName: names.get(row.studentId) ?? "Unknown student" })),
+    awaiting,
     breakdown: breakdown(sittings),
     buckets: scores.length ? scoreBuckets(scores, maxMarks) : [],
+    capped: capped(attempts.length, attemptResult.count),
     maxMarks,
-    proctored: attempts.filter((row) => row.proctored).length,
-    questions: paper.questions.flatMap((question, index) => {
+    proctored: scored.filter((row) => row.proctored).length,
+    questions: paper.questions.flatMap((question) => {
       const row = perQuestion.get(String(question.id));
-      return row ? [{ number: index + 1, question, tally: row }] : [];
+      return row ? [{ question, tally: row }] : [];
     }),
+    scored: scored.length,
     stats: scoreStats(scores),
-    students: new Set(attempts.map((row) => row.studentId)).size,
+    students: new Set(scored.map((row) => row.studentId)).size,
     title: paper.title,
-    unproctored: attempts.filter((row) => !row.proctored).length,
+    unproctored: scored.filter((row) => !row.proctored).length,
   };
 }
 
@@ -308,7 +347,7 @@ export interface MentorAttemptRow extends AttemptRow {
 // `attempts_select_mentor` returns the attempts of this mentor's assigned
 // students and no others, so nothing here filters by assignment.
 export async function listMentorAttempts(page: number): Promise<{ rows: MentorAttemptRow[]; total: number }> {
-  const db = await sessionClient();
+  const db = await createServerSupabaseClient();
   const from = (page - 1) * analyticsPageSize;
   const { count, data, error } = await db
     .from("attempts")

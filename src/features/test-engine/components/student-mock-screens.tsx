@@ -5,14 +5,11 @@ import type { Profile } from "@/features/auth/types";
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
 import { startAttemptAction } from "../actions/attempt-actions";
+import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
 import { TouchFlag } from "./touch-flag";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
-
-function formatMarks(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0$/, "");
-}
 
 function attemptLabel(attempt: AttemptSummary): string {
   if (attempt.status === "in_progress") return "In progress";
