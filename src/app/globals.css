@@ -1,28 +1,30 @@
 /*
- * Design tokens, taken from design/cospire-lms-prototype.html.
+ * Design tokens.
  *
- * The prototype is a visual-builder export: 423 inline style attributes and no
- * classes at all, so nothing in it could be imported. These values were read
- * out of it by counting what it actually uses, which is why the set is small --
- * one shadow, seven radii, a handful of colours. That restraint is the design,
- * and keeping the token list short is how it survives contact with new screens.
+ * First read out of design/cospire-lms-prototype.html, then re-tuned on
+ * 2026-09-26 to the approved admin workspace prototype
+ * (../design-previews/admin-workspace.html): a 12% ink line, a solid muted
+ * slate for secondary text, an 11px card radius and a warm off-white for the
+ * title bar and table heads. The brand itself is unchanged -- cream, navy,
+ * gold, rust, sage.
  *
  * Anything not in this block is a value someone invented. Add a token instead.
  */
 :root {
-  /* Ink. One navy, then opacity ramps for everything quieter. The prototype
-     never uses a separate grey -- secondary text is ink at 40-60%, which is
-     what keeps the palette warm rather than muddy. */
+  /* Ink. One navy, then opacity ramps for everything quieter. */
   --ink: #182b50;
   --ink-70: rgb(24 43 80 / 70%);
   --ink-55: rgb(24 43 80 / 55%);
   --ink-45: rgb(24 43 80 / 45%);
   --ink-35: rgb(24 43 80 / 35%);
 
-  /* Paper. Cream page, white cards. */
+  /* Paper. Cream page, white cards, a warmer white for chrome. */
   --cream: #faf5e6;
   --cream-deep: #f1ead2;
   --cream-warm: #fdf0e0;
+  --paper-raised: #fffdf7;
+  --paper-sunk: #f8f7f1;
+  --table-head: #fdfcf8;
   --card: #ffffff;
 
   /* Accents. Rust carries emphasis and destructive alike; the design has no
@@ -31,28 +33,41 @@
   --gold: #ffc24b;
   --sage: #7e9682;
 
-  /* Lines are ink at very low opacity, never a grey. */
-  --line: rgb(24 43 80 / 10%);
-  --line-strong: rgb(24 43 80 / 20%);
-  --line-faint: rgb(24 43 80 / 6%);
+  /* Tinted grounds for tags and notices, one per accent. */
+  --tint-sage: #eaf0e9;
+  --tint-sage-ink: #46614b;
+  --tint-rust: #f9ebe4;
+  --tint-rust-ink: #a14222;
+  --tint-gold: #fff2cf;
+  --tint-gold-ink: #7e5a10;
+  --tint-ink: #e9edf4;
+  --tint-slate: #f1f2f5;
+  --tint-slate-ink: #54647b;
 
-  /* Radii, exactly the seven the prototype uses. */
+  /* Lines are ink at low opacity, never a grey. */
+  --line: rgb(24 43 80 / 12%);
+  --line-strong: rgb(24 43 80 / 19%);
+  --line-faint: rgb(24 43 80 / 5%);
+
+  /* Radii. */
   --r-xs: 4px;
   --r-sm: 6px;
+  --r-btn: 7px;
   --r-md: 8px;
+  --r-card: 11px;
   --r-lg: 12px;
   --r-xl: 14px;
   --r-pill: 999px;
 
-  /* One shadow, used 46 times and nowhere varied. */
   --shadow: 0 1px 2px rgb(24 43 80 / 6%);
+  --shadow-lift: 0 5px 14px rgb(24 43 80 / 4%);
 
   /* Roles, mapped onto the palette so component rules never name a colour. */
   --background: var(--cream);
   --foreground: var(--ink);
-  --muted: var(--ink-55);
+  --muted: #647086;
   --primary: var(--ink);
-  --primary-dark: #0f1c36;
+  --primary-dark: #2d4265;
   --danger: var(--rust);
   --focus: var(--gold);
 
@@ -60,13 +75,11 @@
      next/font sets it on a class on <html>, and a class and `:root` carry the
      same specificity -- so whichever is emitted last wins. Next emits its class
      first and this file second, which meant a fallback declared here silently
-     beat Figtree: the font downloaded, and nothing rendered in it. The fallback
-     now lives inside var(), where it applies only when the variable is genuinely
-     absent.
+     beat Figtree. The fallback lives inside var() instead.
 
-     The serif is a token with a fallback for a different reason: the prototype
-     sets every heading in Recoleta Bold, a licensed face whose files are not in
-     the export. Until the Client's licence and woff2 arrive this resolves to
+     The serif is a token with a fallback for a different reason: the design
+     sets every heading in Recoleta Bold, a licensed face whose files have not
+     arrived. Until the Client's licence and woff2 do, this resolves to
      Georgia, and swapping it in is a one-line change. */
   --font-serif: Georgia, "Times New Roman", serif;
 
@@ -76,13 +89,21 @@
     sans-serif;
 }
 
-/* The design's signature: small uppercase labels at .06em, used 42 times.
-   Applied through a class rather than repeated, so the tracking stays uniform. */
-.label,
-.eyebrow {
+/* Small uppercase labels, tracked. */
+.label {
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The line above every page heading: rust, tracked wide. */
+.eyebrow {
+  color: var(--rust);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  margin: 0 0 0.625rem;
   text-transform: uppercase;
 }
 
@@ -103,15 +124,18 @@ body {
   min-height: 100%;
 }
 
+/* The workspace prototype's scale: 14px body, most interface text at 12-13px
+   set on the component itself. */
 body {
   background: var(--background);
   color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
   margin: 0;
 }
 
-/* `textarea` and `select` belong here too, and their absence is why every
-   textarea in this application rendered in the browser's default monospace:
-   form controls do not inherit the page font on their own. */
+/* `textarea` and `select` belong here too: form controls do not inherit the
+   page font on their own. */
 button,
 input,
 select,
@@ -123,6 +147,16 @@ button,
 a,
 input {
   outline-color: var(--focus);
+  outline-offset: 3px;
+}
+
+a {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--rust);
   outline-offset: 3px;
 }
 
@@ -138,6 +172,17 @@ code {
   padding: 0.125rem 0.3rem;
 }
 
+svg.icon {
+  fill: none;
+  flex: none;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  width: 1.25rem;
+}
+
 .auth-layout {
   align-items: center;
   display: grid;
@@ -148,7 +193,7 @@ code {
 
 .auth-card {
   background: var(--card);
-  border: 1px solid var(--line-faint);
+  border: 1px solid var(--line);
   border-radius: var(--r-xl);
   box-shadow: 0 1.5rem 4rem rgb(24 43 80 / 8%);
   max-width: 30rem;
@@ -159,16 +204,6 @@ code {
 .auth-card h1 {
   font-size: 1.5rem;
   line-height: 1.15;
-}
-
-/* The prototype's largest heading is 24px and its body copy is 13px. That is a
-   dense admin-tool scale, and it is applied faithfully here rather than
-   quietly enlarged -- but see docs/context/completed.md: 13px body text on a
-   phone is a legibility question the Client should answer deliberately, not
-   one this file should decide on their behalf. */
-body {
-  font-size: 0.8125rem;
-  line-height: 1.6;
 }
 
 .muted {
@@ -182,22 +217,71 @@ body {
   margin-top: 2rem;
 }
 
+/* ---------------------------------------------------------------------------
+ * Forms. Sentence-case 11px labels over 13px inputs with a 6px radius and a
+ * gold focus ring, as the workspace prototype draws them.
+ * ------------------------------------------------------------------------- */
+
 .field {
   display: grid;
   gap: 0.45rem;
 }
 
+/* A bare <span> or <legend> as a field's label, which several older forms use
+   instead of `.field__label`. Same treatment, so no form looks unfinished. */
+.field__label,
+.field > span:first-child:not(.visually-hidden),
+.field > legend {
+  align-items: baseline;
+  color: var(--ink);
+  display: flex;
+  /* A two-line label pushed "Optional" to the far right of the field, where it
+     read as belonging to the next question rather than to this one. */
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0;
+}
+
+/* "Optional" sits with the label rather than inside it. */
+.field__optional {
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.field__hint {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* A capability that is genuinely not built yet. Rust rather than a red, and
+   stated on the field rather than hidden. */
+.field__pending {
+  background: var(--cream-warm);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--rust);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  padding: 0.625rem 0.75rem;
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
 /* A form laid out as one column of fields, with the submit button sitting on
-   its own rather than stretching. Used by the ARS round authoring form. */
+   its own rather than stretching. */
 .stack-form {
   display: grid;
-  gap: 1rem;
+  gap: 1.125rem;
   justify-items: start;
 }
 
-/* The same stack, stretched. `justify-items: start` suits a short admin form
-   whose inputs should not run the width of the screen; a multi-page application
-   wants its sections to fill the panel. */
+/* The same stack, stretched, for a form whose sections should fill the panel. */
 .stack-form--wide {
   justify-items: stretch;
 }
@@ -211,84 +295,47 @@ body {
 }
 
 /* Two fields that belong together -- an opening date and a deadline -- side by
-   side on a desk, stacked on a phone. Clause 3.3 asks for every part of the
-   platform to be usable on a phone. */
+   side on a desk, stacked on a phone. */
 .field-row {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
 }
 
-/* A radio or checkbox beside its words, aligned on the first line of the label
-   rather than centred, so a wrapping label does not drag the control down. */
+/* The prototype's two-column form grid, one column on a phone. */
+.form-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+}
+
+/* A radio or checkbox beside its words, aligned on the first line. */
 .choice {
   align-items: start;
   display: grid;
+  font-size: 0.8125rem;
   gap: 0.6rem;
   grid-template-columns: auto 1fr;
   line-height: 1.45;
 }
 
-.choice input {
+.choice input,
+.form-grid > label > input[type="checkbox"] {
   accent-color: var(--primary);
-  margin-top: 0.15rem;
-}
-
-/* The design's signature applied where it is used most: form labels. Small,
-   uppercase, tracked at .06em -- the same treatment the prototype gives its 42
-   other labels. This is the shared label class, so every form in the
-   application takes it at once rather than each screen inventing one. */
-.field__label {
-  align-items: baseline;
-  color: var(--ink-55);
-  display: flex;
-  /* A two-line label pushed "Optional" to the far right of the field, where it
-     read as belonging to the next question rather than to this one. */
-  flex-wrap: wrap;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  gap: 0.5rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* "Optional" sits with the label rather than inside it, so a screen reader
-   announces the label cleanly and the eye still sees the distinction. */
-.field__optional {
-  color: var(--ink-35);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-
-.field__hint {
-  color: var(--ink-55);
-  font-size: 0.75rem;
-  line-height: 1.45;
-}
-
-/* A capability that is genuinely not built yet. Rust rather than a red, and
-   stated on the field rather than hidden, because a student meeting an upload
-   that does nothing is a support call. */
-.field__pending {
-  background: var(--cream-warm);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-md);
-  color: var(--rust);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  padding: 0.625rem 0.75rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+  width: 1rem;
 }
 
 .upload-status {
   align-items: center;
-  background: var(--cream);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 0.875rem;
+  padding: 0.875rem 1rem;
 }
 
 .upload-status p {
@@ -299,6 +346,7 @@ body {
 fieldset.field {
   border: 0;
   margin: 0;
+  min-width: 0;
   padding: 0;
 }
 
@@ -307,34 +355,33 @@ fieldset.field {
   gap: 0.5rem;
 }
 
-/* A textarea needs room to be worth writing in. The prototype's one textarea is
-   110px; this is taller because ARS essays run to 250 words. */
-/* Deliberately monospace, against the rule above: these two boxes hold a prompt
-   and a block of JSON, where alignment and character shapes carry meaning. It is
-   an exception stated in one place rather than a default nobody chose. */
+/* Deliberately monospace: these boxes hold a prompt and a block of JSON, where
+   alignment and character shapes carry meaning. */
 .input--code {
+  background: var(--paper-sunk);
+  color: #566078;
   font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
-.input--area {
+.input--area,
+textarea.input {
   line-height: 1.55;
-  min-height: 9rem;
+  min-height: 7rem;
   padding: 0.75rem;
   resize: vertical;
 }
 
 /* A section inside a form page: a heading, then its fields. Separated by a rule
-   rather than a card, because cards inside a card is the thing that makes an
-   admin tool look busy. */
+   rather than a card. */
 .form-section {
   display: grid;
   gap: 0.75rem;
 }
 
 .form-section + .form-section {
-  border-top: 1px solid var(--line-faint);
+  border-top: 1px solid var(--line);
   margin-top: 0.5rem;
   padding-top: 1.25rem;
 }
@@ -344,19 +391,14 @@ fieldset.field {
   font-weight: 600;
 }
 
-/* Two columns once there is room, one on a phone. Fields keep their own width
-   rather than every input stretching the full width of a wide screen, which is
-   what made the old layout read as a run-on line. */
 .form-fields {
   display: grid;
   gap: 1.125rem;
   /* `min()` matters: a bare minmax(16rem, 1fr) cannot shrink below 16rem, so on
-     a phone the column keeps its width and the whole page scrolls sideways. */
+     a phone the whole page would scroll sideways. */
   grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
 }
 
-/* A long answer, a choice list and a score list each take the whole row: a
-   250-word essay in a half-width box is a worse form than a plain one. */
 .form-fields > .field:has(.input--area),
 .form-fields > .field:has(.choice-list),
 .form-fields > .field:has(.field-row),
@@ -390,47 +432,79 @@ fieldset.field {
 .field__error,
 .form-error {
   color: var(--danger);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
-.input {
+.input,
+.form-grid input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]) {
   background: var(--card);
-  border: 1.5px solid var(--line-strong);
-  border-radius: var(--r-md);
+  border: 1px solid rgb(24 43 80 / 19%);
+  border-radius: var(--r-sm);
   color: var(--foreground);
+  font-size: 0.8125rem;
+  line-height: 1.5;
   min-height: 2.5rem;
-  padding: 0.5rem 0.75rem;
+  min-width: 0;
+  padding: 0.5625rem 0.75rem;
   width: 100%;
 }
 
+.input::placeholder {
+  color: #8e96a5;
+}
+
 .input:focus {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgb(255 194 75 / 45%);
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .input[aria-invalid="true"] {
   border-color: var(--danger);
 }
 
+/* ---------------------------------------------------------------------------
+ * Buttons. White with a line by default, ink when primary, rust-outlined when
+ * the action removes something. A one-pixel lift on hover.
+ * ------------------------------------------------------------------------- */
+
 .button {
-  border: 1.5px solid transparent;
-  border-radius: var(--r-md);
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
   cursor: pointer;
+  display: inline-flex;
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  gap: 0.5625rem;
+  justify-content: center;
+  line-height: 1.3;
   min-height: 2.375rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1rem;
+  text-decoration: none;
+  transition:
+    transform 0.15s,
+    background 0.15s;
+  white-space: nowrap;
+}
+
+.button svg.icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.45;
+  transform: none;
 }
 
 .button--primary {
   background: var(--primary);
+  border-color: var(--primary);
   color: white;
 }
 
@@ -440,7 +514,6 @@ fieldset.field {
 
 .button--secondary {
   background: var(--card);
-  border-color: var(--line-strong);
   color: var(--foreground);
 }
 
@@ -450,31 +523,142 @@ fieldset.field {
 
 .button--ghost {
   background: transparent;
+  border-color: transparent;
   color: var(--muted);
 }
 
-.button--danger {
-  background: var(--danger);
-  color: white;
+.button--ghost:hover:not(:disabled) {
+  background: var(--cream-deep);
+  color: var(--ink);
 }
 
-.setup-notice {
-  background: var(--cream-warm);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
+.button--danger {
+  background: #fff8f3;
+  border-color: rgb(181 71 31 / 21%);
+  color: var(--rust);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: var(--tint-rust);
+}
+
+/* The prototype's small button: row actions, inline saves. */
+.button--compact {
+  font-size: 0.6875rem;
+  min-height: 2rem;
+  padding: 0.4375rem 0.6875rem;
+}
+
+.input--compact {
+  font-size: 0.75rem;
+  min-height: 2rem;
+  padding: 0.3125rem 0.5rem;
+  width: auto;
+}
+
+/* Anchors styled as buttons, so a plain link can sit beside a submit control
+   without needing JavaScript to navigate. */
+a.button {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+/* A plain link that reads as one: semibold, rust on hover. */
+.title-link {
   color: var(--ink);
-  line-height: 1.55;
-  margin-top: 1.5rem;
-  padding: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.title-link:hover {
+  color: var(--rust);
+}
+
+/* ---------------------------------------------------------------------------
+ * Notices: a tinted strip with a short line of guidance. Sage when something
+ * worked, rust-tinted when it did not, cream for the plain case.
+ * ------------------------------------------------------------------------- */
+
+.notice,
+.setup-notice {
+  background: #f4f0e4;
+  border: 1px solid rgb(24 43 80 / 6%);
+  border-radius: var(--r-md);
+  color: #586479;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0.9375rem 1.125rem;
+}
+
+.notice strong,
+.setup-notice strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.notice--success {
+  background: #edf3eb;
+  color: #48634e;
+}
+
+.notice--warn,
+.notice--error {
+  background: #fff2e5;
+  border-color: rgb(181 71 31 / 15%);
+  color: #99512f;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tags. Small tinted labels for a status, a role, a type. The palette has no
+ * green or red -- sage and rust carry those meanings.
+ * `.pill` is the older name and is kept, drawn the same way.
+ * ------------------------------------------------------------------------- */
+
+.tag,
+.pill {
+  align-items: center;
+  background: var(--tint-slate);
+  border-radius: 5px;
+  color: var(--tint-slate-ink);
+  display: inline-flex;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 0.25rem 0.5rem;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.tag--sage,
+.pill--active {
+  background: var(--tint-sage);
+  color: var(--tint-sage-ink);
+}
+
+.tag--rust,
+.pill--disabled {
+  background: var(--tint-rust);
+  color: var(--tint-rust-ink);
+}
+
+.tag--gold {
+  background: var(--tint-gold);
+  color: var(--tint-gold-ink);
+}
+
+.tag--ink {
+  background: var(--tint-ink);
+  color: var(--ink);
 }
 
 /* ---------------------------------------------------------------------------
  * The application shell: an ink rail on the left, a column on the right.
  *
- * Every measurement here was read off the prototype rather than chosen: the
- * rail is 232px, the title bar 64px, the content padding 32px, and the active
- * navigation item is gold with ink text. The prototype states them as inline
- * styles on the elements themselves; they are tokens and classes here.
+ * Measurements are the workspace prototype's: a 236px rail with a 27px serif
+ * wordmark, grouped navigation with the current item in gold and a dot, a
+ * 72px warm-white title bar carrying a breadcrumb, and the page's own heading
+ * in the content area under a rust eyebrow.
  * ------------------------------------------------------------------------- */
 
 .app-shell {
@@ -484,132 +668,183 @@ fieldset.field {
   min-height: 100vh;
 }
 
+.skip-link {
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 600;
+  left: 15.5rem;
+  padding: 0.75rem;
+  position: fixed;
+  top: -5rem;
+  z-index: 50;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
 .app-sidebar {
   background: var(--ink);
-  box-sizing: border-box;
   color: var(--cream);
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 0.25rem;
   height: 100vh;
-  overflow: auto;
-  padding: 1.25rem 1rem;
+  overflow-y: auto;
+  padding: 1.875rem 1.125rem 1.25rem;
   position: sticky;
   top: 0;
-  width: 14.5rem;
+  width: 14.75rem;
 }
 
 .app-brand {
   align-items: center;
+  color: inherit;
   display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem 0.5rem 1.5rem;
+  font-family: var(--font-serif);
+  font-size: 1.6875rem;
+  font-weight: 700;
+  gap: 0.6875rem;
+  letter-spacing: -0.03em;
+  padding: 0 0.75rem 2rem;
+  text-decoration: none;
 }
 
 .app-brand__mark {
-  align-items: center;
   background: var(--gold);
-  border-radius: var(--r-sm);
+  border-radius: 9px 9px 9px 2px;
   color: var(--ink);
-  display: flex;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  height: 1.5rem;
-  justify-content: center;
-  width: 1.5rem;
-}
-
-.app-brand__name {
-  font-family: var(--font-serif);
-  font-size: 1.0625rem;
-  font-weight: 700;
+  display: grid;
+  font-size: 1.5625rem;
+  height: 2.25rem;
+  place-items: center;
+  width: 2.125rem;
 }
 
 .app-nav {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.1875rem;
 }
 
-/* The rail's group label. Tracked wider than the ink-on-cream labels elsewhere
-   -- .09em against .06em -- because the prototype does that, and light text on
-   a dark ground genuinely needs the extra air. */
+/* The rail's group label, light on dark, tracked wider. */
 .app-nav__group {
-  color: rgb(251 246 227 / 45%);
+  color: #a8b2c2;
   font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: 0.09em;
-  padding: 0.5rem 0.5rem 0.25rem;
+  letter-spacing: 0.15em;
+  margin: 1.3125rem 0.875rem 0.5625rem;
   text-transform: uppercase;
+}
+
+.app-nav__group:first-child {
+  margin-top: 0;
 }
 
 .app-nav__link {
   align-items: center;
-  border-radius: var(--r-md);
-  color: var(--cream);
+  border-radius: var(--r-btn);
+  color: #dce0e7;
   display: flex;
   font-size: 0.8125rem;
   font-weight: 500;
-  gap: 0.5rem;
-  opacity: 0.85;
-  padding: 0.5625rem 0.625rem;
+  gap: 0.75rem;
+  min-height: 2.6875rem;
+  padding: 0.625rem 0.8125rem;
   text-decoration: none;
+  transition: background 0.15s;
+}
+
+.app-nav__link svg.icon {
+  height: 1.0625rem;
+  width: 1.0625rem;
 }
 
 .app-nav__link:hover {
-  background: rgb(251 246 227 / 8%);
-  opacity: 1;
+  background: rgb(255 255 255 / 6%);
+  color: white;
 }
 
 .app-nav__link--active,
 .app-nav__link--active:hover {
   background: var(--gold);
   color: var(--ink);
-  opacity: 1;
+  font-weight: 600;
+}
+
+.app-nav__link--active::after {
+  background: var(--ink);
+  border-radius: 50%;
+  content: "";
+  height: 5px;
+  margin-left: auto;
+  width: 5px;
 }
 
 .app-sidebar__spacer {
   flex: 1;
-  min-height: 1.5rem;
+  min-height: 2rem;
 }
 
 .app-account {
-  border-top: 1px solid rgb(251 246 227 / 12%);
+  align-items: center;
+  border-top: 1px solid rgb(255 255 255 / 12%);
   display: grid;
-  gap: 0.125rem;
-  padding: 0.75rem 0.5rem 0;
+  gap: 0.875rem 0.625rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 1.125rem 0.5rem 0;
+}
+
+.app-avatar {
+  background: #e7ebdf;
+  border-radius: 50%;
+  color: var(--ink);
+  display: grid;
+  flex: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: 2.1875rem;
+  place-items: center;
+  width: 2.1875rem;
+}
+
+.app-account__who {
+  min-width: 0;
 }
 
 .app-account__name {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 600;
-}
-
-.app-account__email {
-  color: rgb(251 246 227 / 55%);
-  font-size: 0.6875rem;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* Without this the ellipsis never fires and a long address wraps to three
-     lines in a 232px rail. */
   white-space: nowrap;
 }
 
-.app-account__signout {
-  background: none;
-  border: 0;
-  color: rgb(251 246 227 / 70%);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-  padding: 0;
-  text-align: left;
-  text-decoration: underline;
+.app-account__email {
+  color: #a8b2c2;
+  font-size: 0.6875rem;
+  margin: 0.125rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Without this the ellipsis never fires and a long address wraps to three
+     lines in the rail. */
+  white-space: nowrap;
 }
 
-.app-account__signout:hover {
-  color: var(--cream);
+.app-account form {
+  grid-column: 1 / -1;
+}
+
+.app-account .app-account__signout {
+  background: transparent;
+  border-color: rgb(255 255 255 / 16%);
+  color: #bfc8d6;
+  width: 100%;
+}
+
+.app-account .app-account__signout:hover:not(:disabled) {
+  background: rgb(255 255 255 / 6%);
+  color: var(--gold);
 }
 
 .app-main {
@@ -621,88 +856,344 @@ fieldset.field {
 
 .app-topbar {
   align-items: center;
-  background: var(--card);
+  background: var(--paper-raised);
   border-bottom: 1px solid var(--line);
-  box-sizing: border-box;
   display: flex;
   flex: none;
   gap: 1rem;
-  height: 4rem;
-  padding: 0 2rem;
+  height: 4.5rem;
+  justify-content: space-between;
+  padding: 0 2.375rem;
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 12;
 }
 
-.app-topbar__title {
-  flex: 1;
-  font-family: var(--font-serif);
-  font-size: 1.0625rem;
-  font-weight: 700;
+.app-breadcrumb {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.75rem;
+  gap: 0.75rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.app-breadcrumb__here {
+  color: var(--ink);
+  font-weight: 500;
+  max-width: 27.5rem;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.app-topbar__meta {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 1.0625rem;
+}
+
 .app-topbar__role {
-  color: var(--ink-55);
-  font-size: 0.75rem;
-  font-weight: 500;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5625rem;
+  text-transform: uppercase;
 }
 
 .app-topbar__avatar {
-  align-items: center;
-  background: var(--sage);
-  border-radius: var(--r-pill);
-  color: #fff;
-  display: flex;
+  background: #eee8d7;
+  border-radius: 50%;
+  color: var(--ink);
+  display: grid;
   flex: none;
   font-size: 0.75rem;
   font-weight: 600;
-  height: 2rem;
-  justify-content: center;
-  width: 2rem;
+  height: 1.9375rem;
+  place-items: center;
+  width: 1.9375rem;
 }
 
 .app-content {
-  box-sizing: border-box;
   flex: 1;
-  padding: 2rem;
+  min-width: 0;
+  padding: 1.875rem 2.375rem 5rem;
+}
+
+.app-content:focus {
+  outline: none;
 }
 
 .app-content__inner {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  max-width: 90rem;
+  gap: 1.25rem;
+  margin: 0 auto;
+  max-width: 95.625rem;
 }
 
-.empty-state {
+/* The page's own heading block: eyebrow, serif heading, one line of purpose,
+   and the page's main actions on the right. */
+.back-link {
+  align-items: center;
+  align-self: flex-start;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.6875rem;
+  gap: 0.4375rem;
+  margin-bottom: -0.375rem;
+  text-decoration: none;
+}
+
+.back-link svg.icon {
+  height: 0.875rem;
+  transform: rotate(180deg);
+  width: 0.875rem;
+}
+
+.back-link:hover {
+  color: var(--rust);
+}
+
+.page-intro {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.25rem;
+  justify-content: space-between;
+  margin-bottom: 0.3125rem;
+}
+
+.page-intro__text {
+  min-width: 0;
+}
+
+.page-intro h1 {
+  font-size: 1.9375rem;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.page-intro__lede {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin: 0.625rem 0 0;
+  max-width: 43rem;
+}
+
+.page-intro__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5625rem;
+}
+
+.page-intro__actions form {
+  display: contents;
+}
+
+@media (max-width: 68.75rem) {
+  .app-sidebar {
+    width: 13.125rem;
+  }
+
+  .app-content {
+    padding: 1.75rem 1.5625rem 5rem;
+  }
+
+  .app-topbar {
+    padding: 0 1.5625rem;
+  }
+
+  .page-intro h1 {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 44rem) {
+  /* The rail stops being a rail. The brand and the sign-out sit in a bar, and
+     the navigation becomes a strip beneath it that scrolls sideways, which
+     keeps every destination reachable on a phone without a menu button that
+     would need JavaScript to open. */
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    height: auto;
+    padding: 0.75rem 1rem;
+    position: static;
+    width: 100%;
+  }
+
+  .app-brand {
+    font-size: 1.25rem;
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+  }
+
+  .app-brand__mark {
+    font-size: 1.125rem;
+    height: 1.875rem;
+    width: 1.75rem;
+  }
+
+  .app-account {
+    border-top: 0;
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    padding: 0;
+  }
+
+  .app-account .app-avatar,
+  .app-account__who {
+    display: none;
+  }
+
+  .app-account .app-account__signout {
+    width: auto;
+  }
+
+  .app-nav {
+    display: flex;
+    gap: 0.25rem;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .app-nav__group,
+  .app-sidebar__spacer,
+  .app-nav__link--active::after {
+    display: none;
+  }
+
+  .app-nav__link {
+    min-height: 2.375rem;
+    white-space: nowrap;
+  }
+
+  .app-topbar {
+    height: 3.875rem;
+    padding: 0 1rem;
+  }
+
+  .app-topbar__role {
+    display: none;
+  }
+
+  .app-content {
+    padding: 1.625rem 1rem 4rem;
+  }
+
+  .page-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-intro h1 {
+    font-size: 1.6875rem;
+  }
+
+  .auth-layout {
+    padding: 1rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Panels. A white card with an 11px radius and a hairline. A panel whose first
+ * child is `.panel__header` gets the prototype's full-width header with a rule
+ * under it; a table directly inside a panel runs edge to edge.
+ * ------------------------------------------------------------------------- */
+
+.panel {
+  --panel-pad: 1.5rem;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  margin-top: 3rem;
-  max-width: 44rem;
-  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: var(--r-card);
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: var(--panel-pad);
 }
 
-.empty-state__mark {
+.panel h2 {
+  font-size: 1.3125rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.panel h3 {
+  font-size: 1.0625rem;
+  margin: 0;
+}
+
+.panel > div > h2 + .muted,
+.panel__header p {
+  font-size: 0.75rem;
+  margin: 0.375rem 0 0;
+}
+
+.panel--narrow {
+  max-width: 40rem;
+}
+
+.panel__header {
   align-items: center;
-  background: var(--primary);
-  border-radius: var(--r-lg);
-  color: white;
-  display: inline-flex;
-  font-size: 1.5rem;
-  font-weight: 900;
-  height: 3rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-  width: 3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
 }
 
-.empty-state h2 {
-  font-size: 1.25rem;
+.panel__header > div {
+  min-width: 0;
+}
+
+.panel > .panel__header:first-child {
+  border-bottom: 1px solid var(--line);
+  margin: calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1) 0;
+  padding: 1.3125rem var(--panel-pad);
+}
+
+.panel > .table-scroll {
+  margin: 0 calc(var(--panel-pad) * -1);
+  max-width: none;
+}
+
+.panel > .table-scroll:last-child {
+  margin-bottom: calc(var(--panel-pad) * -1);
+}
+
+.panel > .table-scroll:last-child .table tr:last-child td {
+  border-bottom: 0;
+}
+
+.panel > .pagination:last-child {
+  border-top: 1px solid var(--line);
+  margin: 0 calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1);
+  padding: 0.875rem var(--panel-pad);
+}
+
+/* A heading inside a form that is itself the panel. */
+.panel > h3:first-child,
+form.panel > h2:first-child {
+  font-size: 1.3125rem;
 }
 
 .table-scroll {
@@ -712,36 +1203,92 @@ fieldset.field {
 
 .table {
   border-collapse: collapse;
+  font-size: 0.75rem;
   width: 100%;
 }
 
 .table th,
 .table td {
-  border-bottom: 1px solid var(--line-faint);
-  padding: 0.75rem;
+  padding: 1.0625rem 1.4375rem;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+.table td {
+  border-top: 1px solid rgb(24 43 80 / 5%);
 }
 
 .table th {
-  color: var(--ink-55);
+  background: var(--table-head);
+  color: var(--muted);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding-bottom: 0.8125rem;
+  padding-top: 0.8125rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: var(--paper-raised);
+}
+
+.table td a:not(.button) {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.table td a:not(.button):hover {
+  color: var(--rust);
+}
+
+/* A secondary line under a cell's main value: an email under a name. */
+.cell-sub {
+  color: var(--muted);
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
+
+/* A person: initials in a circle, the name, the address beneath. */
+.person {
+  align-items: center;
+  display: flex;
+  gap: 0.625rem;
+  min-width: 11rem;
+}
+
+.person__avatar {
+  background: #e9ecdf;
+  border-radius: 50%;
+  color: var(--ink);
+  display: grid;
+  flex: none;
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  height: 2rem;
+  place-items: center;
+  width: 2rem;
+}
+
+.person strong {
+  font-weight: 500;
 }
 
 .dialog {
-  border: 0;
-  border-radius: 1rem;
-  box-shadow: 0 2rem 6rem rgb(0 0 0 / 25%);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: 0 24px 90px rgb(24 43 80 / 15%);
+  color: var(--ink);
   max-width: 36rem;
-  padding: 1.5rem;
+  padding: 1.875rem;
   width: calc(100% - 2rem);
 }
 
 .dialog::backdrop {
-  background: rgb(0 0 0 / 45%);
+  background: rgb(11 25 61 / 40%);
 }
 
 .dialog__header {
@@ -751,103 +1298,57 @@ fieldset.field {
   justify-content: space-between;
 }
 
-@media (max-width: 60rem) {
-  /* The rail stops being a rail. It becomes a strip across the top that
-     scrolls sideways, which keeps every destination reachable on a phone
-     without a menu button that would need JavaScript to open. */
-  .app-shell {
-    flex-direction: column;
-  }
-
-  .app-sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    height: auto;
-    padding: 0.75rem 1rem;
-    position: static;
-    width: 100%;
-  }
-
-  .app-brand {
-    padding: 0;
-  }
-
-  .app-nav {
-    display: flex;
-    flex: 1;
-    gap: 0.25rem;
-    min-width: 0;
-    overflow-x: auto;
-  }
-
-  .app-nav__group {
-    display: none;
-  }
-
-  .app-nav__link {
-    white-space: nowrap;
-  }
-
-  .app-sidebar__spacer {
-    display: none;
-  }
-
-  .app-account {
-    border-top: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    /* Without this the name cannot shrink, the strip grows past the viewport
-       and the entire shell scrolls sideways. */
-    min-width: 0;
-    padding: 0;
-  }
-
-  .app-account__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .app-account__email {
-    display: none;
-  }
-
-  .app-account__signout {
-    margin-top: 0;
-  }
-
-  .app-topbar {
-    padding: 0 1rem;
-  }
-
-  .app-content {
-    min-width: 0;
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 44rem) {
-  .auth-layout {
-    padding: 1rem;
-  }
-
-
-}
-
-.panel {
+/* The design's empty and error state: centred, an icon in a soft square, a
+   serif line, one sentence, one way forward. */
+.empty-state {
   background: var(--card);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 1.25rem;
-  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: clamp(2rem, 6vw, 4rem) 1.5rem;
+  text-align: center;
 }
 
-.panel h2 {
-  font-size: 1.0625rem;
+.empty-state__mark {
+  background: #f6f0df;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  display: inline-grid;
+  font-family: var(--font-serif);
+  font-size: 1.375rem;
+  font-weight: 700;
+  height: 3.25rem;
+  margin-bottom: 1.25rem;
+  place-items: center;
+  width: 3.25rem;
+}
+
+.empty-state__mark--rust {
+  background: var(--tint-rust);
+  color: var(--rust);
+}
+
+.empty-state h2 {
+  font-size: 1.5625rem;
+  margin-bottom: 0.625rem;
+}
+
+.empty-state p {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin: 0 auto 1.375rem;
+  max-width: 24rem;
+}
+
+.empty-state .button {
+  margin: 0 auto;
+}
+
+/* An empty table or list inside a panel: said quietly, centred. */
+.panel-empty {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  padding: 1.5rem 0.5rem;
+  text-align: center;
 }
 
 .report-list {
@@ -857,12 +1358,18 @@ fieldset.field {
 
 .report-list__item {
   align-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 1.125rem 1.25rem;
+}
+
+.report-list__item > div {
+  min-width: 0;
 }
 
 .report-list__item p,
@@ -880,8 +1387,8 @@ fieldset.field {
 }
 
 .metric-row {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
   padding: 0.9rem;
 }
 
@@ -890,29 +1397,8 @@ fieldset.field {
   padding: 0 0.35rem;
 }
 
-.panel--narrow {
-  max-width: 32rem;
-}
-
-.panel h2 {
-  margin: 0;
-}
-
-.panel__header {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
-}
-
-.panel__header p {
-  margin-bottom: 0;
-}
-
 .toolbar {
-  /* flex-end rather than end: `end` has mixed support in older engines and
-     autoprefixer warns on it. */
+  /* flex-end rather than end: `end` has mixed support in older engines. */
   align-items: flex-end;
   display: flex;
   flex-wrap: wrap;
@@ -925,48 +1411,29 @@ fieldset.field {
 }
 
 .form-actions {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-/* Anchors styled as buttons, so a plain link can sit beside a submit control
-   without needing JavaScript to navigate. */
-a.button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-/* Status pills follow the prototype: a tinted ground with ink-weight text and
-   a small uppercase label, rather than the traffic-light greens and reds this
-   file used before. The palette has no green or red -- sage and rust carry
-   those meanings, which is what keeps the interface warm. */
-.pill {
-  border-radius: var(--r-pill);
-  display: inline-block;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  padding: 0.1875rem 0.625rem;
-  text-transform: uppercase;
-}
-
-.pill--active {
-  background: color-mix(in srgb, var(--sage) 22%, white);
-  color: #3d5443;
-}
-
-.pill--disabled {
-  background: color-mix(in srgb, var(--rust) 12%, white);
-  color: var(--rust);
+  gap: 0.625rem;
 }
 
 .pagination {
   align-items: center;
+  color: var(--muted);
   display: flex;
+  font-size: 0.6875rem;
   gap: 1rem;
   justify-content: flex-end;
+}
+
+.pagination a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pagination a:hover {
+  color: var(--rust);
 }
 
 .admin-nav {
@@ -979,18 +1446,16 @@ a.button {
 .row-form {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.input--compact,
-.button--compact {
-  font-size: 0.875rem;
-  padding: 0.35rem 0.6rem;
+.row-form .input:not(.input--compact) {
+  flex: 1 1 14rem;
+  width: auto;
 }
 
-/* Visible to a screen reader, not on screen. Each row's mentor control needs a
-   label naming the student, or twenty-five identical "Mentor" selects are
-   indistinguishable when read aloud. */
+/* Visible to a screen reader, not on screen. */
 .visually-hidden {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
@@ -999,6 +1464,511 @@ a.button {
   position: absolute;
   white-space: nowrap;
   width: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Workspace layouts from the prototype: cards in a grid, a main column with a
+ * summary rail, numbered rows, and a stat strip.
+ * ------------------------------------------------------------------------- */
+
+.card-grid {
+  display: grid;
+  gap: 1.125rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+}
+
+.course-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.4375rem;
+  transition: border-color 0.16s;
+}
+
+.course-card:hover {
+  border-color: rgb(24 43 80 / 25%);
+}
+
+.course-card__top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.course-card h2,
+.course-card h3 {
+  font-size: 1.375rem;
+  letter-spacing: -0.02em;
+  margin: 1.1875rem 0 0.4375rem;
+  overflow-wrap: anywhere;
+}
+
+.course-card p {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.course-card__bottom {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  font-size: 0.6875rem;
+  gap: 0.625rem;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.9375rem;
+}
+
+.course-card p + .course-card__bottom,
+.course-card h2 + .course-card__bottom,
+.course-card h3 + .course-card__bottom {
+  margin-top: 1.4375rem;
+}
+
+.initial-block {
+  background: var(--cream-deep);
+  border-radius: 9px;
+  display: grid;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  height: 2.8125rem;
+  place-items: center;
+  width: 2.8125rem;
+}
+
+.two-col {
+  align-items: start;
+  display: grid;
+  gap: 1.375rem;
+  grid-template-columns: minmax(0, 1fr) 17.5rem;
+}
+
+.two-col > * {
+  min-width: 0;
+}
+
+.two-col__main {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.summary-rail {
+  display: grid;
+  gap: 1.25rem;
+  position: sticky;
+  top: 5.875rem;
+}
+
+.summary-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  font-size: 0.75rem;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.summary-row:last-child {
+  border-bottom: 0;
+}
+
+.summary-row > span:first-child {
+  color: var(--muted);
+}
+
+.summary-row strong {
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 61.25rem) {
+  .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summary-rail {
+    position: static;
+  }
+}
+
+.round-list {
+  margin: 0 calc(var(--panel-pad, 1.5rem) * -1);
+}
+
+.round-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: 1.3125rem 1.4375rem;
+}
+
+.round-row:last-child {
+  padding-bottom: 0.25rem;
+}
+
+.round-number {
+  color: #8290a4;
+  flex: none;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  width: 1.875rem;
+}
+
+.round-row__main {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.round-row h3 {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin: 0 0 0.375rem;
+}
+
+.round-row p {
+  color: var(--muted);
+  font-size: 0.6875rem;
+  margin: 0;
+}
+
+.round-row__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.mini-stats {
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  overflow: hidden;
+}
+
+.mini-stats > div {
+  background: var(--card);
+  padding: 1.1875rem 1.375rem;
+}
+
+.mini-stats strong {
+  display: block;
+  font-size: 1.4375rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.mini-stats small {
+  color: var(--muted);
+  font-size: 0.625rem;
+}
+
+/* The overview: section cards, a quick-actions rail and a guide. */
+.overview-grid {
+  display: grid;
+  gap: 1.5625rem;
+  grid-template-columns: minmax(0, 1fr) 17.1875rem;
+}
+
+.overview-grid > * {
+  min-width: 0;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+  font-size: 1.375rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.section-heading p {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin: 0.3125rem 0 0;
+}
+
+.module-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.module {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 10.875rem;
+  padding: 1.25rem;
+  text-decoration: none;
+  transition:
+    border-color 0.16s,
+    transform 0.16s,
+    box-shadow 0.16s;
+}
+
+.module:hover {
+  border-color: rgb(24 43 80 / 33%);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.module__top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+}
+
+.module__category {
+  color: var(--muted);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.module h3 {
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.375rem;
+}
+
+.module p {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 17rem;
+}
+
+.module__link {
+  align-items: center;
+  display: flex;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 1.125rem;
+}
+
+.module__link svg.icon,
+.module--wide > svg.icon {
+  color: var(--rust);
+  height: 1rem;
+  width: 1rem;
+}
+
+.module--wide {
+  align-items: center;
+  flex-direction: row;
+  gap: 0.9375rem;
+  grid-column: 1 / -1;
+  min-height: 0;
+  padding: 1.125rem 1.25rem;
+}
+
+.module--wide h3 {
+  font-size: 1.0625rem;
+}
+
+.module--wide p {
+  max-width: none;
+}
+
+.module--wide > svg.icon {
+  margin-left: auto;
+}
+
+.icon-box {
+  background: #f6f0df;
+  border-radius: var(--r-md);
+  display: grid;
+  flex: none;
+  height: 2.25rem;
+  place-items: center;
+  width: 2.25rem;
+}
+
+.icon-box--sage {
+  background: #edf0e9;
+  color: #506c55;
+}
+
+.icon-box--rust {
+  background: #f9ece4;
+  color: var(--rust);
+}
+
+.quick {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.quick__head {
+  padding: 1.25rem 1.25rem 0.8125rem;
+}
+
+.quick__head h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.quick__head p {
+  color: var(--muted);
+  font-size: 0.6875rem;
+  margin: 0.3125rem 0 0;
+}
+
+.quick__link {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: inherit;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 500;
+  gap: 0.6875rem;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+}
+
+.quick__link:hover {
+  background: var(--cream);
+}
+
+.quick__link > svg.icon:first-child {
+  color: var(--muted);
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.quick__link > svg.icon:last-child {
+  color: var(--muted);
+  height: 0.875rem;
+  margin-left: auto;
+  width: 0.875rem;
+}
+
+.guide {
+  background: var(--cream-deep);
+  border-radius: 10px;
+  margin-top: 1.125rem;
+  overflow: hidden;
+  padding: 1.4375rem 1.3125rem;
+  position: relative;
+}
+
+.guide h2 {
+  font-size: 1.3125rem;
+  line-height: 1.2;
+  margin: 0 0 0.625rem;
+}
+
+.guide > p {
+  color: #566079;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.guide__steps {
+  counter-reset: steps;
+  list-style: none;
+  margin: 1.3125rem 0 0;
+  padding: 0;
+}
+
+.guide__steps li {
+  align-items: center;
+  border-top: 1px solid rgb(24 43 80 / 6%);
+  counter-increment: steps;
+  display: flex;
+  font-size: 0.6875rem;
+  gap: 0.625rem;
+  padding: 0.625rem 0;
+}
+
+.guide__steps li::before {
+  border: 1px solid rgb(24 43 80 / 15%);
+  border-radius: 50%;
+  content: counter(steps);
+  display: grid;
+  flex: none;
+  font-size: 0.625rem;
+  height: 1.25rem;
+  place-items: center;
+  width: 1.25rem;
+}
+
+.guide__steps a {
+  text-decoration: none;
+}
+
+.guide__steps a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 56.25rem) {
+  .overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 44rem) {
+  .module-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .module {
+    min-height: 0;
+  }
+
+  .panel {
+    --panel-pad: 1.1875rem;
+  }
+
+  .table th,
+  .table td {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .round-row {
+    padding: 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .module,
+  .app-nav__link {
+    transition: none;
+  }
+
+  .button:hover:not(:disabled),
+  .module:hover {
+    transform: none;
+  }
 }
 
 /* The protected document viewer. Each page is a canvas the browser painted, not
@@ -1371,7 +2341,7 @@ a.button {
 }
 
 .review-answer {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
   padding-bottom: 1rem;
 }
 
@@ -1454,6 +2424,20 @@ a.button {
       rgb(251 246 227 / 10%) 63%
     )
     0 0 / 400% 100%;
+}
+
+.skeleton {
+  max-width: 100%;
+}
+
+/* The page heading and its lede, while the record's name is unknown. */
+.skeleton--heading {
+  border-radius: var(--r-xs);
+  height: 2.1rem;
+}
+
+.skeleton--lede {
+  margin-top: 0.75rem;
 }
 
 .skeleton--title {
@@ -1606,7 +2590,7 @@ a.button {
   display: grid;
   gap: 0.45rem;
   padding: 1rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
 }
 
 .question-picker-row:last-child {

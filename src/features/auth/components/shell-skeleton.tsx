@@ -1,8 +1,10 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { AppRole } from "../types";
 
-import { AppNav } from "./app-nav";
+import { AppNav, PageEyebrow } from "./app-nav";
+import { roleAreas, roleHomes, roleLabels } from "./role-shell";
 
 // What a screen looks like while its data is still coming.
 //
@@ -19,8 +21,11 @@ import { AppNav } from "./app-nav";
 //   - the brand,
 //   - the navigation, including which item is current: `AppNav` reads the path,
 //     which needs no data,
-//   - the page title, wherever the route knows it. "Users" is a constant.
-//     A record's name is not, so a detail route passes nothing and gets a bar.
+//   - the page title and heading, wherever the route knows them. "Users" is a
+//     constant. A record's name is not, so a detail route passes nothing and
+//     its breadcrumb and heading shimmer instead,
+//   - the eyebrow over the heading, which comes from the path as the
+//     navigation does.
 //
 // The account block is genuinely unknown until the profile loads, so it is the
 // one part of the rail that shimmers.
@@ -137,43 +142,63 @@ export function SkeletonForm({ fields = 4 }: { fields?: number }) {
 
 export function ShellSkeleton({
   children,
+  description = true,
+  heading,
   role,
   title,
 }: {
   children: ReactNode;
+  // Whether the screen has a line under its heading. On by default, because
+  // nearly every screen does; a skeleton without it would jump by a line when
+  // the page arrives.
+  description?: boolean;
+  // The heading, when the page draws one that differs from its title. `null`
+  // when the heading depends on data, such as the signed-in person's name: it
+  // then shimmers rather than showing a word that is about to change.
+  heading?: string | null;
   role: AppRole;
   title?: string;
 }) {
+  const shownHeading = heading === null ? undefined : (heading ?? title);
+
   return (
     <div className="app-shell">
       <aside className="app-sidebar">
-        <div className="app-brand">
+        <Link aria-label="Cospire home" className="app-brand" href={roleHomes[role]}>
           <span aria-hidden="true" className="app-brand__mark">
             C
           </span>
           <span className="app-brand__name">Cospire</span>
-        </div>
+        </Link>
 
         <AppNav role={role} />
 
         <div className="app-sidebar__spacer" />
 
         <div className="app-account">
-          <Skeleton className="skeleton--on-dark" width="70%" />
-          <Skeleton className="skeleton--on-dark skeleton--small" width="90%" />
+          <span aria-hidden="true" className="app-avatar" />
+          <div className="app-account__who skeleton-lines">
+            <Skeleton className="skeleton--on-dark" width="70%" />
+            <Skeleton className="skeleton--on-dark skeleton--small" width="90%" />
+          </div>
         </div>
       </aside>
 
       <div className="app-main">
         <header className="app-topbar">
-          {title ? (
-            <h1 className="app-topbar__title">{title}</h1>
-          ) : (
-            <span className="app-topbar__title">
-              <Skeleton className="skeleton--title" width="240px" />
-            </span>
-          )}
-          <span className="app-topbar__avatar" />
+          <p className="app-breadcrumb">
+            <span>{roleAreas[role]}</span>
+            <span aria-hidden="true">/</span>
+            {title ? (
+              <span className="app-breadcrumb__here">{title}</span>
+            ) : (
+              <Skeleton className="skeleton--small" width="160px" />
+            )}
+          </p>
+          <div className="app-topbar__meta">
+            <span className="app-topbar__role">{roleLabels[role]}</span>
+            <span className="app-topbar__avatar" />
+          </div>
         </header>
 
         {/*
@@ -185,7 +210,22 @@ export function ShellSkeleton({
           <span className="visually-hidden" role="status">
             Loading
           </span>
-          <div className="app-content__inner">{children}</div>
+          <div className="app-content__inner">
+            <div className="page-intro">
+              <div className="page-intro__text">
+                <PageEyebrow role={role} />
+                {shownHeading ? (
+                  <h1>{shownHeading}</h1>
+                ) : (
+                  <Skeleton className="skeleton--heading" width="320px" />
+                )}
+                {description ? (
+                  <Skeleton className="skeleton--lede" width="420px" />
+                ) : null}
+              </div>
+            </div>
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 
 import type { AppRole } from "../types";
 
-// The left panel's navigation, read out of the Client's prototype: a 232px ink
-// rail, group labels in small uppercase, and the active item filled in gold with
-// ink text.
+import { Icon, type IconName } from "./icon";
+
+// The left panel's navigation, as the approved admin workspace prototype draws
+// it: an ink rail, grouped items under small uppercase labels, and the current
+// item filled in gold with an ink dot.
 //
 // A Client Component for one reason only -- `usePathname`, to know which item is
 // current. That runs during server rendering too, so the active item is already
@@ -15,7 +18,7 @@ import type { AppRole } from "../types";
 // look right. The links are plain anchors.
 //
 // **Only routes that exist are listed.** The prototype's rail also shows
-// Curriculums, Mock tests and Mock Analytics, and those screens are not built.
+// Curriculums and Mock Analytics, and those screens are not built.
 // Shipping them as dead links would make a demo look broken at the first click,
 // and shipping them greyed out would put unbuilt scope in front of the Client as
 // though it were nearly done. They arrive when the screens do.
@@ -23,147 +26,104 @@ import type { AppRole } from "../types";
 interface NavItem {
   // Root items match exactly. Without that, "/admin" prefix-matches
   // "/admin/users" and two items light up at once.
+  // The rust line above the page heading on every screen in this section.
+  eyebrow: string;
   exact?: boolean;
   href: string;
-  icon: "book" | "document" | "grid" | "home" | "people" | "question" | "queue" | "template";
+  icon: IconName;
   label: string;
 }
 
-const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
-  admin: {
-    title: "Admin",
-    items: [
-      { href: "/admin", icon: "home", label: "Overview", exact: true },
-      { href: "/admin/courses", icon: "book", label: "Programmes" },
-      { href: "/admin/ars", icon: "grid", label: "ARS" },
-      { href: "/admin/questions", icon: "question", label: "Question bank" },
-      { href: "/admin/mocks", icon: "grid", label: "Mock tests" },
-      { href: "/admin/users", icon: "people", label: "Users" },
-      { href: "/admin/documents", icon: "document", label: "Documents" },
-      { href: "/admin/report-templates", icon: "template", label: "Report templates" },
-    ],
-  },
-  mentor: {
-    title: "Mentor",
-    items: [
-      { href: "/mentor", icon: "queue", label: "Review queue", exact: true },
-      { href: "/mentor/questions", icon: "question", label: "Question bank" },
-    ],
-  },
-  student: {
-    title: "Student",
-    items: [
-      { href: "/student", icon: "home", label: "Home", exact: true },
-      { href: "/student/ars", icon: "grid", label: "ARS" },
-      { href: "/student/documents", icon: "document", label: "Documents" },
-    ],
-  },
+// Groups follow the workspace prototype: the overview on its own, then the
+// learning and assessment sections, then management.
+interface NavGroup {
+  items: NavItem[];
+  title: string;
+}
+
+const navByRole: Record<AppRole, NavGroup[]> = {
+  admin: [
+    { title: "Workspace", items: [{ href: "/admin", icon: "home", label: "Overview", exact: true, eyebrow: "The admin workspace" }] },
+    {
+      title: "Learning & assessment",
+      items: [
+        { href: "/admin/courses", icon: "book", label: "Programmes", eyebrow: "Learning" },
+        { href: "/admin/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
+        { href: "/admin/questions", icon: "question", label: "Question bank", eyebrow: "Assessment" },
+        { href: "/admin/mocks", icon: "test", label: "Mock tests", eyebrow: "Assessment" },
+      ],
+    },
+    {
+      title: "Management",
+      items: [
+        { href: "/admin/users", icon: "users", label: "Users", eyebrow: "People" },
+        { href: "/admin/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
+        { href: "/admin/report-templates", icon: "template", label: "Report templates", eyebrow: "Reporting" },
+      ],
+    },
+  ],
+  mentor: [
+    {
+      title: "Mentor",
+      items: [
+        { href: "/mentor", icon: "queue", label: "Review queue", exact: true, eyebrow: "Mentor" },
+        { href: "/mentor/questions", icon: "question", label: "Question bank", eyebrow: "Mentor" },
+      ],
+    },
+  ],
+  student: [
+    {
+      title: "Student",
+      items: [
+        { href: "/student", icon: "home", label: "Home", exact: true, eyebrow: "Student" },
+        { href: "/student/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
+        { href: "/student/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
+      ],
+    },
+  ],
 };
 
-// Drawn rather than imported: five small glyphs do not justify an icon package,
-// and `package.json` is a human's call under the operating manual anyway.
-function Icon({ name }: { name: NavItem["icon"] }) {
-  const common = {
-    "aria-hidden": true,
-    fill: "none",
-    height: 15,
-    stroke: "currentColor",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    strokeWidth: 1.6,
-    viewBox: "0 0 16 16",
-    width: 15,
-  };
+function isActive(item: NavItem, pathname: string): boolean {
+  return item.exact
+    ? pathname === item.href
+    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
 
-  if (name === "home") {
-    return (
-      <svg {...common}>
-        <path d="M2.5 6.8 8 2.5l5.5 4.3V13a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5Z" />
-      </svg>
-    );
-  }
-  if (name === "book") {
-    return (
-      <svg {...common}>
-        <path d="M2.5 3.5h4a2 2 0 0 1 1.5.7 2 2 0 0 1 1.5-.7h4v9h-4a2 2 0 0 0-1.5.7 2 2 0 0 0-1.5-.7h-4Z" />
-        <path d="M8 4.2v9" />
-      </svg>
-    );
-  }
-  if (name === "people") {
-    return (
-      <svg {...common}>
-        <circle cx="6" cy="6" r="2.2" />
-        <path d="M2.5 13c0-2 1.6-3.3 3.5-3.3S9.5 11 9.5 13" />
-        <path d="M11 4.2a2 2 0 0 1 0 3.8M12 13c0-1.6-.5-2.6-1.4-3.2" />
-      </svg>
-    );
-  }
-  if (name === "document") {
-    return (
-      <svg {...common}>
-        <path d="M4 2.5h5L12 5.5V13a.5.5 0 0 1-.5.5h-7A.5.5 0 0 1 4 13Z" />
-        <path d="M9 2.5v3h3M6 8.5h4M6 10.8h4" />
-      </svg>
-    );
-  }
-  if (name === "grid") {
-    return (
-      <svg {...common}>
-        <rect height="4.4" rx="1" width="4.4" x="2.6" y="2.6" />
-        <rect height="4.4" rx="1" width="4.4" x="9" y="2.6" />
-        <rect height="4.4" rx="1" width="4.4" x="2.6" y="9" />
-        <rect height="4.4" rx="1" width="4.4" x="9" y="9" />
-      </svg>
-    );
-  }
-  if (name === "question") {
-    return (
-      <svg {...common}>
-        <circle cx="8" cy="8" r="5.5" />
-        <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4M8 11.3v.1" />
-      </svg>
-    );
-  }
-  if (name === "template") {
-    return (
-      <svg {...common}>
-        <rect height="11" rx="1.2" width="11" x="2.5" y="2.5" />
-        <path d="M2.5 6.2h11M6.2 6.2v7.3" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <path d="M3 4.5h10M3 8h10M3 11.5h6" />
-    </svg>
-  );
+// The eyebrow above a page heading names the section the page belongs to, and
+// the section is exactly what the navigation already works out from the path.
+// Reading it here means neither a page nor its loading skeleton has to repeat
+// it, so the two cannot disagree.
+export function PageEyebrow({ role }: { role: AppRole }) {
+  const pathname = usePathname() ?? "";
+  const item = navByRole[role].flatMap((group) => group.items).find((entry) => isActive(entry, pathname));
+  return <p className="eyebrow">{item?.eyebrow ?? navByRole[role][0].title}</p>;
 }
 
 export function AppNav({ role }: { role: AppRole }) {
   const pathname = usePathname() ?? "";
-  const { items, title } = navByRole[role];
 
   return (
     <nav aria-label="Sections" className="app-nav">
-      <p className="app-nav__group">{title}</p>
-      {items.map((item) => {
-        const active = item.exact
-          ? pathname === item.href
-          : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {navByRole[role].map((group) => (
+        <Fragment key={group.title}>
+          <p className="app-nav__group">{group.title}</p>
+          {group.items.map((item) => {
+            const active = isActive(item, pathname);
 
-        return (
-          <Link
-            aria-current={active ? "page" : undefined}
-            className={`app-nav__link${active ? " app-nav__link--active" : ""}`}
-            href={item.href}
-            key={item.href}
-          >
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+            return (
+              <Link
+                aria-current={active ? "page" : undefined}
+                className={`app-nav__link${active ? " app-nav__link--active" : ""}`}
+                href={item.href}
+                key={item.href}
+              >
+                <Icon name={item.icon} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </Fragment>
+      ))}
     </nav>
   );
 }
