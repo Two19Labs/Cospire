@@ -3,6 +3,7 @@ import "server-only";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { questionsPageSize, type QuestionFilters } from "../list-params";
+import { parseQuestionRef } from "../question-id";
 import type { Difficulty, QuestionType } from "../question-input";
 
 export interface QuestionListRow {
@@ -42,7 +43,12 @@ export async function listQuestions(filters: QuestionFilters): Promise<QuestionL
     .range(from, from + questionsPageSize - 1);
 
   query = filters.archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
-  if (filters.search) query = query.ilike("body", `%${filters.search}%`);
+  // A search that is a question ID is a lookup, not a text match. `Q00042` never
+  // appears in a question's body, so searching the text for it finds nothing and
+  // reads as "that question is gone".
+  const searchedId = parseQuestionRef(filters.search);
+  if (searchedId !== null) query = query.eq("id", searchedId);
+  else if (filters.search) query = query.ilike("body", `%${filters.search}%`);
   if (filters.sectionId) query = query.eq("section_id", filters.sectionId);
   if (filters.topic) query = query.eq("topic", filters.topic);
   if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
@@ -87,4 +93,41 @@ export async function listQuestions(filters: QuestionFilters): Promise<QuestionL
     rows,
     total,
   };
+}
+
+// The IDs behind the current filter, for the "copy IDs" box on the bank -- the
+// whole filtered set, not just the page, because "every hard DILR question" is
+// the list an admin wants to paste into a mock document.
+//
+// Bounded, and honest about the bound. An unbounded id query is the screen that
+// is fine at 500 questions and dies at 50,000, which operating manual §8
+// forbids; silently returning the first 2,000 without saying so would build a
+// mock that quietly missed the rest.
+export const questionIdCopyLimit = 2000;
+
+export async function listQuestionIds(
+  filters: QuestionFilters,
+): Promise<{ ids: number[]; truncated: boolean }> {
+  const supabase = await createServerSupabaseClient();
+
+  let query = supabase
+    .from("questions")
+    .select("id")
+    .is("parent_id", null)
+    .order("id", { ascending: true })
+    .limit(questionIdCopyLimit + 1);
+
+  query = filters.archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
+  const searchedId = parseQuestionRef(filters.search);
+  if (searchedId !== null) query = query.eq("id", searchedId);
+  else if (filters.search) query = query.ilike("body", `%${filters.search}%`);
+  if (filters.sectionId) query = query.eq("section_id", filters.sectionId);
+  if (filters.topic) query = query.eq("topic", filters.topic);
+  if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
+  if (filters.type) query = query.eq("type", filters.type);
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Unable to list question IDs: ${error.message}`);
+  const ids = (data ?? []).map((row) => Number(row.id));
+  return { ids: ids.slice(0, questionIdCopyLimit), truncated: ids.length > questionIdCopyLimit };
 }

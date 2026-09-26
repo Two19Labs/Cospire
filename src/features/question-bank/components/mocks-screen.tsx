@@ -11,8 +11,11 @@ export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Prof
     <RoleShell profile={profile} title="Mock tests">
       <section className="panel">
         <div className="panel__header">
-          <div><h2>Mocks</h2><p className="muted">Build timed tests from the question bank.</p></div>
-          <Link className="button button--primary" href="/admin/mocks/new">New mock</Link>
+          <div><h2>Mocks</h2><p className="muted">Build timed tests from the question bank, by picking questions or by pasting a document that quotes their IDs.</p></div>
+          <div className="toolbar">
+            <Link className="button button--primary button--compact" href="/admin/mocks/new">New mock</Link>
+            <Link className="button button--secondary button--compact" href="/admin/mocks/import">Build from a document</Link>
+          </div>
         </div>
         {mocks.length === 0 ? <p className="muted">No mocks yet.</p> : (
           <div className="table-scroll"><Table><TableHead><TableRow>

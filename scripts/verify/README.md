@@ -310,3 +310,49 @@ Two things it knows:
 - **The resolve hook handles `@/` as well as extensionless imports.** Without the
   alias, `import-spec.ts` fails to load and the failure reads like a missing npm
   package rather than a path alias.
+
+## mock-document.mjs — mocks built from a document that quotes question IDs
+
+```bash
+node --env-file=.env.local scripts/verify/mock-document.mjs http://127.0.0.1:3020
+```
+
+Drives the sentence the feature exists for: an admin copies question IDs out of
+the bank, writes the mock as a plain-text document, pastes it in, and the mock is
+built with nothing picked by hand — through the existing `save_mock`, so there is
+no new write path and no migration.
+
+It creates its own admin, mentor and student in org 1 and a rival admin in org 5,
+its own question sections, and seven questions covering an MCQ, a TITA, one it
+then archives, a DI set with two sub-questions, a DI set with none, and one
+belonging to the rival organisation. Everything it made is deleted in a `finally`
+block and the live counts are printed afterwards.
+
+**Ten refusals, each proven by counting mock rows before and after.** The absence
+of an error proves nothing: a parse that refuses and a parse that quietly builds
+half a mock both answer 200. So every refusal check reads the mock count twice
+and requires it not to move, as well as requiring the sentence the admin is shown.
+
+Three things it knows, each of which cost a run:
+
+- **Both forms on the screen carry a field called `pasted`**, and both carry the
+  hidden `$ACTION_*` fields a `useActionState` form is made of, so the paste form
+  is found by looking for the `<textarea>` rather than by the absence of hidden
+  inputs.
+- **The service key cannot archive a `questions` row.** The row's CHECK calls
+  `private.question_images_valid`, granted to `authenticated` only, so the update
+  changes nothing and reports nothing. The archived-question check archives
+  through the admin's own session and asserts one row changed.
+- **A staged import row cannot be seeded as approved.**
+  `private.guard_question_import_write()` forces every insert to
+  `pending_review` with no question and no reviewer — exactly the admin review
+  Annexure A requires — so the check inserts the batch and then *decides* it,
+  both through the admin's own session. Seeding it as approved with the service
+  key left the row pending, and the screen honestly showed 0 approved.
+
+### The baseline this run measured, 2026-09-26
+
+After cleanup: **0 mocks, 0 mock sections, 0 mock questions, 0 questions, 0
+question keys, 0 staged imports, 5 profiles, 2 documents** — and **1 question
+section** (id 39, "QA", created 2026-09-21) and **8 courses**, neither of which
+this run created and neither of which it may delete.
