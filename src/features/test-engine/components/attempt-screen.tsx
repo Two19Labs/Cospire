@@ -96,6 +96,7 @@ export function AttemptScreen({
           </p>
           <form action={nextSectionAction} id="enter-form">
             <input name="attemptId" type="hidden" value={attemptId} />
+            <input name="sectionId" type="hidden" value={state.sectionId} />
             <SubmitButton pendingLabel="Opening…">Begin {section?.title}</SubmitButton>
           </form>
           {auto ? <AutoSubmit formId="enter-form" /> : null}
@@ -124,6 +125,7 @@ export function AttemptScreen({
             {leaving ? (
               <form action={nextSectionAction}>
                 <input name="attemptId" type="hidden" value={attemptId} />
+                <input name="sectionId" type="hidden" value={state.sectionId ?? ""} />
                 <SubmitButton pendingLabel="Moving on…">Leave section</SubmitButton>
               </form>
             ) : (
@@ -147,6 +149,7 @@ export function AttemptScreen({
           {following ? (
             <form action={nextSectionAction}>
               <input name="attemptId" type="hidden" value={attemptId} />
+              <input name="sectionId" type="hidden" value={state.sectionId ?? ""} />
               <SubmitButton pendingLabel="Moving on…">Go to {following.title}</SubmitButton>
             </form>
           ) : (

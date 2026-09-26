@@ -45,7 +45,7 @@ export function MockAttemptsPanel({ attempts }: { attempts: MockAttemptRow[] }) 
                 <TableCell>
                   {attempt.status === "in_progress" ? "In progress" : attempt.submittedBy === "timer" ? "Submitted when time ran out" : "Submitted"}
                 </TableCell>
-                <TableCell>{attempt.score ?? "—"}</TableCell>
+                <TableCell>{attempt.score ?? (attempt.status === "submitted" ? <span className="muted">Being scored</span> : "—")}</TableCell>
                 <TableCell>
                   <span className={`pill pill--${attempt.proctored ? "active" : "disabled"}`}>
                     {attempt.proctored ? "Proctored" : "Unproctored (phone)"}

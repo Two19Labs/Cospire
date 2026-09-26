@@ -6,6 +6,7 @@ import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, 
 
 import { startAttemptAction } from "../actions/attempt-actions";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
+import { TouchFlag } from "./touch-flag";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 
@@ -116,6 +117,7 @@ export function StudentMockScreen({ error, mock, phone, profile }: { error?: str
           ) : (
             <form action={startAttemptAction}>
               <input name="mockId" type="hidden" value={mock.id} />
+              <TouchFlag />
               <SubmitButton pendingLabel="Starting…">{used === 0 ? "Start test" : "Start another attempt"}</SubmitButton>
             </form>
           )}
