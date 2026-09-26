@@ -343,6 +343,17 @@ file claims every pull request gets a clickable URL, and it appears none of them
 ever has -- every verification row here is either a local production build or the
 deployed URL, never a preview.
 
+**And a second reason, measured on 2026-09-26:** a preview URL is behind
+**Vercel deployment protection**. Every path on
+`https://cospire-git-feat-mock-docs-cospire.vercel.app` -- `/login`,
+`/dashboard`, `/admin/mocks/import` alike -- answers `302` to
+`https://vercel.com/sso-api?...`, so **no verify script can drive a preview at
+all** without a protection-bypass token, whatever the environment variables say.
+A browser signed in to the Vercel account passes that gate, which is why the
+error boundary was what a person saw. Two separate things to fix, then: the
+Preview environment variables, and either a bypass token for the harness or
+disabling protection on previews.
+
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
