@@ -1,0 +1,71 @@
+/* Analytics bars. Recharts is named in the stack but is not in package.json,
+   and package.json is a human's call, so the charts are plain HTML: one bar per
+   table row, beside the number it draws. The number is always printed; the bar
+   only makes it quicker to compare down a column. */
+
+.stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 1rem 0;
+}
+
+.stat {
+  border: 1px solid rgba(24, 43, 80, 0.15);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.stat strong {
+  display: block;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.barCell {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  min-width: 9rem;
+}
+
+.barValue {
+  flex: 0 0 3.2rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.track {
+  background: rgba(24, 43, 80, 0.08);
+  border-radius: 4px;
+  flex: 1 1 auto;
+  height: 0.6rem;
+  overflow: hidden;
+}
+
+.fill {
+  background: var(--color-ink, #182b50);
+  border-radius: 0 4px 4px 0;
+  display: block;
+  height: 100%;
+}
+
+.fillWeak {
+  background: var(--color-rust, #b5471f);
+}
+
+.trend {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (forced-colors: active) {
+  .fill {
+    background: CanvasText;
+  }
+}

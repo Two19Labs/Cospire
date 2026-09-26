@@ -38,6 +38,7 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
       { href: "/admin/ars", icon: "grid", label: "ARS" },
       { href: "/admin/questions", icon: "question", label: "Question bank" },
       { href: "/admin/mocks", icon: "grid", label: "Mock tests" },
+      { href: "/admin/analytics", icon: "grid", label: "Analytics" },
       { href: "/admin/users", icon: "people", label: "Users" },
       { href: "/admin/documents", icon: "document", label: "Documents" },
       { href: "/admin/report-templates", icon: "template", label: "Report templates" },
@@ -48,6 +49,7 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
     items: [
       { href: "/mentor", icon: "queue", label: "Review queue", exact: true },
       { href: "/mentor/questions", icon: "question", label: "Question bank" },
+      { href: "/mentor/analytics", icon: "grid", label: "Student results" },
     ],
   },
   student: {
@@ -57,6 +59,7 @@ const navByRole: Record<AppRole, { items: NavItem[]; title: string }> = {
       { href: "/student/ars", icon: "grid", label: "ARS" },
       { href: "/student/documents", icon: "document", label: "Documents" },
       { href: "/student/mocks", icon: "question", label: "Mock tests" },
+      { href: "/student/analytics", icon: "grid", label: "Analytics" },
     ],
   },
 };
