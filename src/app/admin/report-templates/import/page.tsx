@@ -13,5 +13,14 @@ export default async function ImportReportTemplatePage() {
   const supabase = await createServerSupabaseClient();
   const { data: courses, error } = await supabase.from("courses").select("id, title").order("title").limit(200);
   if (error) throw new Error(`Unable to load programmes: ${error.message}`);
-  return <RoleShell profile={profile} title="Import report template"><TemplateImportScreen courses={courses ?? []} prompt={buildTemplateImportPrompt()} /></RoleShell>;
+  return (
+    <RoleShell
+      back={{ href: "/admin/report-templates", label: "Back to templates" }}
+      description="The same reviewed paste-to-build workflow as the ARS process importer. Nothing is saved until you inspect the preview and confirm."
+      profile={profile}
+      title="Build a report template"
+    >
+      <TemplateImportScreen courses={courses ?? []} prompt={buildTemplateImportPrompt()} />
+    </RoleShell>
+  );
 }

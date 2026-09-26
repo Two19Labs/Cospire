@@ -128,7 +128,7 @@ export function UploadForm({ folders }: { folders: string[] }) {
   }
 
   return (
-    <form className="auth-form" noValidate onSubmit={onSubmit}>
+    <form className="stack-form stack-form--wide" noValidate onSubmit={onSubmit}>
       <Input
         error={fieldErrors.title}
         label="Title"

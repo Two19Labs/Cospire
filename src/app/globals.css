@@ -1911,6 +1911,87 @@ form.panel > h2:first-child {
   width: 1rem;
 }
 
+/* A file input drawn as the prototype's drop zone. It is still the native
+   control, so choosing a file works exactly as the browser always did. */
+.input[type="file"] {
+  background: #fdfbf5;
+  border: 1px dashed rgb(24 43 80 / 25%);
+  border-radius: 9px;
+  color: var(--muted);
+  padding: 1.25rem;
+}
+
+.input[type="file"]::file-selector-button {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  margin-right: 0.875rem;
+  padding: 0.4375rem 0.6875rem;
+}
+
+.doc-link {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.625rem;
+}
+
+.doc-link svg.icon {
+  color: var(--sage);
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+/* Older forms write a bare <label> and control as siblings inside the
+   stack, with no classes. Draw them as the field label and input every other
+   form uses, so no form looks unfinished. */
+.stack-form > label:not(.choice):not(.field),
+.field-row > label:not(.choice):not(.field) {
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: -0.625rem;
+}
+
+.stack-form > input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([class]),
+.stack-form > select:not([class]),
+.stack-form > textarea:not([class]),
+.field-row > input:not([class]),
+.table select:not([class]) {
+  background: var(--card);
+  border: 1px solid rgb(24 43 80 / 19%);
+  border-radius: var(--r-sm);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  min-height: 2.5rem;
+  min-width: 0;
+  padding: 0.5625rem 0.75rem;
+  width: 100%;
+}
+
+.stack-form > textarea:not([class]) {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.stack-form > input:not([class]):focus,
+.stack-form > select:not([class]):focus,
+.stack-form > textarea:not([class]):focus,
+.field-row > input:not([class]):focus,
+.table select:not([class]):focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.table .stack-form {
+  gap: 0.5rem;
+  min-width: 11rem;
+}
+
 .mini-stats {
   background: var(--line);
   border: 1px solid var(--line);
