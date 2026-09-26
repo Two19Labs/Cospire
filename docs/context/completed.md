@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-09-27 | **Admin workspace re-skin** (`feat/admin-ui`, committed locally, not pushed, no pull request) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
 | 2026-09-26 | **Mocks built from documents that quote question IDs** (`feat/mock-docs`, pull request raised, not merged) | Readable IDs (`Q00042`, computed from `questions.id`, **no migration**), the ID on every bank row, on the question page and searchable there; copyable ID lists for the current bank filter and at the end of an import; and a plain-text mock template parsed directly -- **no model call**, because an ID must match exactly -- resolving to the existing `save_mock`. `scripts/verify/mock-document.mjs` **29/29** against a local production build and the hosted database, every refusal proven by counting mock rows; 39 new unit tests, 454 in all; typecheck, lint and build pass. Counts back to baseline. See *Mocks built from documents that quote question IDs* |
 | 2026-09-23 | The seven PR #49 review findings fixed (`fix/mock-builder-review`) | Section slots map by slot, not position (`mapSectionSlots`, unit tested); a question archived after selection renders as a removable row rather than a hidden input, and the save says "archived" rather than "unavailable"; the section embed is read as the object PostgREST returns for a many-to-one; a missing section field is refused; childless DI sets are listed and refused instead of filtered after `.range()` had paged, which shortened picker pages; `/admin/mocks/[id]` uses `parseId`; images dropped from a saved question are deleted from Storage after the save, and an upload removed before saving is deleted immediately. 19/19 over HTTP, 354 tests, typecheck, lint and build. **Two facts worth keeping:** the service key cannot write `questions` rows directly -- the row CHECK calls `private.question_images_valid`, granted to `authenticated` only -- so a verify script must archive through the admin's own session; and `notFound()` on a route carrying a `loading.tsx` renders the not-found page with status 200, because the skeleton has already streamed the headers, the same trade-off the role layouts record for `redirect()` |
 | 2026-09-23 | Question bank, Phase 3 parts 1-4, merged as `1c7073d` (PR #49) | Schema with answer keys in their own table, the numerical normaliser, authoring for admins and mentors, paste-a-prompt import with per-question review, and the admin-only mock builder. Seven migrations were already applied, so `main` and the database came back into step on merge. Verified before merge: 41/41 SQL, 36/36 authoring over HTTP, 25/25 importer, 9/9 mock SQL and 10/10 mock HTTP, 342 tests, typecheck, lint and build. A high-effort review at merge time raised seven findings, all in the mock builder and none student-facing: blank section slot misfiles questions; a question archived after selection makes its mock uneditable; the picker's section column always shows "-" (many-to-one embed read as an array, confirmed against the schema); a missing section field files into section one; childless DI stimuli filtered after paging; `/admin/mocks/[id]` 500s on an unsafe integer id; removed image uploads are never deleted from the bucket. To be fixed before any real mock is built |
@@ -573,6 +574,53 @@ value. That was the other thing the script could not settle on its first run.
 is back.** That is the one outstanding verification, and the one thing between
 this and a finished item 2. Re-checked on 2026-09-24, more than two hours after
 the first attempt: still 503.
+
+### The admin workspace re-skin, 2026-09-27
+
+Built on `feat/admin-ui` in `C:\Cospire\Cospire-admin-ui` to the prototype in
+`../design-previews/admin-workspace.html` (sources `../tmp/admin-prototype/`).
+Visual only: no query, Server Action, validation, RLS, route or data shape
+changed, and no dependency, config or migration was added.
+
+**What changed.** Tokens re-tuned (12% ink line, slate muted text, 11px card
+radius, tinted tags and notices). The shell now has a grouped rail with the
+prototype's line icons, a breadcrumb title bar, and the page heading in the
+content area under a rust section eyebrow (read from the path by `PageEyebrow`
+in `app-nav.tsx`, so page and skeleton cannot disagree), with an optional
+description, actions and back link passed to `RoleShell`. `ShellSkeleton`
+draws the same chrome and heading. Screens: overview as section cards, quick
+actions and a guide (the prototype's totals row left out: nothing counts
+them); users as a people table; programmes and ARS processes as cards; ARS
+process page with numbered round rows beside an at-a-glance rail; question
+bank filter bar, tagged table and new-question type tabs (the existing
+`?type=` links); documents and report templates as filtered tables with the
+create forms below; workspace-styled error and 404 states. Tabs on record
+pages are in-page anchors, so nothing needs JavaScript. Prototype sample data
+was not used; the list pages use the prototype's headings and ledes.
+
+**Not built, on purpose:** the prototype's curriculum builder, mock delivery,
+analytics, "View as" switcher and JavaScript-only dialogs, drawer menu and
+toasts. On a phone the rail stays the existing horizontal strip.
+
+**Shared and cross-feature files.** `src/shared/**` was not touched. New
+helpers live in `src/features/auth/components/` (`icon.tsx`,
+`person-cell.tsx`) for a human to promote. The mock builder
+(`mock-editor.tsx`, `mock-routes.tsx`, `mocks/[id]/page.tsx`, owned by
+`feat/test-engine`) was not edited and is styled by CSS only.
+
+**Verified.** Typecheck, lint, 469/469 tests, production build. Every admin
+route photographed at 1440px from a local production build against the hosted
+database with throwaway accounts (deleted afterwards, profile count back to
+5), and ten screens at 390px with the document scroll width measured: none
+scroll sideways after a fix (hidden header labels were escaping the table
+scroll box; `.table-scroll` is now positioned). The phone check found that
+bug; the desktop shots found three spacing bugs, all fixed. Mentor and
+student home, ARS and documents screens photographed and render sensibly.
+The `ars-scheduling.mjs` CSS contract (`minmax(11rem` in `.field-row`) and the
+text contracts in `scripts/verify/` were kept. **Not verified:** any
+interaction in a real browser (clicks, JavaScript-on forms, pending labels),
+a deployed or preview URL, the round preview and import review with data, and
+none of the `scripts/verify/` suites was re-run against this branch.
 
 ### Mocks built from documents that quote question IDs, 2026-09-26
 

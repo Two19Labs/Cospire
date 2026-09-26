@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-26 (Asia/Calcutta)
+Last updated: 2026-09-27 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -320,7 +320,7 @@ Two operational notes that cost time to rediscover:
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 | Claude agent (mock-docs) | `feat/mock-docs` | Readable question IDs, copyable ID lists, and mocks built from a plain-text document that quotes them. No migration. | `src/features/question-bank/question-id.ts`, `mock-document.ts`, their tests, `actions/mock-document-actions.ts`, `queries/resolve-mock-document.ts`, `components/mock-import-*.tsx`, `components/copy-ids.tsx`, plus edits to `list-params.ts`, `queries/list-questions.ts`, `components/questions-screen.tsx`, `components/question-page.tsx`, `components/import-review-screen.tsx`, `components/mocks-screen.tsx`, `src/app/admin/mocks/import/**`, `scripts/verify/mock-document.mjs` | Built and verified 29/29 locally; pull request raised, not merged | 2026-09-26 |
-| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,empty-workspace}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` (except `mock-editor.tsx` and `mock-routes.tsx`, held by `feat/test-engine`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**` (except `mocks/[id]/page.tsx`) | In progress | 2026-09-26 |
+| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/app/{error,not-found}.tsx`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,icon,person-cell}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` (not `mock-editor.tsx` / `mock-routes.tsx`, held by `feat/test-engine`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**` (not `mocks/[id]/page.tsx`) | **Built, committed locally, not pushed, no pull request.** 8 commits; typecheck, lint, 469 tests and build pass; every admin screen photographed at 1440px and ten at 390px (no sideways scroll). Not browser-driven: no click-through, no JavaScript-on interaction was exercised. Expect a conflict with `feat/test-engine` in `app-nav.tsx` (its "Mock tests" student item) and here. Details in `docs/context/completed.md`, *The admin workspace re-skin* | 2026-09-27 |
 
 **One branch is held as of 2026-09-26**: `feat/mock-docs`, in the worktree
 `C:\Cospire\Cospire-mock-docs` on port 3020, with its pull request raised.
@@ -639,10 +639,11 @@ clause 4.4 applies -- notified in writing at the time, not at the end.
 - **The owner should decide where "Ashoka" belongs.** The `kind` backfill filed
   it as an ARS process because it holds one round called "ARS Template". If it
   is really aptitude-prep content, one click on its ARS page moves it back.
-- **The per-screen re-skin of the remaining panels.** The shell, the ARS form
-  and the loading states are done; the panels inside the admin and mentor
-  screens have not been gone through one by one. Start with the mentor report
-  screen, whose layout the owner called broken in the 2026-09-21 demo.
+- **The per-screen re-skin.** The admin screens are re-skinned to the approved
+  workspace prototype on `feat/admin-ui` (not yet merged). The mentor and
+  student panels have not been gone through one by one; they only inherit the
+  new shell and tokens. Start with the mentor report screen, whose layout the
+  owner called broken in the 2026-09-21 demo.
 - **From the 2026-09-21 call, all small, none built yet:**
   - a full-screen mode for the document viewer
   - the watermark as one small mark in the bottom left of each page, in place
