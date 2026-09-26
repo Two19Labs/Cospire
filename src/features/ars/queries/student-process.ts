@@ -3,11 +3,16 @@ import "server-only";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { toFormSpec, type FormSpec, type RoundMode } from "../form-schema";
+import { readRoundMockId } from "../round-mock";
+import { readMocksForStudent, type RoundMockForStudent } from "./round-mock";
 
 export type RoundState = "done" | "locked" | "not_open" | "open" | "reviewed" | "waiting";
 
 export interface ProcessRound {
   dueAt: string | null;
+  // The mock test an off-platform aptitude round is sat as, as this student
+  // may see it. Null when the round links none.
+  mock: RoundMockForStudent | null;
   id: number;
   isLate: boolean;
   name: string;
@@ -80,7 +85,7 @@ export async function listStudentProcesses(): Promise<StudentProcess[]> {
     supabase.from("courses").select("id, title").order("title", { ascending: true }).limit(50),
     supabase
       .from("ars_rounds")
-      .select("id, course_id, name, submission_mode, sort_order, opens_at, due_at")
+      .select("id, course_id, name, submission_mode, sort_order, opens_at, due_at, config")
       .order("sort_order", { ascending: true })
       .order("id", { ascending: true })
       .limit(200),
@@ -96,13 +101,24 @@ export async function listStudentProcesses(): Promise<StudentProcess[]> {
     (submissionsResult.data ?? []).map((row) => [row.round_id, row]),
   );
 
+  // Linked mocks, read through the student's own session: a mock they have not
+  // been granted comes back as no row and is shown as "not opened yet".
+  const mockIdByRound = new Map<number, number>();
+  for (const round of roundsResult.data ?? []) {
+    const mockId = round.submission_mode === "offline" ? readRoundMockId(round.config) : null;
+    if (mockId !== null) mockIdByRound.set(round.id, mockId);
+  }
+  const mocks = await readMocksForStudent([...mockIdByRound.values()]);
+
   const byCourse = new Map<number, ProcessRound[]>();
   for (const round of roundsResult.data ?? []) {
+    const mockId = mockIdByRound.get(round.id);
     const list = byCourse.get(round.course_id) ?? [];
     list.push({
       dueAt: round.due_at,
       id: round.id,
       isLate: submissions.get(round.id)?.submitted_late === true,
+      mock: mockId === undefined ? null : (mocks.get(mockId) ?? null),
       name: round.name,
       opensAt: round.opens_at,
       sortOrder: round.sort_order,

@@ -287,7 +287,7 @@ try {
   );
   record(
     "the preview says the aptitude round is not live yet",
-    preview.body.includes("Not live yet") && preview.body.includes("test engine is not built"),
+    preview.body.includes("Not live yet") && preview.body.includes("Link it to a mock test"),
   );
   record(
     "the preview names the questions it would create, and how many",
