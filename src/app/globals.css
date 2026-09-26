@@ -294,6 +294,10 @@ svg.icon {
   width: auto;
 }
 
+.stack-form > .form-end {
+  width: auto;
+}
+
 /* Two fields that belong together -- an opening date and a deadline -- side by
    side on a desk, stacked on a phone. */
 .field-row {
@@ -1184,6 +1188,11 @@ a.button {
   border-bottom: 0;
 }
 
+.panel > .table-scroll + .pagination,
+.panel > .round-list + .pagination {
+  margin-top: -1.25rem;
+}
+
 .panel > .pagination:last-child {
   border-top: 1px solid var(--line);
   margin: 0 calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1);
@@ -1410,6 +1419,56 @@ form.panel > h2:first-child {
   margin: 0;
 }
 
+/* A panel's search bar, edge to edge on a warm ground above its table. */
+.panel > .toolbar--bleed:first-child {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  margin: calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1) 0;
+  padding: 1.0625rem var(--panel-pad);
+}
+
+.panel > .toolbar--bleed:first-child + .table-scroll {
+  margin-top: -1.25rem;
+}
+
+.toolbar .field__label {
+  color: var(--muted);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A form's closing bar: cancel on the left of the submit, a rule above. */
+.form-end {
+  align-items: center;
+  background: #fffdf8;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  margin: 0.25rem calc(var(--panel-pad, 1.5rem) * -1) calc(var(--panel-pad, 1.5rem) * -1);
+  padding: 1.125rem var(--panel-pad, 1.5rem);
+}
+
+.panel > .form-end,
+.panel > form > .form-end {
+  border-radius: 0 0 var(--r-card) var(--r-card);
+}
+
+.table .table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table .table__actions > * {
+  margin-left: auto;
+}
+
+.table .table__actions form {
+  display: inline-block;
+}
+
 .form-actions {
   align-items: center;
   display: flex;
@@ -1424,6 +1483,10 @@ form.panel > h2:first-child {
   font-size: 0.6875rem;
   gap: 1rem;
   justify-content: flex-end;
+}
+
+.pagination__count {
+  margin-right: auto;
 }
 
 .pagination a {

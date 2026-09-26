@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
@@ -29,6 +30,16 @@ const roleLabels: Record<Profile["role"], string> = {
   student: "Student",
 };
 
+// The page heading, shared with the loading skeleton so the two cannot drift.
+export const usersHeading = "People, thoughtfully connected.";
+
+// Two initials for the circle beside a name: first and last word.
+function initialsOf(name: string, email: string): string {
+  const words = (name || email).trim().split(/\s+/).filter(Boolean);
+  const letters = words.length > 1 ? [words[0], words[words.length - 1]] : words;
+  return letters.map((word) => word.charAt(0).toUpperCase()).join("") || "?";
+}
+
 interface UsersScreenProps {
   error: UserListError | null;
   mentorByStudent: Map<string, MentorOption>;
@@ -51,34 +62,25 @@ export function UsersScreen({
   const lastOnPage = (page - 1) * usersPageSize + rows.length;
 
   return (
-    <RoleShell profile={profile} title="Users">
+    <RoleShell
+      actions={
+        <Link className="button button--primary" href="/admin/users/new">
+          <Icon name="plus" />
+          Add a user
+        </Link>
+      }
+      description="Manage accounts, roles and mentor assignments."
+      heading={usersHeading}
+      profile={profile}
+      title="Users"
+    >
       <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>People in your organisation</h2>
-            <p className="muted">
-              {total === 0
-                ? "No users match."
-                : `Showing ${firstOnPage}-${lastOnPage} of ${total}.`}
-            </p>
-          </div>
-          <Link className="button button--primary" href="/admin/users/new">
-            Create user
-          </Link>
-        </div>
-
-        {error ? (
-          <p className="form-error" role="alert">
-            {userListErrors[error]}
-          </p>
-        ) : null}
-
         {/*
           A plain GET form. Search belongs in the URL so a result page can be
           linked, reloaded and bookmarked, and it keeps this whole screen a
           Server Component with no hydration cost.
         */}
-        <form action="/admin/users" className="toolbar" method="get">
+        <form action="/admin/users" className="toolbar toolbar--bleed" method="get">
           <label className="field field--inline" htmlFor="user-search">
             <span className="field__label">Search</span>
             <input
@@ -86,7 +88,7 @@ export function UsersScreen({
               defaultValue={search}
               id="user-search"
               name="q"
-              placeholder="Name or email"
+              placeholder="Search names or emails"
               type="search"
             />
           </label>
@@ -94,27 +96,35 @@ export function UsersScreen({
             Search
           </SubmitButton>
           {search ? (
-            <Link className="muted" href="/admin/users">
+            <Link className="button button--ghost" href="/admin/users">
               Clear
             </Link>
           ) : null}
         </form>
 
+        {error ? (
+          <p className="notice notice--error" role="alert">
+            {userListErrors[error]}
+          </p>
+        ) : null}
+
         {rows.length === 0 ? (
-          <p className="muted">
+          <p className="panel-empty">
             {search
-              ? "No user matches that search."
-              : "No users yet. Create the first one."}
+              ? "No user matches that search. Try a different name or email."
+              : "No users yet. Add the first one."}
           </p>
         ) : (
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
+                <TableHeaderCell>Name &amp; email</TableHeaderCell>
                 <TableHeaderCell>Role</TableHeaderCell>
                 <TableHeaderCell>Status</TableHeaderCell>
                 <TableHeaderCell>Mentor</TableHeaderCell>
+                <TableHeaderCell>
+                  <span className="visually-hidden">Actions</span>
+                </TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -123,44 +133,24 @@ export function UsersScreen({
 
                 return (
                   <TableRow key={row.id}>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.email}</TableCell>
-                    <TableCell>{roleLabels[row.role]}</TableCell>
                     <TableCell>
-                      <div className="row-form">
-                        <span className={`pill pill--${row.status}`}>
-                          {row.status === "active" ? "Active" : "Disabled"}
+                      <div className="person">
+                        <span aria-hidden="true" className="person__avatar">
+                          {initialsOf(row.name, row.email)}
                         </span>
-                        {/*
-                          Deliberately absent on the admin's own row. The
-                          database stops the last admin being disabled, but with
-                          a second admin present it would happily let someone
-                          lock themselves out of the console they are standing
-                          in. The action refuses it too, in case the form is
-                          posted by hand.
-                        */}
-                        {row.id === profile.id ? null : (
-                          <form action={setUserStatusAction}>
-                            <input name="page" type="hidden" value={page} />
-                            <input name="q" type="hidden" value={search} />
-                            <input
-                              name="userId"
-                              type="hidden"
-                              value={row.id}
-                            />
-                            <input
-                              name="status"
-                              type="hidden"
-                              value={
-                                row.status === "active" ? "disabled" : "active"
-                              }
-                            />
-                            <SubmitButton variant="secondary" compact>
-                              {row.status === "active" ? "Disable" : "Enable"}
-                            </SubmitButton>
-                          </form>
-                        )}
+                        <div>
+                          <strong>{row.name}</strong>
+                          <span className="cell-sub">{row.email}</span>
+                        </div>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="tag tag--ink">{roleLabels[row.role]}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`pill pill--${row.status}`}>
+                        {row.status === "active" ? "Active" : "Disabled"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {row.role !== "student" ? (
@@ -206,6 +196,44 @@ export function UsersScreen({
                         </form>
                       )}
                     </TableCell>
+                    <TableCell className="table__actions">
+                      {/*
+                        Deliberately absent on the admin's own row. The
+                        database stops the last admin being disabled, but with
+                        a second admin present it would happily let someone
+                        lock themselves out of the console they are standing
+                        in. The action refuses it too, in case the form is
+                        posted by hand.
+                      */}
+                      {row.id === profile.id ? (
+                        <span className="tag">Your account</span>
+                      ) : (
+                        <form action={setUserStatusAction}>
+                          <input name="page" type="hidden" value={page} />
+                          <input name="q" type="hidden" value={search} />
+                          <input
+                            name="userId"
+                            type="hidden"
+                            value={row.id}
+                          />
+                          <input
+                            name="status"
+                            type="hidden"
+                            value={
+                              row.status === "active" ? "disabled" : "active"
+                            }
+                          />
+                          <SubmitButton
+                            className="button--ghost"
+                            compact
+                            pendingLabel={row.status === "active" ? "Disabling…" : "Enabling…"}
+                            variant="secondary"
+                          >
+                            {row.status === "active" ? "Disable" : "Enable"}
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -213,33 +241,40 @@ export function UsersScreen({
           </Table>
         )}
 
-        {pageCount > 1 ? (
-          <nav aria-label="Pagination" className="pagination">
-            {page > 1 ? (
-              <Link
-                href={buildUsersHref({ page: page - 1, search })}
-                rel="prev"
-              >
-                Previous
-              </Link>
-            ) : (
-              <span className="muted">Previous</span>
-            )}
-            <span className="muted">
-              Page {page} of {pageCount}
-            </span>
-            {page < pageCount ? (
-              <Link
-                href={buildUsersHref({ page: page + 1, search })}
-                rel="next"
-              >
-                Next
-              </Link>
-            ) : (
-              <span className="muted">Next</span>
-            )}
-          </nav>
-        ) : null}
+        <nav aria-label="Pagination" className="pagination">
+          <span className="pagination__count">
+            {total === 0
+              ? "No users match."
+              : `Showing ${firstOnPage}-${lastOnPage} of ${total} users`}
+          </span>
+          {pageCount > 1 ? (
+            <>
+              {page > 1 ? (
+                <Link
+                  href={buildUsersHref({ page: page - 1, search })}
+                  rel="prev"
+                >
+                  Previous
+                </Link>
+              ) : (
+                <span>Previous</span>
+              )}
+              <span>
+                Page {page} of {pageCount}
+              </span>
+              {page < pageCount ? (
+                <Link
+                  href={buildUsersHref({ page: page + 1, search })}
+                  rel="next"
+                >
+                  Next
+                </Link>
+              ) : (
+                <span>Next</span>
+              )}
+            </>
+          ) : null}
+        </nav>
       </section>
     </RoleShell>
   );

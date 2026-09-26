@@ -3,13 +3,14 @@ import {
   SkeletonPanel,
   SkeletonTable,
 } from "@/features/auth/components/shell-skeleton";
+import { usersHeading } from "@/features/admin/components/users-screen";
 
-// A paginated table of people: four columns, a page of rows.
+// A search bar over a paginated table of people.
 export default function Loading() {
   return (
-    <ShellSkeleton role="admin" title="Users">
+    <ShellSkeleton heading={usersHeading} role="admin" title="Users">
       <SkeletonPanel title={false}>
-        <SkeletonTable columns={4} rows={6} />
+        <SkeletonTable columns={5} rows={6} />
       </SkeletonPanel>
     </ShellSkeleton>
   );

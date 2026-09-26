@@ -23,63 +23,65 @@ export function CreateUserForm() {
   );
 
   return (
-    <form action={action} className="auth-form">
-      <Input
-        autoComplete="off"
-        error={state.fieldErrors.name}
-        label="Full name"
-        name="name"
-        required
-        type="text"
-      />
-      <Input
-        autoComplete="off"
-        error={state.fieldErrors.email}
-        label="Email"
-        name="email"
-        placeholder="student@cospire.in"
-        required
-        type="email"
-      />
-      <SelectField
-        defaultValue="student"
-        error={state.fieldErrors.role}
-        label="Role"
-        name="role"
-        options={roleOptions}
-      />
-      {/*
-        minLength belongs here. Sign-in deliberately has none, because rules
-        enforced where a password is *checked* lock out accounts that predate
-        them; this is where one is *set*, which is the right place to state the
-        rule. It matches the policy pushed to Supabase in config.toml.
-      */}
-      <Input
-        autoComplete="new-password"
-        error={state.fieldErrors.password}
-        label="Initial password"
-        minLength={passwordMinLength}
-        name="password"
-        required
-        type="password"
-      />
-      <p className="muted">
+    <form action={action} className="stack-form stack-form--wide">
+      <div className="form-grid">
+        <Input
+          autoComplete="off"
+          error={state.fieldErrors.name}
+          label="Full name"
+          name="name"
+          required
+          type="text"
+        />
+        <Input
+          autoComplete="off"
+          error={state.fieldErrors.email}
+          label="Email address"
+          name="email"
+          placeholder="student@cospire.in"
+          required
+          type="email"
+        />
+        <SelectField
+          defaultValue="student"
+          error={state.fieldErrors.role}
+          label="Role"
+          name="role"
+          options={roleOptions}
+        />
+        {/*
+          minLength belongs here. Sign-in deliberately has none, because rules
+          enforced where a password is *checked* lock out accounts that predate
+          them; this is where one is *set*, which is the right place to state the
+          rule. It matches the policy pushed to Supabase in config.toml.
+        */}
+        <Input
+          autoComplete="new-password"
+          error={state.fieldErrors.password}
+          label="Initial password"
+          minLength={passwordMinLength}
+          name="password"
+          required
+          type="password"
+        />
+      </div>
+      <p className="notice">
         At least {passwordMinLength} characters, with an uppercase letter, a
-        lowercase letter and a digit. No email is sent, so tell the person their
-        password yourself.
+        lowercase letter and a digit. <strong>No email is sent</strong>, so tell
+        the person their password yourself.
       </p>
       {state.error ? (
         <p className="form-error" role="alert">
           {state.error}
         </p>
       ) : null}
-      <div className="form-actions">
+      <div className="form-end">
+        <Link className="button button--ghost" href="/admin/users">
+          Cancel
+        </Link>
         <Button disabled={pending} type="submit">
           {pending ? "Creating..." : "Create user"}
         </Button>
-        <Link className="button button--secondary" href="/admin/users">
-          Cancel
-        </Link>
       </div>
     </form>
   );
