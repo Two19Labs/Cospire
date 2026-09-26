@@ -10,6 +10,7 @@ import { nextSection, paperState, type PaperItem } from "../paper";
 import type { AttemptView } from "../queries/attempt-view";
 import { AutoSubmit } from "./auto-submit";
 import { Countdown } from "./countdown";
+import { ProctorWatch } from "./proctor-watch";
 import styles from "./exam.module.css";
 
 const errors: Record<string, string> = {
@@ -167,6 +168,7 @@ export function AttemptScreen({
   return (
     <RoleShell profile={profile} title={view.mock.title}>
       {notice}
+      {view.mock.proctoringEnabled && view.attempt.proctored ? <ProctorWatch attemptId={attemptId} /> : null}
       <form action={saveAnswerAction} id="question-form">
         <input name="attemptId" type="hidden" value={attemptId} />
         <input name="questionId" type="hidden" value={item.questionId} />

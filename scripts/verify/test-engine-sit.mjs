@@ -7,6 +7,8 @@
 //
 // It waits about a minute and a half once, for a one-minute paper's clock and
 // its 30-second grace to run out.
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 
@@ -91,17 +93,44 @@ const pathOf = (location) => (location ? new globalThis.URL(location, BASE).path
 // so "not found" arrives as status 200 carrying the not-found page. Judge by
 // what the page says, and by what it does not.
 const isNotFound = (page) => page.body.includes("Page not found");
+// The proctoring action is called from client code, not a form, so it is
+// posted the way the browser does: the page URL, a Next-Action header carrying
+// its id, and the arguments as JSON. The id changes on every build, so it is
+// read from the built chunks.
+function findActionId(name) {
+  const stack = [".next/static/chunks"];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const entry of readdirSync(dir)) {
+      const file = join(dir, entry);
+      if (statSync(file).isDirectory()) { stack.push(file); continue; }
+      if (!file.endsWith(".js")) continue;
+      const match = readFileSync(file, "utf8").match(new RegExp(String.raw`createServerReference\)\("([a-f0-9]+)"[^)]{0,120}"` + name + '"'));
+      if (match) return match[1];
+    }
+  }
+  throw new Error(`action ${name} not found in the build`);
+}
+async function callAction(path, key, id, args) {
+  const r = await fetch(`${BASE}${path}`, {
+    body: JSON.stringify(args),
+    headers: { accept: "text/x-component", cookie: people[key].cookie, "content-type": "text/plain;charset=UTF-8", "next-action": id, origin: BASE },
+    method: "POST",
+  });
+  return { body: await r.text(), status: r.status };
+}
+const eventsFor = async (attempt) => (await service.from("proctor_events").select("event_type").eq("attempt_id", attempt)).data ?? [];
 async function saveQuestion(input) {
   const { data, error } = await people.admin.client.rpc("save_question", input);
   if (error) throw error;
   made.questions.push(data);
   return data;
 }
-async function saveMock(title, minutes, sections, { allowMobile = true, maxAttempts = 1, negative = 1 } = {}) {
+async function saveMock(title, minutes, sections, { allowMobile = true, maxAttempts = 1, negative = 1, proctoring = false } = {}) {
   const { data, error } = await people.admin.client.rpc("save_mock", {
     p_allow_mobile: allowMobile, p_duration_minutes: minutes, p_instructions: "Read each question carefully.",
     p_max_attempts: maxAttempts, p_mock_id: null, p_negative_marking: negative,
-    p_negative_marking_types: ["mcq", "mcq_multi"], p_proctoring_enabled: false, p_sections: sections, p_title: `${title} ${stamp}`,
+    p_negative_marking_types: ["mcq", "mcq_multi"], p_proctoring_enabled: proctoring, p_sections: sections, p_title: `${title} ${stamp}`,
   });
   if (error) throw error;
   made.mocks.push(data);
@@ -133,12 +162,13 @@ try {
   // Children first in cleanup: they reference the passage.
   made.questions.sort((a, b) => (a === child ? -1 : b === child ? 1 : 0));
 
-  const free = await saveMock("Sit free", 30, [{ durationMinutes: null, questions: [q1, q2], title: "All questions" }], { maxAttempts: 2 });
+  const free = await saveMock("Sit free", 30, [{ durationMinutes: null, questions: [q1, q2], title: "All questions" }], { maxAttempts: 2, proctoring: true });
   const sectioned = await saveMock("Sit sectioned", 20, [
     { durationMinutes: 10, questions: [q1], title: "QA" },
     { durationMinutes: 10, questions: [passage, child], title: "DI" },
   ]);
-  const quick = await saveMock("Sit quick", 1, [{ durationMinutes: null, questions: [q1], title: "All questions" }]);
+  const quick = await saveMock("Sit quick", 1, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { proctoring: true });
+  const proctorAction = findActionId("recordProctorEvent");
   const noPhones = await saveMock("Sit no phones", 30, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { allowMobile: false });
 
   // ---- Granting, through the admin's Students panel.
@@ -199,6 +229,18 @@ try {
   const { data: afterOther } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
   check("another student's post changes nothing", afterOther.answer.options[0] === "b");
 
+  // ---- Proctoring: warn and log, never submit (slice 4.4).
+  const attemptPath = `/student/attempts/${attemptId}`;
+  await callAction(attemptPath, "student", proctorAction, [attemptId, "tab_hidden"]);
+  let logged = await eventsFor(attemptId);
+  check("a tab switch on a proctored attempt is logged", logged.length === 1 && logged[0].event_type === "tab_hidden");
+  await callAction(attemptPath, "student", proctorAction, [attemptId, "screenshot"]);
+  await callAction(attemptPath, "other", proctorAction, [attemptId, "copy"]);
+  logged = await eventsFor(attemptId);
+  check("an unknown event type, and another student's event on this attempt, log nothing", logged.length === 1);
+  const { data: stillOpen } = await service.from("attempts").select("status").eq("id", attemptId).single();
+  check("logging an event never ends the attempt", stillOpen.status === "in_progress");
+
   // ---- Submit and score.
   const confirm = await post(`/student/attempts/${attemptId}`, "student", formWith(screen.body, 'name="questionId"'), [["intent", "submit"]]);
   check("submit asks for confirmation first", pathOf(confirm.location) === `/student/attempts/${attemptId}?confirm=submit`);
@@ -211,6 +253,10 @@ try {
   check("each answer carries its marks", marks.find((m) => m.question_id === q1)?.marks_awarded == -1 && marks.find((m) => m.question_id === q2)?.is_correct === true);
   const result = await get(`/student/attempts/${attemptId}`, "student");
   check("the result shows the score, the key and the solution", result.body.includes("Your result") && result.body.includes("A. Alpha") && result.body.includes("Alpha is right."));
+  await callAction(attemptPath, "student", proctorAction, [attemptId, "paste"]);
+  check("nothing is logged after submitting", (await eventsFor(attemptId)).length === 1);
+  const adminView = await get(`/admin/mocks/${free}`, "admin");
+  check("the admin's Attempts panel shows the attempt and its logged event", adminView.body.includes("Attempts") && adminView.body.includes("Sit student") && adminView.body.includes("Switching away from the tab ×1"));
   await post(`/student/attempts/${attemptId}`, "student", formWith(screen.body, 'name="questionId"'), [["answer", "a"], ["goto", "2"]]);
   const { data: afterSubmit } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
   check("no answer changes after submitting", afterSubmit.answer.options[0] === "b");
@@ -255,6 +301,9 @@ try {
   const qAttempt = Number(pathOf(qStart.location).match(/\/student\/attempts\/(\d+)/)?.[1]);
   const { data: qRow } = await service.from("attempts").select("proctored, started_at").eq("id", qAttempt).single();
   check("a phone attempt is stored unproctored", qRow.proctored === false);
+  await callAction(`/student/attempts/${qAttempt}`, "student", proctorAction, [qAttempt, "tab_hidden"]);
+  check("a phone attempt is never proctored, so nothing is logged", (await eventsFor(qAttempt)).length === 0);
+  check("the admin sees the phone attempt marked unproctored", (await get(`/admin/mocks/${quick}`, "admin")).body.includes("Unproctored (phone)"));
   const qScreen = await get(`/student/attempts/${qAttempt}`, "student");
   console.log("      waiting 95 seconds for the one-minute clock and its grace...");
   await new Promise((resolve) => setTimeout(resolve, 95_000));
@@ -284,8 +333,10 @@ try {
   }
   if (made.sections.length) await service.from("question_sections").delete().in("id", made.sections);
   for (const p of Object.values(people)) {
-    await service.from("profiles").delete().eq("id", p.id);
-    await service.auth.admin.deleteUser(p.id);
+    const { error: profileError } = await service.from("profiles").delete().eq("id", p.id);
+    if (profileError) console.log(`cleanup: profile ${p.id} not deleted: ${profileError.message}`);
+    const { error: userError } = await service.auth.admin.deleteUser(p.id);
+    if (userError) console.log(`cleanup: user ${p.id} not deleted: ${userError.message}`);
   }
   const after = await counts();
   console.log("after   ", JSON.stringify(after));

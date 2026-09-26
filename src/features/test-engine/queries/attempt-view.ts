@@ -28,7 +28,7 @@ export interface AttemptView {
   attempt: AttemptSummary & { mockId: number };
   entered: EnteredSection[];
   items: PaperItem[];
-  mock: { durationMinutes: number; negativeMarking: number; negativeMarkingTypes: string[]; title: string };
+  mock: { durationMinutes: number; negativeMarking: number; negativeMarkingTypes: string[]; proctoringEnabled: boolean; title: string };
   questions: Map<number, PaperQuestion>;
   responses: Map<number, Response>;
   sections: PaperSection[];
@@ -74,7 +74,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
   const [mockResult, sectionResult, placedResult, enteredResult, responseResult] = await Promise.all([
     supabase
       .from("mocks")
-      .select("title, duration_minutes, negative_marking, negative_marking_types")
+      .select("title, duration_minutes, negative_marking, negative_marking_types, proctoring_enabled")
       .eq("id", attempt.mock_id)
       .maybeSingle(),
     supabase.from("mock_sections").select("id, title, duration_minutes, sort_order").eq("mock_id", attempt.mock_id),
@@ -171,6 +171,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
       durationMinutes: mockResult.data.duration_minutes,
       negativeMarking: mockResult.data.negative_marking,
       negativeMarkingTypes: mockResult.data.negative_marking_types,
+      proctoringEnabled: mockResult.data.proctoring_enabled,
       title: mockResult.data.title,
     },
     questions,
