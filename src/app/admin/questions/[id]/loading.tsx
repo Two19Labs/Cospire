@@ -3,7 +3,7 @@ import { ShellSkeleton, SkeletonForm, SkeletonPanel } from "@/features/auth/comp
 // The question editor's fields.
 export default function Loading() {
   return (
-    <ShellSkeleton role="admin">
+    <ShellSkeleton role="admin" title="Edit question">
       <SkeletonPanel>
         <SkeletonForm fields={6} />
       </SkeletonPanel>

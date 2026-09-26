@@ -93,18 +93,19 @@ export function QuestionEditor({
         <input key={name} name={name} type="hidden" value={value} />
       ))}
 
-      <div>
-        <h2>{questionTypeLabels[type]}</h2>
-        {isSet ? (
+      <div className="panel__header">
+        <div>
+          <h2>{questionTypeLabels[type]}</h2>
           <p className="muted">
-            The shared passage or chart. Save it, then add its sub-questions,
-            which carry the marks.
+            {isSet
+              ? "The shared passage or chart. Save it, then add its sub-questions, which carry the marks."
+              : "Section, topic, difficulty and marks are required on every question."}
           </p>
-        ) : null}
+        </div>
       </div>
 
       {state.problems.length > 0 ? (
-        <div className="form-error" role="alert">
+        <div className="notice notice--error" role="alert">
           <p>This question was not saved:</p>
           <ul>
             {state.problems.map((problem) => (
@@ -290,7 +291,7 @@ export function QuestionEditor({
         </label>
       )}
 
-      <div className="form-actions">
+      <div className="form-end">
         <SubmitButton pendingLabel="Saving…">
           {submitLabel ?? (questionId ? "Save changes" : "Save question")}
         </SubmitButton>

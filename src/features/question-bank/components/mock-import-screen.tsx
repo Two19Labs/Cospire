@@ -118,7 +118,7 @@ export function MockImportScreen() {
           />
         </label>
         {problems.length > 0 ? (
-          <div className="form-error" role="alert">
+          <div className="notice notice--error" role="alert">
             <p>Nothing was created. Fix these and paste it again:</p>
             <ul>
               {problems.map((problem) => (

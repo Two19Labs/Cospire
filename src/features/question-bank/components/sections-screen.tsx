@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
@@ -7,6 +5,9 @@ import { SubmitButton } from "@/shared/ui";
 import { createSectionAction, deleteSectionAction, updateSectionAction } from "../actions/section-actions";
 import { sectionErrors, sectionNotices, type SectionError, type SectionNotice } from "../list-params";
 import type { QuestionSection } from "../queries/list-sections";
+
+// The page heading, shared with the loading skeleton.
+export const sectionsHeading = "A shared structure.";
 
 // The fixed list of sections the analytics group on. Plain forms throughout,
 // so every change here works with scripting off.
@@ -22,33 +23,37 @@ export function SectionsScreen({
   sections: QuestionSection[];
 }) {
   return (
-    <RoleShell profile={profile} title="Question sections">
-      <p>
-        <Link href="/admin/questions">← Back to the question bank</Link>
-      </p>
+    <RoleShell
+      back={{ href: "/admin/questions", label: "Back to the question bank" }}
+      description="Keep question categories consistent across assessments. Every question belongs to one of these, and the score breakdown a student sees is by section."
+      heading={sectionsHeading}
+      profile={profile}
+      title="Question sections"
+    >
+      {notice ? <p className="notice notice--success">{sectionNotices[notice]}</p> : null}
+      {error ? (
+        <p className="notice notice--error" role="alert">
+          {sectionErrors[error]}
+        </p>
+      ) : null}
 
       <section className="panel">
-        <div>
-          <h2>Sections</h2>
-          <p className="muted">
-            Every question belongs to one of these, and the score breakdown a
-            student sees is by section. Lower numbers come first.
-          </p>
+        <div className="panel__header">
+          <div>
+            <h2>Sections</h2>
+            <p className="muted">Lower numbers come first.</p>
+          </div>
+          <span className="tag">
+            {sections.length} {sections.length === 1 ? "section" : "sections"}
+          </span>
         </div>
 
-        {notice ? <p className="muted">{sectionNotices[notice]}</p> : null}
-        {error ? (
-          <p className="form-error" role="alert">
-            {sectionErrors[error]}
-          </p>
-        ) : null}
-
         {sections.length === 0 ? (
-          <p className="muted">No sections yet. Add the first below.</p>
+          <p className="panel-empty">No sections yet. Add the first below.</p>
         ) : (
-          <div className="choice-list">
+          <div className="edit-rows">
             {sections.map((section) => (
-              <div className="toolbar" key={section.id}>
+              <div className="edit-row" key={section.id}>
                 <form action={updateSectionAction} className="row-form">
                   <input name="sectionId" type="hidden" value={section.id} />
                   <label className="field field--inline" htmlFor={`section-name-${section.id}`}>
@@ -62,7 +67,7 @@ export function SectionsScreen({
                       required
                     />
                   </label>
-                  <label className="field field--inline" htmlFor={`section-order-${section.id}`}>
+                  <label className="field" htmlFor={`section-order-${section.id}`}>
                     <span className="field__label">Order</span>
                     <input
                       className="input input--compact"
@@ -76,7 +81,7 @@ export function SectionsScreen({
                     Save
                   </SubmitButton>
                 </form>
-                <span className="muted">
+                <span className="tag">
                   {section.questionCount} {section.questionCount === 1 ? "question" : "questions"}
                 </span>
                 {section.questionCount === 0 ? (
@@ -93,8 +98,15 @@ export function SectionsScreen({
         )}
       </section>
 
+      <p className="notice">
+        Sections are shared by the whole organisation. A section containing
+        questions cannot be removed.
+      </p>
+
       <section className="panel panel--narrow">
-        <h2>Add a section</h2>
+        <div className="panel__header">
+          <h2>Add a section</h2>
+        </div>
         <form action={createSectionAction} className="stack-form">
           <label className="field" htmlFor="new-section-name">
             <span className="field__label">Name</span>

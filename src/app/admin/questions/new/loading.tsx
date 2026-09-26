@@ -1,9 +1,10 @@
-import { ShellSkeleton, SkeletonForm, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
+import { ShellSkeleton, SkeletonForm, SkeletonLines, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
 
 // The question editor's fields.
 export default function Loading() {
   return (
-    <ShellSkeleton role="admin">
+    <ShellSkeleton heading="Create a question" role="admin" title="New question">
+      <SkeletonLines count={1} />
       <SkeletonPanel>
         <SkeletonForm fields={6} />
       </SkeletonPanel>

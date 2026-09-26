@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
@@ -27,6 +28,16 @@ import { difficulties, questionTypeLabels, questionTypes } from "../question-inp
 import { questionIdCopyLimit, type QuestionListPage } from "../queries/list-questions";
 import type { QuestionSection } from "../queries/list-sections";
 import { CopyIds } from "./copy-ids";
+
+// The admin page heading, shared with the loading skeleton.
+export const questionBankHeading = "A stronger question bank.";
+
+// Sage for easy, gold for medium, rust for hard, as the prototype tags them.
+const difficultyTone: Record<string, string> = {
+  easy: "tag--sage",
+  hard: "tag--rust",
+  medium: "tag--gold",
+};
 
 function preview(body: string): string {
   const flat = body.replace(/\s+/g, " ").trim();
@@ -62,11 +73,39 @@ export function QuestionsScreen({
   );
 
   return (
-    <RoleShell profile={profile} title="Question bank">
+    <RoleShell
+      actions={
+        <>
+          {profile.role === "admin" ? (
+            <>
+              <Link className="button button--secondary" href="/admin/questions/sections">
+                Manage sections
+              </Link>
+              <Link className="button button--secondary" href="/admin/questions/import">
+                Import questions
+              </Link>
+            </>
+          ) : null}
+          {sections.length > 0 ? (
+            <Link className="button button--primary" href={buildNewQuestionHref(base, "mcq")}>
+              <Icon name="plus" />
+              New question
+            </Link>
+          ) : null}
+        </>
+      }
+      description="Find, organise and refine the questions behind every assessment. Every question carries a section, topic, difficulty and marks."
+      heading={profile.role === "admin" ? questionBankHeading : undefined}
+      profile={profile}
+      title="Question bank"
+    >
       {sections.length === 0 ? (
-        <section className="panel">
+        <section className="empty-state">
+          <span aria-hidden="true" className="empty-state__mark">
+            <Icon name="question" />
+          </span>
           <h2>Add sections first</h2>
-          <p className="muted">
+          <p>
             Every question belongs to a section, such as QA, LR or DI, and the
             analytics group scores by it.{" "}
             {profile.role === "admin"
@@ -74,60 +113,29 @@ export function QuestionsScreen({
               : "An admin sets the list of sections; ask one to add them."}
           </p>
           {profile.role === "admin" ? (
-            <p>
-              <Link className="button button--primary" href="/admin/questions/sections">
-                Manage sections
-              </Link>
-            </p>
+            <Link className="button button--primary" href="/admin/questions/sections">
+              Manage sections
+            </Link>
           ) : null}
         </section>
-      ) : (
-        <section className="panel">
-          <div className="panel__header">
-            <div>
-              <h2>New question</h2>
-              <p className="muted">Every question needs a section, topic, difficulty and marks.</p>
-            </div>
-            {profile.role === "admin" ? (
-              <div className="toolbar">
-                <Link className="button button--primary button--compact" href="/admin/questions/import">
-                  Import questions
-                </Link>
-                <Link className="button button--secondary button--compact" href="/admin/questions/sections">
-                  Manage sections
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="toolbar">
-            {questionTypes.map((type) => (
-              <Link className="button button--secondary" href={buildNewQuestionHref(base, type)} key={type}>
-                {questionTypeLabels[type]}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      ) : null}
+
+      {notice ? <p className="notice notice--success">{questionNotices[notice]}</p> : null}
 
       <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>{filters.archived ? "Archived questions" : "Questions"}</h2>
-            <p className="muted">
-              {total === 0 ? "No questions match." : `Showing ${firstOnPage}-${lastOnPage} of ${total}.`}
-            </p>
-          </div>
-        </div>
-
-        {notice ? <p className="muted">{questionNotices[notice]}</p> : null}
-
-        <form action={base} className="toolbar" method="get">
+        <form action={base} className="toolbar toolbar--bleed" method="get">
           <label className="field field--inline" htmlFor="question-search">
             <span className="field__label">Search</span>
-            <input className="input" defaultValue={filters.search} id="question-search" name="q" type="search" />
-            <span className="field__hint">Words in the question, or a question ID such as Q00042.</span>
+            <input
+              className="input"
+              defaultValue={filters.search}
+              id="question-search"
+              name="q"
+              placeholder="Question text, or an ID such as Q00042"
+              type="search"
+            />
           </label>
-          <label className="field field--inline" htmlFor="filter-section">
+          <label className="field" htmlFor="filter-section">
             <span className="field__label">Section</span>
             <select
               className="input input--compact"
@@ -143,7 +151,7 @@ export function QuestionsScreen({
               ))}
             </select>
           </label>
-          <label className="field field--inline" htmlFor="filter-topic">
+          <label className="field" htmlFor="filter-topic">
             <span className="field__label">Topic</span>
             <select className="input input--compact" defaultValue={filters.topic} id="filter-topic" name="topic">
               <option value="">All</option>
@@ -154,7 +162,7 @@ export function QuestionsScreen({
               ))}
             </select>
           </label>
-          <label className="field field--inline" htmlFor="filter-difficulty">
+          <label className="field" htmlFor="filter-difficulty">
             <span className="field__label">Difficulty</span>
             <select
               className="input input--compact"
@@ -170,7 +178,7 @@ export function QuestionsScreen({
               ))}
             </select>
           </label>
-          <label className="field field--inline" htmlFor="filter-type">
+          <label className="field" htmlFor="filter-type">
             <span className="field__label">Type</span>
             <select className="input input--compact" defaultValue={filters.type ?? ""} id="filter-type" name="type">
               <option value="">All</option>
@@ -181,7 +189,7 @@ export function QuestionsScreen({
               ))}
             </select>
           </label>
-          <label className="field field--inline" htmlFor="filter-status">
+          <label className="field" htmlFor="filter-status">
             <span className="field__label">Show</span>
             <select
               className="input input--compact"
@@ -197,80 +205,95 @@ export function QuestionsScreen({
             Filter
           </SubmitButton>
           {filtered ? (
-            <Link className="muted" href={base}>
+            <Link className="button button--ghost" href={base}>
               Clear
             </Link>
           ) : null}
         </form>
 
         {rows.length === 0 ? (
-          <p className="muted">{filtered ? "No question matches that filter." : "No questions yet."}</p>
+          <p className="panel-empty">
+            {filtered
+              ? "No question matches that filter. Try a different search or clear the filters."
+              : "No questions yet. Write the first one, or import a paper."}
+          </p>
         ) : (
-          <div className="table-scroll">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>ID</TableHeaderCell>
-                  <TableHeaderCell>Question</TableHeaderCell>
-                  <TableHeaderCell>Type</TableHeaderCell>
-                  <TableHeaderCell>Section</TableHeaderCell>
-                  <TableHeaderCell>Topic</TableHeaderCell>
-                  <TableHeaderCell>Difficulty</TableHeaderCell>
-                  <TableHeaderCell>Marks</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{filters.archived ? "Archived question" : "Question"}</TableHeaderCell>
+                <TableHeaderCell>Section &amp; topic</TableHeaderCell>
+                <TableHeaderCell>Type</TableHeaderCell>
+                <TableHeaderCell>Difficulty</TableHeaderCell>
+                <TableHeaderCell>
+                  <span className="visually-hidden">Action</span>
+                </TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="table__primary">
+                    <Link href={buildQuestionHref(base, row.id)}>{preview(row.body)}</Link>
+                    <span className="cell-sub">
                       <code>{formatQuestionId(row.id)}</code>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={buildQuestionHref(base, row.id)}>{preview(row.body)}</Link>
-                    </TableCell>
-                    <TableCell>
-                      {questionTypeLabels[row.type]}
-                      {row.type === "di_stimulus" ? (
-                        <span className="muted">
-                          {" "}
-                          · {row.childCount} {row.childCount === 1 ? "question" : "questions"}
-                        </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{sectionName.get(row.sectionId) ?? "—"}</TableCell>
-                    <TableCell>{row.topic}</TableCell>
-                    <TableCell>{row.difficulty}</TableCell>
-                    <TableCell>{row.type === "di_stimulus" ? "—" : row.marks}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      {" · "}
+                      {row.type === "di_stimulus"
+                        ? `${row.childCount} sub-${row.childCount === 1 ? "question" : "questions"}`
+                        : `${row.marks} ${Number(row.marks) === 1 ? "mark" : "marks"}`}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="tag">{sectionName.get(row.sectionId) ?? "—"}</span>
+                    <span className="cell-sub">{row.topic}</span>
+                  </TableCell>
+                  <TableCell>{questionTypeLabels[row.type]}</TableCell>
+                  <TableCell>
+                    <span className={`tag ${difficultyTone[row.difficulty] ?? ""}`}>{row.difficulty}</span>
+                  </TableCell>
+                  <TableCell className="table__actions">
+                    <Link className="title-link" href={buildQuestionHref(base, row.id)}>
+                      Edit →
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
 
-        {pageCount > 1 ? (
+        {total === 0 ? null : (
           <nav aria-label="Pagination" className="pagination">
-            {page > 1 ? (
-              <Link href={buildQuestionsHref(base, { ...filters, page: page - 1 })} rel="prev">
-                Previous
-              </Link>
-            ) : (
-              <span className="muted">Previous</span>
-            )}
-            <span className="muted">
-              Page {page} of {pageCount}
+            <span className="pagination__count">
+              {total === 0 ? "No questions match." : `Showing ${firstOnPage}-${lastOnPage} of ${total} questions`}
             </span>
-            {page < pageCount ? (
-              <Link href={buildQuestionsHref(base, { ...filters, page: page + 1 })} rel="next">
-                Next
-              </Link>
-            ) : (
-              <span className="muted">Next</span>
-            )}
-          </nav>
-        ) : null}
+            {pageCount > 1 ? (
+              <>
+                {page > 1 ? (
+                  <Link href={buildQuestionsHref(base, { ...filters, page: page - 1 })} rel="prev">
+                    Previous
+                  </Link>
+                ) : (
+                  <span>Previous</span>
+        )}
+              <span>
+                Page {page} of {pageCount}
+              </span>
+              {page < pageCount ? (
+                <Link href={buildQuestionsHref(base, { ...filters, page: page + 1 })} rel="next">
+                  Next
+                </Link>
+              ) : (
+                <span>Next</span>
+              )}
+            </>
+          ) : null}
+        </nav>
+        )}
+      </section>
 
-        {questionIds.ids.length > 0 ? (
+      {questionIds.ids.length > 0 ? (
+        <section className="panel">
           <CopyIds
             hint={`${questionIds.ids.length} ${
               questionIds.ids.length === 1 ? "question" : "questions"
@@ -280,8 +303,13 @@ export function QuestionsScreen({
             ids={formatQuestionIdList(questionIds.ids)}
             label="Question IDs for this list, to paste into a mock document"
           />
-        ) : null}
-      </section>
+        </section>
+      ) : null}
+
+      <p className="notice">
+        Answer keys and solutions are part of the authoring view. DI sets keep
+        their shared passage and sub-questions together.
+      </p>
     </RoleShell>
   );
 }

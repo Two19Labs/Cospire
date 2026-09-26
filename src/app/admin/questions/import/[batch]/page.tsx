@@ -18,7 +18,12 @@ export default async function ReviewImportPage({
   const query = await searchParams;
 
   return (
-    <RoleShell profile={profile} title="Review import">
+    <RoleShell
+      back={{ href: "/admin/questions/import", label: "All imports" }}
+      description="Compare each extracted question with the document, correct anything missing, then approve or reject it."
+      profile={profile}
+      title="Review import"
+    >
       <ImportReviewRoute
         batchId={batch}
         notice={typeof query.notice === "string" ? query.notice : null}

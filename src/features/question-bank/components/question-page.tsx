@@ -13,7 +13,7 @@ import {
   type QuestionNotice,
 } from "../list-params";
 import { formatQuestionId } from "../question-id";
-import { questionTypeLabels, type QuestionType } from "../question-input";
+import { questionTypeLabels, questionTypes, type QuestionType } from "../question-input";
 import type { QuestionForEditing } from "../queries/get-question";
 import type { QuestionSection } from "../queries/list-sections";
 import { emptyQuestionValues, QuestionEditor } from "./question-editor";
@@ -46,29 +46,55 @@ export function QuestionPage({
   const title = question ? "Edit question" : "New question";
 
   return (
-    <RoleShell profile={profile} title={title}>
-      <p>
-        <Link href={parent ? buildQuestionHref(base, parent.id) : base}>
-          ← {parent ? "Back to the DI set" : "Back to the question bank"}
-        </Link>
-      </p>
-
-      {question ? (
-        <p className="muted">
-          Question ID <code>{formatQuestionId(question.id)}</code>. Quote it in a
-          mock document to put this question in a mock. An archived question keeps
-          its ID.
-        </p>
+    <RoleShell
+      back={
+        parent
+          ? { href: buildQuestionHref(base, parent.id), label: "Back to the DI set" }
+          : { href: base, label: "Back to the question bank" }
+      }
+      description={
+        question ? (
+          <>
+            Question ID <code>{formatQuestionId(question.id)}</code>. Quote it in a
+            mock document to put this question in a mock. An archived question keeps
+            its ID.
+          </>
+        ) : (
+          "Keep the content clear and the answer key precise."
+        )
+      }
+      heading={question ? undefined : "Create a question"}
+      profile={profile}
+      title={title}
+    >
+      {/*
+        The four kinds of new question, as tabs. Each is the same route with a
+        different `type`, exactly what the bank's links have always opened, so
+        switching is a plain link and needs no JavaScript.
+      */}
+      {!question && !parent ? (
+        <nav aria-label="Question type" className="tabs">
+          {questionTypes.map((option) => (
+            <Link
+              aria-current={option === type ? "page" : undefined}
+              className={`tabs__link${option === type ? " tabs__link--current" : ""}`}
+              href={buildNewQuestionHref(base, option)}
+              key={option}
+            >
+              {questionTypeLabels[option]}
+            </Link>
+          ))}
+        </nav>
       ) : null}
 
-      {notice ? <p className="muted">{questionNotices[notice]}</p> : null}
+      {notice ? <p className="notice notice--success">{questionNotices[notice]}</p> : null}
       {archiveFailed ? (
-        <p className="form-error" role="alert">
+        <p className="notice notice--error" role="alert">
           That change was refused. Nothing changed.
         </p>
       ) : null}
       {question?.archived ? (
-        <p className="setup-notice">
+        <p className="notice notice--warn">
           This question is archived. It stays in past attempts but is not offered
           for new mocks.
         </p>
@@ -94,7 +120,7 @@ export function QuestionPage({
             </div>
           </div>
           {question.children.length === 0 ? (
-            <p className="muted">None yet.</p>
+            <p className="panel-empty">None yet. Add the first below.</p>
           ) : (
             <ol className="report-list">
               {question.children.map((child) => (
@@ -143,7 +169,7 @@ export function QuestionPage({
           <form action={setQuestionArchivedAction}>
             <input name="questionId" type="hidden" value={question.id} />
             <input name="archive" type="hidden" value={question.archived ? "0" : "1"} />
-            <SubmitButton pendingLabel="Working…" variant="secondary">
+            <SubmitButton pendingLabel="Working…" variant={question.archived ? "secondary" : "danger"}>
               {question.archived ? "Restore" : "Archive"}
             </SubmitButton>
           </form>

@@ -227,24 +227,25 @@ export function UsersScreen({
           </Table>
         )}
 
-        <nav aria-label="Pagination" className="pagination">
-          <span className="pagination__count">
-            {total === 0
-              ? "No users match."
-              : `Showing ${firstOnPage}-${lastOnPage} of ${total} users`}
-          </span>
-          {pageCount > 1 ? (
-            <>
-              {page > 1 ? (
-                <Link
-                  href={buildUsersHref({ page: page - 1, search })}
-                  rel="prev"
-                >
-                  Previous
-                </Link>
-              ) : (
-                <span>Previous</span>
-              )}
+        {total === 0 ? null : (
+          <nav aria-label="Pagination" className="pagination">
+            <span className="pagination__count">
+              {total === 0
+                ? "No users match."
+                : `Showing ${firstOnPage}-${lastOnPage} of ${total} users`}
+            </span>
+            {pageCount > 1 ? (
+              <>
+                {page > 1 ? (
+                  <Link
+                    href={buildUsersHref({ page: page - 1, search })}
+                    rel="prev"
+                  >
+                    Previous
+                  </Link>
+                ) : (
+                  <span>Previous</span>
+        )}
               <span>
                 Page {page} of {pageCount}
               </span>
@@ -261,6 +262,7 @@ export function UsersScreen({
             </>
           ) : null}
         </nav>
+        )}
       </section>
     </RoleShell>
   );
