@@ -65,14 +65,13 @@ this file and not found here is in one of these; find it with
   `paid_tier` -- the absence of 503s proves nothing, because they come and go.
   See *The 503 that was a billing checkbox* in `docs/context/completed.md`.
 - **Mocks built from documents that quote question IDs are built on
-  `feat/mock-docs`**, with a pull request raised and not merged. Readable IDs
+  `main`** (PR #61, `092d878`). Readable IDs
   (`Q00042`, computed from `questions.id`), copyable ID lists on the bank and at
   the end of an import, and a plain-text mock template parsed directly into the
   existing `save_mock`. **No migration and no model call.** Verified **29/29**
   against a local production build and the hosted database, every refusal proven
-  by counting rows; nothing has been run against the deployed URL, because the
-  branch is not merged and previews do not work. Details in
-  `docs/context/completed.md`.
+  by counting rows, and **29/29 again against the deployed URL** on
+  2026-09-26 after it merged. Details in `docs/context/completed.md`.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
   extracted (merged, PR #58), then the Gemini import path (merged, same pull
   request), then mocks built from documents that quote question IDs (built, not
@@ -319,16 +318,14 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude agent (mock-docs) | `feat/mock-docs` | Readable question IDs, copyable ID lists, and mocks built from a plain-text document that quotes them. No migration. | `src/features/question-bank/question-id.ts`, `mock-document.ts`, their tests, `actions/mock-document-actions.ts`, `queries/resolve-mock-document.ts`, `components/mock-import-*.tsx`, `components/copy-ids.tsx`, plus edits to `list-params.ts`, `queries/list-questions.ts`, `components/questions-screen.tsx`, `components/question-page.tsx`, `components/import-review-screen.tsx`, `components/mocks-screen.tsx`, `src/app/admin/mocks/import/**`, `scripts/verify/mock-document.mjs` | Built and verified 29/29 locally; pull request raised, not merged | 2026-09-26 |
 
-**One branch is held as of 2026-09-26**: `feat/mock-docs`, in the worktree
-`C:\Cospire\Cospire-mock-docs` on port 3020, with its pull request raised.
-`feat/test-engine` is also in flight in `C:\Cospire\Cospire-test-engine`,
-claiming its own row in its own branch's copy of this file.
+**One branch is held as of 2026-09-26**: `feat/test-engine`, in the worktree
+`C:\Cospire\Cospire-test-engine` on port 3010, claiming its own row in its own
+branch's copy of this file. `feat/mock-docs` merged as PR #61.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
-PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`); all three
-branches are deleted. Three things a new session should know before touching
+PR #59 (`6cc00f6`), `feat/model-provider` as PR #60 (`51148e1`) and
+`feat/mock-docs` as PR #61 (`092d878`). Three things a new session should know before touching
 anything:
 
 - **A dev server is running on port 3000** from the main checkout
@@ -599,7 +596,7 @@ under *Question import with pictures* below.
 
 **3. Mocks built from documents that quote question IDs. BUILT on
 `feat/mock-docs`, 2026-09-26, verified 29/29 locally against the hosted
-database. The pull request is raised and not merged.** Readable IDs
+database, and 29/29 again against the deployed URL after it merged as PR #61.** Readable IDs
 (`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
 the bank and at the end of an import, and a plain-text mock template parsed
 directly -- no model, because an ID must match exactly -- which resolves to the

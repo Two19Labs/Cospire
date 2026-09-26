@@ -13,6 +13,83 @@ Before planning, editing, reviewing, or running commands, read these files fully
 `docs/agent-map.md` diagrams where everything lives, where to look by task, and
 the route every piece of work takes. Use it when unsure where to look.
 
+## The handoff rule - every agent, every tool
+
+**When your remaining allowance falls below 7%, stop working, save what you have,
+write a handoff, and tell the owner.** Do not start something new, do not try to
+finish the current thing quickly, and do not work until you are cut off
+mid-sentence. An agent that stops deliberately at 7% hands over work someone can
+continue. An agent that stops involuntarily at 0% leaves a puzzle.
+
+This binds every agent in this repository whichever tool you are -- Claude,
+Codex, ChatGPT, Gemini or anything else. What differs between tools is only *how*
+you read the number.
+
+### Reading your allowance
+
+| Tool | How |
+|---|---|
+| **Claude Code** | `node scripts/check-usage.mjs`. Exits **0** keep working, **1** hand off now, **2** could not tell. `--json` for a machine, `--threshold N` to change the 7%. |
+| **Codex** | Its own account usage tool, which reports both windows. |
+| **Anything else** | Whatever your tool provides. If it provides nothing, say so plainly in your first message rather than pretending to comply. |
+
+**Whichever window is lowest decides.** Codex on 2026-09-23 had 77% of its weekly
+allowance left and 4% of its five-hour one; the five-hour window is what mattered
+and it was right to stop.
+
+**Check at checkpoints, not continuously** -- after finishing a slice of work,
+before starting the next one, and before any long or expensive step. Roughly a
+few times an hour. Polling is not diligence: the usage endpoint is itself rate
+limited, and calling it five times in a minute returns 429.
+
+**"I could not tell" is never "I am fine."** If the check exits 2, say so in your
+next message to the owner and carry on cautiously. Never treat an unanswered
+check as permission.
+
+### What to do when it fires
+
+In this order. The order matters -- a handoff describing work that was never
+saved is worse than no handoff, because it reads as though the work exists.
+
+1. **Stop.** Finish only what makes the tree consistent: do not begin a new file,
+   a new migration or a new verification run.
+2. **Commit and push.** A work-in-progress commit on your own branch, marked as
+   such, then push it. Work left uncommitted in a worktree dies with the
+   worktree, and worktrees here have been removed mid-flight before.
+
+   ```
+   git commit -m "wip(<scope>): handoff at <what you reached>
+
+   INCOMPLETE. See docs/handoff/<branch>.md"
+   git push -u origin <branch>
+   ```
+3. **Write `docs/handoff/<branch>.md`**, one file per branch so two agents
+   stopping at once cannot overwrite each other, committed so it survives the
+   worktree. Use the template in `docs/handoff/README.md`.
+4. **Update `CONTEXT.md`**: your **Active work** row says handed off, and points
+   at the handoff file.
+5. **Tell the owner in your final message**: which window fired, at what
+   percentage, when it resets, the branch and commit, and the path to the
+   handoff. One short paragraph, not a report.
+
+### What a handoff must contain
+
+The test is not "did I describe what I did". It is: **could a fresh agent, with
+no memory of this session, continue without asking a question?** If not, it is
+not finished.
+
+So it carries the task and why it exists; the branch and the exact commit; what
+is done and **verified**, with the command and its real result; what is done and
+**not** verified, said as plainly; what is half-done and precisely where the seam
+is; the next concrete step; every decision made and the reason, so the next agent
+does not relitigate it; and every trap already hit, so it is not hit twice.
+
+**Never record an assumption as a fact, and never record "should work" as
+"works".** A handoff is read by someone with no way to check your optimism.
+
+**Never put a secret, a credential, a token or client data in a handoff.** It is
+committed to a repository the Client can read.
+
 ## The context rule - non-negotiable, every agent, every session
 
 `CONTEXT.md` is the single source of truth for the state of this project. It is
