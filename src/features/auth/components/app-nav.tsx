@@ -78,6 +78,7 @@ const navByRole: Record<AppRole, NavGroup[]> = {
         { href: "/student", icon: "home", label: "Home", exact: true, eyebrow: "Student" },
         { href: "/student/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
         { href: "/student/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
+        { href: "/student/mocks", icon: "test", label: "Mock tests", eyebrow: "Assessment" },
       ],
     },
   ],

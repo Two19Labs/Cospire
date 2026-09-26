@@ -15,6 +15,7 @@ const errors: Record<string, string> = {
   questions: "One or more selected questions are unavailable.",
   "section-missing": "Every selected question needs a section that still exists. Check the section dropdowns.",
   sections: "Every named section needs a valid duration.", structure: "The database refused that mock structure.",
+  attempted: "Students have already sat this mock, so it can no longer be changed. Build a new mock instead.",
 };
 
 function excerpt(body: string): string {
@@ -22,11 +23,13 @@ function excerpt(body: string): string {
   return value.length > 100 ? `${value.slice(0, 97)}…` : value;
 }
 
-export function MockEditor({ profile, value, picker, offPage = [], error, notice }: {
+export function MockEditor({ profile, value, picker, offPage = [], error, notice, children }: {
   profile: Profile; value: MockEditorValue | null;
   picker: { rows: PickerQuestion[]; page: number; pageCount: number };
   offPage?: PickerQuestion[];
   error?: string; notice?: string;
+  // Panels owned by other features, shown under the form: the test engine's student access.
+  children?: React.ReactNode;
 }) {
   const existingSections = value?.sections ?? [];
   const sectional = existingSections.length > 1 || (existingSections[0]?.durationMinutes ?? null) !== null;
@@ -87,6 +90,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
         </section>
         <div className="toolbar"><SubmitButton pendingLabel="Saving…">Save mock</SubmitButton><Link className="button button--secondary" href="/admin/mocks">Back to mocks</Link></div>
       </form>
+      {children}
     </RoleShell>
   );
 }

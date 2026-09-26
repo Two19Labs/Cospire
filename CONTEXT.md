@@ -17,69 +17,46 @@ this file and not found here is in one of these; find it with
 | `docs/context/phase-history.md` | Phase 0, 1 and 5a progress records, exit gates and security audits |
 | `docs/context/verification-log.md` | Every check run, with its result |
 
-## Status, 2026-09-23
+## Status, 2026-09-27
 
-- **On `main` and deployed** at `https://cospire-roan.vercel.app`:
+- **On `main` and deployed** at `https://cospire-roan.vercel.app` (`main` at
+  `092d878`):
   - Phase 0 and Phase 1: users, access granting, the document library and the
     protected viewer. Bulk CSV creation is the one Phase 1 step unbuilt, blocked
     on custom SMTP.
-  - Phase 5a, ARS, complete: exit gate 28/28 on the deployed URL (2026-09-20).
-    That covers programmes, rounds, submissions, private uploads, the mentor
-    queue, off-platform rounds, the ARS report, and both paste-a-prompt importers.
-  - Programmes and ARS as separate admin sections; the shell and ARS form
-    re-skinned to the Client's prototype.
-  - A skeleton of its own for every signed-in screen, and sign-in straight to
-    the role home (PR #52, 11/11 on the deployed URL).
-  - Report-template round selector limited to the template's programme (PR #50,
-    8/8 on the deployed URL).
-  - The question bank (Phase 3), **merged 2026-09-23 as `1c7073d`** (PR #49):
-    schema with answer keys held apart, the numerical normaliser, authoring,
-    paste-a-prompt import with review, and the admin mock builder. Its seven
-    migrations were already applied, so `main` and the database are back in
-    step. Details in `docs/context/completed.md`.
-- **The seven review findings on the question bank are fixed, merged and
-  deployed** (PR #55, `cc015e0`), all in the mock builder: section slots map by
-  slot rather than position; a question archived after selection is listed and
-  removable instead of locking its mock; the picker reads the section embed as
-  the object PostgREST returns; a missing section field is refused instead of
-  filed into section one; childless DI sets are shown and refused instead of
-  filtered after paging; `/admin/mocks/[id]` uses `parseId`; and images dropped
-  from a question are deleted from Storage. **19/19 on the deployed URL.**
-- **Word upload with pictures extracted is merged and deployed** (PR #58,
-  `b2a4fb8`, 2026-09-25) and verified **25/25 against the deployed URL**. It
-  needs no migration and calls no model. Details in
+  - Phase 5a, ARS, complete (exit gate 28/28 on the deployed URL, 2026-09-20):
+    programmes, rounds, submissions, private uploads, the mentor queue,
+    off-platform rounds, the ARS report and both paste-a-prompt importers.
+  - Phase 3, the question bank: authoring, paste-a-prompt import, Word upload
+    with pictures (PR #58), the Gemini path (PR #58; live round trip
+    UNVERIFIED, see below), the admin mock builder, and mocks built from
+    documents quoting question IDs (PR #61).
+- **Phase 4, the test engine, is built on `feat/test-engine`, pushed, not
+  merged, no pull request yet.** Slices 4.1 (attempt tables and guards), 4.2
+  (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
+  Attempts panel) and rescoring after a key correction. **4.1 is applied to the
+  hosted database; the rescore migration `20260927090000` is written and
+  dry-run 15/15 but NOT applied**, and neither is the review fix-forward `20260927100000` (dry-run 9/9); the owner applies both. Verified 45/45 over
+  HTTP on a local production build. **4.5, closing abandoned attempts on a
+  schedule, is not built** -- a `pg_cron` job was refused by the agent's
+  permission classifier as unauthorised persistence and waits for the owner's
+  decision. Until then an abandoned attempt is closed as the timer's when its
+  student next opens it. Details: *The test engine* in
   `docs/context/completed.md`.
-- **The Gemini path and the automatic routing are merged and deployed too**, in
-  the same pull request. A `.docx` with no pictures shows the prompt to copy, as
-  before; one with pictures is sent to the model with its pictures, and the
-  platform places each figure. Everything about the path is checked except the
-  live round trip, including that the key is in none of the chunks the browser is
-  served.
-- **The three days of Gemini `503` were a billing fault, not an outage.** The
-  Google Cloud project behind the Client's key has **no billing enabled**, so it
-  is served on leftover capacity at five requests a minute. The API named its own
-  quota when pushed: `generate_content_free_tier_requests`, limit 5. **A new API
-  key would fix nothing**; linking a billing account to the project that
-  `aistudio.google.com/apikey` names is the whole fix, and it is Cospire's to
-  make. Verify it by forcing a 429 and reading the quota metric, which must say
-  `paid_tier` -- the absence of 503s proves nothing, because they come and go.
-  See *The 503 that was a billing checkbox* in `docs/context/completed.md`.
-- **Mocks built from documents that quote question IDs are built on
-  `feat/mock-docs`**, with a pull request raised and not merged. Readable IDs
-  (`Q00042`, computed from `questions.id`), copyable ID lists on the bank and at
-  the end of an import, and a plain-text mock template parsed directly into the
-  existing `save_mock`. **No migration and no model call.** Verified **29/29**
-  against a local production build and the hosted database, every refusal proven
-  by counting rows; nothing has been run against the deployed URL, because the
-  branch is not merged and previews do not work. Details in
-  `docs/context/completed.md`.
-- **Next, in this order (owner, 2026-09-23):** Word upload with pictures
-  extracted (merged, PR #58), then the Gemini import path (merged, same pull
-  request), then mocks built from documents that quote question IDs (built, not
-  merged), then the test engine (Phase 4). See *What to build next*.
+- **The admin re-skin to the Client's prototype is built on `feat/admin-ui`,
+  pushed, not merged**, and awaits the owner's visual review. Screenshots only;
+  nobody has clicked through it in a browser.
+- **Analytics (Phase 4 step 5) is being built on `feat/analytics`**, stacked on
+  `feat/test-engine`, by a background agent.
+- **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
+  has no billing enabled, so it runs on the free tier at five requests a minute.
+  Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
-- **Schedule:** the owner confirmed on 2026-09-22 that it holds.
+- **1 October:** the Client was promised a tested mock engine. It exists and is
+  tested, but only on a branch; it reaches the deployed URL when the owner
+  merges it. A clause 4.4 notice is drafted at
+  `docs/client/2026-10-01-delivery-notice.md` (untracked, unsent).
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -246,11 +223,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   buttons. PR #48 makes ARS report-component round links manual. Each feature
   has a documentation follow-up where the context gate required one (#37, #39,
   #41).
-- **The hosted project is 7 migrations ahead of `main`**: 19 on `main`, 26
-  applied, the extra seven being the question bank's, on
-  `feat/question-bank` and applied 2026-09-21. They are additive and nothing
-  deployed reads them, so this is safe (see *Migration safety*). `main` and
-  the database come back into step when that branch merges.
+- **The hosted project is one migration ahead of `main`:**
+  `20260926103000_test_engine_attempts`, applied 2026-09-26 from
+  `feat/test-engine`. It is additive and nothing deployed reads it. The rescore
+  migration `20260927090000` is committed on that branch and **not applied**.
 - Two things worth keeping from the earlier merge history, because both cost
   time. **Do not delete the base branch of a stacked pull request**: merging #24
   with `--delete-branch` closed #25 rather than retargeting it, and reopening
@@ -290,10 +266,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   `main`, with a preview deployment per pull request. Currently on the **Hobby**
   plan, which does not permit commercial use; the owner has chosen to build on it
   and upgrade before handover.
-- Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Schema
-  and auth configuration are applied. All nineteen migrations on `main` are
-  present on both sides, plus the seven question bank migrations from
-  `feat/question-bank`, applied 2026-09-21 ahead of merge.
+- Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Every
+  migration on `main` is applied, plus `20260926103000` from `feat/test-engine`.
+  The Supabase MCP server points at this project (`get_project_url`, checked
+  2026-09-27); an earlier suspicion that it pointed elsewhere was wrong.
 
 ### Tooling available to an agent in this repository
 
@@ -319,13 +295,25 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude agent (mock-docs) | `feat/mock-docs` | Readable question IDs, copyable ID lists, and mocks built from a plain-text document that quotes them. No migration. | `src/features/question-bank/question-id.ts`, `mock-document.ts`, their tests, `actions/mock-document-actions.ts`, `queries/resolve-mock-document.ts`, `components/mock-import-*.tsx`, `components/copy-ids.tsx`, plus edits to `list-params.ts`, `queries/list-questions.ts`, `components/questions-screen.tsx`, `components/question-page.tsx`, `components/import-review-screen.tsx`, `components/mocks-screen.tsx`, `src/app/admin/mocks/import/**`, `scripts/verify/mock-document.mjs` | Built and verified 29/29 locally; pull request raised, not merged | 2026-09-26 |
-| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/app/{error,not-found}.tsx`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,icon,person-cell}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` (not `mock-editor.tsx` / `mock-routes.tsx`, held by `feat/test-engine`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**` (not `mocks/[id]/page.tsx`) | **Built, committed locally, not pushed, no pull request.** 8 commits; typecheck, lint, 469 tests and build pass; every admin screen photographed at 1440px and ten at 390px (no sideways scroll). Not browser-driven: no click-through, no JavaScript-on interaction was exercised. Expect a conflict with `feat/test-engine` in `app-nav.tsx` (its "Mock tests" student item) and here. Details in `docs/context/completed.md`, *The admin workspace re-skin* | 2026-09-27 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Built, pushed, **not merged, no PR**. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration `20260927090000` and review fix-forward `20260927100000` **committed and dry-run (15/15, 9/9), NOT applied** (owner: `npx supabase db push --linked --project-ref eeeftjwvbppznsmcljnw`, then re-run both probes and `SIT_RESCORE=1 node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010`). Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-27 |
+| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/app/{error,not-found}.tsx`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,icon,person-cell}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` and, since the test-engine merge, the mock editor and `src/features/test-engine/components/mock-{access,attempts}-panel.tsx` markup; the ARS aptitude-round mock link (`src/features/ars/**`, `scripts/verify/ars-aptitude.mjs`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**`  | **In progress (2026-09-27):** stacked on `feat/test-engine` (merged in at `ed2a4a3`); mock builder markup and the ARS aptitude round linked to a mock. Earlier re-skin slices done; see `docs/context/completed.md`, *The admin workspace re-skin* | 2026-09-27 |
 
-**One branch is held as of 2026-09-26**: `feat/mock-docs`, in the worktree
-`C:\Cospire\Cospire-mock-docs` on port 3020, with its pull request raised.
-`feat/test-engine` is also in flight in `C:\Cospire\Cospire-test-engine`,
-claiming its own row in its own branch's copy of this file.
+**Three branches are open as of 2026-09-27**, each in its own worktree, each
+claiming its own row in its own copy of this file:
+
+- `feat/test-engine` -- `C:\Cospire\Cospire-test-engine`, port 3010 (this row).
+- `feat/admin-ui` -- `C:\Cospire\Cospire-admin-ui`, port 3050. The admin
+  re-skin; finished, awaiting review. It restyles the mock screens by CSS only,
+  because this branch owns the mock editor; the builder's markup follow-ups are
+  listed in its report.
+- `feat/analytics` -- `C:\Cospire\Cospire-analytics`, port 3060, stacked on
+  `feat/test-engine`.
+
+**Merge order:** `feat/test-engine` first, then `feat/analytics` (retarget it to
+`main` once its base merges; do not delete the base branch first), then
+`feat/admin-ui`. `src/features/auth/components/app-nav.tsx` and this file
+conflict between them; the nav items are grouped and carry an `eyebrow` on
+`feat/admin-ui`.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`); all three
@@ -569,9 +557,8 @@ build and now follows them. The 1 October commitment covers a tested mock
 engine, so this order makes the written revision under clause 4.4 more likely
 to be needed, not less -- see *Next recommended action*, item 1.
 
-**1. Word upload: pictures out, numbered markers in. BUILT on
-`feat/doc-import`, 2026-09-23, verified 25/25 locally, not yet merged or
-deployed.** No model call, so it
+**1. Word upload: pictures out, numbered markers in. DONE.** Merged as PR #58
+(`b2a4fb8`) and verified **25/25 against the deployed URL** on 2026-09-25. No model call, so it
 works whatever the Client decides about cost. The admin uploads a `.docx`; the
 platform opens it (a zip), extracts each image in document order into the
 existing `question-images` bucket, and produces the paper's text with
@@ -586,9 +573,12 @@ open a zip on its own, and a hand-written zip reader is the kind of code that
 works on one file and fails on the next. `@google/genai` was **declined in
 favour of plain `fetch`**, which was proven against the live key on 2026-09-23.
 
-**2. The Gemini path: three steps instead of six. BUILT on `feat/doc-import`,
-2026-09-23. The Client has agreed the cost, per the owner. The live round trip
-is still UNVERIFIED because Gemini answered 503 throughout the session.** The platform sends the
+**2. The Gemini path: three steps instead of six. MERGED AND DEPLOYED** in the
+same pull request. The Client has agreed all costs (owner, 2026-09-25). **The
+live round trip is still UNVERIFIED**, and the reason is known: the Google Cloud
+project behind the Client's key has no billing enabled, so it is served on
+leftover capacity at five requests a minute. A new key would fix nothing; see
+*The 503 that was a billing checkbox* in `docs/context/completed.md`. The platform sends the
 prepared text to Gemini itself and places the images, so the admin uploads,
 reviews and approves. Everything technical is in hand: the key works, returns
 schema-valid JSON, and is on the paid tier. Two things to settle first, neither
@@ -611,18 +601,18 @@ design, pasting a whole new paper so the questions enter the bank and a draft
 mock is made in one step, is deliberately not built** -- the design marks it
 "later, and only if wanted".
 
-**4. The test engine (Phase 4)**, with everything operating manual §1 insists
-on: the server-authoritative timer, per-question-type negative marking, the
-phone attempt permanently marked unproctored, warn-and-log proctoring, and
-auto-submit of expired attempts through Vercel Cron. Two things the question
-bank has already fixed for it:
-- A student reads a question only through an attempt; `questions` and
-  `question_keys` have no student policy today.
-- Keys become readable only after the student's own attempt is submitted. Any
-  change to a key, option set or marks value must rescore affected attempts
-  and write `rescore_events`, because questions stay editable.
-Then **attach a mock to the ARS aptitude round**, replacing the
-`pendingFeature: "test-engine"` placeholder.
+**4. The test engine (Phase 4). BUILT on `feat/test-engine`, not merged.**
+Everything operating manual §1 insists on is in the database, not in routes:
+the server-authoritative timer (answers refused after the clock plus 30s),
+sectional timing, per-question-type negative marking, the phone attempt
+permanently unproctored and refused where a mock bars phones, warn-and-log
+proctoring, keys readable only after the student's own submission, and
+rescoring with `rescore_events` when a key, option set, type or marks value
+changes. Left: **4.5, a scheduled close of abandoned attempts** (owner's
+decision: `pg_cron` in the database, or Vercel Cron, which on Hobby runs once a
+day), analytics (in progress on `feat/analytics`), and **attaching a mock to the
+ARS aptitude round**, replacing the `pendingFeature: "test-engine"` placeholder
+-- best done after `feat/admin-ui` merges, since both touch the round builder.
 
 **5. Run Cospire's real question documents through the importer** as soon as
 they supply them, and settle the model choice with the accuracy test described

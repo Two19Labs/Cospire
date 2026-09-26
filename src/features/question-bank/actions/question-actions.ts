@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
+import { rescoreAwaiting } from "@/features/test-engine/rescore-awaiting";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { buildQuestionHref, parseId, questionBankBase } from "../list-params";
@@ -65,6 +67,11 @@ export async function saveQuestionAction(
     .filter((path): path is string => typeof path === "string")
     .filter((path) => !question.images.includes(path));
   if (dropped.length > 0) await supabase.storage.from(questionImagesBucket).remove(dropped);
+
+  // An edited key, option set or marks value has cleared the scores it affects
+  // (the rescore trigger, in the same transaction as the save). Recompute them
+  // once this response has gone, so the admin is not kept waiting.
+  if (questionId !== null) after(() => rescoreAwaiting(profile.orgId));
 
   revalidatePath(base);
   // A new sub-question goes back to its set, where it is read in context.
