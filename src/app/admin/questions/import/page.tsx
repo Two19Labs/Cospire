@@ -22,7 +22,8 @@ export default async function ImportQuestionsPage({
       <QuestionImportScreen
         batches={batches}
         notice={params.notice === "discarded" ? "The questions that were not approved were discarded." : null}
-        geminiAvailable={Boolean(process.env.GEMINI_API_KEY)}
+        modelAvailable={Boolean(process.env.MODEL_BASE_URL ? process.env.MODEL_API_KEY : process.env.GEMINI_API_KEY)}
+        modelLabel={process.env.MODEL_BASE_URL ? process.env.MODEL_LABEL || "the model" : "Gemini"}
         orgId={profile.orgId}
         prompt={buildQuestionImportPrompt()}
       />
