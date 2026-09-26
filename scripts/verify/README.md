@@ -258,6 +258,27 @@ and neither of which it may delete.
 
 ## gemini-import.mjs — the model path
 
+### Which provider it checks
+
+Whichever the environment configures, so it exercises the path that will really
+run:
+
+```bash
+# Gemini, the production path, on the Client's paid Google account
+node --env-file=.env.local scripts/verify/gemini-import.mjs
+
+# any OpenAI-compatible provider, for testing
+MODEL_BASE_URL=https://api.groq.com/openai/v1 MODEL_API_KEY=... \
+  MODEL_LABEL=Groq MODEL_NAME=llama-3.3-70b-versatile \
+  node --env-file=.env.local scripts/verify/gemini-import.mjs
+```
+
+**Never point this at a free tier with a real Cospire question paper.** Free
+usage is free because the provider may train on what it is given, and clause
+13.1 makes the Client's content confidential. The fixture in this script is
+synthetic, which is why running it is safe.
+
+
 ```bash
 # the round trip, billed to the Client's Google account
 node --env-file=.env.local scripts/verify/gemini-import.mjs

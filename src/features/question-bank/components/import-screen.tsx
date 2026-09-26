@@ -86,15 +86,17 @@ function FigureInputs({ figurePaths }: { figurePaths: Record<number, string> }) 
 
 export function QuestionImportScreen({
   batches,
-  geminiAvailable,
+  modelAvailable,
+  modelLabel,
   notice,
   orgId,
   prompt,
 }: {
   batches: ImportBatchSummary[];
-  // Whether the server holds a Gemini key. The key itself never comes near this
-  // component; only whether there is one.
-  geminiAvailable: boolean;
+  // Whether the server holds a model key, and what to call the service. No key
+  // ever comes near this component -- only whether there is one.
+  modelAvailable: boolean;
+  modelLabel: string;
   notice: string | null;
   orgId: number;
   prompt: string;
@@ -115,7 +117,7 @@ export function QuestionImportScreen({
   const figurePaths = paper?.figurePaths ?? {};
   const attached = Object.keys(figurePaths).length;
   const hasPictures = attached > 0;
-  const useGemini = geminiAvailable && hasPictures;
+  const useModel = modelAvailable && hasPictures;
   const usage = geminiState.usage;
 
   return (
@@ -163,7 +165,7 @@ export function QuestionImportScreen({
       </section>
 
       {paper ? (
-        useGemini ? (
+        useModel ? (
           <form
             action={geminiAction}
             className="panel stack-form"
@@ -172,8 +174,8 @@ export function QuestionImportScreen({
             <h2>Step 2 — let the platform read it</h2>
             <p className="muted">
               This paper has pictures, so the platform sends the text and the
-              pictures to Gemini and places each figure itself. You review and
-              approve as usual. Nothing enters the bank without you.
+              pictures to {modelLabel} and places each figure itself. You review
+              and approve as usual. Nothing enters the bank without you.
             </p>
             <input name="documentText" type="hidden" value={paper.text} />
             <input name="documentName" type="hidden" value={paper.documentName} />
@@ -190,7 +192,7 @@ export function QuestionImportScreen({
               token count is shown once it answers.
             </p>
             <div className="form-actions">
-              <SubmitButton pendingLabel="Reading the paper…">Read it with Gemini</SubmitButton>
+              <SubmitButton pendingLabel="Reading the paper…">{`Read it with ${modelLabel}`}</SubmitButton>
             </div>
             {usage ? (
               <p className="muted">
@@ -205,7 +207,7 @@ export function QuestionImportScreen({
             <h2>Step 2 — copy this prompt</h2>
             <p className="muted">
               {hasPictures
-                ? "This paper has pictures, but no Gemini key is configured on the server, so it has to go through a model by hand."
+                ? "This paper has pictures, but no model key is configured on the server, so it has to go through a model by hand."
                 : "This paper has no pictures, so there is nothing to pay a model for. Copy the prompt, paste the text from step 1 underneath it, and send."}
             </p>
             <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={10} value={prompt} />
@@ -236,8 +238,8 @@ export function QuestionImportScreen({
       <form action={previewAction} className="panel stack-form" onSubmit={() => setSource("paste")}>
         <h2>Step 3 — paste the answer</h2>
         <p className="muted">
-          {useGemini
-            ? "Only needed if you ran the prompt yourself, or if you want to correct what Gemini returned before sending it for review."
+          {useModel
+            ? `Only needed if you ran the prompt yourself, or if you want to correct what ${modelLabel} returned before sending it for review.`
             : "Paste the model's whole answer here."}
         </p>
         <FigureInputs figurePaths={figurePaths} />

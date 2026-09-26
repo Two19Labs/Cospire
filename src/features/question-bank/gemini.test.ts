@@ -171,7 +171,8 @@ describe("readQuestionsWithGemini", () => {
     const result = await readQuestionsWithGemini({ apiKey: undefined, figures: [], text: "Q1." });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.problems[0]).toMatch(/No Gemini key is configured/);
+    // Shared with the other provider now, so it does not name Gemini.
+    expect(result.problems[0]).toMatch(/No model key is configured/);
   });
 
   it("honours a model override, so an overloaded model can be changed without a deploy", async () => {
