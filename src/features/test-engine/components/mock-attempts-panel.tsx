@@ -16,7 +16,7 @@ function describeEvents(events: MockAttemptRow["events"]): string {
 // as clause 3.5 requires them to be surfaced to admins.
 export function MockAttemptsPanel({ attempts }: { attempts: MockAttemptRow[] }) {
   return (
-    <section className="panel">
+    <section className="panel" id="attempts">
       <div className="panel__header">
         <div>
           <h2>Attempts</h2>
@@ -25,7 +25,9 @@ export function MockAttemptsPanel({ attempts }: { attempts: MockAttemptRow[] }) 
           </p>
         </div>
       </div>
-      {attempts.length === 0 ? null : (
+      {attempts.length === 0 ? (
+        <p className="panel-empty">Attempts appear here once a student with access starts this mock.</p>
+      ) : (
         <Table>
           <TableHead>
             <TableRow>
@@ -40,10 +42,14 @@ export function MockAttemptsPanel({ attempts }: { attempts: MockAttemptRow[] }) 
           <TableBody>
             {attempts.map((attempt) => (
               <TableRow key={attempt.id}>
-                <TableCell>{attempt.studentName}</TableCell>
+                <TableCell>
+                  <strong className="cell-strong">{attempt.studentName}</strong>
+                </TableCell>
                 <TableCell>{dateFormat.format(new Date(attempt.startedAt))}</TableCell>
                 <TableCell>
-                  {attempt.status === "in_progress" ? "In progress" : attempt.submittedBy === "timer" ? "Submitted when time ran out" : "Submitted"}
+                  <span className={attempt.status === "in_progress" ? "tag tag--gold" : "tag"}>
+                    {attempt.status === "in_progress" ? "In progress" : attempt.submittedBy === "timer" ? "Submitted when time ran out" : "Submitted"}
+                  </span>
                 </TableCell>
                 <TableCell>{attempt.score ?? (attempt.status === "submitted" ? <span className="muted">Being scored</span> : "—")}</TableCell>
                 <TableCell>
@@ -51,7 +57,7 @@ export function MockAttemptsPanel({ attempts }: { attempts: MockAttemptRow[] }) 
                     {attempt.proctored ? "Proctored" : "Unproctored (phone)"}
                   </span>
                 </TableCell>
-                <TableCell>{attempt.proctored ? describeEvents(attempt.events) : "—"}</TableCell>
+                <TableCell className="muted">{attempt.proctored ? describeEvents(attempt.events) : "—"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -1301,6 +1301,10 @@ form.panel > h2:first-child {
   width: 2rem;
 }
 
+.cell-strong {
+  font-weight: 500;
+}
+
 .person strong {
   font-weight: 500;
 }
@@ -1896,6 +1900,29 @@ form.panel > h2:first-child {
 .table__primary {
   max-width: 32rem;
   min-width: 16rem;
+}
+
+/* A save bar at the foot of a form made of several panels. */
+.form-bar {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+}
+
+.toggle-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem 1.75rem;
+}
+
+.section-slot {
+  gap: 0.5rem;
 }
 
 .tag-row {
