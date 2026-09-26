@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-25 (Asia/Calcutta)
+Last updated: 2026-09-26 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -58,10 +58,19 @@ this file and not found here is in one of these; find it with
   checked, including that the key is in none of the chunks the browser is served.
   Run `scripts/verify/gemini-import.mjs` when the API is back; that is the one
   thing outstanding.
+- **Mocks built from documents that quote question IDs are built on
+  `feat/mock-docs`**, with a pull request raised and not merged. Readable IDs
+  (`Q00042`, computed from `questions.id`), copyable ID lists on the bank and at
+  the end of an import, and a plain-text mock template parsed directly into the
+  existing `save_mock`. **No migration and no model call.** Verified **29/29**
+  against a local production build and the hosted database, every refusal proven
+  by counting rows; nothing has been run against the deployed URL, because the
+  branch is not merged and previews do not work. Details in
+  `docs/context/completed.md`.
 - **Next, in this order (owner, 2026-09-23):** Word upload with pictures
-  extracted (now built, awaiting merge), then the Gemini import path, then mocks
-  built from documents that quote question IDs, then the test engine (Phase 4).
-  See *What to build next*.
+  extracted (merged, PR #58), then the Gemini import path (merged, same pull
+  request), then mocks built from documents that quote question IDs (built, not
+  merged), then the test engine (Phase 4). See *What to build next*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
 - **Schedule:** the owner confirmed on 2026-09-22 that it holds.
@@ -299,10 +308,12 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude agent (mock-docs) | `feat/mock-docs` | Readable question IDs, copyable ID lists, and mocks built from a plain-text document that quotes them. No migration. | `src/features/question-bank/question-id.ts`, `mock-document.ts`, their tests, `actions/mock-document-actions.ts`, `queries/resolve-mock-document.ts`, `components/mock-import-*.tsx`, `components/copy-ids.tsx`, plus edits to `list-params.ts`, `queries/list-questions.ts`, `components/questions-screen.tsx`, `components/question-page.tsx`, `components/import-review-screen.tsx`, `components/mocks-screen.tsx`, `src/app/admin/mocks/import/**`, `scripts/verify/mock-document.mjs` | Built and verified 29/29 locally; pull request raised, not merged | 2026-09-26 |
 
-**Nobody holds a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
-(`b2a4fb8`) and its branch is deleted. Two things a new session should know
-before touching anything:
+**One branch is held as of 2026-09-26**: `feat/mock-docs`, in the worktree
+`C:\Cospire\Cospire-mock-docs` on port 3020, with its pull request raised.
+`feat/doc-import` merged as PR #58 (`b2a4fb8`) and its branch is deleted. Three
+things a new session should know before touching anything:
 
 - **A dev server is running on port 3000** from the main checkout
   (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
@@ -313,6 +324,13 @@ before touching anything:
 - **Tell the owner at once if anything changes that you did not do** -- a file
   in the working tree, a branch, a commit, the dev server going down. They have
   remote access and can intervene, but only if it is surfaced immediately.
+- **A new worktree may arrive without its dependencies.** `Cospire-mock-docs`
+  was handed over as ready and held one stray `next` directory in
+  `node_modules` and no `.bin`, so every script failed with "'vitest' is not
+  recognized" -- which reads like a broken install of vitest rather than an
+  absent `npm ci`. Check `node_modules/.bin` exists before concluding anything
+  about a tool. Its `.env.local` also has an empty `DATABASE_URL`; nothing the
+  application or the verify scripts do reads it, so it blocked nothing.
 
 **The Vercel preview deployments do not work.** `/dashboard` on a preview URL
 renders the application's error boundary while the same route on production
@@ -551,12 +569,18 @@ and needs redrafting before it is sent), and thinking turned low or off in the
 call, because thinking tokens bill as output. Details, limits and routing are
 under *Question import with pictures* below.
 
-**3. Mocks built from documents that quote question IDs.** Readable IDs
+**3. Mocks built from documents that quote question IDs. BUILT on
+`feat/mock-docs`, 2026-09-26, verified 29/29 locally against the hosted
+database. The pull request is raised and not merged.** Readable IDs
 (`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
 the bank and at the end of an import, and a plain-text mock template parsed
 directly -- no model, because an ID must match exactly -- which resolves to the
-existing `save_mock`. Full design under *Question IDs and mock documents:
-designed 2026-09-22* in `docs/context/meetings.md`.
+existing `save_mock`. Built to the design under *Question IDs and mock
+documents: designed 2026-09-22* in `docs/context/meetings.md`; the write-up and
+what is still unverified are in `docs/context/completed.md`. **Item 5 of the
+design, pasting a whole new paper so the questions enter the bank and a draft
+mock is made in one step, is deliberately not built** -- the design marks it
+"later, and only if wanted".
 
 **4. The test engine (Phase 4)**, with everything operating manual §1 insists
 on: the server-authoritative timer, per-question-type negative marking, the
