@@ -106,7 +106,9 @@ export async function saveMockAction(formData: FormData): Promise<void> {
     p_sections: sections,
     p_title: title,
   });
-  if (error || data === null) fail(mockId, error?.code === "23514" ? "structure" : "failed");
+  // 42501 from the test engine's guard: this mock has been attempted, so its
+  // paper is fixed (see 20260926103000_test_engine_attempts.sql).
+  if (error || data === null) fail(mockId, error?.code === "23514" ? "structure" : error?.code === "42501" ? "attempted" : "failed");
   revalidatePath("/admin/mocks");
   redirect(`/admin/mocks/${data}?notice=saved`);
 }
