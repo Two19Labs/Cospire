@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Icon } from "@/features/auth/components/icon";
+import { PersonCell } from "@/features/auth/components/person-cell";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
@@ -32,13 +33,6 @@ const roleLabels: Record<Profile["role"], string> = {
 
 // The page heading, shared with the loading skeleton so the two cannot drift.
 export const usersHeading = "People, thoughtfully connected.";
-
-// Two initials for the circle beside a name: first and last word.
-function initialsOf(name: string, email: string): string {
-  const words = (name || email).trim().split(/\s+/).filter(Boolean);
-  const letters = words.length > 1 ? [words[0], words[words.length - 1]] : words;
-  return letters.map((word) => word.charAt(0).toUpperCase()).join("") || "?";
-}
 
 interface UsersScreenProps {
   error: UserListError | null;
@@ -134,15 +128,7 @@ export function UsersScreen({
                 return (
                   <TableRow key={row.id}>
                     <TableCell>
-                      <div className="person">
-                        <span aria-hidden="true" className="person__avatar">
-                          {initialsOf(row.name, row.email)}
-                        </span>
-                        <div>
-                          <strong>{row.name}</strong>
-                          <span className="cell-sub">{row.email}</span>
-                        </div>
-                      </div>
+                      <PersonCell email={row.email} name={row.name} />
                     </TableCell>
                     <TableCell>
                       <span className="tag tag--ink">{roleLabels[row.role]}</span>

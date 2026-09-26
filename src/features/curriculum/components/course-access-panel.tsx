@@ -8,6 +8,8 @@ import {
   SubmitButton,
 } from "@/shared/ui";
 
+import { PersonCell } from "@/features/auth/components/person-cell";
+
 import { setCourseAccessAction } from "../actions/set-course-access";
 import { setCourseKindAction } from "../actions/set-course-kind";
 import { courseKindLabels, type CourseKind } from "../list-params";
@@ -35,7 +37,7 @@ export function CourseAccessPanel({ courseId, kind, students }: CourseAccessPane
   const noun = kind === "ars_process" ? "process" : "programme";
 
   return (
-    <section className="panel">
+    <section className="panel" id="students">
       <div className="panel__header">
         <div>
           <h2>Students</h2>
@@ -47,43 +49,53 @@ export function CourseAccessPanel({ courseId, kind, students }: CourseAccessPane
         </div>
       </div>
 
-      {students.length === 0 ? null : (
+      {students.length === 0 ? (
+        <p className="panel-empty">Students appear here once their accounts exist.</p>
+      ) : (
         <Table>
           <TableHead>
             <TableRow>
               <TableHeaderCell>Student</TableHeaderCell>
-              <TableHeaderCell>Email</TableHeaderCell>
               <TableHeaderCell>Access</TableHeaderCell>
+              <TableHeaderCell>
+                <span className="visually-hidden">Action</span>
+              </TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {students.map((student) => (
               <TableRow key={student.id}>
-                <TableCell>{student.name}</TableCell>
-                <TableCell>{student.email}</TableCell>
                 <TableCell>
-                  <div className="row-form">
-                    <span className={`pill pill--${student.granted ? "active" : "disabled"}`}>
-                      {student.granted ? `On ${noun}` : "Not on it"}
-                    </span>
-                    {/*
-                      The Server Action is passed straight to the form, so
-                      granting works with JavaScript disabled.
-                    */}
-                    <form action={setCourseAccessAction}>
-                      <input name="courseId" type="hidden" value={courseId} />
-                      <input name="kind" type="hidden" value={kind} />
-                      <input name="studentId" type="hidden" value={student.id} />
-                      <input
-                        name="intent"
-                        type="hidden"
-                        value={student.granted ? "revoke" : "grant"}
-                      />
-                      <SubmitButton variant="primary" compact>
-                        {student.granted ? "Remove" : "Add"}
-                      </SubmitButton>
-                    </form>
-                  </div>
+                  <PersonCell email={student.email} name={student.name} />
+                </TableCell>
+                <TableCell>
+                  <span className={`pill pill--${student.granted ? "active" : "disabled"}`}>
+                    {student.granted ? `On ${noun}` : "Not on it"}
+                  </span>
+                </TableCell>
+                <TableCell className="table__actions">
+                  {/*
+                    The Server Action is passed straight to the form, so
+                    granting works with JavaScript disabled.
+                  */}
+                  <form action={setCourseAccessAction}>
+                    <input name="courseId" type="hidden" value={courseId} />
+                    <input name="kind" type="hidden" value={kind} />
+                    <input name="studentId" type="hidden" value={student.id} />
+                    <input
+                      name="intent"
+                      type="hidden"
+                      value={student.granted ? "revoke" : "grant"}
+                    />
+                    <SubmitButton
+                      className={student.granted ? "button--ghost" : undefined}
+                      compact
+                      pendingLabel={student.granted ? "Removing…" : "Adding…"}
+                      variant={student.granted ? "secondary" : "primary"}
+                    >
+                      {student.granted ? "Remove access" : "Grant access"}
+                    </SubmitButton>
+                  </form>
                 </TableCell>
               </TableRow>
             ))}
@@ -110,7 +122,7 @@ export function CourseMoveForm({ courseId, kind }: { courseId: number; kind: Cou
       <span className="muted">
         Filed as a <strong>{courseKindLabels[kind]}</strong>.
       </span>
-      <SubmitButton variant="secondary" compact>
+      <SubmitButton variant="danger" compact pendingLabel="Moving…">
         Move to {courseKindLabels[target]}s
       </SubmitButton>
     </form>

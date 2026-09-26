@@ -127,6 +127,38 @@ export function SkeletonList({ items = 3 }: { items?: number }) {
   );
 }
 
+// The workspace's card grids: programmes and ARS processes.
+export function SkeletonCards({ items = 3 }: { items?: number }) {
+  return (
+    <div className="card-grid" aria-hidden="true">
+      {Array.from({ length: items }, (_, index) => (
+        <article className="course-card" key={index}>
+          <Skeleton className="skeleton--block" width="45px" />
+          <Skeleton className="skeleton--title skeleton--card-title" width="70%" />
+          <div className="course-card__bottom">
+            <Skeleton className="skeleton--small" width="40%" />
+            <Skeleton className="skeleton--small" width="20%" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+// The strip of three figures at the top of a record's page.
+export function SkeletonStats({ items = 3 }: { items?: number }) {
+  return (
+    <div className="mini-stats" aria-hidden="true">
+      {Array.from({ length: items }, (_, index) => (
+        <div key={index}>
+          <Skeleton className="skeleton--title" width="30%" />
+          <Skeleton className="skeleton--small" width="60%" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonForm({ fields = 4 }: { fields?: number }) {
   return (
     <div className="form-fields">
