@@ -2195,12 +2195,12 @@ form.panel > h2:first-child {
 
 /* A page. Numbered, because "page 2" is how an admin refers to it out loud. */
 .builder__page {
-  background: var(--card);
+  background: var(--paper-raised);
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-card);
   display: grid;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.125rem;
 }
 
 .builder__page-head {
@@ -2251,19 +2251,24 @@ form.panel > h2:first-child {
    scrolling past it. */
 .builder__field {
   align-items: center;
-  background: var(--cream-warm);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 0.9375rem;
+}
+
+.builder__field:hover {
+  border-color: rgb(181 71 31 / 45%);
 }
 
 .builder__field strong {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 
 .builder__field p {

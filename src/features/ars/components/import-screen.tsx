@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import {
@@ -117,20 +116,6 @@ export function ImportScreen({
   return (
     <>
       <section className="panel">
-        <h2>Build this process from a document</h2>
-        <p className="muted">
-          For <strong>{courseTitle}</strong>. Copy the prompt below into any AI model
-          along with the institution&apos;s admission-process document, then paste its
-          answer back here.
-        </p>
-        <p>
-          <Link className="button button--secondary" href={`/admin/ars/${courseId}`}>
-            Back to the ARS process
-          </Link>
-        </p>
-      </section>
-
-      <section className="panel">
         <h3>Step 1 — copy this prompt</h3>
         <p className="muted">
           Paste it into the model, attach or paste the document underneath it, and send.
@@ -161,7 +146,7 @@ export function ImportScreen({
             rows={10}
           />
         </label>
-        <button className="button" disabled={pending} type="submit">
+        <button className="button button--primary" disabled={pending} type="submit">
           {pending ? "Reading…" : "Read this"}
         </button>
       </form>
@@ -190,7 +175,7 @@ export function ImportScreen({
               {rounds.length === 1 ? "" : "s"} in <strong>{courseTitle}</strong>.
             </p>
             {existingRoundCount > 0 ? (
-              <p className="form-error">
+              <p className="notice notice--warn">
                 This programme already has {existingRoundCount} round
                 {existingRoundCount === 1 ? "" : "s"}. Importing{" "}
                 <strong>removes {existingRoundCount === 1 ? "it" : "them"}</strong> and
@@ -216,7 +201,7 @@ export function ImportScreen({
               the browser, and a Server Action is a public endpoint.
             */}
             <input name="pasted" type="hidden" value={state.pasted} />
-            <button className="button" disabled={creating} type="submit">
+            <button className="button button--primary" disabled={creating} type="submit">
               {creating
                 ? "Creating…"
                 : existingRoundCount > 0

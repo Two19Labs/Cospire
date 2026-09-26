@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 
@@ -82,7 +80,7 @@ function FieldRow({
             <Ids courseId={courseId} roundId={roundId} />
             <input name="fieldKey" type="hidden" value={field.key} />
             <input name="direction" type="hidden" value={direction} />
-            <SubmitButton variant="primary">
+            <SubmitButton className="button--ghost" compact variant="secondary">
               {direction === "up" ? "↑" : "↓"}
             </SubmitButton>
           </form>
@@ -90,7 +88,7 @@ function FieldRow({
         <form action={removeFieldAction}>
           <Ids courseId={courseId} roundId={roundId} />
           <input name="fieldKey" type="hidden" value={field.key} />
-          <SubmitButton variant="primary" pendingLabel="Working…">
+          <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
             ✕
           </SubmitButton>
         </form>
@@ -187,11 +185,18 @@ export function RoundBuilder({
 
   if (mode === "offline") {
     return (
-      <RoleShell profile={profile} title={roundName}>
-        <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
+      <RoleShell
+        back={{ href: `/admin/ars/${courseId}`, label: courseTitle }}
+        description="Off-platform round. The mentor records the outcome."
+        profile={profile}
+        title={roundName}
+      >
         <section className="panel">
-          <h2>This round happens off the platform</h2>
-          <p className="muted">
+          <div className="panel__header">
+            <h2>This round happens off the platform</h2>
+            <span className="tag">Off-platform</span>
+          </div>
+          <p className="notice">
             Interviews and group discussions are arranged elsewhere. The student sees the round
             and its dates; the mentor records the outcome afterwards. There is no form to build.
           </p>
@@ -201,9 +206,13 @@ export function RoundBuilder({
   }
 
   return (
-    <RoleShell profile={profile} title={roundName}>
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
+    <RoleShell
+      back={{ href: `/admin/ars/${courseId}`, label: courseTitle }}
+      description="Build the form a student answers, page by page. The preview beside it is what they will see."
+      profile={profile}
+      title={roundName}
+    >
+      {error ? <p className="notice notice--error" role="alert">{error}</p> : null}
 
       <div className="builder">
         <section className="panel">
@@ -245,7 +254,7 @@ export function RoundBuilder({
                         <Ids courseId={courseId} roundId={roundId} />
                         <input name="stepKey" type="hidden" value={step.key} />
                         <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                        <SubmitButton variant="primary" pendingLabel="Working…">
+                        <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
                           ✕
                         </SubmitButton>
                       </form>
@@ -333,7 +342,7 @@ export function RoundBuilder({
                   <form action={removePageAction} className="stack-form">
                     <Ids courseId={courseId} roundId={roundId} />
                     <input name="stepKey" type="hidden" value={step.key} />
-                    <SubmitButton variant="secondary" pendingLabel="Removing…">Delete this page</SubmitButton>
+                    <SubmitButton variant="danger" pendingLabel="Removing…">Delete this page</SubmitButton>
                   </form>
                 ) : null}
               </details>
