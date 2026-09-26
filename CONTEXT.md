@@ -36,7 +36,7 @@ this file and not found here is in one of these; find it with
   (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
   Attempts panel) and rescoring after a key correction. **4.1 is applied to the
   hosted database; the rescore migration `20260927090000` is written and
-  dry-run 15/15 but NOT applied** (the owner applies it). Verified 45/45 over
+  dry-run 15/15 but NOT applied**, and neither is the review fix-forward `20260927100000` (dry-run 9/9); the owner applies both. Verified 45/45 over
   HTTP on a local production build. **4.5, closing abandoned attempts on a
   schedule, is not built** -- a `pg_cron` job was refused by the agent's
   permission classifier as unauthorised persistence and waits for the owner's
@@ -295,7 +295,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Built, pushed, **not merged, no PR**. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration **committed, dry-run 15/15, NOT applied** (owner). 4.5 not built (owner decision, see Status) | 2026-09-27 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Built, pushed, **not merged, no PR**. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration `20260927090000` and review fix-forward `20260927100000` **committed and dry-run (15/15, 9/9), NOT applied** (owner: `npx supabase db push --linked --project-ref eeeftjwvbppznsmcljnw`, then re-run both probes and `SIT_RESCORE=1 node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010`). Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-27 |
 
 **Three branches are open as of 2026-09-27**, each in its own worktree, each
 claiming its own row in its own copy of this file:

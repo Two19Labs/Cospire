@@ -99,7 +99,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
   const [topResult, childResult] = topIds.length
     ? await Promise.all([
         supabase.from("questions").select(questionColumns).in("id", topIds),
-        supabase.from("questions").select(questionColumns).in("parent_id", topIds).is("archived_at", null).order("id"),
+        supabase.from("questions").select(questionColumns).in("parent_id", topIds).order("id"),
       ])
     : [{ data: [], error: null }, { data: [], error: null }];
   if (topResult.error) throw new Error(`Unable to read questions: ${topResult.error.message}`);

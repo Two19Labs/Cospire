@@ -1,9 +1,11 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { proctorEventTypes, type ProctorEventType } from "../proctor";
-import { scoreAndStore } from "../score-attempt";
+import { rescoreAwaiting } from "../rescore-awaiting";
 
 export interface MockAttemptRow {
   events: Partial<Record<ProctorEventType, number>>;
@@ -25,19 +27,20 @@ export async function listMockAttempts(mockId: number): Promise<MockAttemptRow[]
   const supabase = await createServerSupabaseClient();
   const { data: attempts, error } = await supabase
     .from("attempts")
-    .select("id, student_id, proctored, score, started_at, status, submitted_by")
+    .select("id, org_id, student_id, proctored, score, started_at, status, submitted_by")
     .eq("mock_id", mockId)
     .order("started_at", { ascending: false })
     .limit(attemptLimit);
   if (error) throw new Error(`Unable to list attempts: ${error.message}`);
   if (!attempts?.length) return [];
 
-  // Attempts awaiting a score (a question edit cleared them) are scored before
-  // they are shown. RLS has just returned them to this admin, which is the
-  // check the server-key write relies on.
-  for (const row of attempts) {
-    if (row.status === "submitted" && row.score === null) row.score = await scoreAndStore(row.id);
-  }
+  // Attempts awaiting a score (a question edit cleared them) are shown as such
+  // and scored after this page has been sent, never inside the render: a key
+  // correction can clear hundreds, and the admin must not wait on them
+  // (operating manual §8). RLS has just returned them to this admin, in this
+  // admin's organisation, which is what the server-key writes rely on.
+  const awaiting = attempts.find((row) => row.status === "submitted" && row.score === null);
+  if (awaiting) after(() => rescoreAwaiting(awaiting.org_id));
 
   const ids = attempts.map((row) => row.id);
   const [profiles, events] = await Promise.all([

@@ -29,8 +29,19 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
   const mockId = idFrom(formData, "mockId");
   if (mockId === null) redirect("/student/mocks");
 
-  const phone = isPhone((await headers()).get("user-agent"));
+  const phone = isPhone((await headers()).get("user-agent"), formData.get("touchDesktop") === "1");
   const supabase = await createServerSupabaseClient();
+
+  // An attempt already open is resumed, whatever the limit says: a second
+  // click, or a second tab, must land in the same paper.
+  const { data: open } = await supabase
+    .from("attempts")
+    .select("id")
+    .eq("mock_id", mockId)
+    .eq("status", "in_progress")
+    .maybeSingle();
+  if (open) redirect(`/student/attempts/${open.id}`);
+
   const { data, error } = await supabase
     .from("attempts")
     .insert({ mock_id: mockId, org_id: student.orgId, proctored: !phone, student_id: student.id })
@@ -38,17 +49,24 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
     .single();
 
   if (error?.code === "23505") {
-    // One is already open: resume it rather than refuse.
-    const { data: open } = await supabase
+    // Opened in another tab between the check above and this insert.
+    const { data: raced } = await supabase
       .from("attempts")
       .select("id")
       .eq("mock_id", mockId)
       .eq("status", "in_progress")
       .maybeSingle();
-    if (open) redirect(`/student/attempts/${open.id}`);
+    if (raced) redirect(`/student/attempts/${raced.id}`);
   }
   if (error || !data) {
-    const reason = error?.message.includes("phone") ? "phone" : error?.message.includes("attempt") ? "limit" : "failed";
+    // Told apart by the guard's own messages; anything else -- a revoked grant
+    // refused by RLS, a network fault -- is a plain failure.
+    const message = error?.message ?? "";
+    const reason = message.startsWith("this mock does not allow attempts from a phone")
+      ? "phone"
+      : message.startsWith("this mock allows")
+        ? "limit"
+        : "failed";
     redirect(`/student/mocks/${mockId}?error=${reason}`);
   }
 
@@ -123,6 +141,12 @@ export async function nextSectionAction(formData: FormData): Promise<void> {
 
   const supabase = await createServerSupabaseClient();
   const state = paperState(view.sections, view.entered, new Date(view.attempt.startedAt), view.mock.durationMinutes, new Date());
+  // The form names the section it was showing. A duplicate or stale post -- a
+  // double click, a second tab -- finds the paper has already moved on and does
+  // nothing, instead of leaving the next section unseen.
+  const shown = idFrom(formData, "sectionId");
+  const current = state.kind === "open" || state.kind === "enter" ? state.sectionId : null;
+  if (shown === null || shown !== current) redirect(back);
   let target: number | null = null;
   if (state.kind === "open" && state.sectionId !== null) {
     await supabase
