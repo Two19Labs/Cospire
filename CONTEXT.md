@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-26 (Asia/Calcutta)
+Last updated: 2026-09-27 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -321,8 +321,11 @@ Two operational notes that cost time to rediscover:
 |---|---|---|---|---|---|
 | Claude (test-engine chat) | `feat/test-engine` | Phase 4 slices 4.1-4.3: the attempt tables and guards, sitting a mock, scoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | **4.1 applied** 2026-09-26 by the owner (`db push`), probe 56/56 after apply. **4.2, 4.3 and 4.4 built and verified 45/45 over HTTP** on a local production build against the hosted database (`scripts/verify/test-engine-sit.mjs`), counts back to baseline. 4.4 is warn-and-log proctoring plus an Attempts panel on `/admin/mocks/[id]`. Not merged, no PR yet. **4.5 (auto-submit cron) not built**; until it is, an abandoned attempt stays open until its student returns | 2026-09-26 |
 
-**One branch is held as of 2026-09-26**: `feat/test-engine`, in the worktree
-`C:\Cospire\Cospire-test-engine` on port 3010. `feat/mock-docs` merged as
+| Claude (analytics subagent) | `feat/analytics` (from `feat/test-engine` at `5a9aafa`) | Phase 4 step 5: student, admin and mentor analytics over submitted attempts | `src/features/analytics/**`, `src/app/student/analytics/**`, `src/app/admin/analytics/**`, `src/app/mentor/analytics/**`, `scripts/verify/analytics.mjs`, nav items only in `auth/components/app-nav.tsx` | In progress, 2026-09-27. No migration planned: aggregates in TypeScript over bounded, indexed reads | 2026-09-27 |
+
+**Two branches are held as of 2026-09-27**: `feat/test-engine`, in the worktree
+`C:\Cospire\Cospire-test-engine` on port 3010, and `feat/analytics`, in
+`C:\Cospire\Cospire-analytics` on port 3060. `feat/mock-docs` merged as
 PR #61 (`092d878`).
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
