@@ -299,8 +299,23 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4 slice 4.1: the attempt tables, and the access model that lets a student reach a mock at all | `supabase/migrations/2026092*_test_engine_*.sql`, `src/features/test-engine/**`, `src/features/admin/**` (granting mocks), `scripts/verify/test-engine-access.sql` | In progress | 2026-09-26 |
+| Claude (mock-docs agent) | `feat/mock-docs` | Item 3: mocks built from documents quoting question IDs. No migration | `src/features/question-bank/**`, `src/app/admin/mocks/**`, `scripts/verify/` | In progress | 2026-09-26 |
 
-**Nobody holds a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
+Three streams are running at once, which is the ceiling operating manual §5.5
+sets. **They share one database**, so every migration is additive and nobody
+drops or renames anything (§5.6). Only `feat/test-engine` writes a migration in
+this round; `feat/mock-docs` writes none by design.
+
+`feat/model-provider` is open as **PR #60** and green, awaiting the owner's
+merge.
+
+**As of 2026-09-26 the main checkout is two merges behind `origin/main`** -- it
+sits at `e749521` while origin is at `6cc00f6`. The dev server on port 3000 is
+therefore serving code without the Word upload or the Gemini path. Harmless for
+Codex's UI work, misleading for anything else.
+
+**Nobody held a branch as of 2026-09-25.** `feat/doc-import` merged as PR #58
 (`b2a4fb8`) and its branch is deleted. Two things a new session should know
 before touching anything:
 
