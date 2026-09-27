@@ -52,6 +52,30 @@ function readImagePaths(raw: unknown): string[] {
   });
 }
 
+interface OutlineRow {
+  mock_section_id: number;
+  parent_id: number | null;
+  question_id: number;
+  question_type: string;
+  sort_order: number;
+}
+
+type SessionClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+
+// `public.attempt_outline` (20260927110000): ids, parents, sections and types of
+// the caller's own attempt, never a body or a key. Typed by hand here only
+// until that migration is applied and `npm run db:types` adds it to the
+// generated types; then call `supabase.rpc("attempt_outline", ...)` directly.
+// Null when the function is not there yet.
+async function readOutline(supabase: SessionClient, attemptId: number): Promise<OutlineRow[] | null> {
+  const call = supabase.rpc as unknown as (
+    fn: "attempt_outline",
+    args: { p_attempt_id: number },
+  ) => PromiseLike<{ data: OutlineRow[] | null; error: { message: string } | null }>;
+  const { data, error } = await call.call(supabase, "attempt_outline", { p_attempt_id: attemptId });
+  return error || !data ? null : data;
+}
+
 // Everything one attempt screen needs, read through the student's own session:
 // RLS returns the attempt only to its owner and the paper's questions only
 // while they have an attempt on it. Null when either is refused.
@@ -108,7 +132,18 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
   // The builder places a DI set as its passage *and* each sub-question, so a
   // question can arrive through both reads. One row per question.
   const rows = [...new Map([...(topResult.data ?? []), ...(childResult.data ?? [])].map((row) => [row.id, row])).values()];
-  const parentOf = new Map(rows.map((row) => [row.id, row.parent_id]));
+
+  // The paper's shape. While a sectioned paper is open, questions of sections
+  // not yet entered are unreadable (20260927110000), so their ids, parents and
+  // types come from the outline instead; without it (before that migration)
+  // the readable rows are the whole paper anyway.
+  const outline = await readOutline(supabase, attemptId);
+  const parentOf = new Map<number, number | null>(
+    outline ? outline.map((row) => [row.question_id, row.parent_id]) : rows.map((row) => [row.id, row.parent_id]),
+  );
+  const typeOf = new Map<number, string>(
+    outline ? outline.map((row) => [row.question_id, row.question_type]) : rows.map((row) => [row.id, row.type]),
+  );
   const placedIds = new Set(topIds);
   const allPaths = rows.flatMap((row) => readImagePaths(row.images));
   const signed = new Map<string, string>();
@@ -143,9 +178,13 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
     const parent = parentOf.get(row.question_id);
     return parent === null || parent === undefined || !placedIds.has(parent);
   });
+  const childrenOf = new Map<number, number[]>();
+  for (const [id, parent] of [...parentOf.entries()].sort((a, b) => a[0] - b[0])) {
+    if (parent !== null) childrenOf.set(parent, [...(childrenOf.get(parent) ?? []), id]);
+  }
   const placed: PlacedQuestion[] = topLevel.map((row) => ({
-    childIds: (childResult.data ?? []).filter((child) => child.parent_id === row.question_id).map((child) => child.id),
-    isStimulus: questions.get(row.question_id)?.type === "di_stimulus",
+    childIds: childrenOf.get(row.question_id) ?? [],
+    isStimulus: typeOf.get(row.question_id) === "di_stimulus",
     questionId: row.question_id,
     sectionId: row.mock_section_id,
   }));

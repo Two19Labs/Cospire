@@ -47,6 +47,13 @@ describe("scoring, operating manual §13.1", () => {
     expect(Object.is(result.score, 0)).toBe(true);
   });
 
+  it("never lets a repeated option stand in for another (a crafted row)", () => {
+    const result = score([[2, { options: ["a", "a"] }], [1, { options: ["b", "b"] }]]);
+    expect(result.responses[1]).toEqual({ isCorrect: false, marksAwarded: -1, questionId: 2 });
+    expect(result.responses[0]).toEqual({ isCorrect: false, marksAwarded: -1, questionId: 1 });
+    expect(score([[2, { options: ["a", 7] }]]).responses[1].isCorrect).toBe(false);
+  });
+
   it("gives no partial credit on a multiple-correct MCQ", () => {
     const result = score([[2, { options: ["a"] }]]);
     expect(result.responses[1].isCorrect).toBe(false);
