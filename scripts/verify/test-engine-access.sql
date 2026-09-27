@@ -3,7 +3,7 @@
 -- the key after submitting). Every refusal is proven by what the database
 -- refuses or by counting rows, never by the absence of an error.
 --
--- Run after the migration is applied:
+-- Expects every test-engine migration up to 20260927110000 applied. Run:
 --   npx supabase db query --linked --project-ref eeeftjwvbppznsmcljnw -f scripts/verify/test-engine-access.sql
 -- Or as a dry run before it is: see docs/context/verification-log.md for how the
 -- migration body is spliced in after `begin;`.
@@ -108,7 +108,8 @@ select pg_temp.ok((select started_at=now() and status='in_progress' and score is
   'a client-supplied start time and score are overwritten: started_at = now(), unscored, proctored');
 select pg_temp.refused(format($q$insert into public.attempts(org_id,mock_id,student_id) values (1,%s,%L)$q$, pg_temp.v('timed'), current_setting('probe.student')),
   '42501', 'a second attempt on a one-attempt mock is refused');
-select pg_temp.ok((select count(*)=2 from public.questions where id in (pg_temp.v('q1'),pg_temp.v('q2'))), 'with an attempt, the student reads the paper''s questions');
+-- A sectioned paper is read a section at a time (20260927110000): nothing yet.
+select pg_temp.ok((select count(*)=0 from public.questions where id in (pg_temp.v('q1'),pg_temp.v('q2'))), 'with an attempt but no section entered, a sectioned paper''s questions stay unreadable');
 select pg_temp.ok((select count(*)=0 from public.questions where id=pg_temp.v('q4')), 'a question in no paper of theirs stays unreadable');
 select pg_temp.ok((select count(*)=0 from public.question_keys where question_id in (pg_temp.v('q1'),pg_temp.v('q2'))), 'no key is readable while the attempt is open');
 
@@ -123,6 +124,7 @@ select pg_temp.refused(format($q$insert into public.attempt_sections(attempt_id,
   '42501', 'a section from another mock is refused');
 insert into public.attempt_sections(attempt_id,mock_section_id,started_at) values (pg_temp.v('a1'),pg_temp.v('qa'),'2000-01-01');
 select pg_temp.ok((select started_at=now() from public.attempt_sections where attempt_id=pg_temp.v('a1') and mock_section_id=pg_temp.v('qa')), 'the section clock starts at now(), whatever the client sends');
+select pg_temp.ok((select count(*)=1 from public.questions where id in (pg_temp.v('q1'),pg_temp.v('q2'))), 'in the first section, only its question is readable');
 
 insert into public.attempt_responses(attempt_id,question_id,answer,is_correct,marks_awarded) values (pg_temp.v('a1'),pg_temp.v('q1'),'{"options":["b"]}',true,3);
 select pg_temp.ok((select is_correct is null and marks_awarded is null from public.attempt_responses where attempt_id=pg_temp.v('a1') and question_id=pg_temp.v('q1')),
@@ -242,5 +244,5 @@ select pg_temp.ok((select a.score=0 and r.is_correct is false from public.attemp
 update public.attempts set submitted_at=now() where id=pg_temp.v('c2');
 select pg_temp.ok((select submitted_at=started_at + interval '60 minutes' from public.attempts where id=pg_temp.v('c2')), 'even the server cannot move a submission time afterwards');
 
-select pg_temp.ok(current_setting('probe.passes')::int=56, current_setting('probe.passes')||' test-engine database checks passed, expected 56');
+select pg_temp.ok(current_setting('probe.passes')::int=57, current_setting('probe.passes')||' test-engine database checks passed, expected 57');
 rollback;
