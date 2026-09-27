@@ -38,10 +38,15 @@ export interface AttemptScore {
   score: number;
 }
 
-function sameSet(left: unknown[], right: unknown[]): boolean {
-  if (left.length !== right.length) return false;
-  const expected = new Set(right);
-  return left.every((value) => expected.has(value));
+// Exactly the same options, each once. A stored answer is untrusted -- a
+// student can write their own row through the API -- so a repeated option is
+// never allowed to stand in for a different one: ["a","a"] is not ["a","c"].
+function sameSet(given: unknown[], key: unknown[]): boolean {
+  if (!given.every((value) => typeof value === "string")) return false;
+  const chosen = new Set(given);
+  const expected = new Set(key);
+  if (chosen.size !== given.length || chosen.size !== expected.size) return false;
+  return [...chosen].every((value) => expected.has(value));
 }
 
 export function isAnswerCorrect(question: ScoringQuestion, answer: unknown): boolean {
