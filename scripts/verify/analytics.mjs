@@ -55,7 +55,30 @@ async function get(path, key, ua) {
   if (key) headers.cookie = people[key].cookie;
   if (ua) headers["user-agent"] = ua;
   const r = await fetch(`${BASE}${path}`, { headers, redirect: "manual" });
-  return { body: (await r.text()).replaceAll("<!-- -->", ""), location: r.headers.get("location"), status: r.status };
+  return { body: assemble((await r.text()).replaceAll("<!-- -->", "")), location: r.headers.get("location"), status: r.status };
+}
+// React streams a large page out of order: a `<template id="P:n">` placeholder
+// where the markup belongs, and the markup later in a hidden `<div id="S:n">`
+// that a script moves into place. A browser runs that script; this does the
+// same move, so a table row reads as the user sees it.
+// A segment is `<div hidden id="S:n">…</div>`, or inside a table
+// `<table hidden><tr id="S:n">…</tr></table>`, and is always followed by the
+// `$RS("S:n","P:n")` script that moves it; that script marks where it ends.
+function assemble(html) {
+  let out = html;
+  for (let pass = 0; pass < 50; pass += 1) {
+    const moved = /<script>\$RS\("S:(\d+)","P:(\d+)"\)<\/script>/.exec(out);
+    if (!moved) break;
+    const [script, segmentId, placeholderId] = moved;
+    const open = new RegExp(`(?:<table hidden><(\\w+) id="S:${segmentId}">|<(\\w+) hidden id="S:${segmentId}">)`).exec(out);
+    if (!open || open.index > moved.index) break;
+    const close = open[1] ? `</${open[1]}></table>` : `</${open[2]}>`;
+    let inner = out.slice(open.index + open[0].length, moved.index);
+    if (inner.endsWith(close)) inner = inner.slice(0, -close.length);
+    out = out.slice(0, open.index) + out.slice(moved.index + script.length);
+    out = out.replace(`<template id="P:${placeholderId}"></template>`, inner);
+  }
+  return out;
 }
 const forms = (html) => [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]);
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&#39;/g, "'");
@@ -267,8 +290,9 @@ try {
     check("admin mock: 3 attempts, 2 students, average 6.33, median 5, top 12",
       page.status === 200 && stat(page.body, "3", "scored attempts") && stat(page.body, "2", "students") && stat(page.body, "6.33", "average of 12") && stat(page.body, "5", "median") && stat(page.body, "12", "top score"));
     check("admin mock: 2 proctored, 1 unproctored (phone)", stat(page.body, "2", "proctored") && stat(page.body, "1", "unproctored (phone)"));
-    check("admin mock: distribution, 1 in 0-3, 1 in 3-6, 0 in 6-9, 1 in 9-12",
-      same(row(page.body, "0 to under 3"), ["0 to under 3", "1"]) && same(row(page.body, "3 to under 6"), ["3 to under 6", "1"]) && same(row(page.body, "6 to under 9"), ["6 to under 9", "0"]) && same(row(page.body, "9 to 12"), ["9 to 12", "1"]));
+    const buckets = [["0 to under 2.4", "1"], ["2.4 to under 4.8", "0"], ["4.8 to under 7.2", "1"], ["7.2 to under 9.6", "0"], ["9.6 to 12", "1"]];
+    check("admin mock: distribution, five exact buckets to full marks: 2 in the first, 5 in the third, 12 in the last",
+      buckets.every(([label, count]) => same(row(page.body, label), [label, count])), JSON.stringify(buckets.map(([label]) => row(page.body, label))));
     checkRow("admin mock: by section, QA across attempts", page.body, T.qa, [T.qa, "6", "4", "1", "1", "80%", "11 / 18"]);
     checkRow("admin mock: by section, VA across attempts", page.body, T.va, [T.va, "6", "3", "1", "2", "75%", "8 / 18"]);
     checkRow("admin mock: by topic, Tables", page.body, T.tables, [T.tables, "3", "1", "0", "2", "100%", "3 / 9"]);
