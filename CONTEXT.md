@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-27 (Asia/Calcutta)
+Last updated: 2026-09-28 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -17,7 +17,7 @@ this file and not found here is in one of these; find it with
 | `docs/context/phase-history.md` | Phase 0, 1 and 5a progress records, exit gates and security audits |
 | `docs/context/verification-log.md` | Every check run, with its result |
 
-## Status, 2026-09-27
+## Status, 2026-09-28
 
 - **On `main` and deployed** at `https://cospire-roan.vercel.app` (`main` at
   `092d878`):
@@ -31,8 +31,8 @@ this file and not found here is in one of these; find it with
     with pictures (PR #58), the Gemini path (PR #58; live round trip
     UNVERIFIED, see below), the admin mock builder, and mocks built from
     documents quoting question IDs (PR #61).
-- **Phase 4, the test engine, is built on `feat/test-engine`, pushed, not
-  merged, no pull request yet.** Slices 4.1 (attempt tables and guards), 4.2
+- **Phase 4, the test engine, is built on `feat/test-engine`, with a pull
+  request open since 2026-09-28, not merged.** Slices 4.1 (attempt tables and guards), 4.2
   (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
   Attempts panel) and rescoring after a key correction. **4.1 is applied to the
   hosted database; the rescore migration `20260927090000` is written and
@@ -295,9 +295,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Built, pushed, **not merged, no PR**. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration `20260927090000`, review fix-forward `20260927100000` and security fix-forward `20260927110000` **committed and dry-run (15/15, 9/9, 15/15), NOT applied** (owner: `npx supabase db push --linked --project-ref eeeftjwvbppznsmcljnw`, then re-run both probes and `SIT_RESCORE=1 node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010`). Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-27 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Pull request open 2026-09-28, **not merged**. typecheck, lint, test (497/497) and build re-run green 2026-09-28; `main` already contained. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration `20260927090000`, review fix-forward `20260927100000` and security fix-forward `20260927110000` **committed and dry-run (15/15, 9/9, 15/15), NOT applied** (owner: `npx supabase db push --linked --project-ref eeeftjwvbppznsmcljnw`, then re-run both probes and `SIT_RESCORE=1 node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010`). Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-27 |
 
-**Three branches are open as of 2026-09-27**, each in its own worktree, each
+**Three branches are open as of 2026-09-28**, each in its own worktree, each
 claiming its own row in its own copy of this file:
 
 - `feat/test-engine` -- `C:\Cospire\Cospire-test-engine`, port 3010 (this row).
@@ -315,11 +315,12 @@ conflict between them; the nav items are grouped and carry an `eyebrow` on
 `feat/admin-ui`.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
-PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`); all three
-branches are deleted. Three things a new session should know before touching
+PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
+`feat/doc-import` and `feat/mock-docs` (PR #61) are merged but **still on
+`origin`**, awaiting the owner's deletion. Three things a new session should know before touching
 anything:
 
-- **A dev server is running on port 3000** from the main checkout
+- **A dev server may be running on port 3000** (none was on 2026-09-28) from the main checkout
   (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
   reading the code and working on UI there. **Never run `npm run build` in that
   checkout while it is up** -- they share `.next`, and the build corrupts the
