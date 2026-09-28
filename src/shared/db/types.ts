@@ -568,6 +568,166 @@ export type Database = {
           },
         ]
       }
+      attempt_responses: {
+        Row: {
+          answer: Json | null
+          attempt_id: number
+          created_at: string
+          id: number
+          is_correct: boolean | null
+          marked_for_review: boolean
+          marks_awarded: number | null
+          question_id: number
+          updated_at: string
+        }
+        Insert: {
+          answer?: Json | null
+          attempt_id: number
+          created_at?: string
+          id?: never
+          is_correct?: boolean | null
+          marked_for_review?: boolean
+          marks_awarded?: number | null
+          question_id: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: Json | null
+          attempt_id?: number
+          created_at?: string
+          id?: never
+          is_correct?: boolean | null
+          marked_for_review?: boolean
+          marks_awarded?: number | null
+          question_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempt_responses_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attempt_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attempt_sections: {
+        Row: {
+          attempt_id: number
+          created_at: string
+          id: number
+          mock_section_id: number
+          started_at: string
+          submitted_at: string | null
+        }
+        Insert: {
+          attempt_id: number
+          created_at?: string
+          id?: never
+          mock_section_id: number
+          started_at?: string
+          submitted_at?: string | null
+        }
+        Update: {
+          attempt_id?: number
+          created_at?: string
+          id?: never
+          mock_section_id?: number
+          started_at?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempt_sections_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attempt_sections_mock_section_id_fkey"
+            columns: ["mock_section_id"]
+            isOneToOne: false
+            referencedRelation: "mock_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attempts: {
+        Row: {
+          created_at: string
+          id: number
+          mock_id: number
+          org_id: number
+          proctored: boolean
+          score: number | null
+          started_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          mock_id: number
+          org_id: number
+          proctored?: boolean
+          score?: number | null
+          started_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          mock_id?: number
+          org_id?: number
+          proctored?: boolean
+          score?: number | null
+          started_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempts_mock_fk"
+            columns: ["mock_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "mocks"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "attempts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attempts_student_fk"
+            columns: ["student_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       content_access: {
         Row: {
           created_at: string
@@ -939,6 +1099,35 @@ export type Database = {
         }
         Relationships: []
       }
+      proctor_events: {
+        Row: {
+          attempt_id: number
+          event_type: string
+          id: number
+          occurred_at: string
+        }
+        Insert: {
+          attempt_id: number
+          event_type: string
+          id?: never
+          occurred_at?: string
+        }
+        Update: {
+          attempt_id?: number
+          event_type?: string
+          id?: never
+          occurred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proctor_events_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1236,6 +1425,58 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      rescore_events: {
+        Row: {
+          attempts_affected: number
+          changed_by: string | null
+          id: number
+          occurred_at: string
+          org_id: number
+          question_id: number
+          reason: string | null
+        }
+        Insert: {
+          attempts_affected?: number
+          changed_by?: string | null
+          id?: never
+          occurred_at?: string
+          org_id: number
+          question_id: number
+          reason?: string | null
+        }
+        Update: {
+          attempts_affected?: number
+          changed_by?: string | null
+          id?: never
+          occurred_at?: string
+          org_id?: number
+          question_id?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rescore_events_changed_by_fk"
+            columns: ["changed_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "rescore_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rescore_events_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
           },
         ]
       }

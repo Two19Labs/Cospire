@@ -15,7 +15,7 @@ export async function NewMockRoute({ searchParams }: { searchParams: Promise<Rec
   const profile = await requireRole("admin"); const params = await searchParams;
   return <MockEditor error={typeof params.error === "string" ? params.error : undefined} picker={await listPickerQuestions(parseMockPage(params.page))} profile={profile} value={null} />;
 }
-export async function EditMockRoute({ mockId, searchParams }: { mockId: number; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export async function EditMockRoute({ children, mockId, searchParams }: { children?: React.ReactNode; mockId: number; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireRole("admin"); const params = await searchParams;
   const value = await getMock(mockId);
   const picker = await listPickerQuestions(parseMockPage(params.page));
@@ -25,5 +25,5 @@ export async function EditMockRoute({ mockId, searchParams }: { mockId: number; 
   const selected = await listSelectedQuestions(
     value.sections.flatMap((section) => section.questionIds).filter((id) => !onPage.has(id)),
   );
-  return <MockEditor error={typeof params.error === "string" ? params.error : undefined} notice={typeof params.notice === "string" ? params.notice : undefined} offPage={selected} picker={picker} profile={profile} value={value} />;
+  return <MockEditor error={typeof params.error === "string" ? params.error : undefined} notice={typeof params.notice === "string" ? params.notice : undefined} offPage={selected} picker={picker} profile={profile} value={value}>{children}</MockEditor>;
 }

@@ -7,6 +7,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | Date | Work | Result / verification |
 |---|---|---|
 | 2026-09-26 | **Mocks built from documents that quote question IDs** (`feat/mock-docs`, pull request raised, not merged) | Readable IDs (`Q00042`, computed from `questions.id`, **no migration**), the ID on every bank row, on the question page and searchable there; copyable ID lists for the current bank filter and at the end of an import; and a plain-text mock template parsed directly -- **no model call**, because an ID must match exactly -- resolving to the existing `save_mock`. `scripts/verify/mock-document.mjs` **29/29** against a local production build and the hosted database, every refusal proven by counting mock rows; 39 new unit tests, 454 in all; typecheck, lint and build pass. Counts back to baseline. See *Mocks built from documents that quote question IDs* |
+| 2026-09-27 | **Phase 4, the test engine, built on `feat/test-engine` (not merged)** | Slices 4.1-4.4 and rescoring. 4.1 applied; rescore migration dry-run 15/15, not applied. 45/45 over HTTP on a local production build. See *The test engine* |
 | 2026-09-23 | The seven PR #49 review findings fixed (`fix/mock-builder-review`) | Section slots map by slot, not position (`mapSectionSlots`, unit tested); a question archived after selection renders as a removable row rather than a hidden input, and the save says "archived" rather than "unavailable"; the section embed is read as the object PostgREST returns for a many-to-one; a missing section field is refused; childless DI sets are listed and refused instead of filtered after `.range()` had paged, which shortened picker pages; `/admin/mocks/[id]` uses `parseId`; images dropped from a saved question are deleted from Storage after the save, and an upload removed before saving is deleted immediately. 19/19 over HTTP, 354 tests, typecheck, lint and build. **Two facts worth keeping:** the service key cannot write `questions` rows directly -- the row CHECK calls `private.question_images_valid`, granted to `authenticated` only -- so a verify script must archive through the admin's own session; and `notFound()` on a route carrying a `loading.tsx` renders the not-found page with status 200, because the skeleton has already streamed the headers, the same trade-off the role layouts record for `redirect()` |
 | 2026-09-23 | Question bank, Phase 3 parts 1-4, merged as `1c7073d` (PR #49) | Schema with answer keys in their own table, the numerical normaliser, authoring for admins and mentors, paste-a-prompt import with per-question review, and the admin-only mock builder. Seven migrations were already applied, so `main` and the database came back into step on merge. Verified before merge: 41/41 SQL, 36/36 authoring over HTTP, 25/25 importer, 9/9 mock SQL and 10/10 mock HTTP, 342 tests, typecheck, lint and build. A high-effort review at merge time raised seven findings, all in the mock builder and none student-facing: blank section slot misfiles questions; a question archived after selection makes its mock uneditable; the picker's section column always shows "-" (many-to-one embed read as an array, confirmed against the schema); a missing section field files into section one; childless DI stimuli filtered after paging; `/admin/mocks/[id]` 500s on an unsafe integer id; removed image uploads are never deleted from the bucket. To be fixed before any real mock is built |
 | 2026-09-22 | Skeletons for every signed-in screen, and sign-in straight to the role home (`fix/loading-coverage`) | From the 2026-09-21 client demo: skeletons looked fine on admin screens but not on student and mentor ones. Every page already had a skeleton, and all three roles stream it with the first byte (measured on the deployed URL: about 0.5s to skeleton, 0.75-1.1s to content, the same for each role). The real gaps were on exactly the paths the demo took. (1) Seven detail screens had no `loading.tsx` of their own and borrowed their parent list's, under the list's title, so a click into them looked as if it had not landed: `student/reports/[id]`, `student/documents/[id]`, `mentor/reports/[id]`, `admin/documents/[id]`, `admin/report-templates/[id]`, `admin/report-templates/import`, `admin/ars/[id]/rounds/[roundId]`. Each now has its own. (2) Signing in went login, then `/dashboard`, then the role home: a second full round trip (about 0.5s) with nothing on screen, at the moment of switching to a student or mentor account. `loginAction` now redirects straight to the role home when the profile is active, and falls back to `/dashboard` otherwise; the role layout re-checks either way. `src/features/auth/loading-coverage.test.ts` fails if any admin, mentor or student page lacks its own `loading.tsx`, and was seen to fail when one was removed. `scripts/verify/loading-coverage.mjs` 11/11 on a local production build and 1/11 on the unfixed deployed URL, so it discriminates. 241/241 tests, typecheck, lint and build pass. **Merged as PR #52 (`39860c6`) and 11/11 on the deployed URL.** Not browser-tested: client-side navigation itself cannot be driven here |
@@ -54,6 +55,74 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
 | 2026-09-20 | **Multi-file ARS upload UI built, merged and deployed** | A file question uploads directly from the browser to the private `ars-uploads` bucket, attaches metadata under its stable field key, and can be replaced or removed only while the submission is a draft. Multiple questions in one form are supported. Migration `20260920150318` is applied; live Storage verification is 10/10; typecheck, lint, 226 tests and production build pass. PR #36 merged as `0e0f14f`; Production deployed it and a signed-in live capture confirmed a real file input with no placeholder |
+
+### The test engine, 2026-09-26 and 27
+
+Built on `feat/test-engine`, in the worktree `C:\Cospire\Cospire-test-engine`.
+
+**4.1 was corrected before it was applied.** The first draft let a student, with
+their own session and no route involved, set their own score, answer after the
+clock ran out by never pressing submit, start two attempts from two tabs past
+`max_attempts`, answer questions outside their paper, and enter sections out of
+order. All five are refused in the database now: triggers own the clock, the
+submission stamps and the score; answers are refused after `started_at +
+duration + 30s` and, in a timed section, outside that section's own window; an
+advisory lock and a partial unique index allow one open attempt per mock.
+The file was also renamed from `20260926T1030_` to `20260926103000_`: the CLI
+reads only `<digits>_name.sql` and would have skipped it silently.
+
+**What counts as the server.** `private.is_trusted_writer()` is true for the
+secret key (scoring, written from `score-attempt.ts`), a direct connection with
+no request claims (migrations, the console), and -- from `20260927090000` -- a
+transaction-local `cospire.system_write` flag the rescore trigger sets for its
+own statement. A student's request always carries `authenticated` claims.
+
+**A sat mock is frozen.** `save_mock` rewrites every section on each save, which
+would change the paper under a sitting student and orphan answers, so a mock
+with any attempt cannot be rebuilt; the builder says why. That includes its
+settings. A settings-only edit path is a possible follow-up.
+
+**Sitting it.** `/student/mocks`, `/student/mocks/[id]`, `/student/attempts/[id]`.
+Every move is a form post that saves first, so the paper works without
+JavaScript. The countdown is decoration drawn from the server's deadline; at
+zero it submits the question form with a hidden `timeup` button, so the answer
+on screen is saved inside the grace. The screen moves on at the deadline itself,
+not after the grace: moving on after the grace made the countdown fire again on
+every reload for 30 seconds.
+
+**Scoring** is §13.1 exactly, in `scoring.ts` (pure, unit-tested): no partial
+credit on multiple-correct, TITA penalised only when the mock lists it,
+unanswered kept apart from wrong (`is_correct` and `marks_awarded` both null),
+marks summed in hundredths. A DI set is placed by the builder as its passage
+**and** each sub-question, so layout and scoring both de-duplicate; without that
+a sub-question appeared and scored twice.
+
+**Proctoring (4.4)** records fullscreen exit, tab hidden, window blur, copy and
+paste through the student's session, only while the attempt is open and only
+on a proctored attempt of a mock with proctoring on, and shows a banner that
+says the test has not ended. `/admin/mocks/[id]` lists every attempt with its
+logged events; phone attempts show as unproctored.
+
+**Rescoring.** A key, option, type or marks change clears the score of every
+submitted attempt that answered the question and writes one `rescore_events`
+row, in the edit's transaction. The app recomputes: after the question save
+(`after()`), when a result opens, and when a mock's attempts are listed.
+
+**Not built:** 4.5, a scheduled close of abandoned attempts. A `pg_cron` job was
+written and refused by the agent's permission classifier as unauthorised
+persistence; it waits for the owner. Vercel Cron on Hobby runs once a day.
+Meanwhile an expired attempt closes as the timer's, at its deadline, when its
+student next opens it.
+
+**Harness lessons.** `scripts/verify/test-engine-sit.mjs` drives everything as
+no-JavaScript posts. Three false failures cost time, all the harness's own: it
+must post what a browser posts (checked radios and typed values, not only hidden
+fields -- otherwise pressing Submit "clears" a saved answer); React separates
+adjacent text with `<!-- -->`, so strip it before matching; and `notFound()`
+under a `loading.tsx` answers 200 with the not-found page. A server action
+called from client code is posted with a `Next-Action` header whose id is read
+from `.next/static/chunks`. Stopping the `next start` wrapper leaves node on the
+port; stop the process that owns it.
 
 ### The process importer, 2026-09-20
 
