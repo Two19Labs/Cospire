@@ -46,9 +46,10 @@ this file and not found here is in one of these; find it with
 - **The admin re-skin to the Client's prototype is built on `feat/admin-ui`,
   pushed, not merged**, and awaits the owner's visual review. Screenshots only;
   nobody has clicked through it in a browser.
-- **Analytics (Phase 4 step 5) is on `feat/analytics`**, pushed, no pull
-  request yet. It is stacked on `feat/test-engine`, which has now merged, so it
-  needs `main` merged in before its pull request is opened.
+- **Analytics (Phase 4 step 5) is on `feat/analytics`**, with `main` merged in
+  and a pull request open since 2026-09-28, not merged. **Two owner decisions
+  gate the merge**: Recharts (bars are CSS today) and the server-key read of
+  paper structure for students and mentors. See its Active work row.
 - **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
   has no billing enabled, so it runs on the free tier at five requests a minute.
   Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
@@ -295,6 +296,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude (analytics subagent) | `feat/analytics` | Phase 4 step 5 (branched from `feat/test-engine` at `5a9aafa`): student, admin and mentor analytics over submitted attempts | `src/features/analytics/**`, `src/app/student/analytics/**`, `src/app/admin/analytics/**`, `src/app/mentor/analytics/**`, `scripts/verify/analytics.mjs`, three nav items in `auth/components/app-nav.tsx` | **Built, reviewed and re-verified 53/53** over HTTP on a local production build against the hosted database, counts back to baseline. **No migration.** `main` merged in 2026-09-28 (after the test engine's squash merge); pull request open, not merged. A high-effort review's findings are fixed: attempts awaiting a score are excluded and announced; questions are numbered in paper order; the newest attempts are kept and capped lists say so; score buckets end at full marks. **Owner decisions, not done:** Recharts is not a dependency (bars are CSS); students' and mentors' paper structure (titles, placement, tags; never text or keys) is read with the server key after their own session proves the attempts, where an RLS policy would be the manual's way. Nothing looked at in a browser | 2026-09-28 |
 
 **Two branches are open as of 2026-09-28**, each in its own worktree, each
 claiming its own row in its own copy of this file. `feat/test-engine` merged
@@ -305,11 +307,11 @@ as a base.
   re-skin; finished, awaiting review. It restyles the mock screens by CSS only,
   because this branch owns the mock editor; the builder's markup follow-ups are
   listed in its report.
-- `feat/analytics` -- `C:\Cospire\Cospire-analytics`, port 3060, stacked on
-  `feat/test-engine`.
+- `feat/analytics` -- `C:\Cospire\Cospire-analytics`, port 3060 (its row
+  above). `main` merged in; targets `main` directly.
 
-**Merge order:** `feat/analytics` next (merge `main` into it and open its pull
-request against `main`; delete `feat/test-engine` only after that), then
+**Merge order:** `feat/analytics` next (delete `feat/test-engine` once it has
+merged), then
 `feat/admin-ui`. `src/features/auth/components/app-nav.tsx` and this file
 conflict between them; the nav items are grouped and carry an `eyebrow` on
 `feat/admin-ui`.

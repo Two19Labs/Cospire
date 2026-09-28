@@ -7,13 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import { isAnswered } from "../answer";
 import type { AttemptView, PaperQuestion } from "../queries/attempt-view";
 import type { QuestionKey } from "../queries/attempt-keys";
+import { formatMarks } from "../marks";
 import styles from "./exam.module.css";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
-
-function marks(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0$/, "");
-}
 
 // An answer or a key, as the student would read it: option text for a choice,
 // the typed text or accepted forms for a typed answer.
@@ -56,13 +53,20 @@ export function ResultScreen({ keys, profile, view }: { keys: Map<number, Questi
         )}
         <div className={styles.stats}>
           <div className={styles.stat}>
-            <strong>{attempt.score === null ? "—" : marks(attempt.score)}</strong>score out of {marks(total)}
+            <strong>{attempt.score === null ? "—" : formatMarks(attempt.score)}</strong>score out of {formatMarks(total)}
           </div>
           <div className={styles.stat}><strong>{correct}</strong>correct</div>
           <div className={styles.stat}><strong>{answered.length - correct}</strong>wrong</div>
           <div className={styles.stat}><strong>{view.items.length - answered.length}</strong>not answered</div>
         </div>
-        {attempt.score === null ? <p className="muted">Your score is being worked out. Refresh in a moment.</p> : null}
+        {attempt.score === null ? (
+          <p className="muted">Your score is being worked out. Refresh in a moment.</p>
+        ) : (
+          <p>
+            <Link href={`/student/analytics/attempts/${attempt.id}`}>See the full breakdown</Link>
+            <span className="muted"> by section, topic and difficulty</span>
+          </p>
+        )}
       </section>
 
       {view.sections.length > 1 ? (
@@ -90,7 +94,7 @@ export function ResultScreen({ keys, profile, view }: { keys: Map<number, Questi
                     <TableCell>{right}</TableCell>
                     <TableCell>{tried.length - right}</TableCell>
                     <TableCell>{inSection.length - tried.length}</TableCell>
-                    <TableCell>{marks(sum)}</TableCell>
+                    <TableCell>{formatMarks(sum)}</TableCell>
                   </TableRow>
                 );
               })}
@@ -111,7 +115,7 @@ export function ResultScreen({ keys, profile, view }: { keys: Map<number, Questi
                 <strong>Question {item.number}</strong>{" "}
                 <span className={tried ? (response?.isCorrect ? styles.correct : styles.wrong) : "muted"}>
                   {tried ? (response?.isCorrect ? "Correct" : "Wrong") : "Not answered"}
-                  {response?.marksAwarded != null ? ` · ${response.marksAwarded > 0 ? "+" : ""}${marks(response.marksAwarded)}` : ""}
+                  {response?.marksAwarded != null ? ` · ${response.marksAwarded > 0 ? "+" : ""}${formatMarks(response.marksAwarded)}` : ""}
                 </span>
               </p>
               {question ? <p className={styles.body}>{question.body}</p> : null}
