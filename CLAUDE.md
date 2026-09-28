@@ -8,6 +8,16 @@ Then read the full operating manual at `../CLAUDE.md`. The parent manual defines
 how this repository is built; the signed agreement in `../Context/` defines what
 is delivered. When they conflict, the agreement wins.
 
+## The handoff rule - stop at 7%, do not stop at 0%
+
+**Check your remaining allowance at checkpoints with `node scripts/check-usage.mjs`.
+Below 7% on either window, stop, commit and push what you have, write
+`docs/handoff/<branch>.md`, and tell the owner.** Exit 0 means keep working, 1
+means hand off now, 2 means it could not tell -- and 2 is never 0.
+
+The full rule, and what a handoff must contain, is in `AGENTS.md`. It binds every
+agent whichever tool it is.
+
 ## The context rule - non-negotiable, every agent, every session
 
 `CONTEXT.md` is the single source of truth for the state of this project. It is
