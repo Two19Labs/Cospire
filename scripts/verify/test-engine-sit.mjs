@@ -7,8 +7,6 @@
 //
 // It waits about a minute and a half once, for a one-minute paper's clock and
 // its 30-second grace to run out.
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 
@@ -97,19 +95,18 @@ const isNotFound = (page) => page.body.includes("Page not found");
 // posted the way the browser does: the page URL, a Next-Action header carrying
 // its id, and the arguments as JSON. The id changes on every build, so it is
 // read from the built chunks.
-function findActionId(name) {
-  const stack = [".next/static/chunks"];
-  while (stack.length) {
-    const dir = stack.pop();
-    for (const entry of readdirSync(dir)) {
-      const file = join(dir, entry);
-      if (statSync(file).isDirectory()) { stack.push(file); continue; }
-      if (!file.endsWith(".js")) continue;
-      const match = readFileSync(file, "utf8").match(new RegExp(String.raw`createServerReference\)\("([a-f0-9]+)"[^)]{0,120}"` + name + '"'));
-      if (match) return match[1];
-    }
+// Action ids are generated per build, so read the one the server actually
+// serves: the page's own script chunks, fetched as the signed-in student.
+// Reading the local .next folder instead gives the wrong id against any other
+// build, including the deployed one.
+async function findActionId(path, key, name) {
+  const page = await get(path, key);
+  const pattern = new RegExp(String.raw`createServerReference\)\("([a-f0-9]+)"[^)]{0,120}"` + name + '"');
+  for (const [, src] of page.body.matchAll(/<script[^>]+src="([^"]+\.js)"/g)) {
+    const match = (await (await fetch(src.startsWith("http") ? src : `${BASE}${src}`)).text()).match(pattern);
+    if (match) return match[1];
   }
-  throw new Error(`action ${name} not found in the build`);
+  throw new Error(`action ${name} not found in the scripts ${path} serves`);
 }
 async function callAction(path, key, id, args) {
   const r = await fetch(`${BASE}${path}`, {
@@ -168,7 +165,6 @@ try {
     { durationMinutes: 10, questions: [passage, child], title: "DI" },
   ]);
   const quick = await saveMock("Sit quick", 1, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { proctoring: true });
-  const proctorAction = findActionId("recordProctorEvent");
   const noPhones = await saveMock("Sit no phones", 30, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { allowMobile: false });
 
   // ---- Granting, through the admin's Students panel.
@@ -231,6 +227,7 @@ try {
 
   // ---- Proctoring: warn and log, never submit (slice 4.4).
   const attemptPath = `/student/attempts/${attemptId}`;
+  const proctorAction = await findActionId(attemptPath, "student", "recordProctorEvent");
   await callAction(attemptPath, "student", proctorAction, [attemptId, "tab_hidden"]);
   let logged = await eventsFor(attemptId);
   check("a tab switch on a proctored attempt is logged", logged.length === 1 && logged[0].event_type === "tab_hidden");
