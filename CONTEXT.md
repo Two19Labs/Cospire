@@ -43,9 +43,13 @@ this file and not found here is in one of these; find it with
   decision. Until then an abandoned attempt is closed as the timer's when its
   student next opens it. Details: *The test engine* in
   `docs/context/completed.md`.
-- **The admin re-skin to the Client's prototype is on `feat/admin-ui`**, with
-  `main` merged in and a pull request open since 2026-09-28. Screenshots only;
-  nobody has clicked through it in a browser.
+- **The admin re-skin to the Client's prototype is merged and deployed** (PR
+  #66, `fe9e836`, 2026-09-28), with the ARS aptitude round linked to a mock.
+  **Nobody has clicked through it in a browser**: the owner chose to merge it
+  on screenshots, so a visual pass on the deployed URL is still owed.
+- **Everything built is on `main` and deployed, as of 2026-09-28.** No feature
+  branch is open. On the deployed URL: `test-engine-sit.mjs` 49/49,
+  `analytics.mjs` 53/53, `ars-aptitude.mjs` 14/14.
 - **Analytics (Phase 4 step 5) is merged and deployed** (PR #65, `566e112`,
   2026-09-28): student, admin and mentor views over submitted attempts, 53/53
   on a local production build. **Two owner decisions remain open**: Recharts
@@ -297,12 +301,13 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/app/{error,not-found}.tsx`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,icon,person-cell}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` and, since the test-engine merge, the mock editor and `src/features/test-engine/components/mock-{access,attempts}-panel.tsx` markup; the ARS aptitude-round mock link (`src/features/ars/**`, `scripts/verify/ars-aptitude.mjs`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**`  | **Built; pull request open 2026-09-28, not merged.** `main` merged in 2026-09-28 (test engine and analytics squash-merged); conflicts resolved three-way against `ce56a39`, and the nav keeps the grouped layout with the three analytics links added. **Nobody has clicked through it in a browser**; the owner chose to merge without that review on 2026-09-28. The analytics screens are not re-skinned. See `docs/context/completed.md`, *The admin workspace re-skin* | 2026-09-28 |
 
-**One branch is open as of 2026-09-28**: `feat/admin-ui`, in
-`C:\Cospire\Cospire-admin-ui` on port 3050 (its row above). `feat/test-engine`
-merged as PR #63 and `feat/analytics` as PR #65 (`566e112`); both branches are
-deleted.
+**Every feature branch is merged as of 2026-09-28.**
+`feat/test-engine` merged as PR #63,
+`feat/analytics` as PR #65 and `feat/admin-ui` as PR #66 (`fe9e836`); all three
+branches are deleted from `origin`. The worktrees `Cospire-test-engine`,
+`Cospire-analytics`, `Cospire-admin-ui` and `Cospire-mock-docs` still exist
+locally and can be removed with `scripts/wt-done.sh`.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
@@ -602,7 +607,7 @@ rescoring with `rescore_events` when a key, option set, type or marks value
 changes. Left: **4.5, a scheduled close of abandoned attempts** (owner's
 decision: `pg_cron` in the database, or Vercel Cron, which on Hobby runs once a
 day), and analytics is merged (PR #65). **Attaching a mock to the ARS aptitude
-round** is built on `feat/admin-ui`.
+round** is merged (PR #66).
 
 **5. Run Cospire's real question documents through the importer** as soon as
 they supply them, and settle the model choice with the accuracy test described
