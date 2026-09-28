@@ -31,13 +31,13 @@ this file and not found here is in one of these; find it with
     with pictures (PR #58), the Gemini path (PR #58; live round trip
     UNVERIFIED, see below), the admin mock builder, and mocks built from
     documents quoting question IDs (PR #61, 29/29 on the deployed URL).
-- **Phase 4, the test engine, is built on `feat/test-engine`, with a pull
-  request open since 2026-09-28, not merged.** Slices 4.1 (attempt tables and guards), 4.2
+- **Phase 4, the test engine, is merged and deployed** (PR #63, `47beb72`,
+  2026-09-28) and verified **49/49 against the deployed URL**, rescoring
+  included. Slices 4.1 (attempt tables and guards), 4.2
   (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
   Attempts panel) and rescoring after a key correction. **All four of its migrations are applied to the hosted database** (the last three on
   2026-09-28, with the owner's approval); database probes 57/57, 15/15, 9/9 and 15/15
-  against the applied schema, and **49/49 over HTTP** on a local production build
-  including rescoring. **4.5, closing abandoned attempts on a
+  against the applied schema. **4.5, closing abandoned attempts on a
   schedule, is not built** -- a `pg_cron` job was refused by the agent's
   permission classifier as unauthorised persistence and waits for the owner's
   decision. Until then an abandoned attempt is closed as the timer's when its
@@ -46,17 +46,18 @@ this file and not found here is in one of these; find it with
 - **The admin re-skin to the Client's prototype is built on `feat/admin-ui`,
   pushed, not merged**, and awaits the owner's visual review. Screenshots only;
   nobody has clicked through it in a browser.
-- **Analytics (Phase 4 step 5) is being built on `feat/analytics`**, stacked on
-  `feat/test-engine`, by a background agent.
+- **Analytics (Phase 4 step 5) is on `feat/analytics`**, pushed, no pull
+  request yet. It is stacked on `feat/test-engine`, which has now merged, so it
+  needs `main` merged in before its pull request is opened.
 - **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
   has no billing enabled, so it runs on the free tier at five requests a minute.
   Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
 - **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
   Supabase Pro, Vercel Pro. See *External blockers*.
-- **1 October:** the Client was promised a tested mock engine. It exists and is
-  tested, but only on a branch; it reaches the deployed URL when the owner
-  merges it. A clause 4.4 notice is drafted at
-  `docs/client/2026-10-01-delivery-notice.md` (untracked, unsent).
+- **1 October:** the Client was promised a tested mock engine. **It is on the
+  deployed URL and verified there** (2026-09-28). A clause 4.4 notice drafted
+  earlier at `docs/client/2026-10-01-delivery-notice.md` (untracked, unsent) is
+  now for the owner to send, revise or drop.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -223,11 +224,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   buttons. PR #48 makes ARS report-component round links manual. Each feature
   has a documentation follow-up where the context gate required one (#37, #39,
   #41).
-- **The hosted project is four migrations ahead of `main`**, all from
-  `feat/test-engine`: `20260926103000` (applied 2026-09-26) and `20260927090000`,
-  `20260927100000`, `20260927110000` (applied 2026-09-28). All additive; nothing
-  deployed reads them. `main` and the database are back in step when that
-  branch merges.
+- **`main` and the hosted database are in step**: every migration on `main` is
+  applied, the test engine's four included (the last three on 2026-09-28,
+  before PR #63 merged).
 - Two things worth keeping from the earlier merge history, because both cost
   time. **Do not delete the base branch of a stacked pull request**: merging #24
   with `--delete-branch` closed #25 rather than retargeting it, and reopening
@@ -268,7 +267,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   plan, which does not permit commercial use; the owner has chosen to build on it
   and upgrade before handover.
 - Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Every
-  migration on `main` is applied, plus `20260926103000` from `feat/test-engine`.
+  migration on `main` is applied, and nothing else.
   The Supabase MCP server points at this project (`get_project_url`, checked
   2026-09-27); an earlier suspicion that it pointed elsewhere was wrong.
 
@@ -296,12 +295,12 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Pull request open 2026-09-28, **not merged**. typecheck, lint, test (497/497) and build re-run green 2026-09-28; `main` already contained. All four migrations **applied** (last three 2026-09-28); probes 57/57, 15/15, 9/9, 15/15 on the applied schema; `SIT_RESCORE=1` HTTP run **49/49**. Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-28 |
 
-**Three branches are open as of 2026-09-28**, each in its own worktree, each
-claiming its own row in its own copy of this file:
+**Two branches are open as of 2026-09-28**, each in its own worktree, each
+claiming its own row in its own copy of this file. `feat/test-engine` merged
+as PR #63 and is **kept on `origin`** until `feat/analytics` no longer needs it
+as a base.
 
-- `feat/test-engine` -- `C:\Cospire\Cospire-test-engine`, port 3010 (this row).
 - `feat/admin-ui` -- `C:\Cospire\Cospire-admin-ui`, port 3050. The admin
   re-skin; finished, awaiting review. It restyles the mock screens by CSS only,
   because this branch owns the mock editor; the builder's markup follow-ups are
@@ -309,16 +308,16 @@ claiming its own row in its own copy of this file:
 - `feat/analytics` -- `C:\Cospire\Cospire-analytics`, port 3060, stacked on
   `feat/test-engine`.
 
-**Merge order:** `feat/test-engine` first, then `feat/analytics` (retarget it to
-`main` once its base merges; do not delete the base branch first), then
+**Merge order:** `feat/analytics` next (merge `main` into it and open its pull
+request against `main`; delete `feat/test-engine` only after that), then
 `feat/admin-ui`. `src/features/auth/components/app-nav.tsx` and this file
 conflict between them; the nav items are grouped and carry an `eyebrow` on
 `feat/admin-ui`.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
-`feat/doc-import` and `feat/mock-docs` (PR #61) are merged but **still on
-`origin`**, awaiting the owner's deletion. Three things a new session should know before touching
+`feat/mock-docs` merged as PR #61 and the stop-at-7% rule as PR #62; their
+branches and `feat/doc-import` were deleted from `origin` on 2026-09-28. Three things a new session should know before touching
 anything:
 
 - **A dev server may be running on port 3000** (none was on 2026-09-28) from the main checkout
@@ -508,7 +507,8 @@ time otherwise.
    holds. ARS is done and deployed, and so are the question bank and the mock
    builder. **On 2026-09-23 the owner put the import work ahead of the test
    engine**, so what a student sits is now the last of the four items above.
-   A tested mock engine by 1 October is the part at risk. The owner promised
+   **The test engine merged and was verified on the deployed URL on
+   2026-09-28**, so the 1 October commitment is met on the platform side. The owner promised
    the Client on 2026-09-21 to raise any delay up front, and clause 4.4 wants
    that in writing at the time rather than at the end.
 2. **Put the build-now, invoice-later arrangement in writing**, with the first
@@ -589,9 +589,8 @@ and needs redrafting before it is sent), and thinking turned low or off in the
 call, because thinking tokens bill as output. Details, limits and routing are
 under *Question import with pictures* below.
 
-**3. Mocks built from documents that quote question IDs. BUILT on
-`feat/mock-docs`, 2026-09-26, verified 29/29 locally against the hosted
-database. The pull request is raised and not merged.** Readable IDs
+**3. Mocks built from documents that quote question IDs. MERGED as PR #61
+(`092d878`), 29/29 on the deployed URL.** Readable IDs
 (`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
 the bank and at the end of an import, and a plain-text mock template parsed
 directly -- no model, because an ID must match exactly -- which resolves to the
@@ -602,7 +601,8 @@ design, pasting a whole new paper so the questions enter the bank and a draft
 mock is made in one step, is deliberately not built** -- the design marks it
 "later, and only if wanted".
 
-**4. The test engine (Phase 4). BUILT on `feat/test-engine`, not merged.**
+**4. The test engine (Phase 4). MERGED as PR #63 (`47beb72`), 49/49 on the
+deployed URL.**
 Everything operating manual §1 insists on is in the database, not in routes:
 the server-authoritative timer (answers refused after the clock plus 30s),
 sectional timing, per-question-type negative marking, the phone attempt
