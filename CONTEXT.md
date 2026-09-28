@@ -295,14 +295,12 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (context chat) | `fix/sit-live-action-id` | Record the test engine merge and its check on the deployed URL; make `test-engine-sit.mjs` read the served action id so it runs against any build | `CONTEXT.md`, `docs/context/verification-log.md`, `docs/context/completed.md`, `scripts/verify/test-engine-sit.mjs` | Pull request open 2026-09-28 | 2026-09-28 |
 
-**Three branches are open as of 2026-09-28**, each claiming its own row in its
-own copy of this file:
+**Two branches are open as of 2026-09-28**, each in its own worktree, each
+claiming its own row in its own copy of this file. `feat/test-engine` merged
+as PR #63 and is **kept on `origin`** until `feat/analytics` no longer needs it
+as a base.
 
-- `fix/sit-live-action-id` -- in the `C:\Cospire\Cospire-test-engine` worktree
-  (this row). `feat/test-engine` merged as PR #63 and is **kept on `origin`**
-  until `feat/analytics` no longer needs it as a base.
 - `feat/admin-ui` -- `C:\Cospire\Cospire-admin-ui`, port 3050. The admin
   re-skin; finished, awaiting review. It restyles the mock screens by CSS only,
   because this branch owns the mock editor; the builder's markup follow-ups are
