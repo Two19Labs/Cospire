@@ -30,14 +30,14 @@ this file and not found here is in one of these; find it with
   - Phase 3, the question bank: authoring, paste-a-prompt import, Word upload
     with pictures (PR #58), the Gemini path (PR #58; live round trip
     UNVERIFIED, see below), the admin mock builder, and mocks built from
-    documents quoting question IDs (PR #61).
+    documents quoting question IDs (PR #61, 29/29 on the deployed URL).
 - **Phase 4, the test engine, is built on `feat/test-engine`, with a pull
   request open since 2026-09-28, not merged.** Slices 4.1 (attempt tables and guards), 4.2
   (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
-  Attempts panel) and rescoring after a key correction. **4.1 is applied to the
-  hosted database; the rescore migration `20260927090000` is written and
-  dry-run 15/15 but NOT applied**, and neither are the review fix-forward `20260927100000` (dry-run 9/9) and the security fix-forward `20260927110000` (15/15); the owner applies all three. Verified 45/45 over
-  HTTP on a local production build. **4.5, closing abandoned attempts on a
+  Attempts panel) and rescoring after a key correction. **All four of its migrations are applied to the hosted database** (the last three on
+  2026-09-28, with the owner's approval); database probes 57/57, 15/15, 9/9 and 15/15
+  against the applied schema, and **49/49 over HTTP** on a local production build
+  including rescoring. **4.5, closing abandoned attempts on a
   schedule, is not built** -- a `pg_cron` job was refused by the agent's
   permission classifier as unauthorised persistence and waits for the owner's
   decision. Until then an abandoned attempt is closed as the timer's when its
@@ -223,10 +223,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
   buttons. PR #48 makes ARS report-component round links manual. Each feature
   has a documentation follow-up where the context gate required one (#37, #39,
   #41).
-- **The hosted project is one migration ahead of `main`:**
-  `20260926103000_test_engine_attempts`, applied 2026-09-26 from
-  `feat/test-engine`. It is additive and nothing deployed reads it. The rescore
-  migration `20260927090000` is committed on that branch and **not applied**.
+- **The hosted project is four migrations ahead of `main`**, all from
+  `feat/test-engine`: `20260926103000` (applied 2026-09-26) and `20260927090000`,
+  `20260927100000`, `20260927110000` (applied 2026-09-28). All additive; nothing
+  deployed reads them. `main` and the database are back in step when that
+  branch merges.
 - Two things worth keeping from the earlier merge history, because both cost
   time. **Do not delete the base branch of a stacked pull request**: merging #24
   with `--delete-branch` closed #25 rather than retargeting it, and reopening
@@ -295,7 +296,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Pull request open 2026-09-28, **not merged**. typecheck, lint, test (497/497) and build re-run green 2026-09-28; `main` already contained. 4.1 applied (56/56 after apply); 4.2-4.4 verified 45/45 over HTTP; rescore migration `20260927090000`, review fix-forward `20260927100000` and security fix-forward `20260927110000` **committed and dry-run (15/15, 9/9, 15/15), NOT applied** (owner: `npx supabase db push --linked --project-ref eeeftjwvbppznsmcljnw`, then re-run both probes and `SIT_RESCORE=1 node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010`). Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-27 |
+| Claude (test-engine chat) | `feat/test-engine` | Phase 4: attempts and guards, sitting a mock, scoring, proctoring, rescoring | `supabase/migrations/20260926103000_test_engine_attempts.sql`, `supabase/migrations/20260927090000_test_engine_rescore.sql`, `src/features/test-engine/**`, `src/app/student/mocks/**`, `src/app/student/attempts/**`, `src/app/admin/mocks/[id]/page.tsx`, small edits to `question-bank` mock editor/routes/actions and question save action, `auth/components/app-nav.tsx`, `scripts/verify/test-engine-*` | Pull request open 2026-09-28, **not merged**. typecheck, lint, test (497/497) and build re-run green 2026-09-28; `main` already contained. All four migrations **applied** (last three 2026-09-28); probes 57/57, 15/15, 9/9, 15/15 on the applied schema; `SIT_RESCORE=1` HTTP run **49/49**. Ten review findings fixed. 4.5 not built (owner decision, see Status) | 2026-09-28 |
 
 **Three branches are open as of 2026-09-28**, each in its own worktree, each
 claiming its own row in its own copy of this file:
