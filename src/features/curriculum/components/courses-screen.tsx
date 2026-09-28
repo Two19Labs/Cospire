@@ -1,16 +1,9 @@
 import Link from "next/link";
 
+import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-  SubmitButton,
-} from "@/shared/ui";
+import { SubmitButton } from "@/shared/ui";
 
 import { createCourseAction } from "../actions/create-course";
 import { courseTitleMaxLength } from "../course-input";
@@ -24,6 +17,9 @@ import {
   type CourseNotice,
 } from "../list-params";
 import type { CourseListPage } from "../queries/list-courses";
+
+// The page heading, shared with the loading skeleton.
+export const programmesHeading = "Room to learn.";
 
 interface CoursesScreenProps {
   courses: CourseListPage;
@@ -45,78 +41,51 @@ export function CoursesScreen({
   const lastOnPage = (page - 1) * coursesPageSize + rows.length;
 
   return (
-    <RoleShell profile={profile} title="Programmes">
+    <RoleShell
+      actions={
+        <>
+          <Link className="button button--secondary" href="/admin/ars">
+            Go to ARS
+          </Link>
+          {/* An anchor to the form further down: no JavaScript needed. */}
+          <a className="button button--primary" href="#new-programme">
+            <Icon name="plus" />
+            New programme
+          </a>
+        </>
+      }
+      description="Organise learning programmes and the students who can access them."
+      heading={programmesHeading}
+      profile={profile}
+      title="Programmes"
+    >
       {/*
         What this section is FOR, said before what it currently holds.
 
         Programmes and ARS processes were the same `courses` row until
         2026-09-20, so this list showed admission processes and the ARS list
-        showed learning content. `kind` separates them, and this panel says what
+        showed learning content. `kind` separates them, and this line says what
         belongs here now that it can be answered.
-
-        The two cards are honest placeholders: neither aptitude preparation nor
-        video curriculums is built, and both are whole phases away. They are
-        shown rather than hidden so the shape of the section is visible, and
-        marked so nobody demonstrates them by accident.
       */}
-      <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>Learning programmes</h2>
-            <p className="muted">
-              Teachable content a student works through. Admission readiness
-              processes are managed separately, under ARS.
-            </p>
-          </div>
-          <Link className="button button--secondary" href="/admin/ars">
-            Go to ARS
-          </Link>
-        </div>
+      <p className="notice">
+        Teachable content a student works through. Admission readiness processes
+        are managed separately, under <Link href="/admin/ars">ARS</Link>.
+      </p>
 
-        <div className="report-list">
-          <article className="report-list__item">
-            <div>
-              <strong>Aptitude preparation</strong>
-              <p className="muted">
-                Quantitative, verbal and logical reasoning, with topic tests and
-                full-length mocks. Needs the question bank and the test engine.
-              </p>
-            </div>
-            <span className="pill pill--disabled">Not built yet</span>
-          </article>
-          <article className="report-list__item">
-            <div>
-              <strong>Video curriculums</strong>
-              <p className="muted">
-                Video lessons, documents and tests in an ordered sequence, with
-                progress tracking. Waiting on VdoCipher access.
-              </p>
-            </div>
-            <span className="pill pill--disabled">Not built yet</span>
-          </article>
-        </div>
-      </section>
+      {error ? (
+        <p className="notice notice--error" role="alert">
+          {courseListErrors[error]}
+        </p>
+      ) : null}
 
-      <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>Programmes</h2>
-            <p className="muted">
-              {total === 0
-                ? "No programmes match."
-                : `Showing ${firstOnPage}-${lastOnPage} of ${total}.`}
-            </p>
-          </div>
-        </div>
+      {notice ? <p className="notice notice--success">{courseNotices[notice]}</p> : null}
 
-        {error ? (
-          <p className="form-error" role="alert">
-            {courseListErrors[error]}
-          </p>
-        ) : null}
-
-        {notice ? <p className="muted">{courseNotices[notice]}</p> : null}
-
+      <div className="list-bar">
+        <p className="list-bar__count">
+          {total === 0
+            ? "No programmes match."
+            : `Showing ${firstOnPage}-${lastOnPage} of ${total} programmes`}
+        </p>
         {/*
           A GET form, so searching is a link the browser builds and the result
           is a URL that can be shared or reloaded. It needs no JavaScript.
@@ -142,72 +111,113 @@ export function CoursesScreen({
             </Link>
           ) : null}
         </form>
+      </div>
 
-        {rows.length === 0 ? (
-          <p className="muted">
+      {rows.length === 0 ? (
+        <section className="empty-state">
+          <span aria-hidden="true" className="empty-state__mark">
+            <Icon name="book" />
+          </span>
+          <h2>{search ? "No programme by that name." : "No programmes yet."}</h2>
+          <p>
             Programmes are how content is grouped: one per target institution
-            per content type, such as “Ashoka — aptitude prep”. Create the first
-            one below.
+            per content type, such as “Ashoka — aptitude prep”.
           </p>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Programme</TableHeaderCell>
-                <TableHeaderCell>Created</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((course) => (
-                <TableRow key={course.id}>
-                  <TableCell>
-                    <Link href={buildCourseHref({ courseId: course.id })}>
-                      {course.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{course.createdAt.slice(0, 10)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+          <a className="button button--primary" href="#new-programme">
+            Create the first one
+          </a>
+        </section>
+      ) : (
+        <div className="card-grid">
+          {rows.map((course) => (
+            <article className="course-card" key={course.id}>
+              <div className="course-card__top">
+                <span aria-hidden="true" className="initial-block">
+                  {course.title.trim().charAt(0).toUpperCase() || "P"}
+                </span>
+                <span className="tag">Programme</span>
+              </div>
+              <h2>{course.title}</h2>
+              <div className="course-card__bottom">
+                <span className="muted">Created {course.createdAt.slice(0, 10)}</span>
+                <Link className="title-link" href={buildCourseHref({ courseId: course.id })}>
+                  Manage →
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
-        {pageCount > 1 ? (
-          <nav aria-label="Pagination" className="pagination">
-            {page > 1 ? (
-              <Link
-                href={buildCoursesHref({ page: page - 1, search })}
-                rel="prev"
-              >
-                Previous
-              </Link>
-            ) : (
-              <span className="muted">Previous</span>
-            )}
-            <span className="muted">
-              Page {page} of {pageCount}
-            </span>
-            {page < pageCount ? (
-              <Link
-                href={buildCoursesHref({ page: page + 1, search })}
-                rel="next"
-              >
-                Next
-              </Link>
-            ) : (
-              <span className="muted">Next</span>
-            )}
-          </nav>
-        ) : null}
+      {pageCount > 1 ? (
+        <nav aria-label="Pagination" className="pagination">
+          {page > 1 ? (
+            <Link
+              href={buildCoursesHref({ page: page - 1, search })}
+              rel="prev"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span>Previous</span>
+          )}
+          <span>
+            Page {page} of {pageCount}
+          </span>
+          {page < pageCount ? (
+            <Link
+              href={buildCoursesHref({ page: page + 1, search })}
+              rel="next"
+            >
+              Next
+            </Link>
+          ) : (
+            <span>Next</span>
+          )}
+        </nav>
+      ) : null}
+
+      {/*
+        The two cards are honest placeholders: neither aptitude preparation nor
+        video curriculums is built, and both are whole phases away. They are
+        shown rather than hidden so the shape of the section is visible, and
+        marked so nobody demonstrates them by accident.
+      */}
+      <section className="panel">
+        <div className="panel__header">
+          <h2>Curriculum capabilities</h2>
+        </div>
+        <div className="card-grid card-grid--two">
+          <div>
+            <h3>
+              Aptitude preparation <span className="tag">Not built yet</span>
+            </h3>
+            <p className="field__hint">
+              Quantitative, verbal and logical reasoning, with topic tests and
+              full-length mocks. Needs the question bank and the test engine.
+            </p>
+          </div>
+          <div>
+            <h3>
+              Video curriculums <span className="tag">Not built yet</span>
+            </h3>
+            <p className="field__hint">
+              Video lessons, documents and tests in an ordered sequence, with
+              progress tracking. Waiting on VdoCipher access.
+            </p>
+          </div>
+        </div>
       </section>
 
-      <section className="panel panel--narrow">
-        <div>
-          <h2>Add a programme</h2>
-          <p className="muted">
-            Nothing here is a fixed list. Name the programme however your team
-            refers to it; students reach its content by being granted it.
-          </p>
+      <section className="panel panel--narrow" id="new-programme">
+        <div className="panel__header">
+          <div>
+            <h2>Add a programme</h2>
+            <p className="muted">
+              Nothing here is a fixed list. Name the programme however your team
+              refers to it; students reach its content by being granted it.
+            </p>
+          </div>
         </div>
 
         {/*
@@ -216,11 +226,11 @@ export function CoursesScreen({
           rebuilds every destination from a literal path.
         */}
         <form action={createCourseAction} className="stack-form">
-        {/* Says which section this is, so the action creates the right kind and
-            returns here rather than to ARS. */}
-        <input name="kind" type="hidden" value="programme" />
+          {/* Says which section this is, so the action creates the right kind
+              and returns here rather than to ARS. */}
+          <input name="kind" type="hidden" value="programme" />
           <label className="field">
-            <span>Name</span>
+            <span className="field__label">Name</span>
             <input
               className="input"
               maxLength={courseTitleMaxLength}

@@ -3,12 +3,16 @@ import {
   SkeletonPanel,
 } from "@/features/auth/components/shell-skeleton";
 
-// The fallback for every admin route that has no shape of its own.
+// The overview: section cards on the left, quick actions and a guide on the
+// right. The heading greets the admin by name, so it shimmers until the
+// profile arrives.
 export default function Loading() {
   return (
-    <ShellSkeleton role="admin" title="Overview">
-      <SkeletonPanel lines={3} />
-      <SkeletonPanel lines={2} />
+    <ShellSkeleton heading={null} role="admin" title="Overview">
+      <div className="overview-grid">
+        <SkeletonPanel lines={6} />
+        <SkeletonPanel lines={4} />
+      </div>
     </ShellSkeleton>
   );
 }

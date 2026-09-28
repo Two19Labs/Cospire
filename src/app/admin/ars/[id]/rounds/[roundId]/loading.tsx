@@ -4,14 +4,17 @@ import {
   SkeletonPanel,
 } from "@/features/auth/components/shell-skeleton";
 
-// The round builder: the round's settings, then its form, field by field.
+// The round builder: its pages and questions beside the student preview.
+// No title: it is the round's name.
 export default function Loading() {
   return (
     <ShellSkeleton role="admin">
-      <SkeletonPanel lines={1} />
-      <SkeletonPanel title={false}>
-        <SkeletonForm fields={5} />
-      </SkeletonPanel>
+      <div className="builder">
+        <SkeletonPanel>
+          <SkeletonForm fields={5} />
+        </SkeletonPanel>
+        <SkeletonPanel lines={6} />
+      </div>
     </ShellSkeleton>
   );
 }

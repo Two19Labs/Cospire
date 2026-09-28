@@ -126,7 +126,7 @@ export function QuestionImportScreen({
         <Link href="/admin/questions">← Back to the question bank</Link>
       </p>
 
-      {notice ? <p className="muted">{notice}</p> : null}
+      {notice ? <p className="notice notice--success">{notice}</p> : null}
 
       <section className="panel stack-form">
         <h2>Step 1 — open the Word file</h2>
@@ -278,7 +278,7 @@ export function QuestionImportScreen({
           />
         </label>
         {problems.length > 0 ? (
-          <div className="form-error" role="alert">
+          <div className="notice notice--error" role="alert">
             <ul>
               {problems.map((problem) => (
                 <li key={problem}>{problem}</li>

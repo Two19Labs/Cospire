@@ -1,17 +1,20 @@
 import {
   ShellSkeleton,
+  SkeletonLines,
   SkeletonPanel,
   SkeletonTable,
 } from "@/features/auth/components/shell-skeleton";
 
-// One document: the page as a student sees it, then who holds access.
+// A document's own page. No title: it is the document's name. Section links,
+// the access table, then the preview.
 export default function Loading() {
   return (
     <ShellSkeleton role="admin">
-      <SkeletonPanel lines={8} />
-      <SkeletonPanel title={false}>
+      <SkeletonLines count={1} />
+      <SkeletonPanel>
         <SkeletonTable columns={3} rows={4} />
       </SkeletonPanel>
+      <SkeletonPanel lines={8} />
     </ShellSkeleton>
   );
 }

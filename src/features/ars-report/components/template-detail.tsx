@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 
@@ -33,16 +31,32 @@ export function TemplateDetailScreen({
   const remaining = Math.round((100 - template.weightageTotal) * 100) / 100;
 
   return (
-    <RoleShell profile={profile} title={template.name}>
-      {error ? <p className="form-error" role="alert">{templateErrorMessages[error]}</p> : null}
-      {notice ? <p className="muted">{templateNoticeMessages[notice]}</p> : null}
+    <RoleShell
+      back={{ href: "/admin/report-templates", label: "All templates" }}
+      description={`Report template · ${template.components.length} component${template.components.length === 1 ? "" : "s"} · ${template.isActive ? "Active" : "Inactive"}`}
+      profile={profile}
+      title={template.name}
+    >
+      {error ? <p className="notice notice--error" role="alert">{templateErrorMessages[error]}</p> : null}
+      {notice ? <p className="notice notice--success">{templateNoticeMessages[notice]}</p> : null}
 
-      <p><Link href="/admin/report-templates">← All templates</Link></p>
+      {/* In-page sections rather than tabs that need JavaScript. */}
+      <nav aria-label="Page sections" className="tabs">
+        <a className="tabs__link tabs__link--current" href="#settings">
+          Template settings
+        </a>
+        <a className="tabs__link" href="#components">
+          Components &amp; weights
+        </a>
+        <a className="tabs__link" href="#add-component">
+          Add a component
+        </a>
+      </nav>
 
-      <section className="panel">
+      <section className="panel" id="settings">
         <div className="panel__header">
           <div>
-            <h2>Template</h2>
+            <h2>Template settings</h2>
             <p className="muted">
               The two vocabularies below are the words a mentor may choose from. One per line,
               or comma separated.
@@ -94,7 +108,7 @@ export function TemplateDetailScreen({
         </form>
       </section>
 
-      <section className="panel">
+      <section className="panel" id="components">
         <div className="panel__header">
           <div>
             <h2>Components</h2>
@@ -103,13 +117,13 @@ export function TemplateDetailScreen({
               calculated from these — a mentor never types a total.
             </p>
           </div>
-          <p className={template.weightageTotal === 100 ? "pill" : "pill pill--disabled"}>
+          <p className={template.weightageTotal === 100 ? "pill pill--active" : "pill pill--disabled"}>
             {template.weightageTotal}% of 100
           </p>
         </div>
 
         {template.weightageTotal !== 100 ? (
-          <p className="muted">
+          <p className="notice notice--warn">
             {remaining > 0
               ? `${remaining}% still to allocate. A report cannot be released until the components total exactly 100.`
               : `${Math.abs(remaining)}% over. Lower a component below before adding another.`}
@@ -117,9 +131,10 @@ export function TemplateDetailScreen({
         ) : null}
 
         {template.components.length === 0 ? (
-          <p className="muted">No component yet. Add the first one below.</p>
+          <p className="panel-empty">No component yet. Add the first one below.</p>
         ) : (
           <>
+            <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -146,7 +161,7 @@ export function TemplateDetailScreen({
                           <option value="">No round</option>
                           {template.roundOptions.map((round) => <option key={round.id} value={round.id}>{round.name}</option>)}
                         </select>
-                        <SubmitButton variant="secondary" pendingLabel="Linkingâ€¦">Save link</SubmitButton>
+                        <SubmitButton compact variant="secondary" pendingLabel="Linking…">Save link</SubmitButton>
                       </form>
                     </td>
                     <td>
@@ -170,13 +185,14 @@ export function TemplateDetailScreen({
                       <form action={removeComponentAction}>
                         <input name="componentId" type="hidden" value={component.id} />
                         <input name="templateId" type="hidden" value={template.id} />
-                        <SubmitButton variant="secondary" pendingLabel="Removing…">Remove</SubmitButton>
+                        <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Removing…">Remove</SubmitButton>
                       </form>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
 
             {/*
               Every weightage is submitted together, and the action applies each
@@ -210,7 +226,7 @@ export function TemplateDetailScreen({
         )}
       </section>
 
-      <section className="panel">
+      <section className="panel" id="add-component">
         <div className="panel__header">
           <div>
             <h2>Add a component</h2>

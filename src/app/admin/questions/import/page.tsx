@@ -18,7 +18,12 @@ export default async function ImportQuestionsPage({
   const batches = await listImportBatches();
 
   return (
-    <RoleShell profile={profile} title="Import questions">
+    <RoleShell
+      back={{ href: "/admin/questions", label: "Back to the question bank" }}
+      description="A guided workflow: open the paper, get it read, then review every question before anything reaches the bank."
+      profile={profile}
+      title="Import questions"
+    >
       <QuestionImportScreen
         batches={batches}
         notice={params.notice === "discarded" ? "The questions that were not approved were discarded." : null}

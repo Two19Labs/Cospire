@@ -5,6 +5,8 @@ import { RoundBuilder } from "@/features/ars/components/round-builder";
 import { emptyForm } from "@/features/ars/form-builder";
 import { toFormSpec, type RoundMode } from "@/features/ars/form-schema";
 import { parseRoundId } from "@/features/ars/list-params";
+import { countProcessStudentsWithoutMock, listMockOptions } from "@/features/ars/queries/round-mock";
+import { readRoundMockId } from "@/features/ars/round-mock";
 import { requireRole } from "@/features/auth/guards";
 import { parseCourseId } from "@/features/curriculum/list-params";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
@@ -23,6 +25,42 @@ export default async function AdminArsRoundPage({ params, searchParams }: { para
   if (roundResult.error) throw new Error(`Unable to load the round: ${roundResult.error.message}`);
   if (!roundResult.data) notFound();
   const mode = roundResult.data.submission_mode as RoundMode;
-  const error = (await searchParams).error;
-  return <RoundBuilder courseId={courseId} courseTitle={courseResult.data?.title ?? "Programme"} error={typeof error === "string" && error.length < 200 ? error : null} mode={mode} profile={profile} roundId={roundId} roundName={roundResult.data.name} spec={toFormSpec(roundResult.data.config, mode) ?? emptyForm} />;
+  const query = await searchParams;
+  const error = query.error;
+  const notice = query.notice;
+
+  // An off-platform round may be linked to a mock test. The options and the
+  // access gap are read through the admin's own session.
+  const linkedMockId = mode === "offline" ? readRoundMockId(roundResult.data.config) : null;
+  const [mockOptions, accessGap] =
+    mode === "offline"
+      ? await Promise.all([
+          listMockOptions(linkedMockId),
+          linkedMockId === null ? Promise.resolve(null) : countProcessStudentsWithoutMock(courseId, linkedMockId),
+        ])
+      : [[], null];
+
+  return (
+    <RoundBuilder
+      courseId={courseId}
+      courseTitle={courseResult.data?.title ?? "Programme"}
+      error={typeof error === "string" && error.length < 200 ? error : null}
+      mockLink={
+        mode === "offline"
+          ? {
+              accessGap,
+              linkedMockId,
+              notice: notice === "mock-linked" || notice === "mock-unlinked" ? notice : null,
+              options: mockOptions,
+              pendingTest: (roundResult.data.config as Record<string, unknown> | null)?.pendingFeature === "test-engine",
+            }
+          : null
+      }
+      mode={mode}
+      profile={profile}
+      roundId={roundId}
+      roundName={roundResult.data.name}
+      spec={toFormSpec(roundResult.data.config, mode) ?? emptyForm}
+    />
+  );
 }

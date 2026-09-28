@@ -1,16 +1,18 @@
+import { templatesHeading } from "@/features/ars-report/components/templates-screen";
 import {
   ShellSkeleton,
-  SkeletonList,
+  SkeletonTable,
   SkeletonPanel,
 } from "@/features/auth/components/shell-skeleton";
 
-// Templates are cards.
+// The templates table, then the new-template form.
 export default function Loading() {
   return (
-    <ShellSkeleton role="admin" title="Report templates">
-      <SkeletonPanel title={false}>
-        <SkeletonList items={3} />
+    <ShellSkeleton heading={templatesHeading} role="admin" title="Report templates">
+      <SkeletonPanel>
+        <SkeletonTable columns={6} rows={3} />
       </SkeletonPanel>
+      <SkeletonPanel lines={2} />
     </ShellSkeleton>
   );
 }

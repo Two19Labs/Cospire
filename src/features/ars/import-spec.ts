@@ -589,7 +589,7 @@ function readRound(raw: unknown, index: number, problems: string[]): ImportedRou
       test,
     };
 
-    notes.push("The test engine is not built, so this is created as a placeholder carrying its specification.");
+    notes.push("Created as a placeholder carrying its specification. Link it to a mock test in the round's settings once the mock is built.");
 
     return {
       config,

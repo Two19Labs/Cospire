@@ -1,5 +1,7 @@
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
+import { PersonCell } from "@/features/auth/components/person-cell";
+
 import { setMockAccessAction } from "../actions/set-mock-access";
 import type { MockAccessStudent } from "../queries/list-mock-access";
 
@@ -16,7 +18,7 @@ export function MockAccessPanel({ access, mockId, students }: { access?: string;
   const notice = access ? notices[access] : undefined;
 
   return (
-    <section className="panel">
+    <section className="panel" id="students">
       <div className="panel__header">
         <div>
           <h2>Students</h2>
@@ -29,34 +31,44 @@ export function MockAccessPanel({ access, mockId, students }: { access?: string;
       </div>
       {notice ? <p className={`notice notice--${notice.tone}`}>{notice.text}</p> : null}
 
-      {students.length === 0 ? null : (
+      {students.length === 0 ? (
+        <p className="panel-empty">Students appear here once their accounts exist.</p>
+      ) : (
         <Table>
           <TableHead>
             <TableRow>
               <TableHeaderCell>Student</TableHeaderCell>
-              <TableHeaderCell>Email</TableHeaderCell>
               <TableHeaderCell>Access</TableHeaderCell>
+              <TableHeaderCell>
+                <span className="visually-hidden">Action</span>
+              </TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {students.map((student) => (
               <TableRow key={student.id}>
-                <TableCell>{student.name}</TableCell>
-                <TableCell>{student.email}</TableCell>
                 <TableCell>
-                  <div className="row-form">
-                    <span className={`pill pill--${student.granted ? "active" : "disabled"}`}>
-                      {student.granted ? "Has access" : "No access"}
-                    </span>
-                    <form action={setMockAccessAction}>
-                      <input name="mockId" type="hidden" value={mockId} />
-                      <input name="studentId" type="hidden" value={student.id} />
-                      <input name="intent" type="hidden" value={student.granted ? "revoke" : "grant"} />
-                      <SubmitButton compact pendingLabel={student.granted ? "Removing..." : "Adding..."} variant="primary">
-                        {student.granted ? "Remove" : "Add"}
-                      </SubmitButton>
-                    </form>
-                  </div>
+                  <PersonCell email={student.email} name={student.name} />
+                </TableCell>
+                <TableCell>
+                  <span className={`pill pill--${student.granted ? "active" : "disabled"}`}>
+                    {student.granted ? "Has access" : "No access"}
+                  </span>
+                </TableCell>
+                <TableCell className="table__actions">
+                  <form action={setMockAccessAction}>
+                    <input name="mockId" type="hidden" value={mockId} />
+                    <input name="studentId" type="hidden" value={student.id} />
+                    <input name="intent" type="hidden" value={student.granted ? "revoke" : "grant"} />
+                    <SubmitButton
+                      className={student.granted ? "button--ghost" : undefined}
+                      compact
+                      pendingLabel={student.granted ? "Removing..." : "Adding..."}
+                      variant={student.granted ? "secondary" : "primary"}
+                    >
+                      {student.granted ? "Remove access" : "Grant access"}
+                    </SubmitButton>
+                  </form>
                 </TableCell>
               </TableRow>
             ))}

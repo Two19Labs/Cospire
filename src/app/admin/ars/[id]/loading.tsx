@@ -1,18 +1,24 @@
 import {
   ShellSkeleton,
+  SkeletonLines,
+  SkeletonList,
   SkeletonPanel,
   SkeletonTable,
 } from "@/features/auth/components/shell-skeleton";
 
-// Header, the rounds table, then the students table. Three panels, because this page has three.
+// The process's own page. No title: it is the process's name. Section links,
+// the rounds beside a summary, then the students table.
 export default function Loading() {
   return (
     <ShellSkeleton role="admin">
-      <SkeletonPanel lines={1} />
-      <SkeletonPanel title={false}>
-        <SkeletonTable columns={5} rows={4} />
-      </SkeletonPanel>
-      <SkeletonPanel title={false}>
+      <SkeletonLines count={1} />
+      <div className="two-col">
+        <SkeletonPanel>
+          <SkeletonList items={3} />
+        </SkeletonPanel>
+        <SkeletonPanel lines={3} />
+      </div>
+      <SkeletonPanel>
         <SkeletonTable columns={3} rows={3} />
       </SkeletonPanel>
     </ShellSkeleton>

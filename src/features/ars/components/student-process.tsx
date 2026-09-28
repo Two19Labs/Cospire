@@ -32,25 +32,57 @@ function formatDay(value: string | null): string | null {
   return shifted.toISOString().slice(0, 10);
 }
 
+// An aptitude round linked to a mock test: the test's name and a way into it,
+// or, when the mock has not been granted to this student, a plain sentence
+// rather than a link that would only 404.
+function MockTestLine({ mock }: { mock: ProcessRound["mock"] & object }) {
+  if (!mock.available) {
+    return <p className="muted">Your admin has not opened this test for you yet.</p>;
+  }
+  const latest = mock.latest;
+  return (
+    <p className="muted">
+      Mock test: <strong>{mock.title}</strong>
+      {latest
+        ? latest.status === "in_progress"
+          ? " · attempt in progress"
+          : ` · submitted${latest.score === null ? ", being scored" : `, score ${latest.score}`}`
+        : " · not started"}
+    </p>
+  );
+}
+
 function RoundRow({ round }: { round: ProcessRound }) {
   const opens = formatDay(round.opensAt);
   const due = formatDay(round.dueAt);
   const reachable = round.state === "open";
+  const mock = round.submissionMode === "offline" ? round.mock : null;
 
   return (
     <article className="report-list__item">
       <div>
         <strong>{round.name}</strong>
         <p className="muted">
-          {round.submissionMode === "offline"
-            ? "Happens off the platform"
-            : stateLabels[round.state]}
+          {mock
+            ? "A timed test"
+            : round.submissionMode === "offline"
+              ? "Happens off the platform"
+              : stateLabels[round.state]}
           {opens ? ` · opens ${opens}` : ""}
           {due ? ` · due ${due}` : ""}
           {round.isLate ? " · submitted late" : ""}
         </p>
+        {mock ? <MockTestLine mock={mock} /> : null}
       </div>
-      {reachable && round.submissionMode !== "offline" ? (
+      {mock ? (
+        mock.available ? (
+          <Link className="button button--primary" href={`/student/mocks/${mock.id}`}>
+            {mock.latest?.status === "in_progress" ? "Continue the test" : mock.latest ? "View the test" : "Take the test"}
+          </Link>
+        ) : (
+          <span className="pill">Not open yet</span>
+        )
+      ) : reachable && round.submissionMode !== "offline" ? (
         <Link className="button button--primary" href={`/student/ars/${round.id}`}>
           Continue
         </Link>

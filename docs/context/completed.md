@@ -7,7 +7,8 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | Date | Work | Result / verification |
 |---|---|---|
 | 2026-09-28 | **Phase 4, the test engine, merged and deployed** (PR #63, `47beb72`) | Slices 4.1-4.4 and rescoring. All four migrations applied (the last three on 2026-09-28, before the merge); database probes 57/57, 15/15, 9/9 and 15/15 on the applied schema; **49/49 over HTTP against the deployed URL**, rescoring included. 4.5, the scheduled close of abandoned attempts, is not built. See *The test engine* |
-| 2026-09-27 | **Analytics, Phase 4 step 5** (`feat/analytics`, pull request open 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
+| 2026-09-27 | **Admin workspace re-skin** (`feat/admin-ui`, committed locally, not pushed, no pull request) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
+| 2026-09-27 | **Analytics, Phase 4 step 5** (PR #65, `566e112`, merged 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
 | 2026-09-26 | **Mocks built from documents that quote question IDs** (PR #61, `092d878`, 29/29 on the deployed URL) | Readable IDs (`Q00042`, computed from `questions.id`, **no migration**), the ID on every bank row, on the question page and searchable there; copyable ID lists for the current bank filter and at the end of an import; and a plain-text mock template parsed directly -- **no model call**, because an ID must match exactly -- resolving to the existing `save_mock`. `scripts/verify/mock-document.mjs` **29/29** against a local production build and the hosted database, every refusal proven by counting mock rows; 39 new unit tests, 454 in all; typecheck, lint and build pass. Counts back to baseline. See *Mocks built from documents that quote question IDs* |
 | 2026-09-23 | The seven PR #49 review findings fixed (`fix/mock-builder-review`) | Section slots map by slot, not position (`mapSectionSlots`, unit tested); a question archived after selection renders as a removable row rather than a hidden input, and the save says "archived" rather than "unavailable"; the section embed is read as the object PostgREST returns for a many-to-one; a missing section field is refused; childless DI sets are listed and refused instead of filtered after `.range()` had paged, which shortened picker pages; `/admin/mocks/[id]` uses `parseId`; images dropped from a saved question are deleted from Storage after the save, and an upload removed before saving is deleted immediately. 19/19 over HTTP, 354 tests, typecheck, lint and build. **Two facts worth keeping:** the service key cannot write `questions` rows directly -- the row CHECK calls `private.question_images_valid`, granted to `authenticated` only -- so a verify script must archive through the admin's own session; and `notFound()` on a route carrying a `loading.tsx` renders the not-found page with status 200, because the skeleton has already streamed the headers, the same trade-off the role layouts record for `redirect()` |
 | 2026-09-23 | Question bank, Phase 3 parts 1-4, merged as `1c7073d` (PR #49) | Schema with answer keys in their own table, the numerical normaliser, authoring for admins and mentors, paste-a-prompt import with per-question review, and the admin-only mock builder. Seven migrations were already applied, so `main` and the database came back into step on merge. Verified before merge: 41/41 SQL, 36/36 authoring over HTTP, 25/25 importer, 9/9 mock SQL and 10/10 mock HTTP, 342 tests, typecheck, lint and build. A high-effort review at merge time raised seven findings, all in the mock builder and none student-facing: blank section slot misfiles questions; a question archived after selection makes its mock uneditable; the picker's section column always shows "-" (many-to-one embed read as an array, confirmed against the schema); a missing section field files into section one; childless DI stimuli filtered after paging; `/admin/mocks/[id]` 500s on an unsafe integer id; removed image uploads are never deleted from the bucket. To be fixed before any real mock is built |
@@ -644,82 +645,114 @@ is back.** That is the one outstanding verification, and the one thing between
 this and a finished item 2. Re-checked on 2026-09-24, more than two hours after
 the first attempt: still 503.
 
-### Analytics, 2026-09-27
-
-Phase 4 step 5, on `feat/analytics`, branched from `feat/test-engine` at
-`5a9aafa` because it reads the attempt tables that branch adds. Not merged, no
+key, **only for mock ids taken from attempts their own session returned**. This
+text contracts in `scripts/verify/` were kept. **Not verified:** any
+always read through the signed-in user's own session, so RLS alone decides whose
+Nav items were added for all three roles (array items only in `app-nav.tsx`).
+route photographed at 1440px from a local production build against the hosted
+bounded reads are argued, not measured.
+could measure. The arithmetic is pure (`src/features/analytics/aggregate.ts`) and
+`question_sections` for sections of questions they reach.
+student home, ARS and documents screens photographed and render sensibly.
+`?type=` links); documents and report templates as filtered tables with the
+actions and a guide (the prototype's totals row left out: nothing counts
+interaction in a real browser (clicks, JavaScript-on forms, pending labels),
+attempts. The first run leaked one throwaway admin (the mentor assignment's
+database with throwaway accounts (deleted afterwards, profile count back to
+data comes back. The paper's structure and tags are different: a student cannot
+not-found or an empty list, and an assigned mentor sees only their student's
+Visual only: no query, Server Action, validation, RLS, route or data shape
+`assigned_by` does not cascade); it was deleted by hand and the cleanup now
+baseline.
+description, actions and back link passed to `RoleShell`. `ShellSkeleton`
+was not used; the list pages use the prototype's headings and ledes.
+port 3060 and the hosted database, **46/46**. Two students sit two mocks through
+scroll sideways after a fix (hidden header labels were escaping the table
+scroll box; `.table-scroll` is now positioned). The phone check found that
+marks, never a body, option, key or anyone's answer -- is read with the server
+screen is compared with values worked out by hand in the script: scores 5, 2, 12
+For those two roles the paper -- titles, placement, section, topic, difficulty,
+topic as it does in the score. Time per question is not recorded anywhere, so
+paper is read through the admin's own session. A reviewer who would rather have
+prototype's line icons, a breadcrumb title bar, and the page heading in the
+another student, an unassigned mentor and another organisation's admin get
+`mock_questions` for mocks an assigned student has sat, and a student read on
+process page with numbered round rows beside an at-a-glance rail; question
+content area under a rust section eyebrow (read from the path by `PageEyebrow`
+bank filter bar, tagged table and new-question type tabs (the existing
+none of the `scripts/verify/` suites was re-run against this branch.
+none is shown.
+removes the assignment first. The second run was 46/46 with counts back to
+(`mock-editor.tsx`, `mock-routes.tsx`, `mocks/[id]/page.tsx`, owned by
+helpers live in `src/features/auth/components/` (`icon.tsx`,
+follow-up for that branch.
 pull request.
-
-**Screens.** Eight routes, each with its own `loading.tsx`:
-
-| Route | What it shows |
-|---|---|
+cell beside the printed number. The bar is `aria-hidden`; the number is what is
+unit tested.
+Built on `feat/admin-ui` in `C:\Cospire\Cospire-admin-ui` to the prototype in
+migration applied by hand before any screen worked, for no difference a user
+engine) does **not** link to the new breakdown yet; one link there is a small
+pages are in-page anchors, so nothing needs JavaScript. Prototype sample data
+bug; the desktop shots found three spacing bugs, all fixed. Mentor and
+questions answered correctly, with an unanswered question counting against the
+question 67%/0%, 67%/33% and 33%/67%; the DI passage not counted. Refusals:
+`person-cell.tsx`) for a human to promote. The mock builder
+operating manual section 1.4 makes mandatory, not the mock section. A DI passage
+them); users as a people table; programmes and ARS processes as cards; ARS
+*Section* is the question's bank section (`question_sections.name`), the tag
+create forms below; workspace-styled error and 404 states. Tabs on record
+`feat/test-engine`) was not edited and is styled by CSS only.
+The student result page (`src/app/student/attempts/[id]`, owned by the test
+the deployed URL, because the branch is unmerged. Scale was not load-tested; the
+the app's own start and submit (so the app scores them), answers written through
+The `ars-scheduling.mjs` CSS contract (`minmax(11rem` in `.field-row`) and the
+radius, tinted tags and notices). The shell now has a grouped rail with the
+order; average 6.33, median 5, top 12; the four distribution buckets; per
+a deployed or preview URL, the round preview and import review with data, and
+and 3; by-section, by-topic and by-difficulty rows; the trend; weakest-topic
+each student's own session, one sitting from a phone. Every number on every
+draws the same chrome and heading. Screens: overview as section cards, quick
+toasts. On a phone the rail stays the existing horizontal strip.
+Phase 4 step 5, on `feat/analytics`, branched from `feat/test-engine` at
+changed, and no dependency, config or migration was added.
+analytics, "View as" switcher and JavaScript-only dialogs, drawer menu and
+read.
+read `question_sections`, and a mentor cannot read `mocks` or `mock_questions`.
+`package.json`, which is a human's call, so each chart is a bar inside a table
+`5a9aafa` because it reads the attempt tables that branch adds. Not merged, no
 | `/student/analytics` | Mocks submitted, questions attempted, correct, overall accuracy; the score trend (each mock's attempts in order, score and share of full marks); the five weakest topics |
 | `/student/analytics/attempts/[id]` | One attempt: score of full marks, attempted, correct, wrong, not answered, accuracy; then by section, by topic, by difficulty |
+| `/mentor/analytics` | The assigned students' submitted attempts, paged, with scores |
+| `/mentor/analytics/attempts/[id]` | One attempt's breakdown, read-only |
 | `/admin/analytics` | Mocks (submitted attempts, students, average) and students (submitted attempts), each paged 25 at a time |
 | `/admin/analytics/mocks/[id]` | Attempts, students, average, median, top score, proctored and unproctored counts; the score distribution in equal buckets; by section, topic, difficulty across every attempt; per question, the share right and the share left unanswered; every attempt, linking to its breakdown |
 | `/admin/analytics/students/[id]` | The student's overview, as the student sees it |
 | `/admin/analytics/attempts/[id]` | One attempt's breakdown, naming the student |
-| `/mentor/analytics` | The assigned students' submitted attempts, paged, with scores |
-| `/mentor/analytics/attempts/[id]` | One attempt's breakdown, read-only |
-
-Nav items were added for all three roles (array items only in `app-nav.tsx`).
-The student result page (`src/app/student/attempts/[id]`, owned by the test
-engine) does **not** link to the new breakdown yet; one link there is a small
-follow-up for that branch.
-
-**Definitions.** *Accuracy* is correct out of attempted, as CAT reports it.
-*Section* is the question's bank section (`question_sections.name`), the tag
-operating manual section 1.4 makes mandatory, not the mock section. A DI passage
-is not a question; its sub-questions are. *Weakest topics* rank by the share of
-questions answered correctly, with an unanswered question counting against the
-topic as it does in the score. Time per question is not recorded anywhere, so
-none is shown.
-
 **Why no migration.** The plan says "analytics as SQL aggregates". At clause
-3.1's scale a mock's responses are at most tens of thousands of small rows, read
-in pages of 1,000 by indexed columns; a SQL function would have needed a
-migration applied by hand before any screen worked, for no difference a user
-could measure. The arithmetic is pure (`src/features/analytics/aggregate.ts`) and
-unit tested.
-
 **Who sees what, and the one server-key read.** Attempts and responses are
-always read through the signed-in user's own session, so RLS alone decides whose
-data comes back. The paper's structure and tags are different: a student cannot
-read `question_sections`, and a mentor cannot read `mocks` or `mock_questions`.
-For those two roles the paper -- titles, placement, section, topic, difficulty,
-marks, never a body, option, key or anyone's answer -- is read with the server
-key, **only for mock ids taken from attempts their own session returned**. This
-is the pattern the test engine already uses to sign question images. An admin's
-paper is read through the admin's own session. A reviewer who would rather have
-RLS decide this too needs one additive migration: a mentor read on `mocks` and
-`mock_questions` for mocks an assigned student has sat, and a student read on
-`question_sections` for sections of questions they reach.
-
-**Charts are plain HTML.** Recharts is named in the stack but is not in
-`package.json`, which is a human's call, so each chart is a bar inside a table
-cell beside the printed number. The bar is `aria-hidden`; the number is what is
-read.
-
+**What changed.** Tokens re-tuned (12% ink line, slate muted text, 11px card
+**Verified.** Typecheck, lint, 469/469 tests, production build. Every admin
 **Verified.** `scripts/verify/analytics.mjs` against a local production build on
-port 3060 and the hosted database, **46/46**. Two students sit two mocks through
-the app's own start and submit (so the app scores them), answers written through
-each student's own session, one sitting from a phone. Every number on every
-screen is compared with values worked out by hand in the script: scores 5, 2, 12
-and 3; by-section, by-topic and by-difficulty rows; the trend; weakest-topic
-order; average 6.33, median 5, top 12; the four distribution buckets; per
-question 67%/0%, 67%/33% and 33%/67%; the DI passage not counted. Refusals:
-another student, an unassigned mentor and another organisation's admin get
-not-found or an empty list, and an assigned mentor sees only their student's
-attempts. The first run leaked one throwaway admin (the mentor assignment's
-`assigned_by` does not cascade); it was deleted by hand and the cleanup now
-removes the assignment first. The second run was 46/46 with counts back to
-baseline.
-
+**Shared and cross-feature files.** `src/shared/**` was not touched. New
+**Screens.** Eight routes, each with its own `loading.tsx`:
+RLS decide this too needs one additive migration: a mentor read on `mocks` and
+| Route | What it shows |
 **Not verified.** Nothing in a browser: the pages were read as HTML, not looked
+**Not built, on purpose:** the prototype's curriculum builder, mock delivery,
+**Definitions.** *Accuracy* is correct out of attempted, as CAT reports it.
+**Charts are plain HTML.** Recharts is named in the stack but is not in
+3.1's scale a mock's responses are at most tens of thousands of small rows, read
+`../design-previews/admin-workspace.html` (sources `../tmp/admin-prototype/`).
+|---|---|
 at, so layout at phone width and the look of the bars are unchecked. Nothing on
-the deployed URL, because the branch is unmerged. Scale was not load-tested; the
-bounded reads are argued, not measured.
+5), and ten screens at 390px with the document scroll width measured: none
+### The admin workspace re-skin, 2026-09-27
+### Analytics, 2026-09-27
+is the pattern the test engine already uses to sign question images. An admin's
+in pages of 1,000 by indexed columns; a SQL function would have needed a
+is not a question; its sub-questions are. *Weakest topics* rank by the share of
+in `app-nav.tsx`, so page and skeleton cannot disagree), with an optional
+
 
 ### Mocks built from documents that quote question IDs, 2026-09-26
 

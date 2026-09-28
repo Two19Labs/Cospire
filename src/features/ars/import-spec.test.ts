@@ -154,7 +154,7 @@ describe("parseImportedProcess", () => {
     expect(test.config.pendingFeature).toBe("test-engine");
     expect(test.config.test).toMatchObject({ questionCount: 45, durationMinutes: 120 });
     expect(String(test.config.prompt)).toContain("45 questions");
-    expect(test.notes.join(" ")).toContain("test engine is not built");
+    expect(test.notes.join(" ")).toContain("Link it to a mock test");
   });
 
   it("accepts the words a model actually uses instead of the ones we asked for", () => {

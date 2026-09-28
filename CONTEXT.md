@@ -43,13 +43,14 @@ this file and not found here is in one of these; find it with
   decision. Until then an abandoned attempt is closed as the timer's when its
   student next opens it. Details: *The test engine* in
   `docs/context/completed.md`.
-- **The admin re-skin to the Client's prototype is built on `feat/admin-ui`,
-  pushed, not merged**, and awaits the owner's visual review. Screenshots only;
+- **The admin re-skin to the Client's prototype is on `feat/admin-ui`**, with
+  `main` merged in and a pull request open since 2026-09-28. Screenshots only;
   nobody has clicked through it in a browser.
-- **Analytics (Phase 4 step 5) is on `feat/analytics`**, with `main` merged in
-  and a pull request open since 2026-09-28, not merged. **Two owner decisions
-  gate the merge**: Recharts (bars are CSS today) and the server-key read of
-  paper structure for students and mentors. See its Active work row.
+- **Analytics (Phase 4 step 5) is merged and deployed** (PR #65, `566e112`,
+  2026-09-28): student, admin and mentor views over submitted attempts, 53/53
+  on a local production build. **Two owner decisions remain open**: Recharts
+  (the bars are CSS) and replacing the server-key read of paper structure for
+  students and mentors with narrow RLS policies (a migration).
 - **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
   has no billing enabled, so it runs on the free tier at five requests a minute.
   Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
@@ -296,25 +297,12 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (analytics subagent) | `feat/analytics` | Phase 4 step 5 (branched from `feat/test-engine` at `5a9aafa`): student, admin and mentor analytics over submitted attempts | `src/features/analytics/**`, `src/app/student/analytics/**`, `src/app/admin/analytics/**`, `src/app/mentor/analytics/**`, `scripts/verify/analytics.mjs`, three nav items in `auth/components/app-nav.tsx` | **Built, reviewed and re-verified 53/53** over HTTP on a local production build against the hosted database, counts back to baseline. **No migration.** `main` merged in 2026-09-28 (after the test engine's squash merge); pull request open, not merged. A high-effort review's findings are fixed: attempts awaiting a score are excluded and announced; questions are numbered in paper order; the newest attempts are kept and capped lists say so; score buckets end at full marks. **Owner decisions, not done:** Recharts is not a dependency (bars are CSS); students' and mentors' paper structure (titles, placement, tags; never text or keys) is read with the server key after their own session proves the attempts, where an RLS policy would be the manual's way. Nothing looked at in a browser | 2026-09-28 |
+| Claude agent (admin-ui) | `feat/admin-ui` | Visual re-skin of the admin screens to the approved prototype (`../design-previews/admin-workspace.html`). CSS and markup only: no query, action, route, schema or behaviour change. Worktree `C:\Cospire\Cospire-admin-ui`, port 3050 | `src/app/globals.css`, `src/app/{error,not-found}.tsx`, `src/features/auth/components/{role-shell,app-nav,shell-skeleton,icon,person-cell}.tsx`, admin screen components in `src/features/{admin,curriculum,ars,documents,ars-report,question-bank}/components/**` and, since the test-engine merge, the mock editor and `src/features/test-engine/components/mock-{access,attempts}-panel.tsx` markup; the ARS aptitude-round mock link (`src/features/ars/**`, `scripts/verify/ars-aptitude.mjs`), admin `page.tsx`/`loading.tsx` under `src/app/admin/**`  | **Built; pull request open 2026-09-28, not merged.** `main` merged in 2026-09-28 (test engine and analytics squash-merged); conflicts resolved three-way against `ce56a39`, and the nav keeps the grouped layout with the three analytics links added. **Nobody has clicked through it in a browser**; the owner chose to merge without that review on 2026-09-28. The analytics screens are not re-skinned. See `docs/context/completed.md`, *The admin workspace re-skin* | 2026-09-28 |
 
-**Two branches are open as of 2026-09-28**, each in its own worktree, each
-claiming its own row in its own copy of this file. `feat/test-engine` merged
-as PR #63 and is **kept on `origin`** until `feat/analytics` no longer needs it
-as a base.
-
-- `feat/admin-ui` -- `C:\Cospire\Cospire-admin-ui`, port 3050. The admin
-  re-skin; finished, awaiting review. It restyles the mock screens by CSS only,
-  because this branch owns the mock editor; the builder's markup follow-ups are
-  listed in its report.
-- `feat/analytics` -- `C:\Cospire\Cospire-analytics`, port 3060 (its row
-  above). `main` merged in; targets `main` directly.
-
-**Merge order:** `feat/analytics` next (delete `feat/test-engine` once it has
-merged), then
-`feat/admin-ui`. `src/features/auth/components/app-nav.tsx` and this file
-conflict between them; the nav items are grouped and carry an `eyebrow` on
-`feat/admin-ui`.
+**One branch is open as of 2026-09-28**: `feat/admin-ui`, in
+`C:\Cospire\Cospire-admin-ui` on port 3050 (its row above). `feat/test-engine`
+merged as PR #63 and `feat/analytics` as PR #65 (`566e112`); both branches are
+deleted.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
@@ -613,9 +601,8 @@ proctoring, keys readable only after the student's own submission, and
 rescoring with `rescore_events` when a key, option set, type or marks value
 changes. Left: **4.5, a scheduled close of abandoned attempts** (owner's
 decision: `pg_cron` in the database, or Vercel Cron, which on Hobby runs once a
-day), analytics (in progress on `feat/analytics`), and **attaching a mock to the
-ARS aptitude round**, replacing the `pendingFeature: "test-engine"` placeholder
--- best done after `feat/admin-ui` merges, since both touch the round builder.
+day), and analytics is merged (PR #65). **Attaching a mock to the ARS aptitude
+round** is built on `feat/admin-ui`.
 
 **5. Run Cospire's real question documents through the importer** as soon as
 they supply them, and settle the model choice with the accuracy test described

@@ -16,5 +16,20 @@ export default async function AdminArsImportPage({ params }: { params: Promise<{
   if (courseId === null) notFound();
   const [course, rounds] = await Promise.all([getCourse(courseId), listRounds(courseId)]);
   if (!course) notFound();
-  return <RoleShell profile={profile} title={`${course.title} ARS`}><ImportScreen courseId={courseId} courseTitle={course.title} existingRoundCount={rounds.length} prompt={buildImportPrompt()} /></RoleShell>;
+  return (
+    <RoleShell
+      back={{ href: `/admin/ars/${courseId}`, label: course.title }}
+      description={
+        <>
+          For <strong>{course.title}</strong>. Copy the prompt below into any AI model along with
+          the institution&apos;s admission-process document, then paste its answer back here.
+          Nothing is created until you have checked it.
+        </>
+      }
+      profile={profile}
+      title="Build from a document"
+    >
+      <ImportScreen courseId={courseId} courseTitle={course.title} existingRoundCount={rounds.length} prompt={buildImportPrompt()} />
+    </RoleShell>
+  );
 }

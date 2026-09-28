@@ -117,7 +117,7 @@ export function ImportReviewScreen({
             </form>
           ) : null}
         </div>
-        {notice && notices[notice] ? <p className="muted">{notices[notice]}</p> : null}
+        {notice && notices[notice] ? <p className="notice notice--success">{notices[notice]}</p> : null}
         <p className="muted">
           Check each question against the document, correct anything the model got
           wrong, add any figure it flagged, then approve. A figure taken out of a
@@ -171,7 +171,7 @@ export function ImportReviewScreen({
               {row.status !== "pending_review" ? null : !parsed ? (
                 <p className="muted">This entry is not a question this bank can hold. Reject it.</p>
               ) : waitingForSet ? (
-                <p className="setup-notice">Approve the set&apos;s passage (question {parsed.parentPosition! + 1}) first.</p>
+                <p className="notice notice--warn">Approve the set&apos;s passage (question {parsed.parentPosition! + 1}) first.</p>
               ) : (
                 <QuestionEditor
                   action={approveImportAction}

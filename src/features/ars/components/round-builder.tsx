@@ -15,6 +15,7 @@ import {
   renameSectionAction,
   setPageSubtitleAction,
 } from "../actions/builder-actions";
+import { setRoundMockAction } from "../actions/round-mock-actions";
 import { countFields, readyForStudents } from "../form-builder";
 import { fieldsForStep, type FormField, type FormSpec, type RoundMode } from "../form-schema";
 import { RoundPreview } from "./round-preview";
@@ -42,6 +43,74 @@ const typeLabels: Record<string, string> = {
   file: "File upload",
   score_list: "Score list (exam + score)",
 };
+
+export interface MockLink {
+  // Students on this process who cannot open the linked mock yet. Null when no
+  // mock is linked.
+  accessGap: { onProcess: number; withoutMock: number } | null;
+  linkedMockId: number | null;
+  notice: "mock-linked" | "mock-unlinked" | null;
+  options: { id: number; title: string }[];
+  // An imported aptitude round still carrying its placeholder.
+  pendingTest: boolean;
+}
+
+// An aptitude round is sat as a mock test. The link is stored in the round's
+// config; the student then sees the test on their process page. Access to the
+// mock itself is a separate grant, so the panel says who still lacks it.
+function MockLinkPanel({ courseId, link, roundId }: { courseId: number; link: MockLink; roundId: number }) {
+  const linked = link.options.find((option) => option.id === link.linkedMockId) ?? null;
+
+  return (
+    <section className="panel" id="mock-test">
+      <div className="panel__header">
+        <div>
+          <h2>Mock test</h2>
+          <p className="muted">
+            Link a mock when this round is a timed test. Students then take it from their process page.
+          </p>
+        </div>
+        {link.linkedMockId !== null ? <span className="tag tag--sage">Linked</span> : link.pendingTest ? <span className="tag tag--gold">Test not linked</span> : null}
+      </div>
+
+      {link.notice === "mock-linked" ? <p className="notice notice--success">Mock test linked.</p> : null}
+      {link.notice === "mock-unlinked" ? <p className="notice notice--success">Mock test unlinked.</p> : null}
+
+      <form action={setRoundMockAction} className="stack-form">
+        <Ids courseId={courseId} roundId={roundId} />
+        <label className="field" htmlFor="round-mock">
+          <span className="field__label">Mock test</span>
+          <select className="input" defaultValue={link.linkedMockId ?? ""} id="round-mock" name="mockId">
+            <option value="">No mock test</option>
+            {link.options.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </select>
+          {link.options.length === 0 ? (
+            <span className="field__hint">No mock tests yet. Build one under Mock tests first.</span>
+          ) : null}
+        </label>
+        <SubmitButton pendingLabel="Saving…" variant="primary">
+          Save mock test
+        </SubmitButton>
+      </form>
+
+      {link.linkedMockId !== null ? (
+        <p className="notice notice--warn">
+          Students also need access to the mock itself: Mock tests →{" "}
+          <Link href={`/admin/mocks/${link.linkedMockId}#students`}>{linked?.title ?? "the mock"}</Link> → Students.
+          {link.accessGap
+            ? link.accessGap.withoutMock === 0
+              ? ` All ${link.accessGap.onProcess} student${link.accessGap.onProcess === 1 ? "" : "s"} on this process can open it.`
+              : ` ${link.accessGap.withoutMock} of ${link.accessGap.onProcess} student${link.accessGap.onProcess === 1 ? "" : "s"} on this process cannot open it yet.`
+            : null}
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
 function Ids({ courseId, roundId }: { courseId: number; roundId: number }) {
   return (
@@ -82,7 +151,7 @@ function FieldRow({
             <Ids courseId={courseId} roundId={roundId} />
             <input name="fieldKey" type="hidden" value={field.key} />
             <input name="direction" type="hidden" value={direction} />
-            <SubmitButton variant="primary">
+            <SubmitButton className="button--ghost" compact variant="secondary">
               {direction === "up" ? "↑" : "↓"}
             </SubmitButton>
           </form>
@@ -90,7 +159,7 @@ function FieldRow({
         <form action={removeFieldAction}>
           <Ids courseId={courseId} roundId={roundId} />
           <input name="fieldKey" type="hidden" value={field.key} />
-          <SubmitButton variant="primary" pendingLabel="Working…">
+          <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
             ✕
           </SubmitButton>
         </form>
@@ -172,10 +241,13 @@ export function RoundBuilder({
   roundId,
   roundName,
   spec,
+  mockLink = null,
 }: {
   courseId: number;
   courseTitle: string;
   error: string | null;
+  // The off-platform round's link to a mock test. Null for every other mode.
+  mockLink?: MockLink | null;
   mode: RoundMode;
   profile: Profile;
   roundId: number;
@@ -187,23 +259,36 @@ export function RoundBuilder({
 
   if (mode === "offline") {
     return (
-      <RoleShell profile={profile} title={roundName}>
-        <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
+      <RoleShell
+        back={{ href: `/admin/ars/${courseId}`, label: courseTitle }}
+        description="Off-platform round. The mentor records the outcome, or students sit a linked mock test."
+        profile={profile}
+        title={roundName}
+      >
+        {error ? <p className="notice notice--error" role="alert">{error}</p> : null}
         <section className="panel">
-          <h2>This round happens off the platform</h2>
-          <p className="muted">
+          <div className="panel__header">
+            <h2>This round happens off the platform</h2>
+            <span className="tag">Off-platform</span>
+          </div>
+          <p className="notice">
             Interviews and group discussions are arranged elsewhere. The student sees the round
             and its dates; the mentor records the outcome afterwards. There is no form to build.
           </p>
         </section>
+        {mockLink ? <MockLinkPanel courseId={courseId} link={mockLink} roundId={roundId} /> : null}
       </RoleShell>
     );
   }
 
   return (
-    <RoleShell profile={profile} title={roundName}>
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      <p><Link href={`/admin/ars/${courseId}`}>← {courseTitle} ARS</Link></p>
+    <RoleShell
+      back={{ href: `/admin/ars/${courseId}`, label: courseTitle }}
+      description="Build the form a student answers, page by page. The preview beside it is what they will see."
+      profile={profile}
+      title={roundName}
+    >
+      {error ? <p className="notice notice--error" role="alert">{error}</p> : null}
 
       <div className="builder">
         <section className="panel">
@@ -245,7 +330,7 @@ export function RoundBuilder({
                         <Ids courseId={courseId} roundId={roundId} />
                         <input name="stepKey" type="hidden" value={step.key} />
                         <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                        <SubmitButton variant="primary" pendingLabel="Working…">
+                        <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
                           ✕
                         </SubmitButton>
                       </form>
@@ -333,7 +418,7 @@ export function RoundBuilder({
                   <form action={removePageAction} className="stack-form">
                     <Ids courseId={courseId} roundId={roundId} />
                     <input name="stepKey" type="hidden" value={step.key} />
-                    <SubmitButton variant="secondary" pendingLabel="Removing…">Delete this page</SubmitButton>
+                    <SubmitButton variant="danger" pendingLabel="Removing…">Delete this page</SubmitButton>
                   </form>
                 ) : null}
               </details>
