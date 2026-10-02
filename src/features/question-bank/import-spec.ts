@@ -19,6 +19,7 @@
 
 import { extractJsonBlock } from "@/features/ars/import-spec";
 
+import type { Verdict } from "./duplicates";
 import { parseNumericalAnswer } from "./numerical";
 import {
   maxAcceptedForms,
@@ -40,6 +41,9 @@ export interface StagedQuestion {
   body: string;
   correctOptions: number[];
   difficulty: string;
+  // Whether the bank already holds it (D22-D24), decided once at staging. Absent
+  // on rows staged before duplicate detection existed.
+  duplicate?: Verdict;
   // The figure numbers this question referred to, in the order they appeared.
   // What the text asked for; `images` is what it got.
   figures: number[];

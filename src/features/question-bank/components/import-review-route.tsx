@@ -64,8 +64,30 @@ export async function ImportReviewRoute({
     }
   }
 
+  // The bank questions a pending row may be the same as, so the admin compares
+  // the two texts before deciding. Read through the admin's own session.
+  const candidateIds = [
+    ...new Set(
+      batch.rows.flatMap((row) => {
+        const verdict = row.status === "pending_review" ? row.parsed?.duplicate : undefined;
+        if (!verdict) return [];
+        if (verdict.kind === "same") return [verdict.questionId];
+        if (verdict.kind === "possible") return verdict.candidates.flatMap((candidate) => (candidate.source === "bank" ? [candidate.questionId] : []));
+        return [];
+      }),
+    ),
+  ];
+  const bankTexts: Record<number, string> = {};
+  if (candidateIds.length > 0) {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase.from("questions").select("id, body").in("id", candidateIds);
+    if (error) throw new Error(`Unable to read the matching questions: ${error.message}`);
+    for (const question of data ?? []) bankTexts[Number(question.id)] = String(question.body);
+  }
+
   return (
     <ImportReviewScreen
+      bankTexts={bankTexts}
       batch={batch}
       batchId={batchId}
       imageUrls={imageUrls}

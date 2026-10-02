@@ -27,6 +27,9 @@ export interface QuestionEditorProps {
   // The import review screen approves instead of saving. Same form, same
   // fields; a different Server Action and one more hidden field.
   action?: (state: QuestionEditorState, formData: FormData) => Promise<QuestionEditorState>;
+  // Further submit buttons beside the main one, each posting its own name and
+  // value: the import review uses them for "save as a corrected version of …".
+  alternateSubmits?: Array<{ label: string; name: string; value: string }>;
   hidden?: Record<string, string>;
   imageUrls: Record<string, string>;
   initialValues: QuestionFormValues;
@@ -55,6 +58,7 @@ export const emptyQuestionValues: QuestionFormValues = {
 
 export function QuestionEditor({
   action: saveAction = saveQuestionAction,
+  alternateSubmits = [],
   hidden = {},
   imageUrls,
   initialValues,
@@ -292,6 +296,11 @@ export function QuestionEditor({
       )}
 
       <div className="form-end">
+        {alternateSubmits.map((submit) => (
+          <button className="button button--secondary" key={`${submit.name}-${submit.value}`} name={submit.name} type="submit" value={submit.value}>
+            {submit.label}
+          </button>
+        ))}
         <SubmitButton pendingLabel="Saving…">
           {submitLabel ?? (questionId ? "Save changes" : "Save question")}
         </SubmitButton>
