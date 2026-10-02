@@ -35,6 +35,10 @@ flowchart LR
     H5["verification-log.md<br/>every check run"]
   end
 
+  subgraph DEC["Decisions from owner sessions"]
+    DS["docs/decisions/DATE-decision-statement.md<br/>untracked: main checkout only"]
+  end
+
   subgraph HOW["How the work is done"]
     PLAN["docs/implementation-plan.md<br/>phases and order"]
     REV["docs/review-checklist.md<br/>PR claims, reviewer checks"]
@@ -56,6 +60,8 @@ flowchart LR
   AG --> CTX
   CTX -->|"index says which"| HIST
   CTX --> PLAN
+  CTX --> DEC
+  DEC --> PLAN
   PLAN --> CODE
   REV --> CODE
 ```
@@ -67,6 +73,9 @@ flowchart LR
 | What is true right now, who is working on what, what is next | `CONTEXT.md` |
 | What a past piece of work did and how it was verified | `docs/context/completed.md` |
 | What the Client said or decided in a call | `docs/context/meetings.md`, full transcripts in `../Context/` |
+| What the owner decided in a flow session (D-numbered decisions, open questions, scope of each change) | `docs/decisions/`, newest file first. Untracked, so read it in the main checkout |
+| What is being built next, and its gates | `docs/implementation-plan.md`, *Phase 6* |
+| Synthetic papers and PDFs for a manual run | `C:\Cospire\Test Documents\` (outside git); its `README.md` says what each tests |
 | What is applied to the hosted database, Auth settings, advisors | `docs/context/supabase.md` |
 | How a phase, exit gate or security audit went | `docs/context/phase-history.md` |
 | The result of any check ever run | `docs/context/verification-log.md` |
@@ -87,6 +96,10 @@ flowchart TD
   Q -->|"Schema, RLS, storage"| D1["docs/context/supabase.md"]
   D1 --> D2["supabase/migrations/: the latest files"]
   D2 --> D3["../CLAUDE.md sections 4 and 9"]
+
+  Q -->|"Phase 6: exam screen or import"| P1["implementation-plan.md: Phase 6"]
+  P1 --> P2["docs/decisions/: D1-D24"]
+  P2 --> F1
 
   Q -->|"Client asked for something"| C1["docs/context/meetings.md"]
   C1 --> C2{"In Annexure A?"}
