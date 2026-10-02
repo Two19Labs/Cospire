@@ -87,6 +87,8 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
         <form action={saveMockAction} className="two-col__main">
           {value ? <input name="mockId" type="hidden" value={value.id} /> : null}
           {notice === "saved" ? <p className="notice notice--success">Mock saved.</p> : null}
+          {notice === "built" ? <p className="notice notice--success">Mock built from the paper. Check the settings, then it is ready.</p> : null}
+          {notice === "built-grant-failed" ? <p className="notice notice--error">The mock was built, but granting it to the students failed. Grant them below.</p> : null}
           {error && errors[error] ? <p className="notice notice--error">{errors[error]}</p> : null}
 
           <section className="panel" id="settings">

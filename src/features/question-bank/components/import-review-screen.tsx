@@ -4,7 +4,7 @@ import { SubmitButton } from "@/shared/ui";
 
 import { approveAllCleanAction, approveImportAction, discardPendingAction, linkImportAction, rejectImportAction } from "../actions/import-actions";
 import type { Verdict } from "../duplicates";
-import { matchSection, stagedToFormValues } from "../import-review";
+import { matchSection, reviewProblems, stagedToFormValues } from "../import-review";
 import { buildQuestionHref } from "../list-params";
 import { formatQuestionId, formatQuestionIdList } from "../question-id";
 import { questionTypeLabels } from "../question-input";
@@ -25,10 +25,11 @@ const notices: Record<string, string> = {
   corrected: "Saved as a corrected version of the existing question. Past attempts that answered it are rescored if the key changed.",
   failed: "That change was refused. Nothing changed.",
   linked: "Linked to the existing question. Nothing was copied.",
+  "section-created": "Section created. Questions naming it can now be approved.",
   rejected: "Rejected. It will not enter the bank.",
 };
 
-function SourceColumn({ row }: { row: ImportRow }) {
+function SourceColumn({ problems, row }: { problems: string[]; row: ImportRow }) {
   const source = row.parsed?.source || (typeof row.raw.source === "string" ? row.raw.source : "");
   return (
     <div className="import-source">
@@ -45,11 +46,11 @@ function SourceColumn({ row }: { row: ImportRow }) {
           ))}
         </ul>
       ) : null}
-      {row.status === "pending_review" && row.problems.length > 0 ? (
+      {row.status === "pending_review" && problems.length > 0 ? (
         <div className="form-error">
           <p>Fix before approving:</p>
           <ul>
-            {row.problems.map((problem) => (
+            {problems.map((problem) => (
               <li key={problem}>{problem}</li>
             ))}
           </ul>
@@ -64,10 +65,25 @@ function excerpt(body: string): string {
   return flat.length > 160 ? `${flat.slice(0, 157)}…` : flat;
 }
 
+// What still stops a pending row being approved, judged against the sections
+// that exist now rather than as stored at staging: a section created since
+// (D14) settles "choose a section". A row already held needs only linking.
+function liveProblems(row: ImportRow, sections: QuestionSection[], orgId: number): string[] {
+  if (!row.parsed) return row.problems;
+  const kind = row.parsed.duplicate?.kind;
+  if (kind === "same" || kind === "repeat") return [];
+  return reviewProblems(row.parsed, matchSection(row.parsed.sectionName, sections), orgId);
+}
+
 // Whether a pending row needs a person. Mirrors approveAllCleanAction: a flagged
 // match, a problem to fix, or an unreadable entry always does.
-function isClean(row: ImportRow): boolean {
-  return row.status === "pending_review" && row.parsed !== null && row.problems.length === 0 && row.parsed.duplicate?.kind !== "possible";
+function isClean(row: ImportRow, sections: QuestionSection[], orgId: number): boolean {
+  return (
+    row.status === "pending_review" &&
+    row.parsed !== null &&
+    row.parsed.duplicate?.kind !== "possible" &&
+    liveProblems(row, sections, orgId).length === 0
+  );
 }
 
 function LinkButton({ batchId, importId, label, questionId }: { batchId: string; importId: number; label: string; questionId: number }) {
@@ -207,7 +223,7 @@ export function ImportReviewScreen({
     .sort((a, b) => a.position - b.position)
     .map((row) => row.questionId as number);
 
-  const cleanCount = batch.rows.filter(isClean).length;
+  const cleanCount = batch.rows.filter((row) => isClean(row, sections, orgId)).length;
   const questionIdAt = (position: number) =>
     batch.rows.find((row) => row.position === position && row.status === "approved")?.questionId ?? null;
 
@@ -305,7 +321,7 @@ export function ImportReviewScreen({
             ) : null}
 
             <div className="import-row">
-              <SourceColumn row={row} />
+              <SourceColumn problems={liveProblems(row, sections, orgId)} row={row} />
 
               {row.status !== "pending_review" || linkOnly ? null : !parsed ? (
                 <p className="muted">This entry is not a question this bank can hold. Reject it.</p>

@@ -26,6 +26,8 @@ export default async function ReviewImportPage({
     >
       <ImportReviewRoute
         batchId={batch}
+        buildError={typeof query.build === "string" ? query.build : null}
+        mock={query.mock === "1"}
         notice={typeof query.notice === "string" ? query.notice : null}
         orgId={profile.orgId}
         page={typeof query.page === "string" ? query.page : undefined}

@@ -18,6 +18,7 @@ import { readQuestionsWithGemini } from "../gemini";
 import { type ModelFigure } from "../model-call";
 import { readQuestionsWithOpenAiCompatible } from "../openai-compatible";
 import { findDuplicates } from "../queries/find-duplicates";
+import { readBatchRows, type SessionClient } from "../queries/import-rows";
 import { listSections } from "../queries/list-sections";
 import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
@@ -227,15 +228,34 @@ export async function stageQuestionImportAction(
   const figurePaths = readFigurePaths(formData, admin.orgId);
   const batchId = randomUUID();
 
+  // Paper-wide choices (D20): one section for a paper that never mixes them,
+  // and one difficulty for the questions the paper does not grade. Only a
+  // section that exists and a difficulty the bank knows are applied.
+  const paperSectionRaw = formData.get("paperSection");
+  const paperSection =
+    typeof paperSectionRaw === "string" ? sections.find((section) => section.name === paperSectionRaw)?.name ?? "" : "";
+  const difficultyRaw = formData.get("defaultDifficulty");
+  const defaultDifficulty = typeof difficultyRaw === "string" && ["easy", "medium", "hard"].includes(difficultyRaw) ? difficultyRaw : "";
+  const applyPaperChoices = (staged: StagedQuestion): StagedQuestion => ({
+    ...staged,
+    difficulty: staged.difficulty || defaultDifficulty,
+    sectionName: paperSection || staged.sectionName,
+  });
+  const choicesMade = paperSection !== "" || defaultDifficulty !== "";
+
   const rows = outcome.items.map((item) => {
     const parsed: StagedQuestion | null = item.parsed
-      ? attachFigures(applyDefaultMarks(item.parsed, defaultMarks), figurePaths)
+      ? attachFigures(applyDefaultMarks(applyPaperChoices(item.parsed), defaultMarks), figurePaths)
       : null;
     const sectionId = parsed ? matchSection(parsed.sectionName, sections) : null;
     // The parser's own findings win where it has any; otherwise the same
-    // validator approval uses says what is left to fix, marks included.
+    // validator approval uses says what is left to fix, marks included. Once a
+    // paper-wide choice has filled a gap the parser complained about, the
+    // validator is asked again, so a difficulty now given is not still a problem.
     const problems =
-      item.problems.length > 0 ? item.problems : parsed ? reviewProblems(parsed, sectionId, admin.orgId) : [];
+      parsed && (item.problems.length === 0 || choicesMade)
+        ? reviewProblems(parsed, sectionId, admin.orgId)
+        : item.problems;
     return {
       batch_id: batchId,
       org_id: admin.orgId,
@@ -270,7 +290,7 @@ export async function stageQuestionImportAction(
   }
 
   revalidatePath("/admin/questions/import");
-  redirect(`/admin/questions/import/${batchId}`);
+  redirect(`/admin/questions/import/${batchId}${formData.get("buildMock") === "1" ? "?mock=1" : ""}`);
 }
 
 function describeApproveError(error: { code?: string; message?: string }): string {
@@ -394,8 +414,6 @@ function linkTargets(staged: StagedQuestion | null, questionIdAt: (position: num
   return [];
 }
 
-type SessionClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
-
 async function linkRow(supabase: SessionClient, importId: number, questionId: number): Promise<boolean> {
   const { data: target } = await supabase.from("questions").select("id, archived_at").eq("id", questionId).maybeSingle();
   if (!target || target.archived_at !== null) return false;
@@ -408,23 +426,6 @@ async function linkRow(supabase: SessionClient, importId: number, questionId: nu
     .eq("status", "pending_review")
     .select("id");
   return !error && (data ?? []).length === 1;
-}
-
-async function readBatchRows(supabase: SessionClient, batchId: string) {
-  const { data, error } = await supabase
-    .from("question_imports")
-    .select("id, position, parsed, problems, status, question_id")
-    .eq("batch_id", batchId)
-    .order("position");
-  if (error) throw new Error(`Unable to read the import: ${error.message}`);
-  return (data ?? []).map((row) => ({
-    id: Number(row.id),
-    parsed: (row.parsed ?? null) as StagedQuestion | null,
-    position: Number(row.position),
-    problems: Array.isArray(row.problems) ? row.problems.map(String) : [],
-    questionId: row.question_id === null ? null : Number(row.question_id),
-    status: String(row.status),
-  }));
 }
 
 // "Same question": approve a staged row as an existing question.
@@ -463,7 +464,9 @@ export async function approveAllCleanAction(formData: FormData): Promise<void> {
 
   for (const row of rows) {
     const staged = row.parsed;
-    if (row.status !== "pending_review" || !staged || row.problems.length > 0) continue;
+    // Problems are judged now, not as stored at staging: a section created on
+    // the review screen since then (D14) settles "choose a section".
+    if (row.status !== "pending_review" || !staged) continue;
     const verdict = staged.duplicate ?? { kind: "new" as const };
     if (verdict.kind === "possible") continue;
 

@@ -16,15 +16,19 @@ export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Prof
       actions={
         <>
           <Link className="button button--secondary" href="/admin/mocks/import">
-            Build from a document
+            Build from question IDs
           </Link>
-          <Link className="button button--primary" href="/admin/mocks/new">
+          <Link className="button button--secondary" href="/admin/mocks/new">
             <Icon name="plus" />
-            New mock
+            Pick questions
+          </Link>
+          <Link className="button button--primary" href="/admin/mocks/import-paper">
+            <Icon name="upload" />
+            Import a paper
           </Link>
         </>
       }
-      description="Build timed tests from the question bank, by picking questions or by pasting a document that quotes their IDs."
+      description="Import a paper and its questions become a mock, with any the bank already holds linked rather than copied. Or pick questions from the bank, or quote their IDs."
       heading={mocksHeading}
       profile={profile}
       title="Mock tests"
