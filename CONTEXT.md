@@ -332,9 +332,14 @@ Two operational notes that cost time to rediscover:
 **Every feature branch is merged as of 2026-09-28.**
 `feat/test-engine` merged as PR #63,
 `feat/analytics` as PR #65 and `feat/admin-ui` as PR #66 (`fe9e836`); all three
-branches are deleted from `origin`. The worktrees `Cospire-test-engine`,
-`Cospire-analytics`, `Cospire-admin-ui` and `Cospire-mock-docs` still exist
-locally and can be removed with `scripts/wt-done.sh`.
+branches are deleted from `origin`. **Cleaned up on 2026-10-02:** those
+worktrees, the orphan `Cospire-doc-import` folder and the seven merged local
+branches are removed. Three stale `next start` servers from 2026-09-28 (ports
+3010, 3050 and 3060) are stopped. `scripts/wt-done.sh` cannot remove a
+squash-merged branch: its `merge-base --is-ancestor` check refuses every one.
+Use `git worktree remove` and `git branch -D` once the PR is confirmed merged.
+A leftover `next start` locks `next-swc.win32-x64-msvc.node` and stops the
+folder being deleted, so stop the server first.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
@@ -360,9 +365,6 @@ anything:
   "stage all" skips it. `docs/decisions/` is not excluded (N13). The editor's
   record of every git command is its `vscode.git/Git.log`, under
   `%APPDATA%\Antigravity IDE\logs\`.
-- **The main checkout's `node_modules` is stale.** On 2026-10-01 it lacked
-  `fflate`, which `package.json` lists. Run `npm ci` there before using it
-  locally, but not while a dev server is up.
 - **A new worktree may arrive without its dependencies.** `Cospire-mock-docs`
   was handed over as ready and held one stray `next` directory in
   `node_modules` and no `.bin`, so every script failed with "'vitest' is not
@@ -598,10 +600,16 @@ or read them from the main checkout. In order:
    questions waits for the Client's written line.
 3. **6.3 Duplicate detection (D22–D24).** Exact fingerprint plus `pg_trgm`, **no
    model**. A flagged match offers same / corrected version / different.
-   **Clause 12: quote before building**, or record the owner's decision to build
-   at risk.
-4. **6.4 The mock-first import wizard (D7–D9, D13–D15, D20).** Clause 12. Its
-   screens wait until the Client's weekend change list has been triaged.
+   Clause 12.
+4. **6.4 The mock-first import wizard (D7–D9, D13–D15, D20).** Clause 12.
+
+**The owner decided on 2026-10-02 to start 6.2, 6.3 and 6.4 immediately, at
+risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
+was settled with the Client on 1 October, and the import route is what the
+Client uses first. The quote and the clause 16.1 written amendment are **still
+owed**; building first does not settle them. Work happens on `feat/mock-import`
+in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
+for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
 5. **6.5 Small committed items**: watermark bottom left, viewer full screen, the
    landscape check, the stale Programmes card.
 6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
