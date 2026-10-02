@@ -33,6 +33,7 @@ export default async function ImportQuestionsPage({
         orgId={profile.orgId}
         prompt={buildQuestionImportPrompt()}
         sections={sections}
+        startManual={params.paste === "1"}
       />
     </RoleShell>
   );

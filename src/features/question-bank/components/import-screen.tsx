@@ -142,6 +142,7 @@ export function QuestionImportScreen({
   orgId,
   prompt,
   sections,
+  startManual = false,
 }: {
   batches: ImportBatchSummary[];
   // Opened from Mock tests (D7): the review offers to build a mock from the
@@ -155,6 +156,9 @@ export function QuestionImportScreen({
   orgId: number;
   prompt: string;
   sections: Array<{ id: number; name: string }>;
+  // `?paste=1`: start at step 2 without a Word file. A link rather than a
+  // button, so the paste route works with scripting off, like every screen here.
+  startManual?: boolean;
 }) {
   const [state, previewAction] = useActionState(previewQuestionImportAction, initialQuestionImportState);
   const [geminiState, geminiAction] = useActionState(askGeminiAction, initialQuestionImportState);
@@ -162,7 +166,7 @@ export function QuestionImportScreen({
   const [paper, setPaper] = useState<ExtractedPaper | null>(null);
   // "Paste a model's answer without a Word file": the old step 2 for anyone who
   // attaches the paper to a model themselves.
-  const [manual, setManual] = useState(false);
+  const manual = startManual;
   // Which path last ran. Set when the form is submitted, so the two results
   // cannot fight over which one is showing.
   const [source, setSource] = useState<"gemini" | "paste">("paste");
@@ -234,9 +238,9 @@ export function QuestionImportScreen({
           <WordUploadField onExtracted={setPaper} orgId={orgId} />
           <p className="muted">
             No Word file?{" "}
-            <button className="button button--ghost" onClick={() => setManual(true)} type="button">
+            <Link href={`${buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}?paste=1`}>
               Paste a model&apos;s answer instead
-            </button>
+            </Link>
           </p>
         </section>
       ) : null}

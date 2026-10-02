@@ -11,8 +11,13 @@ export const metadata: Metadata = { title: "Import a paper" };
 
 // Mock-first import (D7): the same importer as the question bank's, opened from
 // Mock tests, so the review ends by building the mock from the paper.
-export default async function ImportPaperPage() {
+export default async function ImportPaperPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const profile = await requireRole("admin");
+  const params = await searchParams;
   const [batches, sections] = await Promise.all([listImportBatches(), listSections()]);
 
   return (
@@ -31,6 +36,7 @@ export default async function ImportPaperPage() {
         orgId={profile.orgId}
         prompt={buildQuestionImportPrompt()}
         sections={sections}
+        startManual={params.paste === "1"}
       />
     </RoleShell>
   );
