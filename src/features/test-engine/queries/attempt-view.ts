@@ -6,6 +6,7 @@ import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { buildItems, type EnteredSection, type PaperItem, type PaperSection, type PlacedQuestion } from "../paper";
+import { effectiveMarks } from "../scoring";
 import type { AttemptSummary } from "./student-mocks";
 
 export interface PaperQuestion {
@@ -101,7 +102,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
       .select("title, duration_minutes, negative_marking, negative_marking_types, proctoring_enabled")
       .eq("id", attempt.mock_id)
       .maybeSingle(),
-    supabase.from("mock_sections").select("id, title, duration_minutes, sort_order").eq("mock_id", attempt.mock_id),
+    supabase.from("mock_sections").select("id, title, duration_minutes, sort_order, marks").eq("mock_id", attempt.mock_id),
     supabase
       .from("mock_questions")
       .select("question_id, mock_section_id, sort_order")
@@ -154,13 +155,19 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
     for (const entry of data ?? []) if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
   }
 
+  // Marks come from the mock where its section sets them (D19).
+  const marksBySection = new Map((sectionResult.data ?? []).map((row) => [row.id, row.marks === null ? null : Number(row.marks)]));
+  const sectionMarksOf = new Map(
+    (placedResult.data ?? []).map((row) => [row.question_id, marksBySection.get(row.mock_section_id) ?? null]),
+  );
+
   const questions = new Map<number, PaperQuestion>();
   for (const row of rows) {
     questions.set(row.id, {
       body: row.body,
       id: row.id,
       imageUrls: readImagePaths(row.images).flatMap((path) => signed.get(path) ?? []),
-      marks: row.marks,
+      marks: effectiveMarks(row, sectionMarksOf.get(row.id)),
       options: readOptions(row.options),
       type: row.type as QuestionType,
     });

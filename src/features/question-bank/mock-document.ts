@@ -8,6 +8,7 @@
 //   Mock: CAT Full Length 3
 //   Duration: 120
 //   Negative marking: 1 on mcq, mcq_multi
+//   Marks: 3
 //   Attempts: 1
 //   Allow mobile: no
 //   Proctoring: yes
@@ -59,6 +60,9 @@ export interface MockDocumentRef {
 export interface MockDocumentSection {
   durationMinutes: number | null;
   line: number;
+  // Marks per correct answer in this section (D19): its own, else the mock's
+  // "Marks:" line, else null, which keeps each question's own marks.
+  marks: number | null;
   refs: MockDocumentRef[];
   title: string;
 }
@@ -66,6 +70,7 @@ export interface MockDocumentSection {
 export interface MockDocumentSpec {
   allowMobile: boolean;
   durationMinutes: number;
+  marks: number | null;
   maxAttempts: number;
   negativeMarking: number;
   negativeMarkingTypes: NegativeMarkingType[];
@@ -83,7 +88,7 @@ export interface MockDocumentParse {
   spec: MockDocumentSpec | null;
 }
 
-const settingLabels = new Set(["mock", "duration", "negative marking", "attempts", "allow mobile", "proctoring"]);
+const settingLabels = new Set(["mock", "duration", "negative marking", "marks", "attempts", "allow mobile", "proctoring"]);
 
 function normaliseLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, " ").toLowerCase();
@@ -100,6 +105,14 @@ function readMinutes(raw: string): number | null {
   if (!match) return null;
   const value = Number.parseInt(match[1], 10);
   return value >= 1 && value <= 1440 ? value : null;
+}
+
+// "3", "3 marks", "+3", "1.5 marks". Null for anything else.
+function readMarks(raw: string): number | null {
+  const match = normaliseText(raw).match(/^\+?([0-9]{1,3}(?:\.[0-9]{1,2})?)(?:\s*(?:marks|mark))?$/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return value > 0 && value <= 100 ? value : null;
 }
 
 function readYesNo(raw: string): boolean | null {
@@ -158,6 +171,7 @@ export function parseMockDocument(text: string): MockDocumentParse {
   let allowMobile: boolean | null = null;
   let proctoringEnabled: boolean | null = null;
   let negative: NegativeMarking | null = null;
+  let marks: number | null = null;
   const sections: MockDocumentSection[] = [];
   // Sections whose own line was refused. They are still pushed, so the IDs under
   // them have somewhere to go and the reader is not handed a second complaint
@@ -194,22 +208,33 @@ export function parseMockDocument(text: string): MockDocumentParse {
           at(line, `there is already a section called “${existing.title}”, on line ${existing.line}. Each section needs its own name.`);
           invalid = true;
         }
+        // After the name: minutes, and optionally marks, in either order. A
+        // part that mentions marks is marks; anything else is minutes.
         let minutes: number | null = null;
-        if (rest.length > 0) {
-          minutes = readMinutes(rest.join("|"));
-          if (minutes === null) {
-            at(line, `“${normaliseText(rest.join("|"))}” is not a number of minutes. Write the section as “Section: VARC | 40”.`);
-            invalid = true;
+        let sectionMarks: number | null = null;
+        for (const part of rest.map(normaliseText).filter((value) => value !== "")) {
+          if (/marks?\b/i.test(part)) {
+            sectionMarks = readMarks(part);
+            if (sectionMarks === null) {
+              at(line, `“${part}” is not a mark. Write it as “3 marks”, above 0 and at most 100.`);
+              invalid = true;
+            }
+          } else {
+            minutes = readMinutes(part);
+            if (minutes === null) {
+              at(line, `“${part}” is not a number of minutes. Write the section as “Section: VARC | 40”.`);
+              invalid = true;
+            }
           }
         }
-        const section: MockDocumentSection = { durationMinutes: minutes, line, refs: [], title: sectionTitle };
+        const section: MockDocumentSection = { durationMinutes: minutes, line, marks: sectionMarks, refs: [], title: sectionTitle };
         sections.push(section);
         if (invalid) invalidSections.add(section);
         continue;
       }
 
       if (!settingLabels.has(label)) {
-        at(line, `“${normaliseText(labelled[1])}” is not a setting this template understands. It reads Mock, Duration, Negative marking, Attempts, Allow mobile, Proctoring and Section.`);
+        at(line, `“${normaliseText(labelled[1])}” is not a setting this template understands. It reads Mock, Duration, Negative marking, Marks, Attempts, Allow mobile, Proctoring and Section.`);
         continue;
       }
       if (sections.length > 0) {
@@ -245,6 +270,13 @@ export function parseMockDocument(text: string): MockDocumentParse {
           if (allowMobile !== null) at(line, "whether phones are allowed is already set.");
           else if (answer === null) at(line, `“${normaliseText(value)}” is not yes or no.`);
           else allowMobile = answer;
+          break;
+        }
+        case "marks": {
+          const read = readMarks(value);
+          if (marks !== null) at(line, "the marks are already set.");
+          else if (read === null) at(line, `“${normaliseText(value)}” is not a mark. Write it as “Marks: 3”, above 0 and at most 100.`);
+          else marks = read;
           break;
         }
         case "proctoring": {
@@ -339,12 +371,13 @@ export function parseMockDocument(text: string): MockDocumentParse {
     spec: {
       allowMobile: allowMobile ?? true,
       durationMinutes,
+      marks,
       maxAttempts: maxAttempts ?? 1,
       negativeMarking: negative?.penalty ?? 0,
       negativeMarkingTypes: negative?.types ?? [],
       proctoringEnabled: proctoringEnabled ?? false,
       proctoringStated: proctoringEnabled !== null,
-      sections,
+      sections: sections.map((section) => ({ ...section, marks: section.marks ?? marks })),
       timingMode,
       title,
     },
@@ -356,6 +389,7 @@ export function parseMockDocument(text: string): MockDocumentParse {
 export const mockDocumentTemplate = `Mock: CAT Full Length 3
 Duration: 120
 Negative marking: 1 on mcq, mcq_multi
+Marks: 3
 Attempts: 1
 Allow mobile: no
 Proctoring: yes

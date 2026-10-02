@@ -28,7 +28,8 @@ export interface MockEditorValue {
   maxAttempts: number;
   allowMobile: boolean;
   proctoringEnabled: boolean;
-  sections: Array<{ id: number; title: string; durationMinutes: number | null; questionIds: number[] }>;
+  // Marks per correct answer, per section (D19). Null keeps each question's own.
+  sections: Array<{ id: number; title: string; durationMinutes: number | null; marks: number | null; questionIds: number[] }>;
 }
 
 // PostgREST returns a many-to-one embed as an object, not a one-element array:
@@ -125,7 +126,7 @@ export async function getMock(mockId: number): Promise<MockEditorValue> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("mocks")
-    .select("id,title,instructions,duration_minutes,negative_marking,negative_marking_types,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,title,duration_minutes,sort_order,mock_questions(question_id,sort_order,questions(parent_id)))")
+    .select("id,title,instructions,duration_minutes,negative_marking,negative_marking_types,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,title,duration_minutes,sort_order,marks,mock_questions(question_id,sort_order,questions(parent_id)))")
     .eq("id", mockId)
     .order("sort_order", { referencedTable: "mock_sections", ascending: true })
     .single();
@@ -144,6 +145,7 @@ export async function getMock(mockId: number): Promise<MockEditorValue> {
       id: section.id,
       title: section.title,
       durationMinutes: section.duration_minutes,
+      marks: section.marks === null ? null : Number(section.marks),
       questionIds: [...section.mock_questions]
         .sort((a, b) => a.sort_order - b.sort_order)
         .filter((question) => question.questions?.parent_id === null)

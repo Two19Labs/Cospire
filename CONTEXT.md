@@ -328,6 +328,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude (owner's flow session) | `feat/mock-import` | Phase 6 steps 6.2 (marks onto the mock), 6.3 (duplicate detection, no model) and 6.4 (mock-first import wizard). Built at risk ahead of the clause 12 quote, by the owner's decision of 2026-10-02 | `src/features/question-bank/**`, `src/features/test-engine/{scoring,score-attempt}.ts`, `src/features/test-engine/queries/attempt-view.ts`, `src/features/analytics/**` (marks reads only), `src/app/admin/mocks/**`, `src/app/admin/questions/**`, new `supabase/migrations/20261002*` | In progress | 2026-10-02 |
 
 **Every feature branch is merged as of 2026-09-28.**
 `feat/test-engine` merged as PR #63,
