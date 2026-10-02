@@ -58,6 +58,63 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
 | 2026-09-20 | **Multi-file ARS upload UI built, merged and deployed** | A file question uploads directly from the browser to the private `ars-uploads` bucket, attaches metadata under its stable field key, and can be replaced or removed only while the submission is a draft. Multiple questions in one form are supported. Migration `20260920150318` is applied; live Storage verification is 10/10; typecheck, lint, 226 tests and production build pass. PR #36 merged as `0e0f14f`; Production deployed it and a signed-in live capture confirmed a real file input with no placeholder |
 
+### Mock-first import with duplicate detection, 2026-10-02 (Phase 6.2-6.4)
+
+On `feat/mock-import`, **built at risk ahead of the clause 12 quote** by the
+owner's decision of 2026-10-02. The decisions are D7-D24 in the main checkout's
+untracked `docs/decisions/2026-10-02-decision-statement.md`.
+
+- **6.2, marks on the mock (D19).** `mock_sections.marks`, nullable. Scoring,
+  the attempt and result screens and analytics use
+  `effectiveMarks(question, sectionMarks)` in `test-engine/scoring.ts`: the
+  section's marks when set, the question's own otherwise. A DI passage always
+  earns 0. Every mock saved before this has null, so its scores are unchanged.
+  The builder takes one "marks per correct answer" for the mock, with a
+  per-section override, and the mock document takes `Marks: 3` and
+  `Section: QA | 40 | 3 marks`. `questions.marks` stays NOT NULL until the
+  Client confirms D19 in writing.
+- **6.3, duplicate detection (D22-D24), no model.**
+  `private.question_text_key(body)` lowercases text and drops punctuation that
+  is not inside a number. Letters, digits and maths symbols stay, so "7.2" is
+  never "72". `questions.body_key` is a stored generated column, indexed by md5
+  for equality and by GIN trigram for similarity.
+  `public.find_question_matches(bodies, threshold)` compares a paper with the
+  bank and with itself. The pure rules are in `question-bank/duplicates.ts`:
+  - **same**: equal text, type, options in order, key and picture content.
+    Linked automatically.
+  - **repeat**: an exact repeat earlier in the same paper.
+  - **possible**: anything else that matched. A person decides.
+  - **new**: no match.
+  - A DI set links only when every part matches; otherwise it is a new set.
+
+  Pictures are compared by sha256 of their bytes, and only where the text is
+  equal, because a Word upload gives every copy of a chart a fresh path.
+  Verdicts are computed once at staging and stored in `parsed.duplicate`.
+- **Review.** Each question shows its verdict. A flagged one offers "same
+  question" (`linkImportAction`), "save as a corrected version of Qnnnnn"
+  (`approve_question_import_into`, which updates in place and rescores through
+  the existing triggers), or "approve as a different question". Every link
+  target is checked on the server against what the verdict offered.
+  **Approve all clean** (`approveAllCleanAction`) approves new, same and repeat
+  rows in paper order and never a flagged one. Problems are re-judged against
+  the current sections, not as stored at staging.
+- **6.4, the wizard (D7-D9, D13-D15, D20).** One import screen, one step at a
+  time, opened from the question bank or from Mock tests → Import a paper
+  (`/admin/mocks/import-paper`, now the primary action). The paste route is
+  always reachable: a `?paste=1` link from step 1, and a disclosure beside the
+  Gemini button. The paper's section and a default difficulty are chosen once,
+  at step 3. The review page offers to create sections the paper names and the
+  bank lacks (`createPaperSectionAction`). Once every question is decided it
+  offers **Build a mock from this paper** (`buildMockFromImportAction`):
+  - settings and marks
+  - overall timing, or per-section timing from the paper's own sections
+  - who takes it: a programme's or ARS process's students, or picked students
+
+  It calls the existing `save_mock`.
+- **Not built:** opening the importer from an ARS aptitude round so the mock is
+  linked automatically (D8). Today the round is linked by hand after the build.
+  Removing marks from questions (the contract step of D19) is also not built.
+
 ### The test engine, 2026-09-26 and 27
 
 Built on `feat/test-engine`, in the worktree `C:\Cospire\Cospire-test-engine`.
