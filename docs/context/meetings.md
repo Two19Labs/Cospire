@@ -2,6 +2,71 @@
 
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
+## The status call, 2026-10-01
+
+The owner and Aditya Singhani with the Client's founder, about 22 minutes. The
+transcript is at `../Context/2026-10-01 status call - transcript.md`, outside
+git. The decisions that follow from it, and the owner's own of the same day, are
+in `docs/decisions/2026-10-02-decision-statement.md` (D7–D24).
+
+### Told to the Client
+
+- The test engine and the platform outside video are built. The team is now on
+  usability, and video waits for VdoCipher. The owner put the work at "70 to 75%
+  done". That figure is the owner's, not a measurement.
+- Aditya showed his **reference design** for the exam and results screens: an
+  instruction screen, the question palette, per-section submit, results with
+  section-wise performance, **time spent per question**, and the tab-switch
+  record. **This was a design, not the deployed build.** Nothing records time
+  per question today.
+
+### Settled
+
+- **Marks belong to the mock, not the question bank.** The founder: "we should
+  have it in the mock… and not the question bank". Their marking is constant,
+  +1/0 or +1/−1. This settles 28 Sept O1 as option B. **Verbal only**: Annexure A
+  names marks as mandatory question metadata, so a written line is needed
+  (clause 16.1) before marks are removed from questions.
+- **Duplicate handling accepted** as described: an exact match links
+  automatically, a similar one is flagged for a person. "Perfect."
+- **Gemini billing: the Client will pay**, about ₹1,000 prepaid to start. The
+  account must stay in Cospire's name (clause 3.8).
+- **Five sections**, with the ability to add more ("general knowledge"). The
+  exact five names are not clear from the transcript.
+
+### Learned
+
+- **Their documents carry no metadata**: no difficulty, marks or topic. The
+  founder's instinct was to import and then tag topic and difficulty by hand. He
+  also floated a Google Sheet with difficulty and marks columns. The owner said
+  the model can find the topic, and difficulty should be Cospire's own call.
+- **Volume:** 200–300 documents, 10–40 questions each. Question banks come in
+  levels 1–3, with 3 hardest, plus separate "advanced" documents. **A document
+  never mixes sections.**
+- Their analytics wishes are not yet written down: "all the things that were
+  existing in the Lovable side are needed", and more to come.
+
+### Committed in the call, to watch
+
+- **An Excel export of the whole bank**, with IDs, questions and options. Offered
+  by the owner, accepted. Not in Annexure A, so clause 12 unless absorbed.
+- **AntiDeploy instead of Vercel**, proposed by the owner, who knows its founders.
+  The founder is open but will discuss it internally. Not decided. It must run
+  this application and be in Cospire's name (clause 3.8) before it is
+  recommended in writing.
+
+### Next
+
+The Client's team will send **one consolidated change list over the weekend**,
+then meet on **Sunday 4 or Monday 5 October**. The founder asked that their
+changes be discussed rather than simply accepted. Changes beyond Annexure A still
+go through clause 12.
+
+**Not raised in the call, still owed:** the written Kickoff Date, the VdoCipher
+date and the clause 4.4 extension in writing, SMTP, Supabase Pro and the hosting
+plan, TITA tolerance, mentor per student or per process, whether the answer key
+sits in the same file, sub-admin permissions, and the written amendment.
+
 ## The walkthrough call, 2026-09-21
 
 The owner demonstrated the build to the Client's founder: the document viewer,

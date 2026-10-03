@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-09-28 (Asia/Calcutta)
+Last updated: 2026-10-02 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -16,6 +16,33 @@ this file and not found here is in one of these; find it with
 | `docs/context/supabase.md` | Hosted Supabase state: applied migrations, Auth configuration, users, advisors, traps |
 | `docs/context/phase-history.md` | Phase 0, 1 and 5a progress records, exit gates and security audits |
 | `docs/context/verification-log.md` | Every check run, with its result |
+| `docs/decisions/` | Decision statements from flow sessions with the owner. **Untracked**: whether to commit them is open (N13), so they exist only in the main checkout |
+
+## Status, 2026-10-02
+
+- **Phase 6 is next**: the exam screen and mock-first import, before video. Its
+  plan and targets are *Phase 6* in `docs/implementation-plan.md`; the decisions
+  it builds are D7–D24 in `docs/decisions/2026-10-02-decision-statement.md`,
+  which continues the 28 September file. **Nothing in it is built.**
+- **The owner sat a mock on the deployed URL on 2026-10-01.** It scored
+  correctly, but the exam was poor to sit: a blank skeleton between every
+  question, because each move is a full form submission and server render, and
+  no full-screen layout. The import prompt is also hidden whenever a paper has
+  pictures and a Gemini key is configured. All three are in scope; the exam
+  comes first (D11).
+- **Client call, 2026-10-01** (*The status call* in `docs/context/meetings.md`):
+  - marks move to the mock (D19, verbal only; needs a written line)
+  - the duplicate rule is accepted
+  - the Client will pay for Gemini billing
+  - 200–300 question documents with no metadata
+  - five sections
+  - an Excel export promised
+  - AntiDeploy floated in place of Vercel
+  - their consolidated change list comes over the weekend, with a meeting on
+    4 or 5 October
+- **Synthetic test papers** for manual runs are in `C:\Cospire\Test Documents\`
+  (outside git). Its `README.md` maps each file to a screen; paper B is the
+  duplicate-detection test set.
 
 ## Status, 2026-09-28
 
@@ -305,9 +332,14 @@ Two operational notes that cost time to rediscover:
 **Every feature branch is merged as of 2026-09-28.**
 `feat/test-engine` merged as PR #63,
 `feat/analytics` as PR #65 and `feat/admin-ui` as PR #66 (`fe9e836`); all three
-branches are deleted from `origin`. The worktrees `Cospire-test-engine`,
-`Cospire-analytics`, `Cospire-admin-ui` and `Cospire-mock-docs` still exist
-locally and can be removed with `scripts/wt-done.sh`.
+branches are deleted from `origin`. **Cleaned up on 2026-10-02:** those
+worktrees, the orphan `Cospire-doc-import` folder and the seven merged local
+branches are removed. Three stale `next start` servers from 2026-09-28 (ports
+3010, 3050 and 3060) are stopped. `scripts/wt-done.sh` cannot remove a
+squash-merged branch: its `merge-base --is-ancestor` check refuses every one.
+Use `git worktree remove` and `git branch -D` once the PR is confirmed merged.
+A leftover `next start` locks `next-swc.win32-x64-msvc.node` and stops the
+folder being deleted, so stop the server first.
 
 `feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
 PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
@@ -324,6 +356,15 @@ anything:
 - **Tell the owner at once if anything changes that you did not do** -- a file
   in the working tree, a branch, a commit, the dev server going down. They have
   remote access and can intervene, but only if it is surfaced immediately.
+- **The editor's Commit button stages everything.** On 2026-10-01 at 10:43,
+  Commit was pressed in the Antigravity IDE's Source Control panel with nothing
+  staged. That makes VS Code-based editors run `git add -A` first, and it staged
+  the private `docs/client/` files in this **public** repository. The commit
+  aborted on an empty message, so nothing was committed or pushed. They were
+  unstaged on 2026-10-02, and `docs/client/` is now in `.git/info/exclude`, so a
+  "stage all" skips it. `docs/decisions/` is not excluded (N13). The editor's
+  record of every git command is its `vscode.git/Git.log`, under
+  `%APPDATA%\Antigravity IDE\logs\`.
 - **A new worktree may arrive without its dependencies.** `Cospire-mock-docs`
   was handed over as ready and held one stray `next` directory in
   `node_modules` and no `.bin`, so every script failed with "'vitest' is not
@@ -412,7 +453,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
-| **Billing on the Gemini project** | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
+| **Billing on the Gemini project** (**agreed by the Client on 2026-10-01**, about ₹1,000 prepaid; owner to set up, in Cospire's name) | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
@@ -543,6 +584,38 @@ browser-level harness is inside it. Nothing in the phase is outstanding.
 **Programmes and ARS are separated** (2026-09-20, PR #44/#45) and **every
 signed-in screen has a loading state** (2026-09-21, PR #46). Both are deployed
 and verified against the deployed URL.
+
+### Now: Phase 6, before video
+
+Decided 2026-10-01/02. Plan: *Phase 6* in `docs/implementation-plan.md`.
+Decisions: `docs/decisions/2026-10-02-decision-statement.md`. Both decision
+statements are **untracked**, so a worktree will not have them; copy them across
+or read them from the main checkout. In order:
+
+1. **6.1 The exam screen.** Instant question switching, background saving and a
+   full-screen layout, from Aditya's reference design, with every server-side
+   rule kept. Step 4.5 (closing abandoned attempts) comes with it. **In scope;
+   start now.**
+2. **6.2 Marks onto the mock (D19).** Expand first. Removing marks from
+   questions waits for the Client's written line.
+3. **6.3 Duplicate detection (D22–D24).** Exact fingerprint plus `pg_trgm`, **no
+   model**. A flagged match offers same / corrected version / different.
+   Clause 12.
+4. **6.4 The mock-first import wizard (D7–D9, D13–D15, D20).** Clause 12.
+
+**The owner decided on 2026-10-02 to start 6.2, 6.3 and 6.4 immediately, at
+risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
+was settled with the Client on 1 October, and the import route is what the
+Client uses first. The quote and the clause 16.1 written amendment are **still
+owed**; building first does not settle them. Work happens on `feat/mock-import`
+in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
+for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
+5. **6.5 Small committed items**: watermark bottom left, viewer full screen, the
+   landscape check, the stale Programmes card.
+6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
+   log and flags, bulk CSV once SMTP exists.
+7. **6.7 Real documents** through the paid Gemini path, once billing and their
+   files exist.
 
 ### What to build next, in the order it should be taken
 

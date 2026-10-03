@@ -27,11 +27,165 @@ Phase numbers name **scope**, not order. The order changed on 2026-09-08; see
 |---|---|---|---|---|
 | **0** | Foundation, identity, access | 1 | done | **Complete** |
 | **1** | Admin console and documents | 2 | done | **Exit gate closed 2026-09-08**, 36/36 on the deployed URL. Only step 5 (bulk CSV) is unbuilt, blocked on SMTP |
-| **5a** | **Programmes, then ARS** | 6 | **in progress** | Brought forward at the Client's request. Step 1, programmes, is **done and verified** (PR #19, migration applied). `ars_rounds` is next |
-| **2** | Video, curriculums | 3 | deferred | **Blocked on VdoCipher**, which has still not arrived |
-| **3** | Question bank and authoring | 4 | to be re-planned | Not started |
-| **4** | Test engine | 5 | to be re-planned | Not started |
-| **5b** | Migration, handover | 6 | last | Not started |
+| **5a** | **Programmes, then ARS** | 6 | done | **Complete**, exit gate 28/28 on the deployed URL (2026-09-20) |
+| **3** | Question bank and authoring | 4 | done | **Merged and deployed**: authoring, Word upload, Gemini path (live round trip unverified), mock builder, mocks from ID documents |
+| **4** | Test engine | 5 | done | **Merged and deployed** (PR #63), 49/49 on the deployed URL, rescoring included. Analytics merged (PR #65). Step 4.5, closing abandoned attempts on a schedule, is unbuilt |
+| **6** | **Before video: the exam screen and mock-first import** | — | **next** | Planned 2026-10-02 from the owner's manual run and the Client call of 2026-10-01. See *Phase 6* below |
+| **2** | Video, curriculums | 3 | when VdoCipher lands | **Blocked on VdoCipher**, which has still not arrived |
+| **5b** | Migration, handover | 6 | last | Not started. The Client holds 200–300 question documents (2026-10-01) |
+
+---
+
+# Phase 6 — Before video: the exam screen and mock-first import
+
+Planned 2026-10-02. The decisions it builds are in
+`docs/decisions/2026-10-02-decision-statement.md` (D7–D24), which continues
+`2026-09-28-decision-statement.md` (D1–D6). Read both before starting any step.
+
+**Why now.** Everything the agreement asks for outside video is built and
+verified, but the owner's manual run on 2026-10-01 found the exam unpleasant to
+sit and the import route backwards for how Cospire works. Both are what the
+Client's team touches first, and their consolidated change list arrives around
+4–5 October. Video still waits on VdoCipher.
+
+**Two rules for the whole phase.**
+
+1. **Clause 12 before building new scope.** Steps 6.3 and 6.4 are new scope
+   (D18). Clause 12.2 says work begins after a written quote is approved, and
+   12.3 says nothing is built first and invoiced afterwards. Send the quote, or
+   record the owner's decision to build at risk, before either step starts.
+2. **Re-plan after the Client's change list.** Steps 6.1 and 6.2 are safe to
+   start now. Hold the screens of 6.4 until the weekend list has been read, since
+   it may change them.
+
+## Targets
+
+| Target | Done when | Steps |
+|---|---|---|
+| **T1. A student can sit a mock comfortably** | The exam passes the 6.1 gate on the deployed URL, on desktop and a phone | 6.1 |
+| **T2. Drop a paper, get a mock** | Paper A in `Test Documents` goes from upload to a granted mock in one review, and paper B's duplicates resolve as the decision table says | 6.2, 6.3, 6.4 |
+| **T3. The admin console Annexure A describes** | Admins can see every ARS submission and an activity log with flags | 6.6 |
+| **T4. Ready for the real migration** | A sample of Cospire's own documents has been through the paid Gemini path, with accuracy and review time measured | 6.7 |
+
+Rough sizes, for ordering rather than promising: 6.1 large, 6.2 small to medium,
+6.3 medium, 6.4 large, 6.5 small, 6.6 medium, 6.7 small once its inputs exist.
+
+## How it runs in parallel
+
+```
+ now ──► 6.1 exam screen  (UI worktree, Aditya's reference)  ─────────────► T1
+    │
+    ├──► 6.2 marks onto the mock ──► 6.3 duplicate detection ──► 6.4 wizard ─► T2
+    │      (needs the written line      (needs the clause 12       (screens wait for
+    │       before the contract step)    quote)                     the Client's list)
+    ├──► 6.5 small committed items, any time
+    ├──► 6.6 admin gaps (bulk CSV only once SMTP exists) ───────────────────► T3
+    └──► 6.7 real documents, once Gemini billing and their documents exist ─► T4
+```
+
+Separate worktrees per `../CLAUDE.md` §5. 6.2 and 6.3 both add migrations; keep
+them additive (§5.6) and apply each only with the owner's approval.
+
+## 6.1 The exam screen (D11) · in scope, a defect
+
+- Load a section's questions in one request, and switch between questions in the
+  browser with no navigation and no skeleton in between.
+- Save each answer in the background when it changes, debounced, showing a quiet
+  "saved" state. Annexure A: "answers save continuously".
+- A true exam layout: no app sidebar or header, entered in fullscreen, with the
+  proctoring banner from the warn-and-log decision.
+- Built from Aditya's reference design. **Every server-side rule stays**: the
+  server clock and the 30-second grace, sectional timing, the phone attempt
+  unproctored, keys hidden until submission, proctor events logged.
+- **The no-JavaScript fallback is a decision to take, not to lose by accident.**
+  The current screen works without scripting by design. Either keep the form
+  route as a fallback or record that the exam now requires JavaScript.
+- With it: **step 4.5**, closing abandoned attempts on a schedule (decision N6),
+  and **D12**, a real loading state on long admin saves.
+
+**Gate:** on the deployed URL, a student moves between questions with no blank
+screen and no full-page load; a refresh mid-section loses no answer; the exam
+fills the screen; `scripts/verify/test-engine-sit.mjs` still passes 49/49; a
+phone attempt is still stored and shown unproctored.
+
+## 6.2 Marks onto the mock (D19) · implementation change, written line needed
+
+- **Expand, additive only:** a default mark on the mock, an optional per-section
+  mark, an optional per-question override inside the mock. Backfill each existing
+  mock from today's `questions.marks`. Scoring and rescoring read the mock.
+- The mock document and the builder take `Marks:` and an optional `| marks` on a
+  section line.
+- **Contract, later:** stop requiring `questions.marks`, then remove it, only
+  after the Client confirms D19 in writing (clause 16.1). Annexure A and operating
+  manual §1 rule 4 both make marks mandatory question metadata today, and the
+  manual is the owner's to correct.
+- Decide 28 Sept O2 here: whether marks stay correctable on a locked mock, with
+  rescoring and a `rescore_events` row.
+
+**Gate:** existing attempts score identically before and after the backfill; a
+mock with a section override scores correctly; rescoring after a key correction
+still passes.
+
+## 6.3 Duplicate detection (D22–D24) · clause 12
+
+- A stored fingerprint per question: normalised text, options, answer and image
+  hashes. Backfill it for the existing bank (an additive migration).
+- `pg_trgm` similarity for close matches, run inside the database. No model.
+- Run at staging, before approval, against the bank **and** within the paper.
+- Review shows each question as new, already in bank, or "possibly Qnnnnn"
+  with the three choices of D24. "Corrected version" updates the original
+  through the existing save path, so rescoring happens as it does today.
+- DI sets follow 28 Sept D4.
+
+**Gate:** importing paper B after paper A from `C:\Cospire\Test Documents\`
+produces exactly the outcome in the decision statement's duplicate table, row by
+row, and an unrelated paper produces no flags.
+
+## 6.4 The import wizard, mock-first (D7–D9, D13–D15, D17, D20) · clause 12
+
+- One step on screen at a time. The copy-a-prompt route is always reachable.
+- Section once per document; difficulty from the document's level if N1 is
+  decided that way, with a bulk "set difficulty" on review.
+- One review screen: settings, sections offered for creation, questions with
+  their duplicate status, "approve all clean", "who takes this", and the "also
+  build a mock" switch.
+- Opened from Mock tests, and from an ARS aptitude round (which then links the
+  mock). The curriculum entry comes with video.
+- Bank-first import and the ID-list mock import stay, less prominent.
+
+**Gate:** paper A becomes a granted mock in one review; paper C, with no tags,
+needs one section choice and no per-question tagging; with Gemini unavailable the
+wizard takes the copy-a-prompt branch without a reload trick.
+
+## 6.5 Small committed items · in scope
+
+- Watermark: one small mark, bottom left (D10). Update the comments above
+  `drawWatermark`, which argue for tiling.
+- Document viewer full-screen mode; check `Test Documents/07` (landscape).
+- Remove the stale "Aptitude preparation: not built yet" card on Programmes.
+
+## 6.6 Admin gaps Annexure A already promises · in scope, owed
+
+- An admin view of every ARS submission (the database already permits it; no
+  screen exists).
+- `activity_log` and the unusual-activity flags that do not need video:
+  concurrent sessions and one account in several locations. The watch-pattern
+  flag arrives with video.
+- Bulk CSV student creation, the day SMTP exists.
+
+## 6.7 Real documents · in scope (the pulled-forward accuracy test)
+
+- Needs Gemini billing on the Client's account (D21) and their documents. **Use
+  the paid path only.** Their papers are confidential (clause 13.1), and the free
+  tier may train on its input.
+- Measure accuracy, figure placement and minutes of review per paper. Multiply
+  by 200–300 documents before promising a migration date.
+
+## Not in this phase
+
+Video and curriculums (Phase 2, on VdoCipher); migration and handover (5b);
+anything in the Client's weekend list until it has been triaged against
+Annexure A.
 
 ---
 
