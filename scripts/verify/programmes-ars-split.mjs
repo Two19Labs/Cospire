@@ -132,9 +132,14 @@ try {
   // ------------------------------------------------ A. each section creates
   const programmesPage = await get("/admin/courses", "admin");
   record("the Programmes screen loads", programmesPage.status === 200, `${programmesPage.status}`);
+  // The stale "Aptitude preparation: not built yet" card was removed in phase
+  // 6.5 (D10): the question bank and test engine it said it needed are both
+  // built now, and aptitude prep is not a placeholder card at all -- it lands
+  // under a programme's own curriculum later. Video curriculums is still a
+  // genuine placeholder, waiting on VdoCipher.
   record(
-    "and says what the section is for, with both placeholders marked unbuilt",
-    programmesPage.body.includes("Aptitude preparation") &&
+    "and says what the section is for, with the one remaining placeholder marked unbuilt",
+    !programmesPage.body.includes("Aptitude preparation") &&
       programmesPage.body.includes("Video curriculums") &&
       programmesPage.body.includes("Not built yet"),
   );

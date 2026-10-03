@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
 | 2026-09-28 | **Phase 4, the test engine, merged and deployed** (PR #63, `47beb72`) | Slices 4.1-4.4 and rescoring. All four migrations applied (the last three on 2026-09-28, before the merge); database probes 57/57, 15/15, 9/9 and 15/15 on the applied schema; **49/49 over HTTP against the deployed URL**, rescoring included. 4.5, the scheduled close of abandoned attempts, is not built. See *The test engine* |
 | 2026-09-27 | **Admin workspace re-skin** (PR #66, `fe9e836`, merged 2026-09-28; not clicked through in a browser) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
 | 2026-09-27 | **Analytics, Phase 4 step 5** (PR #65, `566e112`, merged 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
@@ -114,6 +115,108 @@ untracked `docs/decisions/2026-10-02-decision-statement.md`.
 - **Not built:** opening the importer from an ARS aptitude round so the mock is
   linked automatically (D8). Today the round is linked by hand after the build.
   Removing marks from questions (the contract step of D19) is also not built.
+### Phase 6.5, small committed items, 2026-10-03
+
+Built on `feat/small-items`, in the worktree `C:\Cospire\Cospire-small-items` (port
+3050), not yet merged. Three small, independent items from the 2026-09-21 call and
+the Phase 6 plan, D10.
+
+**1. The document watermark is now one small mark, bottom left, drawn once per
+page**, in `src/features/documents/components/document-viewer.tsx`
+(`drawWatermark`), replacing the rotated tiling. The identity text is unchanged
+-- still composed server-side in `watermark.ts`, never from anything the client
+sends. The comment above the function is rewritten to argue the new shape
+honestly rather than defend the old one: a single corner mark is weaker
+deterrence than tiling (a crop that misses the bottom-left corner escapes
+attribution entirely), kept anyway because the Client asked for it on
+readability grounds. The owner still owes Cospire the standing explanation of
+what the watermark does and does not stop (see *Owner decisions* in
+`CONTEXT.md`); this change does not alter that gap, only where the mark sits.
+
+**2. A full-screen button on the document viewer**, using the real Fullscreen
+API on the viewer element itself (not just the canvas host), so the exit
+control and any loading/error message stay visible while full screen. The
+button is hidden rather than shown-and-broken where
+`document.fullscreenEnabled` is false, which is the correct feature-detection
+story for iOS Safari (no Fullscreen API at all) -- not tested on an actual iOS
+device, since none was available, but confirmed in a real desktop Chrome that
+toggling the API correctly flips `document.fullscreenElement` to the viewer and
+the button label to "Exit full screen". CSS additions in `globals.css`
+(`.document-viewer:fullscreen`) remove the 75vh scroll cap while full screen,
+since the viewer then owns the whole screen anyway.
+
+**3. The stale "Aptitude preparation: not built yet" card removed** from the
+Programmes page (`src/features/curriculum/components/courses-screen.tsx`). It
+was stale because the question bank and test engine it said it needed are both
+built now; the honest state is that aptitude prep is not a card on this page at
+all, because it will land under a programme's own curriculum later (Phase 2,
+still unbuilt) rather than as a placeholder here. The Video curriculums card is
+untouched, since that one is still a genuine placeholder waiting on VdoCipher.
+`scripts/verify/programmes-ars-split.mjs` asserted on the removed text as part
+of a broader check that the page still says what the section is for; the
+assertion is updated rather than deleted, so it still proves the remaining
+placeholder is there and proves the stale one is gone, instead of just going
+quiet on both.
+
+**Verification.** `typecheck`, `lint`, `test` (537/537) and `npx next build`
+all pass. Against a local production build (port 3050) and the hosted database:
+
+- `scripts/verify/verify.mjs`: **35/36**. The one failure,
+  "student B is refused the document" (HTTP 200 where 404 is expected), is
+  **pre-existing and unrelated** -- confirmed by reading the response body,
+  which carries `NEXT_HTTP_ERROR_FALLBACK;404` in the streamed RSC payload: the
+  server did call `notFound()` correctly, but Next 15's streaming SSR had
+  already committed the 200 status line before the error surfaced deeper in the
+  stream, so the *page* 404s but the *HTTP status code* does not. This touches
+  no file this change edited (`document-viewer.tsx` is pure client rendering;
+  the guard lives in the route's `page.tsx`, untouched), and document access
+  paths were explicitly out of scope for this work. Flagged for the owner
+  rather than fixed.
+- `scripts/verify/programmes-ars-split.mjs`: **19/19** after the assertion
+  update above.
+- `scripts/verify/loading-coverage.mjs`: **8/11**, all three failures
+  **pre-existing and unrelated**: `/student/documents/999999999` expects the
+  marker `skeleton--title`, but that route's own `loading.tsx` passes
+  `title={false}` to `SkeletonPanel`, which never renders that class at all --
+  a mismatch between the loading skeleton and the harness's marker that
+  predates this work (neither file was touched here). The other two failures
+  (`/admin/report-templates/import`, `/admin/ars/.../rounds/...`) are in
+  screens this work never touched. Not fixed, since it is outside this task's
+  scope; worth a follow-up.
+- **Real-browser confirmation.** No browser automation exists in this
+  repository (`scripts/verify/shot.mjs` strips every `<script>`, which is
+  correct for what it checks but cannot render pdfjs-dist's canvas or prove a
+  watermark is visually where the code says it is). This run drove an actual
+  installed Chrome headless over its own DevTools Protocol by hand (a `/json/version`
+  fetch for the WebSocket URL, then `Target.createTarget` /
+  `Network.setCookie` with the harness's real session cookie /
+  `Page.navigate` / `Runtime.evaluate` / `Input.dispatchMouseEvent` for a real
+  click so the Fullscreen API's user-gesture requirement is satisfied /
+  `Page.captureScreenshot`) -- JavaScript on, so the real client component
+  rendered. It opened the two real test-document PDFs from
+  `C:\Cospire\Test Documents\` (file 06, portrait, 3 pages; file 07, landscape),
+  uploaded through the real upload-ticket/record-document Server Actions and
+  granted to a throwaway student exactly as `verify.mjs` does, then deleted by
+  the normal teardown. Screenshots (not kept; written under the gitignored
+  `coverage/shots/` and not committed) confirmed: the watermark renders as one
+  small, legible mark in the bottom-left corner of each page; clicking "Full
+  screen" really calls `requestFullscreen()` on the viewer
+  (`document.fullscreenElement.className === "document-viewer"` afterwards) and
+  the button relabels to "Exit full screen"; and the landscape page fills the
+  full screen width edge to edge with no clipping, in both the ordinary and the
+  full-screen layout, with the watermark still visible in full screen. iOS
+  Safari itself was not available to test; the hidden-button behaviour there
+  rests on the standard `document.fullscreenEnabled` feature check rather than
+  on a device test.
+- Finding the two Server Action ids for `verify.mjs` needed a different grep
+  than the README documents: `grep -roh 'createServerReference)("[a-f0-9]*"'`
+  against `.next/static/chunks/app/admin/documents` found nothing in this
+  build, because the two actions live in a shared chunk
+  (`6589-664c3ccd47e74790.js` in this build, found via
+  `grep -rl "createUploadTicket" .next/static/chunks/*.js`) rather than the
+  route's own page chunk. Worth noting in case a future run hits the same dead
+  end: find the chunk by the action's own function name, not just by the route
+  folder.
 
 ### The test engine, 2026-09-26 and 27
 

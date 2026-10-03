@@ -178,25 +178,21 @@ export function CoursesScreen({
       ) : null}
 
       {/*
-        The two cards are honest placeholders: neither aptitude preparation nor
-        video curriculums is built, and both are whole phases away. They are
-        shown rather than hidden so the shape of the section is visible, and
-        marked so nobody demonstrates them by accident.
+        Honest placeholder: video curriculums is a whole phase away. Shown
+        rather than hidden so the shape of the section is visible, and marked
+        so nobody demonstrates it by accident.
+
+        The aptitude-preparation card that used to sit beside this one is
+        gone (phase 6.5) -- it was stale, since the question bank and test
+        engine it said it needed are both built now. Aptitude prep is not a
+        card here at all; it lands under a programme's own curriculum later,
+        the same way any other content kind would.
       */}
       <section className="panel">
         <div className="panel__header">
           <h2>Curriculum capabilities</h2>
         </div>
         <div className="card-grid card-grid--two">
-          <div>
-            <h3>
-              Aptitude preparation <span className="tag">Not built yet</span>
-            </h3>
-            <p className="field__hint">
-              Quantitative, verbal and logical reasoning, with topic tests and
-              full-length mocks. Needs the question bank and the test engine.
-            </p>
-          </div>
           <div>
             <h3>
               Video curriculums <span className="tag">Not built yet</span>

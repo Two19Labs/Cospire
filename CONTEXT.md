@@ -611,8 +611,25 @@ Client uses first. The quote and the clause 16.1 written amendment are **still
 owed**; building first does not settle them. Work happens on `feat/mock-import`
 in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
-5. **6.5 Small committed items**: watermark bottom left, viewer full screen, the
-   landscape check, the stale Programmes card.
+5. **6.5 Small committed items: built on `feat/small-items`, not yet merged.**
+   Watermark bottom left, viewer full screen, the landscape check, the stale
+   Programmes card. Done: watermark drawn once per page as one small bottom-left
+   mark; a full-screen button on the document viewer, hidden where the
+   Fullscreen API is unavailable; the stale "Aptitude preparation: not built
+   yet" card removed from the Programmes page. Typecheck, lint, 537/537 tests
+   and build pass; `verify.mjs` 35/36 and `programmes-ars-split.mjs` 19/19
+   against a local production build and the hosted database, both pre-existing
+   unrelated findings below; real-browser screenshots over Chrome's own
+   DevTools Protocol confirm the watermark and full screen render correctly
+   with the real landscape test PDF. See *Phase 6.5, small committed items* in
+   `docs/context/completed.md`. **Two pre-existing, unrelated findings
+   surfaced and are not fixed here:** a student refused a document gets HTTP
+   200 with a client-side 404 rather than a 404 status, a Next 15 streaming
+   artifact in the route guard this branch never touched; and three
+   `loading-coverage.mjs` checks fail because their `loading.tsx` skeletons
+   don't produce the marker the harness looks for (`/student/documents/[id]`,
+   `/admin/report-templates/import`, `/admin/ars/[id]/rounds/[roundId]`), none
+   of them touched here either. Both are worth a follow-up task.
 6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
    log and flags, bulk CSV once SMTP exists.
 7. **6.7 Real documents** through the paid Gemini path, once billing and their

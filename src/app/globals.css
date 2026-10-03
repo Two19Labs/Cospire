@@ -2370,6 +2370,32 @@ form.panel > h2:first-child {
   gap: 0.75rem;
 }
 
+.document-viewer__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Full screen via the Fullscreen API, on the viewer itself rather than only
+   the canvas host, so the exit control and any loading/error message stay
+   visible too. Unprefixed `:fullscreen` covers every browser that exposes
+   `document.fullscreenEnabled`, which is the same check that decides whether
+   the button renders at all. */
+.document-viewer:fullscreen {
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+}
+
+.document-viewer:fullscreen .document-pages {
+  flex: 1;
+  /* The 75vh cap exists to keep a long document from stretching an ordinary
+     page; full screen is the one place that constraint is wrong, because the
+     viewer already owns the whole screen. */
+  max-height: none;
+}
+
 .document-pages {
   display: flex;
   flex-direction: column;
