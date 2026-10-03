@@ -9,6 +9,7 @@ import { importMockDocumentAction, previewMockDocumentAction } from "../actions/
 import { mockDocumentTemplate } from "../mock-document";
 import { initialMockDocumentState, type MockPreview } from "../mock-document-state";
 import { questionTypeLabels } from "../question-input";
+import { PendingOverlay } from "./pending-overlay";
 
 // A mock written as a document, pasted in and built with no manual picking.
 //
@@ -148,6 +149,7 @@ export function MockImportScreen() {
           <form action={saveAction}>
             <input name="pasted" type="hidden" value={pasted} />
             <SubmitButton pendingLabel="Building…">Build this mock</SubmitButton>
+            <PendingOverlay label="Building the mock…" />
           </form>
         </section>
       ) : null}
