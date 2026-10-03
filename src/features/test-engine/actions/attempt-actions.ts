@@ -8,11 +8,13 @@ import { parseId } from "@/features/question-bank/list-params";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import type { QuestionType } from "@/features/question-bank/question-input";
+
 import { readAnswer } from "../answer";
 import { attemptDeadline } from "../clock";
 import { isPhone } from "../device";
 import { nextSection, paperState } from "../paper";
-import { getAttemptView } from "../queries/attempt-view";
+import { getAttemptView, readOptions } from "../queries/attempt-view";
 import { scoreAndStore } from "../score-attempt";
 
 function idFrom(formData: FormData, name: string): number | null {
@@ -99,6 +101,8 @@ export async function saveAnswerAction(formData: FormData): Promise<void> {
 
   if (question && view.attempt.status === "in_progress") {
     const answer = intent === "clear" ? null : readAnswer(question, formData.getAll("answer").map(String));
+    // "Mark for review and next" marks whatever the checkbox said.
+    const review = intent === "review-next" || formData.get("review") === "on";
     if (answer === "invalid") {
       const number = view.items.find((item) => item.questionId === question.id)?.number ?? 1;
       redirect(`${back}?q=${number}&error=invalid`);
@@ -109,7 +113,7 @@ export async function saveAnswerAction(formData: FormData): Promise<void> {
       {
         answer,
         attempt_id: attemptId,
-        marked_for_review: formData.get("review") === "on",
+        marked_for_review: review,
         question_id: question.id,
       },
       { onConflict: "attempt_id,question_id" },
@@ -124,9 +128,64 @@ export async function saveAnswerAction(formData: FormData): Promise<void> {
   // The countdown reached zero: the answer on screen is saved (inside the
   // grace), and the page carries straight on.
   if (intent === "timeup") redirect(`${back}?auto=1`);
+  if (intent === "review-next") {
+    const following = Number(formData.get("next"));
+    if (Number.isSafeInteger(following) && following > 0) redirect(`${back}?q=${following}`);
+  }
   const current = Number(formData.get("current"));
   const target = Number.isSafeInteger(goto) && goto > 0 ? goto : Number.isSafeInteger(current) && current > 0 ? current : null;
   redirect(target ? `${back}?q=${target}` : back);
+}
+
+export type SaveResult = { ok: true } | { ok: false; reason: "closed" | "invalid" };
+
+// The exam screen's background save: one answer, posted as it changes, with no
+// navigation. The same rules as the form post above, because they are the
+// database's: the student's own session writes, RLS returns the question only
+// while it is on their open paper, and the clock triggers refuse anything after
+// the deadline plus grace or outside the open section. Nothing the browser says
+// about time is read. Arguments arrive from the client, so every one is
+// checked here before use.
+export async function saveResponseAction(
+  attemptId: unknown,
+  questionId: unknown,
+  values: unknown,
+  markedForReview: unknown,
+): Promise<SaveResult> {
+  await requireRole("student");
+  if (
+    typeof attemptId !== "number" ||
+    !Number.isSafeInteger(attemptId) ||
+    attemptId <= 0 ||
+    typeof questionId !== "number" ||
+    !Number.isSafeInteger(questionId) ||
+    questionId <= 0 ||
+    !Array.isArray(values) ||
+    values.length > 26 ||
+    !values.every((value) => typeof value === "string") ||
+    typeof markedForReview !== "boolean"
+  ) {
+    return { ok: false, reason: "invalid" };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const [{ data: attempt }, { data: question }] = await Promise.all([
+    supabase.from("attempts").select("status").eq("id", attemptId).maybeSingle(),
+    supabase.from("questions").select("type, options").eq("id", questionId).maybeSingle(),
+  ]);
+  if (!attempt || attempt.status !== "in_progress") return { ok: false, reason: "closed" };
+  if (!question) return { ok: false, reason: "invalid" };
+
+  const answer = readAnswer({ options: readOptions(question.options), type: question.type as QuestionType }, values as string[]);
+  if (answer === "invalid") return { ok: false, reason: "invalid" };
+
+  const { error } = await supabase
+    .from("attempt_responses")
+    .upsert(
+      { answer, attempt_id: attemptId, marked_for_review: markedForReview, question_id: questionId },
+      { onConflict: "attempt_id,question_id" },
+    );
+  return error ? { ok: false, reason: "closed" } : { ok: true };
 }
 
 // Leaving the current section early, or entering the next once it is over.

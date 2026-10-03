@@ -25,7 +25,11 @@ export function Countdown({
   // was submitted.
   submitterId?: string;
 }) {
-  const [left, setLeft] = useState<number | null>(null);
+  // Starts at the server's own reading, so the page shows the time left even
+  // before (or without) JavaScript; the tick then keeps it current.
+  const [left, setLeft] = useState(() =>
+    Math.max(0, Math.floor((new Date(deadline).getTime() - new Date(serverNow).getTime()) / 1000)),
+  );
 
   useEffect(() => {
     const skew = new Date(serverNow).getTime() - Date.now();
@@ -48,12 +52,16 @@ export function Countdown({
     return () => window.clearInterval(timer);
   }, [deadline, formId, serverNow, submitterId]);
 
-  if (left === null) return <span className="muted">Time is kept by the server</span>;
   const minutes = Math.floor(left / 60);
   const seconds = String(left % 60).padStart(2, "0");
   return (
-    <span aria-live={left <= 60 ? "polite" : "off"} className={left <= 300 ? `${styles.clock} ${styles.clockLow}` : styles.clock}>
-      {minutes}:{seconds} left
+    <span
+      aria-label={`${minutes} minutes ${seconds} seconds left`}
+      aria-live={left <= 60 ? "polite" : "off"}
+      className={left <= 300 ? `${styles.clock} ${styles.clockLow}` : styles.clock}
+      role="timer"
+    >
+      {minutes}:{seconds}
     </span>
   );
 }
