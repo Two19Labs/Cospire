@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isAnswered } from "@/features/test-engine/answer";
 import type { PaperSection } from "@/features/test-engine/paper";
+import { effectiveMarks } from "@/features/test-engine/scoring";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
@@ -150,13 +151,13 @@ export async function readPapers(db: SupabaseClient, mockIds: number[]): Promise
   const papers = new Map<number, Paper>();
   if (!ids.length) return papers;
 
-  type SectionRecord = { duration_minutes: number | null; id: number; mock_id: number; sort_order: number; title: string };
+  type SectionRecord = { duration_minutes: number | null; id: number; marks: number | null; mock_id: number; sort_order: number; title: string };
   type PlacedRecord = { mock_id: number; mock_section_id: number; question_id: number; sort_order: number };
   const [mocks, sections, placed] = await Promise.all([
     readChunks(ids, (group) => checked<{ id: number; title: string }>(db.from("mocks").select("id, title").in("id", group), "mocks")),
     readChunks(ids, (group) =>
       readAll<SectionRecord>((from, to) =>
-        db.from("mock_sections").select("id, mock_id, title, duration_minutes, sort_order").in("mock_id", group).order("id").range(from, to),
+        db.from("mock_sections").select("id, mock_id, title, duration_minutes, sort_order, marks").in("mock_id", group).order("id").range(from, to),
       ),
     ),
     readChunks(ids, (group) =>
@@ -223,7 +224,15 @@ export async function readPapers(db: SupabaseClient, mockIds: number[]): Promise
       sectionId: row.mock_section_id,
       sortOrder: row.sort_order,
     }));
-    papers.set(mock.id, { mockId: mock.id, questions: layOutPaper(paperSections, placements, tags, childrenOf), title: mock.title });
+    // A question shared between mocks can earn different marks in each (D19),
+    // so its tags are copied per mock with the marks this mock gives it.
+    const marksBySection = new Map((sectionsByMock.get(mock.id) ?? []).map((row) => [row.id, row.marks === null ? null : Number(row.marks)]));
+    const mockTags = new Map(tags);
+    for (const row of placedByMock.get(mock.id) ?? []) {
+      const tag = tags.get(row.question_id);
+      if (tag) mockTags.set(row.question_id, { ...tag, marks: effectiveMarks(tag, marksBySection.get(row.mock_section_id)) });
+    }
+    papers.set(mock.id, { mockId: mock.id, questions: layOutPaper(paperSections, placements, mockTags, childrenOf), title: mock.title });
   }
   return papers;
 }

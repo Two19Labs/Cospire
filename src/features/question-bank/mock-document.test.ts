@@ -236,3 +236,29 @@ describe("layout a Google Doc paste actually carries", () => {
     expect(spec).toMatchObject({ allowMobile: true, durationMinutes: 30, title: "Cased" });
   });
 });
+
+describe("marks per correct answer (D19)", () => {
+  const base = ["Mock: Marks test", "Duration: 60"];
+
+  it("applies the Marks line to every section", () => {
+    const { spec } = parseMockDocument([...base, "Marks: 1", "Section: QA | 30", "Q1", "Section: LR | 30", "Q2"].join("\n"));
+    expect(spec?.marks).toBe(1);
+    expect(spec?.sections.map((section) => section.marks)).toEqual([1, 1]);
+  });
+
+  it("lets a section override it, with marks and minutes in either order", () => {
+    const { spec } = parseMockDocument([...base, "Marks: 1", "Section: QA | 30 | 3 marks", "Q1", "Section: LR | 2 marks | 30", "Q2"].join("\n"));
+    expect(spec?.sections.map((section) => [section.durationMinutes, section.marks])).toEqual([[30, 3], [30, 2]]);
+  });
+
+  it("leaves marks null when the document states none, so each question keeps its own", () => {
+    const { spec } = parseMockDocument([...base, "Section: QA", "Q1"].join("\n"));
+    expect(spec?.marks).toBeNull();
+    expect(spec?.sections[0].marks).toBeNull();
+  });
+
+  it("refuses a mark that is not a number in (0, 100], naming the line", () => {
+    expect(parseMockDocument([...base, "Marks: lots", "Section: QA", "Q1"].join("\n")).problems[0]).toMatch(/^Line 3: .*not a mark/);
+    expect(parseMockDocument([...base, "Section: QA | 60 | 0 marks", "Q1"].join("\n")).problems[0]).toMatch(/^Line 3: .*not a mark/);
+  });
+});

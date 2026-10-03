@@ -168,7 +168,9 @@ try {
   const studentPage = await get("/admin/questions/import", "student");
   record("mentors and students are turned away from importing", mentorPage.status === 307 && studentPage.status === 307);
 
-  const page = await get("/admin/questions/import", "admin");
+  // The prompt and the paste box are step 2, reached without a Word file by
+  // the `?paste=1` link, which works with scripting off.
+  const page = await get("/admin/questions/import?paste=1", "admin");
   record(
     "the import screen loads with the prompt to copy",
     page.status === 200 && page.body.includes("di_set") && page.body.includes("[[figure]]"),
@@ -196,7 +198,9 @@ try {
   record("a mentor posting the stage action stages nothing", (await stagedRows()).length === 0, `${mentorStage.status}`);
 
   // ------------------------------------------------------------- C. staging
-  const staged = await postForm("/admin/questions/import", "admin", stageForm, []);
+  // Default marks are a visible field on step 3 since the wizard (Phase 6.4),
+  // pre-filled from the paste step; a person sending the paper posts it.
+  const staged = await postForm("/admin/questions/import", "admin", stageForm, [["defaultMarks", "3"]]);
   const rows = await stagedRows();
   const batchId = rows[0]?.batch_id;
   record(

@@ -17,6 +17,8 @@ import { toSaveQuestionArgs, validateQuestion } from "../question-input";
 import { readQuestionsWithGemini } from "../gemini";
 import { type ModelFigure } from "../model-call";
 import { readQuestionsWithOpenAiCompatible } from "../openai-compatible";
+import { findDuplicates } from "../queries/find-duplicates";
+import { readBatchRows, type SessionClient } from "../queries/import-rows";
 import { listSections } from "../queries/list-sections";
 import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
@@ -226,15 +228,34 @@ export async function stageQuestionImportAction(
   const figurePaths = readFigurePaths(formData, admin.orgId);
   const batchId = randomUUID();
 
+  // Paper-wide choices (D20): one section for a paper that never mixes them,
+  // and one difficulty for the questions the paper does not grade. Only a
+  // section that exists and a difficulty the bank knows are applied.
+  const paperSectionRaw = formData.get("paperSection");
+  const paperSection =
+    typeof paperSectionRaw === "string" ? sections.find((section) => section.name === paperSectionRaw)?.name ?? "" : "";
+  const difficultyRaw = formData.get("defaultDifficulty");
+  const defaultDifficulty = typeof difficultyRaw === "string" && ["easy", "medium", "hard"].includes(difficultyRaw) ? difficultyRaw : "";
+  const applyPaperChoices = (staged: StagedQuestion): StagedQuestion => ({
+    ...staged,
+    difficulty: staged.difficulty || defaultDifficulty,
+    sectionName: paperSection || staged.sectionName,
+  });
+  const choicesMade = paperSection !== "" || defaultDifficulty !== "";
+
   const rows = outcome.items.map((item) => {
     const parsed: StagedQuestion | null = item.parsed
-      ? attachFigures(applyDefaultMarks(item.parsed, defaultMarks), figurePaths)
+      ? attachFigures(applyDefaultMarks(applyPaperChoices(item.parsed), defaultMarks), figurePaths)
       : null;
     const sectionId = parsed ? matchSection(parsed.sectionName, sections) : null;
     // The parser's own findings win where it has any; otherwise the same
-    // validator approval uses says what is left to fix, marks included.
+    // validator approval uses says what is left to fix, marks included. Once a
+    // paper-wide choice has filled a gap the parser complained about, the
+    // validator is asked again, so a difficulty now given is not still a problem.
     const problems =
-      item.problems.length > 0 ? item.problems : parsed ? reviewProblems(parsed, sectionId, admin.orgId) : [];
+      parsed && (item.problems.length === 0 || choicesMade)
+        ? reviewProblems(parsed, sectionId, admin.orgId)
+        : item.problems;
     return {
       batch_id: batchId,
       org_id: admin.orgId,
@@ -247,6 +268,19 @@ export async function stageQuestionImportAction(
     };
   });
 
+  // Whether the bank already holds each question (D22-D24), decided once here
+  // and stored with the row, so the review screen shows it without asking again.
+  let verdicts: Awaited<ReturnType<typeof findDuplicates>>;
+  try {
+    verdicts = await findDuplicates(rows);
+  } catch {
+    return { ...echo, problems: ["The questions could not be compared with the bank. Nothing was saved; try again."] };
+  }
+  for (const row of rows) {
+    const verdict = verdicts.get(row.position);
+    if (row.parsed && verdict) row.parsed = { ...row.parsed, duplicate: verdict };
+  }
+
   const supabase = await createServerSupabaseClient();
   // One statement, so a batch is staged whole or not at all.
   const { data, error } = await supabase.from("question_imports").insert(rows).select("id");
@@ -256,7 +290,7 @@ export async function stageQuestionImportAction(
   }
 
   revalidatePath("/admin/questions/import");
-  redirect(`/admin/questions/import/${batchId}`);
+  redirect(`/admin/questions/import/${batchId}${formData.get("buildMock") === "1" ? "?mock=1" : ""}`);
 }
 
 function describeApproveError(error: { code?: string; message?: string }): string {
@@ -320,6 +354,34 @@ export async function approveImportAction(
   const { problems, question } = validateQuestion(draft, admin.orgId);
   if (!question) return { problems, values };
 
+  // "Corrected version" (D24): the reviewed question replaces an existing one's
+  // content instead of becoming a new question. Only a bank question the
+  // staging verdict offered, of the same type and still active, may be named:
+  // the form is a public endpoint and a stray id must not overwrite anything.
+  const intoRaw = formData.get("intoQuestionId");
+  if (intoRaw !== null && intoRaw !== "") {
+    const intoId = parseId(intoRaw);
+    const offered =
+      staged.duplicate?.kind === "possible"
+        ? staged.duplicate.candidates.flatMap((candidate) => (candidate.source === "bank" ? [candidate.questionId] : []))
+        : [];
+    if (intoId === null || !offered.includes(intoId) || staged.parentPosition !== null) {
+      return { problems: ["That question cannot be corrected from here."], values };
+    }
+    const { data: target } = await supabase.from("questions").select("id, type, parent_id, archived_at").eq("id", intoId).maybeSingle();
+    if (!target || target.archived_at !== null || target.type !== staged.type || target.parent_id !== null) {
+      return { problems: ["That question is archived, part of a set, or of a different type, so it cannot take this version."], values };
+    }
+    const { error: intoError } = await supabase.rpc("approve_question_import_into", {
+      ...toSaveQuestionArgs(question, intoId),
+      p_import_id: importId,
+      p_question_id: intoId,
+    });
+    if (intoError) return { problems: [describeApproveError(intoError)], values };
+    revalidatePath("/admin/questions");
+    redirect(`/admin/questions/import/${row.batch_id}?notice=corrected#import-${importId}`);
+  }
+
   // approve_question_import always creates, so it takes no question id.
   const args: Record<string, unknown> = { ...toSaveQuestionArgs(question, null), p_import_id: importId };
   delete args.p_question_id;
@@ -328,6 +390,134 @@ export async function approveImportAction(
 
   revalidatePath("/admin/questions");
   redirect(`/admin/questions/import/${row.batch_id}?notice=approved#import-${importId}`);
+}
+
+// The existing questions a staged row may be linked to without creating
+// anything (D24 "same question"): the exact match staging found, any bank
+// candidate it flagged, or what an earlier repeat of it in this paper became.
+function linkTargets(staged: StagedQuestion | null, questionIdAt: (position: number) => number | null): number[] {
+  const verdict = staged?.duplicate;
+  if (!staged || !verdict) return [];
+  if (verdict.kind === "same") return [verdict.questionId];
+  if (verdict.kind === "repeat") {
+    const earlier = questionIdAt(verdict.position);
+    return earlier === null ? [] : [earlier];
+  }
+  // A flagged sub-question is never linked on its own: a set links whole.
+  if (verdict.kind === "possible" && staged.parentPosition === null) {
+    return verdict.candidates.flatMap((candidate) => {
+      if (candidate.source === "bank") return [candidate.questionId];
+      const earlier = questionIdAt(candidate.position);
+      return earlier === null ? [] : [earlier];
+    });
+  }
+  return [];
+}
+
+async function linkRow(supabase: SessionClient, importId: number, questionId: number): Promise<boolean> {
+  const { data: target } = await supabase.from("questions").select("id, archived_at").eq("id", questionId).maybeSingle();
+  if (!target || target.archived_at !== null) return false;
+  // Allowed by the existing grant on (status, question_id); the guard stamps
+  // who decided and when, and refuses a row already decided.
+  const { data, error } = await supabase
+    .from("question_imports")
+    .update({ question_id: questionId, status: "approved" })
+    .eq("id", importId)
+    .eq("status", "pending_review")
+    .select("id");
+  return !error && (data ?? []).length === 1;
+}
+
+// "Same question": approve a staged row as an existing question.
+export async function linkImportAction(formData: FormData): Promise<void> {
+  await requireRole("admin");
+  const importId = parseId(formData.get("importId"));
+  const batchId = parseBatchId(formData.get("batchId"));
+  const questionId = parseId(formData.get("questionId"));
+  if (importId === null || batchId === null || questionId === null) redirect("/admin/questions/import");
+
+  const supabase = await createServerSupabaseClient();
+  const rows = await readBatchRows(supabase, batchId);
+  const row = rows.find((entry) => entry.id === importId);
+  const questionIdAt = (position: number) => rows.find((entry) => entry.position === position && entry.status === "approved")?.questionId ?? null;
+  const ok = row !== undefined && linkTargets(row.parsed, questionIdAt).includes(questionId) && (await linkRow(supabase, importId, questionId));
+
+  revalidatePath("/admin/questions");
+  redirect(`/admin/questions/import/${batchId}?notice=${ok ? "linked" : "failed"}#import-${importId}`);
+}
+
+// Approves everything that needs no decision, in paper order: every question
+// with no problems that is new, already in the bank, or a repeat of one before
+// it. A flagged question ("possibly the same as …") is always left for a person
+// (O3), as is anything with a problem to fix. A DI set's passage comes before
+// its sub-questions in the paper, so they have a set to join.
+export async function approveAllCleanAction(formData: FormData): Promise<void> {
+  const admin = await requireRole("admin");
+  const batchId = parseBatchId(formData.get("batchId"));
+  if (batchId === null) redirect("/admin/questions/import");
+
+  const supabase = await createServerSupabaseClient();
+  const [rows, sections] = await Promise.all([readBatchRows(supabase, batchId), listSections()]);
+  const decided = new Map(rows.filter((row) => row.status === "approved").map((row) => [row.position, row.questionId]));
+  const questionIdAt = (position: number) => decided.get(position) ?? null;
+  let done = 0;
+
+  for (const row of rows) {
+    const staged = row.parsed;
+    // Problems are judged now, not as stored at staging: a section created on
+    // the review screen since then (D14) settles "choose a section".
+    if (row.status !== "pending_review" || !staged) continue;
+    const verdict = staged.duplicate ?? { kind: "new" as const };
+    if (verdict.kind === "possible") continue;
+
+    if (verdict.kind === "same" || verdict.kind === "repeat") {
+      const target = linkTargets(staged, questionIdAt)[0];
+      if (target !== undefined && (await linkRow(supabase, row.id, target))) {
+        decided.set(row.position, target);
+        done += 1;
+      }
+      continue;
+    }
+
+    // New: approved as staged, exactly as the editor would with nothing changed.
+    let parentId: number | null = null;
+    let sectionId = matchSection(staged.sectionName, sections);
+    if (staged.parentPosition !== null) {
+      parentId = questionIdAt(staged.parentPosition);
+      if (parentId === null) continue;
+      const { data: parent } = await supabase.from("questions").select("section_id").eq("id", parentId).maybeSingle();
+      if (!parent) continue;
+      sectionId = Number(parent.section_id);
+    }
+    const { question } = validateQuestion(
+      {
+        accepted: staged.accepted,
+        body: staged.body,
+        correctOptions: staged.correctOptions,
+        difficulty: staged.difficulty,
+        images: staged.images ?? [],
+        marks: staged.marks,
+        options: staged.options,
+        parentId,
+        sectionId,
+        solution: staged.solution,
+        tolerance: staged.tolerance,
+        topic: staged.topic,
+        type: staged.type,
+      },
+      admin.orgId,
+    );
+    if (!question) continue;
+    const args: Record<string, unknown> = { ...toSaveQuestionArgs(question, null), p_import_id: row.id };
+    delete args.p_question_id;
+    const { data: savedId, error } = await supabase.rpc("approve_question_import", args);
+    if (error || savedId === null) continue;
+    decided.set(row.position, Number(savedId));
+    done += 1;
+  }
+
+  revalidatePath("/admin/questions");
+  redirect(`/admin/questions/import/${batchId}?notice=${done > 0 ? "bulk" : "bulk-none"}`);
 }
 
 export async function rejectImportAction(formData: FormData): Promise<void> {

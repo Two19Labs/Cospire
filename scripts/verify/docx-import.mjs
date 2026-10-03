@@ -329,14 +329,17 @@ try {
   record("mentors and students are turned away from importing", mentorPage.status === 307 && studentPage.status === 307);
 
   const page = await get("/admin/questions/import", "admin");
+  // Since the wizard (Phase 6.4) the prompt is step 2, so it is read from the
+  // paste route; the Word step is step 1.
+  const pastePage = await get("/admin/questions/import?paste=1", "admin");
   // Asserted on what the screen *does*, not on what it says. The first version
   // of this matched the step-1 heading word for word, and silently went stale
   // the moment that heading was reworded for the Gemini path -- which nothing
   // caught, because CI never runs anything in scripts/verify.
   record(
     "the import screen offers the Word step and a prompt that teaches the numbered markers",
-    page.status === 200 && page.body.includes('accept=".docx') && page.body.includes("[[figure:1]]"),
-    `${page.status}`,
+    page.status === 200 && page.body.includes('accept=".docx') && pastePage.body.includes("[[figure:1]]"),
+    `${page.status}/${pastePage.status}`,
   );
 
   // What a model returns, having been given the extracted text: the markers are
@@ -368,7 +371,7 @@ try {
   const PASTED = `Here is the JSON:\n\`\`\`json\n${JSON.stringify(answer, null, 2)}\n\`\`\``;
   const figureFields = Object.entries(figurePaths).map(([n, path]) => ["figures", `${n}:${path}`]);
 
-  const previewForm = forms(page.body).find((form) => form.includes('name="pasted"'));
+  const previewForm = forms(pastePage.body).find((form) => form.includes('name="pasted"'));
   if (!previewForm) throw new Error("no paste form");
 
   const previewed = await postForm("/admin/questions/import", "admin", previewForm, [

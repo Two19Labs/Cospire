@@ -10,6 +10,7 @@ import type { MockEditorValue, PickerQuestion } from "../queries/mock-builder";
 
 const errors: Record<string, string> = {
   duration: "Section durations must add up exactly to the full mock duration.",
+  marks: "Marks must be a number above 0 and at most 100, or left blank.",
   failed: "The mock could not be saved.", invalid: "Check the mock settings.",
   archived: "A selected question has been archived. Untick it below, then save again.",
   questions: "One or more selected questions are unavailable.",
@@ -38,6 +39,10 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
 }) {
   const existingSections = value?.sections ?? [];
   const sectional = existingSections.length > 1 || (existingSections[0]?.durationMinutes ?? null) !== null;
+  // One mock-wide value when every section agrees; a section that differs shows
+  // its own number in its slot.
+  const sectionMarks = existingSections.map((section) => section.marks);
+  const mockMarks = sectionMarks.length > 0 && sectionMarks.every((marks) => marks === sectionMarks[0]) ? sectionMarks[0] : null;
   const selectedSection = new Map<number, number>();
   existingSections.forEach((section, index) => section.questionIds.forEach((id) => selectedSection.set(id, index)));
   const offPageIds = new Set(offPage.map((question) => question.id));
@@ -82,6 +87,8 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
         <form action={saveMockAction} className="two-col__main">
           {value ? <input name="mockId" type="hidden" value={value.id} /> : null}
           {notice === "saved" ? <p className="notice notice--success">Mock saved.</p> : null}
+          {notice === "built" ? <p className="notice notice--success">Mock built from the paper. Check the settings, then it is ready.</p> : null}
+          {notice === "built-grant-failed" ? <p className="notice notice--error">The mock was built, but granting it to the students failed. Grant them below.</p> : null}
           {error && errors[error] ? <p className="notice notice--error">{errors[error]}</p> : null}
 
           <section className="panel" id="settings">
@@ -91,6 +98,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
               <label className="field"><span className="field__label">Full duration (minutes)</span><input className="input" defaultValue={value?.durationMinutes ?? 120} min={1} max={1440} name="durationMinutes" required type="number" /></label>
               <label className="field field--full"><span className="field__label">Instructions</span><textarea className="input" defaultValue={value?.instructions} maxLength={20000} name="instructions" rows={5} /></label>
               <label className="field"><span className="field__label">Attempt limit</span><input className="input" defaultValue={value?.maxAttempts ?? 1} min={1} max={100} name="maxAttempts" required type="number" /></label>
+              <label className="field"><span className="field__label">Marks per correct answer</span><input className="input" defaultValue={mockMarks ?? ""} min={0.01} max={100} name="marks" placeholder="Each question's own" step="0.01" type="number" /><span className="field__hint">Applies to every section. Leave blank to use each question&apos;s own marks.</span></label>
               <label className="field"><span className="field__label">Penalty per wrong answer</span><input className="input" defaultValue={value?.negativeMarking ?? "0"} min={0} max={100} name="negativeMarking" step="0.01" required type="number" /></label>
             </div>
             <fieldset className="field"><legend className="field__label">Negative marking applies to</legend>
@@ -115,6 +123,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
               <div className="field section-slot" key={index}><span className="field__label">Section {index + 1}</span>
                 <input aria-label={`Section ${index + 1} title`} className="input" defaultValue={existingSections[index]?.title ?? ""} name={`sectionTitle_${index}`} placeholder={index < 2 ? (index === 0 ? "QA" : "LR") : "Optional"} />
                 <input aria-label={`Section ${index + 1} minutes`} className="input" defaultValue={existingSections[index]?.durationMinutes ?? ""} min={1} max={1440} name={`sectionDuration_${index}`} placeholder="Minutes" type="number" />
+                <input aria-label={`Section ${index + 1} marks per correct answer`} className="input" defaultValue={mockMarks === null ? existingSections[index]?.marks ?? "" : ""} min={0.01} max={100} name={`sectionMarks_${index}`} placeholder="Marks (optional)" step="0.01" type="number" />
               </div>
             ))}</div>
           </section>

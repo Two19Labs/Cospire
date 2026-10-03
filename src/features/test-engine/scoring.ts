@@ -1,7 +1,7 @@
 // Scoring one attempt, per operating manual §13.1:
 //
 //   unanswered                            ->  0
-//   correct                               ->  +questions.marks
+//   correct                               ->  +marks (see effectiveMarks)
 //   wrong, type in negative_marking_types ->  -mocks.negative_marking
 //   wrong, type not in the list           ->  0
 //
@@ -17,8 +17,18 @@ export interface ScoringQuestion {
   id: number;
   // null for a DI passage, which carries no key and no marks.
   key: unknown;
+  // What a correct answer earns in this mock: effectiveMarks, already applied.
   marks: number;
   type: QuestionType;
+}
+
+// Marks belong to the mock (decision D19, 2026-10-01). A mock section that sets
+// marks overrides the question's own; one that does not (every mock saved
+// before 2026-10-02) keeps the question's. A DI passage is read, not answered,
+// so it earns nothing whatever its section says.
+export function effectiveMarks(question: { marks: number; type: string }, sectionMarks: number | null | undefined): number {
+  if (question.type === "di_stimulus") return 0;
+  return sectionMarks ?? Number(question.marks);
 }
 
 export interface ScoringRules {

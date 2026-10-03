@@ -969,6 +969,7 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: number
+          marks: number | null
           mock_id: number
           org_id: number
           sort_order: number
@@ -979,6 +980,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: never
+          marks?: number | null
           mock_id: number
           org_id: number
           sort_order: number
@@ -989,6 +991,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: never
+          marks?: number | null
           mock_id?: number
           org_id?: number
           sort_order?: number
@@ -1339,6 +1342,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           body: string
+          body_key: string | null
           created_at: string
           created_by: string | null
           difficulty: string
@@ -1357,6 +1361,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           body: string
+          body_key?: string | null
           created_at?: string
           created_by?: string | null
           difficulty: string
@@ -1375,6 +1380,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           body?: string
+          body_key?: string | null
           created_at?: string
           created_by?: string | null
           difficulty?: string
@@ -1501,6 +1507,44 @@ export type Database = {
           p_type: string
         }
         Returns: number
+      }
+      approve_question_import_into: {
+        Args: {
+          p_body: string
+          p_correct_answer: Json
+          p_difficulty: string
+          p_images: Json
+          p_import_id: number
+          p_marks: number
+          p_options: Json
+          p_parent_id: number
+          p_question_id: number
+          p_section_id: number
+          p_solution: string
+          p_topic: string
+          p_type: string
+        }
+        Returns: number
+      }
+      attempt_outline: {
+        Args: { p_attempt_id: number }
+        Returns: {
+          mock_section_id: number
+          parent_id: number
+          question_id: number
+          question_type: string
+          sort_order: number
+        }[]
+      }
+      find_question_matches: {
+        Args: { p_bodies: string[]; p_threshold?: number }
+        Returns: {
+          input_index: number
+          match_kind: string
+          match_ref: number
+          same_text: boolean
+          similarity: number
+        }[]
       }
       save_mock: {
         Args: {
