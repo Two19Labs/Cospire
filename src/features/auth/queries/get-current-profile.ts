@@ -16,7 +16,7 @@ import { isAppRole, type Profile } from "../types";
 export type SessionState =
   | { status: "anonymous" }
   | { status: "orphaned"; userId: string }
-  | { status: "active"; profile: Profile };
+  | { status: "active"; profile: Profile; sessionId: string | null };
 
 // Wrapped in React's per-request `cache`, so asking twice in one render costs
 // one token verification and one profile query rather than two of each.
@@ -58,8 +58,13 @@ export const getSessionState = cache(async function getSessionState(): Promise<S
     throw new Error("The signed-in profile has an invalid shape.");
   }
 
+  // The Auth session this request belongs to, for the activity log: it is
+  // what tells two browsers apart from two tabs of one.
+  const sessionId = claimsData?.claims?.session_id;
+
   return {
     status: "active",
+    sessionId: typeof sessionId === "string" ? sessionId : null,
     profile: {
       email: row.email,
       id: row.id,
