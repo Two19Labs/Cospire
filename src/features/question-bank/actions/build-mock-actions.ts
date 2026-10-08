@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { linkImportRound } from "@/features/ars/queries/round-import";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
@@ -159,6 +160,12 @@ export async function buildMockFromImportAction(formData: FormData): Promise<voi
     grantFailed = grantError !== null;
   }
 
+  // An import started from an ARS aptitude round (D8) links the new mock to
+  // that round, through the admin's own session as setRoundMockAction does.
+  const roundLink = await linkImportRound(batchId, Number(mockId));
+  if (roundLink !== "none") revalidatePath("/student/ars");
+
   revalidatePath("/admin/mocks");
-  redirect(`/admin/mocks/${mockId}?notice=${grantFailed ? "built-grant-failed" : "built"}`);
+  const notice = grantFailed ? "built-grant-failed" : roundLink === "linked" ? "built-linked" : roundLink === "failed" ? "built-link-failed" : "built";
+  redirect(`/admin/mocks/${mockId}?notice=${notice}`);
 }

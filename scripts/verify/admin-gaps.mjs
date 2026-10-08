@@ -5,13 +5,29 @@
 //   B. The activity log and its flags. Needs 20261008120000_activity_log.sql
 //      applied; until it is, part B reports itself skipped and FAILS the run,
 //      so a green result can never be mistaken for B having been checked.
+//   C. D8: the mock-first importer opened from an ARS aptitude round, the
+//      mock it builds linked to that round. Needs no migration. Reads action
+//      ids from this checkout's .next, so run it against a build of the same
+//      code.
 //
 // Throwaway accounts and fixtures only; everything it creates is deleted at the
 // end and the live counts are printed against the baseline.
 //
 //   node --env-file=.env.local scripts/verify/admin-gaps.mjs http://127.0.0.1:3070
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
+
+const require = createRequire(import.meta.url);
+const { encodeReply } = require("next/dist/compiled/react-server-dom-webpack/client.node");
+const manifest = JSON.parse(readFileSync(new globalThis.URL("../../.next/server/server-reference-manifest.json", import.meta.url), "utf8"));
+const actionId = (name) => {
+  const entry = Object.entries(manifest.node).find(([, value]) => value.exportedName === name);
+  if (!entry) throw new Error(`no server action called ${name} in the build`);
+  return entry[0];
+};
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:3070";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,7 +39,8 @@ const service = createClient(URL, SECRET, { auth: { autoRefreshToken: false, per
 const stamp = Date.now();
 const password = `GapsVerify${stamp}x`;
 const people = {};
-const made = { courseId: null, objects: [] };
+const made = { batches: [], courseId: null, mocks: [], objects: [], sections: [] };
+const tag = stamp.toString(36).slice(-5);
 let passes = 0;
 let failures = 0;
 
@@ -57,13 +74,54 @@ async function get(path, key, headers = {}) {
 }
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const forms = (html) => [...html.matchAll(/<form[\s\S]*?<\/form>/g)].map((m) => m[0]);
+// Every value a form would post as rendered, as mock-import.mjs reads them.
+function formValues(formHtml) {
+  const fields = [];
+  for (const t of formHtml.matchAll(/<input [^>]*>/g)) {
+    const name = t[0].match(/name="([^"]*)"/)?.[1];
+    if (!name) continue;
+    const type = t[0].match(/type="([^"]*)"/)?.[1] ?? "text";
+    if ((type === "checkbox" || type === "radio") && !/ checked/.test(t[0])) continue;
+    if (type === "submit" || type === "file") continue;
+    fields.push([decode(name), decode(t[0].match(/value="([^"]*)"/)?.[1] ?? (type === "checkbox" ? "on" : ""))]);
+  }
+  for (const a of formHtml.matchAll(/<textarea [^>]*name="([^"]*)"[^>]*>([\s\S]*?)<\/textarea>/g)) fields.push([decode(a[1]), decode(a[2])]);
+  for (const sel of formHtml.matchAll(/<select [^>]*name="([^"]*)"[^>]*>([\s\S]*?)<\/select>/g)) {
+    const chosen = sel[2].match(/<option[^>]*selected[^>]*value="([^"]*)"/) ?? sel[2].match(/<option[^>]*value="([^"]*)"[^>]*selected/) ?? sel[2].match(/<option[^>]*value="([^"]*)"/);
+    fields.push([decode(sel[1]), decode(chosen?.[1] ?? "")]);
+  }
+  return fields;
+}
+async function postForm(path, key, formHtml, replace = []) {
+  const body = new FormData();
+  const replaced = new Set(replace.map(([n]) => n));
+  for (const [k, v] of formValues(formHtml)) if (!replaced.has(k)) body.append(k, v);
+  for (const [k, v] of replace) body.append(k, String(v));
+  const r = await fetch(`${BASE}${path}`, { body, headers: { cookie: people[key].cookie, origin: BASE }, method: "POST", redirect: "manual" });
+  return { body: await r.text(), location: r.headers.get("location") ?? "", status: r.status };
+}
+// A useActionState action, called as the browser calls it.
+async function callAction(path, key, name, fields) {
+  const formData = new FormData();
+  for (const [k, v] of fields) formData.append(k, String(v));
+  const initial = { defaultMarks: "", documentName: "", items: null, pasted: "", problems: [] };
+  const r = await fetch(`${BASE}${path}`, {
+    body: await encodeReply([initial, formData]),
+    headers: { accept: "text/x-component", cookie: people[key].cookie, "next-action": actionId(name), origin: BASE },
+    method: "POST",
+    redirect: "manual",
+  });
+  await r.text();
+  return r.headers.get("x-action-redirect") ?? r.headers.get("location") ?? "";
+}
 async function tableExists(table) {
   const { error } = await service.from(table).select("*").limit(1);
   return !error;
 }
 async function counts() {
   const out = {};
-  const tables = ["profiles", "courses", "ars_rounds", "ars_submissions", "ars_process_runs", "content_access"];
+  const tables = ["profiles", "courses", "ars_rounds", "ars_submissions", "ars_process_runs", "content_access", "mocks", "questions", "question_imports", "question_sections"];
   if (await tableExists("activity_log")) tables.push("activity_log");
   for (const t of tables) out[t] = (await service.from(t).select("*", { count: "exact", head: true })).count;
   return out;
@@ -228,10 +286,73 @@ try {
     const actives = (await service.from("activity_log").select("ip").eq("user_id", people.admin.id).eq("event_type", "active").eq("ip", "198.51.100.88")).data ?? [];
     check("two page views from one address record one throttled active row", actives.length === 1, JSON.stringify(actives));
   }
+
+  // --------------------------------------- C. D8: import from an aptitude round
+  const { data: aptitude, error: ae } = await service.from("ars_rounds").insert({
+    config: { pendingFeature: "test-engine", prompt: "Gaps aptitude", test: { durationMinutes: 10, questions: 1 } },
+    course_id: course.id, name: `Gaps aptitude ${stamp}`, org_id: ORG, requires_review: false, sort_order: 3, submission_mode: "offline",
+  }).select("id").single();
+  if (ae) throw ae;
+  const builder = await get(`/admin/ars/${course.id}/rounds/${aptitude.id}`, "admin");
+  check("the aptitude round offers to import a paper for it", builder.status === 200 && builder.body.includes(`/admin/mocks/import-paper?round=${aptitude.id}`), `${builder.status}`);
+  const wizard = await get(`/admin/mocks/import-paper?round=${aptitude.id}`, "admin");
+  check("the importer opened from the round names it", wizard.status === 200 && wizard.body.includes(`Gaps aptitude ${stamp}`), `${wizard.status}`);
+
+  const sectionName = `Gaps QA ${stamp}`;
+  const { data: qa, error: qe } = await service.from("question_sections").insert({ name: sectionName, org_id: ORG }).select("id").single();
+  if (qe) throw qe;
+  made.sections.push(qa.id);
+  const paper = { document: `Gaps paper ${stamp}`, questions: [
+    { answer: "B", difficulty: "easy", options: ["3", "4", "5", "6"], question: `A gardener plants ninety-two saplings in rows of twenty-three. How many rows result? #${tag}`, section: sectionName, topic: "Division", type: "mcq" },
+  ] };
+  const stageFields = (roundId) => [["pasted", JSON.stringify(paper)], ["documentName", paper.document], ["defaultMarks", "1"], ["paperSection", ""], ["defaultDifficulty", ""], ["buildMock", "1"], ["roundId", String(roundId)]];
+
+  // Refused: a round that is not off-platform is never marked.
+  const textBefore = JSON.stringify((await service.from("ars_rounds").select("config").eq("id", textRound).single()).data?.config);
+  const refusedAt = await callAction("/admin/mocks/import-paper", "admin", "stageQuestionImportAction", stageFields(textRound));
+  const refusedBatch = refusedAt.match(/import\/([0-9a-f-]{36})/)?.[1];
+  if (refusedBatch) made.batches.push(refusedBatch);
+  const textAfter = JSON.stringify((await service.from("ars_rounds").select("config").eq("id", textRound).single()).data?.config);
+  check("a round that is not off-platform is refused and left untouched", refusedAt.includes("roundLink=refused") && textAfter === textBefore, refusedAt);
+
+  const stagedAt = await callAction("/admin/mocks/import-paper", "admin", "stageQuestionImportAction", stageFields(aptitude.id));
+  const batchId = stagedAt.match(/import\/([0-9a-f-]{36})/)?.[1];
+  if (batchId) made.batches.push(batchId);
+  const marked = (await service.from("ars_rounds").select("config").eq("id", aptitude.id).single()).data?.config ?? {};
+  check("staging from the round marks it with the import", Boolean(batchId) && marked.importBatchId === batchId && !stagedAt.includes("refused"), stagedAt);
+
+  // The review's own forms drop the round from the URL; the mark carries it.
+  let review = await get(`/admin/questions/import/${batchId}`, "admin");
+  const approve = forms(review.body).find((f) => f.includes("Approve all clean"));
+  if (!approve) throw new Error("no approve-all form");
+  await postForm(`/admin/questions/import/${batchId}`, "admin", approve);
+  review = await get(`/admin/questions/import/${batchId}`, "admin");
+  check("the review, reopened without the round in its URL, still names it", review.body.includes(`Gaps aptitude ${stamp}`) && review.body.includes("linked to the ARS round"));
+  const buildForm = forms(review.body).find((f) => f.includes(`$ACTION_ID_${actionId("buildMockFromImportAction")}`));
+  if (!buildForm) throw new Error("no build form");
+  check("the build step offers the round's process for access", formValues(buildForm).some(([k, v]) => k === "grantCourseId" && v === String(course.id)));
+  const built = await postForm(`/admin/questions/import/${batchId}`, "admin", buildForm, [["title", `Gaps mock ${stamp}`], ["durationMinutes", "10"]]);
+  const mockId = Number(built.location.match(/\/admin\/mocks\/(\d+)/)?.[1] ?? 0);
+  if (mockId) made.mocks.push(mockId);
+  const linked = (await service.from("ars_rounds").select("config").eq("id", aptitude.id).single()).data?.config ?? {};
+  check("building the mock links it to the round and clears the mark",
+    mockId > 0 && built.location.includes("notice=built-linked") && linked.mockId === mockId && !("importBatchId" in linked) && !("pendingFeature" in linked),
+    `${built.location} ${JSON.stringify(linked)}`);
 } catch (error) {
   check("run completed without throwing", false, String(error?.message ?? error));
 } finally {
   const report = (what, { error }) => { if (error) console.log(`cleanup: ${what} not deleted: ${error.message}`); };
+  if (made.mocks.length) {
+    report("mock grants", await service.from("content_access").delete().eq("resource_type", "mock").in("resource_id", made.mocks));
+    report("mocks", await service.from("mocks").delete().in("id", made.mocks));
+  }
+  if (made.batches.length) report("imports", await service.from("question_imports").delete().in("batch_id", made.batches));
+  const { data: ours } = await service.from("questions").select("id").eq("org_id", ORG).like("body", `%#${tag}%`);
+  for (const row of ours ?? []) {
+    report("question key", await service.from("question_keys").delete().eq("question_id", row.id));
+    report("question", await service.from("questions").delete().eq("id", row.id));
+  }
+  if (made.sections.length) report("sections", await service.from("question_sections").delete().in("id", made.sections));
   if (made.objects.length) report("objects", await service.storage.from("ars-uploads").remove(made.objects));
   if (made.courseId) {
     const { data: mine } = await service.from("ars_rounds").select("id").eq("course_id", made.courseId);

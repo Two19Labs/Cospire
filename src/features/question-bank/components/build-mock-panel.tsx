@@ -1,6 +1,8 @@
 import { SubmitButton } from "@/shared/ui";
 
 import { buildMockFromImportAction, createPaperSectionAction } from "../actions/build-mock-actions";
+import type { ImportRound } from "@/features/ars/queries/round-import";
+
 import type { BuildMockOptions } from "../queries/build-mock-options";
 
 // The last step of mock-first import (D7, D13, D15): once every question is
@@ -49,15 +51,20 @@ export function BuildMockPanel({
   batchId,
   defaultMarks,
   error,
+  linkedRound = null,
   open,
   options,
   pending,
+  roundRefused = false,
   title,
 }: {
   batchId: string;
   defaultMarks: string;
   error: string | null;
+  // The ARS aptitude round this import was started from (D8), if any.
+  linkedRound?: ImportRound | null;
   open: boolean;
+  roundRefused?: boolean;
   options: BuildMockOptions;
   pending: number;
   title: string;
@@ -72,6 +79,8 @@ export function BuildMockPanel({
         <span className="muted"> · optional</span>
       </summary>
       {error && buildErrors[error] ? <p className="notice notice--error">{buildErrors[error]}</p> : null}
+      {linkedRound ? <p className="notice">The mock built here is linked to the ARS round <strong>{linkedRound.name}</strong> automatically.</p> : null}
+      {roundRefused && !linkedRound ? <p className="notice notice--error">This import could not be tied to its ARS round, so the mock will not link itself. Link it from the round&apos;s page after building.</p> : null}
       {pending > 0 ? (
         <p className="notice notice--warn">
           {pending} {pending === 1 ? "question is" : "questions are"} still to decide. Build the mock once every question is
@@ -162,7 +171,7 @@ export function BuildMockPanel({
             <legend className="field__label">Who takes it</legend>
             <label className="field">
               <span className="field__label">Everyone on a programme or ARS process</span>
-              <select className="input" defaultValue="" name="grantCourseId">
+              <select className="input" defaultValue={linkedRound ? String(linkedRound.courseId) : ""} name="grantCourseId">
                 <option value="">Nobody this way</option>
                 {courses.map((course) => (
                   <option key={course.id} value={course.id}>

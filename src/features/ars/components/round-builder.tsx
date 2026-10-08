@@ -96,6 +96,10 @@ function MockLinkPanel({ courseId, link, roundId }: { courseId: number; link: Mo
           Save mock test
         </SubmitButton>
       </form>
+      <p className="muted">
+        Or <Link href={`/admin/mocks/import-paper?round=${roundId}`}>import a paper for this round</Link>: the mock built
+        from it links itself here.
+      </p>
 
       {link.linkedMockId !== null ? (
         <p className="notice notice--warn">

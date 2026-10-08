@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseMockIdField, readRoundMockId, withRoundMock } from "./round-mock";
+import { parseMockIdField, readImportBatchId, readRoundMockId, withImportBatch, withRoundMock } from "./round-mock";
 
 describe("readRoundMockId", () => {
   it("reads a positive integer id", () => {
@@ -71,5 +71,26 @@ describe("withRoundMock", () => {
     const config = { ...imported };
     withRoundMock(config, 4);
     expect(config).toEqual(imported);
+  });
+});
+
+describe("the import mark (D8)", () => {
+  const batch = "0f8fad5b-d9cb-469f-a165-70867728950e";
+
+  it("marks a round with the batch and keeps every other key", () => {
+    const marked = withImportBatch({ pendingFeature: "test-engine", prompt: "p" }, batch);
+    expect(marked).toEqual({ importBatchId: batch, pendingFeature: "test-engine", prompt: "p" });
+    expect(readImportBatchId(marked)).toBe(batch);
+  });
+
+  it("reads anything that is not a batch id as no mark", () => {
+    expect(readImportBatchId({})).toBeNull();
+    expect(readImportBatchId({ importBatchId: "x" })).toBeNull();
+    expect(readImportBatchId({ importBatchId: 5 })).toBeNull();
+  });
+
+  it("linking or unlinking a mock clears the mark", () => {
+    expect(withRoundMock(withImportBatch({}, batch), 9)).toEqual({ mockId: 9 });
+    expect(readImportBatchId(withRoundMock(withImportBatch({ test: {} }, batch), null))).toBeNull();
   });
 });

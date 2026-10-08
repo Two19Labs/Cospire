@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { markRoundForImport } from "@/features/ars/queries/round-import";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
@@ -290,7 +291,15 @@ export async function stageQuestionImportAction(
   }
 
   revalidatePath("/admin/questions/import");
-  redirect(`/admin/questions/import/${batchId}${formData.get("buildMock") === "1" ? "?mock=1" : ""}`);
+  if (formData.get("buildMock") !== "1") redirect(`/admin/questions/import/${batchId}`);
+
+  // Started from an ARS aptitude round (D8): mark the round so the mock built
+  // at the end links itself. The write goes through the admin's own session,
+  // so a round this admin may not edit is refused, and the review says so.
+  const roundRaw = formData.get("roundId");
+  const roundId = typeof roundRaw === "string" && /^[1-9][0-9]{0,15}$/.test(roundRaw) ? Number(roundRaw) : null;
+  const roundRefused = roundId !== null && !(await markRoundForImport(roundId, batchId));
+  redirect(`/admin/questions/import/${batchId}?mock=1${roundRefused ? "&roundLink=refused" : ""}`);
 }
 
 function describeApproveError(error: { code?: string; message?: string }): string {

@@ -43,6 +43,8 @@ export function parseMockIdField(raw: unknown): MockIdField {
 // test specification -- so linking never discards what the importer wrote.
 export function withRoundMock(config: unknown, mockId: number | null): Record<string, unknown> {
   const next: Record<string, unknown> = { ...asRecord(config) };
+  // Any pending import (D8) is settled by an explicit choice either way.
+  delete next.importBatchId;
   if (mockId === null) {
     delete next.mockId;
     if (next.test !== undefined) next.pendingFeature = "test-engine";
@@ -51,4 +53,20 @@ export function withRoundMock(config: unknown, mockId: number | null): Record<st
     delete next.pendingFeature;
   }
   return next;
+}
+
+// D8: one importer, opened from several places. An import of a paper started
+// from an aptitude round marks the round with the import's batch id, so the
+// mock built at the end of the review links itself to this round. The mark
+// lives in the round's config rather than in the URL because the review is many
+// form posts long and a query parameter would have to survive every one.
+export function withImportBatch(config: unknown, batchId: string): Record<string, unknown> {
+  return { ...asRecord(config), importBatchId: batchId };
+}
+
+const batchIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function readImportBatchId(config: unknown): string | null {
+  const raw = asRecord(config).importBatchId;
+  return typeof raw === "string" && batchIdPattern.test(raw) ? raw : null;
 }

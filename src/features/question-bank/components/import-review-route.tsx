@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { findImportRound } from "@/features/ars/queries/round-import";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { matchSection } from "../import-review";
@@ -23,6 +24,7 @@ export async function ImportReviewRoute({
   notice,
   orgId,
   page,
+  roundRefused = false,
 }: {
   batchId: string;
   // The build step's refusal, if the last attempt to build a mock failed.
@@ -32,6 +34,8 @@ export async function ImportReviewRoute({
   notice: string | null;
   orgId: number;
   page: string | undefined;
+  // The import was started from an ARS round this admin could not edit (D8).
+  roundRefused?: boolean;
 }) {
   const batchId = parseBatchId(rawBatchId);
   if (!batchId) notFound();
@@ -105,7 +109,7 @@ export async function ImportReviewRoute({
       ),
     ),
   ];
-  const buildOptions = await getBuildMockOptions(paperQuestionIds(batch.rows));
+  const [buildOptions, linkedRound] = await Promise.all([getBuildMockOptions(paperQuestionIds(batch.rows)), findImportRound(batchId)]);
   const pending = batch.rows.filter((row) => row.status === "pending_review").length;
   const defaultMarks = batch.rows.find((row) => row.parsed && row.parsed.type !== "di_stimulus" && row.parsed.marks)?.parsed?.marks ?? "";
 
@@ -128,9 +132,11 @@ export async function ImportReviewRoute({
       batchId={batchId}
       defaultMarks={defaultMarks}
       error={buildError}
-      open={mock}
+      linkedRound={linkedRound}
+      open={mock || linkedRound !== null}
       options={buildOptions}
       pending={pending}
+      roundRefused={roundRefused}
       title={batch.sourceRef ?? ""}
     />
     </>
