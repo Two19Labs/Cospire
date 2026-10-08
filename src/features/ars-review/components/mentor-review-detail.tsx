@@ -28,6 +28,16 @@ async function Answer({ answer }: { answer: ReviewAnswer }) {
   return <p className="review-answer__value">{typeof answer.value === "boolean" ? (answer.value ? "Yes" : "No") : String(answer.value)}</p>;
 }
 
+// The student's answers, files as five-minute signed links. Shared with the
+// admin's read-only view of the same submission.
+export function SubmissionAnswers({ answers }: { answers: ReviewAnswer[] }) {
+  return (
+    <div className="review-answers">
+      {answers.length ? answers.map((answer) => <article className="review-answer" key={answer.field.key}><h3>{answer.field.label}</h3><Answer answer={answer} /></article>) : <p className="muted">This off-platform round was recorded as completed; it has no student answers.</p>}
+    </div>
+  );
+}
+
 export function MentorReviewDetail({ profile, submission, notice, error }: { profile: Profile; submission: MentorSubmissionDetail; notice?: string; error?: string }) {
   return (
     <RoleShell profile={profile} title="Review submission">
@@ -36,9 +46,7 @@ export function MentorReviewDetail({ profile, submission, notice, error }: { pro
         {notice === "reviewed" ? <p className="notice notice--success">Submission marked as reviewed.</p> : null}
         {error ? <p className="notice notice--error">The review could not be saved. Please try again.</p> : null}
         <div className="panel__header"><div><h2>{submission.studentName}</h2><p className="muted">{submission.courseTitle} · {submission.roundName} · attempt {submission.attemptNo}{submission.isLate ? " · submitted late" : ""}</p></div><span className="pill">{submission.status === "submitted" ? "Waiting" : "Reviewed"}</span></div>
-        <div className="review-answers">
-          {submission.answers.length ? submission.answers.map((answer) => <article className="review-answer" key={answer.field.key}><h3>{answer.field.label}</h3><Answer answer={answer} /></article>) : <p className="muted">This off-platform round was recorded as completed; it has no student answers.</p>}
-        </div>
+        <SubmissionAnswers answers={submission.answers} />
         {submission.status === "submitted" ? <form action={markSubmissionReviewedAction}><input name="submissionId" type="hidden" value={submission.id} /><SubmitButton variant="primary" pendingLabel="Saving…">Mark reviewed</SubmitButton></form> : <p className="muted">Reviewed {submission.reviewedAt?.slice(0, 10)}</p>}
       </section>
     </RoleShell>
