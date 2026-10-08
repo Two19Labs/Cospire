@@ -11,7 +11,7 @@ import { activityPageSize } from "../activity-params";
 // `activity_log_select_admin` returns the admin's organisation and nothing
 // else, and returns nothing at all to a mentor or a student.
 //
-// `activity_log` (20261008120000) is not in the generated types until that
+// `activity_log` (20261008130000) is not in the generated types until that
 // migration is applied and `npm run db:types` runs, so the table is read
 // through an untyped view of the same client. Once it is generated, drop the
 // cast and the hand-written row checks below can go too.

@@ -2,7 +2,7 @@
 // hosted database read for ground truth. Two parts:
 //
 //   A. The admin's view of every ARS submission. Needs no migration.
-//   B. The activity log and its flags. Needs 20261008120000_activity_log.sql
+//   B. The activity log and its flags. Needs 20261008130000_activity_log.sql
 //      applied; until it is, part B reports itself skipped and FAILS the run,
 //      so a green result can never be mistaken for B having been checked.
 //   C. D8: the mock-first importer opened from an ARS aptitude round, the
@@ -211,7 +211,7 @@ try {
 
   // ------------------------------------------------------ B. the activity log
   if (!(await tableExists("activity_log"))) {
-    check("part B: activity_log exists (migration 20261008120000 applied)", false, "not applied; part B skipped");
+    check("part B: activity_log exists (migration 20261008130000 applied)", false, "not applied; part B skipped");
   } else {
     for (const key of ["student", "mentor"]) {
       const home = key === "student" ? "/student" : "/mentor";

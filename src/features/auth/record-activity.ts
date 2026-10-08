@@ -28,7 +28,7 @@ export async function recordActivity(entry: {
 }): Promise<void> {
   try {
     const admin = createAdminSupabaseClient();
-    // `public.record_activity` (20261008120000) is typed by hand only until
+    // `public.record_activity` (20261008130000) is typed by hand only until
     // that migration is applied and `npm run db:types` adds it to the
     // generated types; then call `admin.rpc("record_activity", ...)` directly.
     const call = admin.rpc as unknown as (
