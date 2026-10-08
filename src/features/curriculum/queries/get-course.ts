@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 export interface Course {
   createdAt: string;
   id: number;
+  kind: string;
   sortOrder: number;
   title: string;
 }
@@ -23,7 +24,7 @@ export async function getCourse(courseId: number): Promise<Course | null> {
 
   const { data, error } = await supabase
     .from("courses")
-    .select("id, title, sort_order, created_at")
+    .select("id, title, sort_order, created_at, kind")
     .eq("id", courseId)
     .maybeSingle();
 
@@ -39,7 +40,8 @@ export async function getCourse(courseId: number): Promise<Course | null> {
     typeof row.id !== "number" ||
     typeof row.title !== "string" ||
     typeof row.sort_order !== "number" ||
-    typeof row.created_at !== "string"
+    typeof row.created_at !== "string" ||
+    typeof row.kind !== "string"
   ) {
     throw new Error("A programme row came back in an unexpected shape.");
   }
@@ -47,6 +49,7 @@ export async function getCourse(courseId: number): Promise<Course | null> {
   return {
     createdAt: row.created_at,
     id: row.id,
+    kind: row.kind,
     sortOrder: row.sort_order,
     title: row.title,
   };

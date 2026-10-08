@@ -21,6 +21,9 @@ export function StudentHome({ profile, reports }: { profile: Profile; reports: S
           <Link className="button button--primary" href="/student/ars">
             Your ARS
           </Link>
+          <Link className="button button--primary" href="/student/programmes">
+            Programmes
+          </Link>
           <Link className="button button--primary" href="/student/documents">
             Documents
           </Link>
