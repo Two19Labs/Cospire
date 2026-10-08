@@ -7,9 +7,11 @@ import { buildQuestionImportPrompt } from "@/features/question-bank/import-promp
 import { listImportBatches } from "@/features/question-bank/queries/list-imports";
 import { listSections } from "@/features/question-bank/queries/list-sections";
 
-export const metadata: Metadata = { title: "Import questions" };
+export const metadata: Metadata = { title: "Import a paper" };
 
-export default async function ImportQuestionsPage({
+// Mock-first import (D7): the same importer as the question bank's, opened from
+// Mock tests, so the review ends by building the mock from the paper.
+export default async function ImportPaperPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -20,16 +22,17 @@ export default async function ImportQuestionsPage({
 
   return (
     <RoleShell
-      back={{ href: "/admin/questions", label: "Back to the question bank" }}
-      description="A guided workflow: open the paper, get it read, then review every question before anything reaches the bank."
+      back={{ href: "/admin/mocks", label: "Back to mock tests" }}
+      description="Open the paper, get it read, review its questions, then build the mock. New questions go into the bank; ones it already holds are linked, not copied."
       profile={profile}
-      title="Import questions"
+      title="Import a paper"
     >
       <QuestionImportScreen
         batches={batches}
-        notice={params.notice === "discarded" ? "The questions that were not approved were discarded." : null}
+        buildMock
         modelAvailable={Boolean(process.env.MODEL_BASE_URL ? process.env.MODEL_API_KEY : process.env.GEMINI_API_KEY)}
         modelLabel={process.env.MODEL_BASE_URL ? process.env.MODEL_LABEL || "the model" : "Gemini"}
+        notice={null}
         orgId={profile.orgId}
         prompt={buildQuestionImportPrompt()}
         sections={sections}

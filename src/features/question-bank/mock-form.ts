@@ -24,6 +24,16 @@ export function parseSectionSlot(value: FormDataEntryValue | null): number | nul
   return Number.isSafeInteger(parsed) && parsed >= 0 && parsed < maxMockSections ? parsed : null;
 }
 
+// Marks per correct answer: blank is null (keep each question's own marks), a
+// number in (0, 100] with at most two decimals is that number, anything else is
+// undefined so the caller can refuse it rather than guess.
+export function parseMarks(value: FormDataEntryValue | null): number | null | undefined {
+  if (value === null || (typeof value === "string" && value.trim() === "")) return null;
+  if (typeof value !== "string" || !/^\d{1,3}(?:\.\d{1,2})?$/.test(value.trim())) return undefined;
+  const parsed = Number(value.trim());
+  return parsed > 0 && parsed <= 100 ? parsed : undefined;
+}
+
 export function normaliseMockText(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
 }

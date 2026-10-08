@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { mapSectionSlots, maxMockSections, normaliseMockText, parsePositiveInteger, parseSectionSlot } from "../mock-form";
+import { mapSectionSlots, maxMockSections, normaliseMockText, parseMarks, parsePositiveInteger, parseSectionSlot } from "../mock-form";
 
 function fail(mockId: number | null, code: string): never {
   redirect(mockId === null ? `/admin/mocks/new?error=${code}` : `/admin/mocks/${mockId}?error=${code}`);
@@ -28,8 +28,13 @@ export async function saveMockAction(formData: FormData): Promise<void> {
     fail(mockId, "invalid");
   }
 
+  // Marks belong to the mock (D19): one value for the whole mock, which a
+  // section may override. Blank keeps each question's own marks.
+  const mockMarks = parseMarks(formData.get("marks"));
+  if (mockMarks === undefined) fail(mockId, "marks");
+
   const timingMode = formData.get("timingMode") === "sectional" ? "sectional" : "overall";
-  const sections: Array<{ title: string; durationMinutes: number | null; questions: number[] }> = [];
+  const sections: Array<{ title: string; durationMinutes: number | null; marks: number | null; questions: number[] }> = [];
   const sectionCount = timingMode === "overall" ? 1 : maxMockSections;
 
   // A question's dropdown posts the SLOT it was drawn from -- "Section 3" is
@@ -43,8 +48,10 @@ export async function saveMockAction(formData: FormData): Promise<void> {
     if (!sectionTitle) continue;
     const sectionDuration = timingMode === "overall" ? null : parsePositiveInteger(formData.get(`sectionDuration_${index}`), 1440);
     if (timingMode === "sectional" && sectionDuration === null) fail(mockId, "sections");
+    const sectionMarks = timingMode === "overall" ? null : parseMarks(formData.get(`sectionMarks_${index}`));
+    if (sectionMarks === undefined) fail(mockId, "marks");
     slotOfSection.push(index);
-    sections.push({ title: sectionTitle, durationMinutes: sectionDuration, questions: [] });
+    sections.push({ title: sectionTitle, durationMinutes: sectionDuration, marks: sectionMarks ?? mockMarks, questions: [] });
   }
   const sectionBySlot = mapSectionSlots(slotOfSection);
   if (sections.length === 0) fail(mockId, "sections");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readAnswer } from "./answer";
 import { attemptDeadline, isOver, secondsLeft, sectionDeadline } from "./clock";
-import { scoreAttempt, type ScoringQuestion } from "./scoring";
+import { effectiveMarks, scoreAttempt, type ScoringQuestion } from "./scoring";
 
 const mcq: ScoringQuestion = { id: 1, key: { options: ["b"] }, marks: 3, type: "mcq" };
 const multi: ScoringQuestion = { id: 2, key: { options: ["a", "c"] }, marks: 3, type: "mcq_multi" };
@@ -124,5 +124,20 @@ describe("the clock", () => {
     expect(secondsLeft(paper, new Date("2026-10-01T12:30:00Z"))).toBe(0);
     expect(isOver(paper, new Date("2026-10-01T12:00:29Z"))).toBe(false);
     expect(isOver(paper, new Date("2026-10-01T12:00:31Z"))).toBe(true);
+  });
+});
+
+describe("marks belong to the mock (D19)", () => {
+  it("uses the section's marks when it sets them", () => {
+    expect(effectiveMarks({ marks: 3, type: "mcq" }, 1)).toBe(1);
+  });
+
+  it("keeps the question's own marks when the section sets none, as every older mock does", () => {
+    expect(effectiveMarks({ marks: 3, type: "numerical" }, null)).toBe(3);
+    expect(effectiveMarks({ marks: 3, type: "numerical" }, undefined)).toBe(3);
+  });
+
+  it("gives a DI passage nothing, whatever its section says", () => {
+    expect(effectiveMarks({ marks: 0, type: "di_stimulus" }, 4)).toBe(0);
   });
 });

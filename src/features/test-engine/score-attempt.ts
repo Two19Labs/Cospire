@@ -3,7 +3,7 @@ import "server-only";
 import type { QuestionType } from "@/features/question-bank/question-input";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 
-import { scoreAttempt, type ScoringQuestion } from "./scoring";
+import { effectiveMarks, scoreAttempt, type ScoringQuestion } from "./scoring";
 
 type Admin = ReturnType<typeof createAdminSupabaseClient>;
 
@@ -15,10 +15,19 @@ function fingerprint(questions: ScoringQuestion[]): string {
 }
 
 async function readPaper(admin: Admin, mockId: number): Promise<ScoringQuestion[]> {
-  const { data: placed, error } = await admin.from("mock_questions").select("question_id").eq("mock_id", mockId);
-  if (error) throw new Error(`Unable to read the paper to score: ${error.message}`);
-  const topIds = (placed ?? []).map((row) => row.question_id);
+  const [placedResult, sectionResult] = await Promise.all([
+    admin.from("mock_questions").select("question_id, mock_section_id").eq("mock_id", mockId),
+    admin.from("mock_sections").select("id, marks").eq("mock_id", mockId),
+  ]);
+  if (placedResult.error) throw new Error(`Unable to read the paper to score: ${placedResult.error.message}`);
+  if (sectionResult.error) throw new Error(`Unable to read the paper to score: ${sectionResult.error.message}`);
+  const placed = placedResult.data ?? [];
+  const topIds = placed.map((row) => row.question_id);
   if (topIds.length === 0) return [];
+  // Every scored question, sub-questions included, is placed in a section: the
+  // builder refuses a DI set that is not whole in one section.
+  const marksBySection = new Map((sectionResult.data ?? []).map((row) => [row.id, row.marks === null ? null : Number(row.marks)]));
+  const sectionMarksOf = new Map(placed.map((row) => [row.question_id, marksBySection.get(row.mock_section_id) ?? null]));
 
   // Every question in the paper as it was sat, archived or not: archiving a
   // question does not change what the student answered.
@@ -41,7 +50,7 @@ async function readPaper(admin: Admin, mockId: number): Promise<ScoringQuestion[
   return rows.map((row) => ({
     id: row.id,
     key: keyById.get(row.id) ?? null,
-    marks: row.marks,
+    marks: effectiveMarks(row, sectionMarksOf.get(row.id)),
     type: row.type as QuestionType,
   }));
 }

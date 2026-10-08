@@ -48,7 +48,7 @@ export interface ResolvedMockDocument {
   problems: string[];
   // The section payload `save_mock` takes, stimulus first and every
   // sub-question after it, in id order.
-  sections: Array<{ durationMinutes: number | null; questions: number[]; title: string }>;
+  sections: Array<{ durationMinutes: number | null; marks: number | null; questions: number[]; title: string }>;
 }
 
 export async function resolveMockDocument(spec: MockDocumentSpec): Promise<ResolvedMockDocument> {
@@ -116,7 +116,8 @@ export async function resolveMockDocument(spec: MockDocumentSpec): Promise<Resol
         excerpt: excerpt(String(row.body)),
         id: ref.id,
         label,
-        marks: String(row.marks),
+        // What a correct answer earns in this mock (D19), not the bank's value.
+        marks: String(section.marks ?? row.marks),
         sectionName: embeddedName(row.question_sections),
         type: row.type,
       });
@@ -124,7 +125,7 @@ export async function resolveMockDocument(spec: MockDocumentSpec): Promise<Resol
       questionCount += 1 + children.length;
     }
     previewSections.push({ durationMinutes: section.durationMinutes, questions, title: section.title });
-    saveSections.push({ durationMinutes: section.durationMinutes, questions: saveIds, title: section.title });
+    saveSections.push({ durationMinutes: section.durationMinutes, marks: section.marks, questions: saveIds, title: section.title });
   }
 
   if (problems.length > 0) return { preview: null, problems, sections: [] };
