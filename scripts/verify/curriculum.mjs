@@ -194,7 +194,17 @@ try {
     const mine = await page("s1");
     const body = await mine.text();
     check("app: s1's programme page renders the curriculum", mine.status === 200 && body.includes("Week 1") && body.includes("Intro"));
-    check("app: s2 gets a 404 for a programme they do not hold", (await page("s2")).status === 404);
+    // The route has its own loading.tsx, so Next streams and commits 200 before
+    // notFound() runs; the refusal is then the not-found payload. What matters
+    // is that none of the curriculum is in the response.
+    const theirs = await page("s2");
+    const refused = await theirs.text();
+    check(
+      "app: s2 is refused a programme they do not hold, and nothing leaks",
+      (theirs.status === 404 || refused.includes("NEXT_HTTP_ERROR_FALLBACK;404")) &&
+        !refused.includes("Week 1") && !refused.includes("Intro"),
+      `${theirs.status}`,
+    );
   }
 
   // ---- A disabled student reads nothing.
