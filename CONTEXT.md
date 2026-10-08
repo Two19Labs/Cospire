@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-09 (Asia/Calcutta)
+Last updated: 2026-10-08 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,7 +328,7 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (subagent of the owner's session) | `feat/exam-screen` | Rebased onto `main` after PR #69 merged (2026-10-08). Phase 6 step 6.1 (D11): the exam screen rebuilt -- a section's questions switched in the browser, answers saved in the background, a fullscreen exam layout outside `RoleShell`, the no-JavaScript form path kept. D12: a real pending state on long admin saves. No migration | `src/features/test-engine/components/**`, `src/features/test-engine/actions/attempt-actions.ts`, `src/app/student/attempts/**`, `src/features/question-bank/components/{mock-editor,import-screen,mock-import-screen,pending-overlay}.tsx`, `scripts/verify/test-engine-sit.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** `test-engine-sit.mjs` 59/59 with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; neighbouring harnesses green; 556/556 unit tests. **Not clicked through in a real browser.** No migration. Write-up: *The exam screen, 6.1* in `docs/context/completed.md`. Next: owner review and the browser click-through (desktop, then a phone) before merge | 2026-10-08 |
+| Claude (stream C agent) | `feat/admin-gaps` | Worktree `C:\Cospire\Cospire-admin-gaps`, port 3070. Phase 6.6: admin view of every ARS submission; `activity_log` with the concurrent-session and several-location flags; D8 (the mock-first importer opened from an ARS aptitude round, linking its mock) | `src/features/admin/**`, `src/features/ars-review/**`, `src/features/ars/{round-mock.ts,queries/round-import.ts,components/round-builder.tsx}`, `src/features/question-bank/{actions/import-actions.ts,actions/build-mock-actions.ts,components/import-screen.tsx,components/import-review-route.tsx,components/build-mock-panel.tsx,components/mock-editor.tsx}`, `src/features/auth/{guards.ts,record-activity.ts,activity-input.ts,actions/login.ts,actions/logout.ts,queries/get-current-profile.ts,components/app-nav.tsx}`, `src/app/admin/{ars-submissions,activity,mocks/import-paper,questions/import/[batch]}/**`, `supabase/migrations/20261008120000_activity_log.sql`, `scripts/verify/admin-gaps.mjs` | **Built, committed locally, not pushed, no PR.** Migration `20261008120000_activity_log.sql` written and **not applied**. Harness parts A and C 20/20 on a local production build against the hosted database; part B (activity log, 11 checks) not run until the migration is applied. Flag thresholds (24 h window, more than 3 addresses, 30 min idle, 10 min throttle) want the owner's confirmation. Write-up: *Admin gaps, 2026-10-08* in `docs/context/completed.md`. Next: owner applies the migration, runs `npm run db:types` and part B, then push and PR | 2026-10-08 |
 
 **Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`.
 
@@ -624,7 +624,8 @@ or read them from the main checkout. In order:
 risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
 was settled with the Client on 1 October, and the import route is what the
 Client uses first. The quote and the clause 16.1 written amendment are **still
-owed**; building first does not settle them. Merged as PR #69 (`92df9fc`). The exam-screen reference design
+owed**; building first does not settle them. **6.2-6.4 merged as PR #69
+(`92df9fc`, 2026-10-08)**; its two migrations were applied on 2026-10-02. The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
 5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
    Watermark bottom left, viewer full screen, the landscape check, the stale
@@ -646,7 +647,10 @@ for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
    `/admin/report-templates/import`, `/admin/ars/[id]/rounds/[roundId]`), none
    of them touched here either. Both are worth a follow-up task.
 6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
-   log and flags, bulk CSV once SMTP exists.
+   log and flags, bulk CSV once SMTP exists. **Built on `feat/admin-gaps`
+   2026-10-08 with D8**, not pushed; its migration waits for the owner (see
+   Active work). Bulk CSV still waits for SMTP; the video-watching flag waits
+   for video.
 7. **6.7 Real documents** through the paid Gemini path, once billing and their
    files exist.
 

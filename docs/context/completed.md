@@ -9,6 +9,8 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
 | 2026-10-08 | **Curriculums before video, Phase 2 steps 3, 4, 4b, 5** (`feat/curriculum`, local commits, not pushed) | `sections`, `curriculum_items` (document, test, text; video refused until the video library), the admin builder on a programme, programme grants cascading to every item (N11), `item_progress` for documents and text, and the student programme page. Typecheck, lint, tests and `next build` pass. **Migration not applied and `scripts/verify/curriculum.mjs` never run**; not clicked through in a browser. See *Curriculums before video* |
 | 2026-10-03 | **The exam screen rebuilt, Phase 6 step 6.1 (D11), and long admin saves given a real loading state (D12)** (`feat/exam-screen`, local, not pushed; based on `feat/mock-import`) | A section arrives in one request and its questions are switched in the browser; answers and mark-for-review save in the background through a new server action; the sitting is a full-viewport exam frame outside `RoleShell`, entered in full screen from the Start and Begin buttons. The no-JavaScript form path is kept. No migration. `test-engine-sit.mjs` **59/59** (49 earlier checks plus 10 new) with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; `analytics` 53/53, `mock-import` 26/26, `ars-aptitude` 14/14, `mock-builder` 19/19; 556/556 unit tests. **Not clicked through in a real browser.** See *The exam screen, 6.1* |
+| 2026-10-08 | **Mock-first import, duplicate detection and marks on the mock merged** (PR #69, `92df9fc`) | Phase 6.2-6.4. Its migrations were applied on 2026-10-02. Verification as recorded under *Mock-first import with duplicate detection*; not re-run on the deployed URL by this entry |
+| 2026-10-08 | **Phase 6.6 admin gaps and D8, built on `feat/admin-gaps`** (local commits, not pushed, no PR) | An admin view of every ARS submission; `activity_log` with sign-in, sign-out and page-activity rows and two flags (concurrent sessions, several locations); the mock-first importer opened from an ARS aptitude round with the mock linking itself. Migration `20261008120000_activity_log.sql` written, **not applied**. `scripts/verify/admin-gaps.mjs` parts A and C **20/20** on a local production build against the hosted database, counts back to baseline; part B (activity log, 11 checks) **not run** until the migration is applied. `mock-import` 26/26 and `ars-aptitude` 14/14 unchanged. 577 unit tests, typecheck, lint and build pass. See *Admin gaps, 2026-10-08* |
 | 2026-09-28 | **Phase 4, the test engine, merged and deployed** (PR #63, `47beb72`) | Slices 4.1-4.4 and rescoring. All four migrations applied (the last three on 2026-09-28, before the merge); database probes 57/57, 15/15, 9/9 and 15/15 on the applied schema; **49/49 over HTTP against the deployed URL**, rescoring included. 4.5, the scheduled close of abandoned attempts, is not built. See *The test engine* |
 | 2026-09-27 | **Admin workspace re-skin** (PR #66, `fe9e836`, merged 2026-09-28; not clicked through in a browser) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
 | 2026-09-27 | **Analytics, Phase 4 step 5** (PR #65, `566e112`, merged 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
@@ -60,6 +62,114 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
 | 2026-09-20 | **Multi-file ARS upload UI built, merged and deployed** | A file question uploads directly from the browser to the private `ars-uploads` bucket, attaches metadata under its stable field key, and can be replaced or removed only while the submission is a draft. Multiple questions in one form are supported. Migration `20260920150318` is applied; live Storage verification is 10/10; typecheck, lint, 226 tests and production build pass. PR #36 merged as `0e0f14f`; Production deployed it and a signed-in live capture confirmed a real file input with no placeholder |
+
+### Admin gaps, 2026-10-08 (Phase 6.6 and D8)
+
+Built on `feat/admin-gaps` (`C:\Cospire\Cospire-admin-gaps`, port 3070) by
+the stream C agent. Three local commits, not pushed, no pull request.
+
+**1. Every ARS submission, for admins** (`/admin/ars-submissions`). No
+migration: `ars_submissions_select_authorized` already lets an admin read
+every row in their organisation, so the screen reads through the admin's own
+session. Paginated 25 a page, newest first by primary key; filters by
+process, by round (only rounds of the chosen process are offered or honoured)
+and by status (draft, waiting, reviewed). A round filter uses
+`ars_submissions_round_id_idx` and a status filter
+`ars_submissions_org_status_submitted_idx`. Each row opens a read-only
+detail (`/admin/ars-submissions/[id]`) that reuses the mentor's query
+(`getMentorSubmission`, now with an `includeDrafts` option) and the mentor's
+answers component (`SubmissionAnswers`, extracted from
+`mentor-review-detail.tsx`); the "Mark reviewed" form is left out because only
+the assigned mentor may review. Files open through five-minute signed URLs
+created with the admin's session, never proxied. Drafts are listed and
+openable, marked as drafts. A nav entry under Learning & assessment.
+
+**2. The activity log and its flags** (`/admin/activity`). Migration
+`20261008120000_activity_log.sql`, **written and not applied**:
+
+- `public.activity_log`: `id`, `org_id`, `user_id`, `event_type` (`sign_in`,
+  `sign_out`, `active`), `meta` jsonb (`session_id`), `ip` inet,
+  `occurred_at` timestamptz. FK to `profiles (id, org_id)` **ON DELETE
+  CASCADE**, deliberately unlike most references to profiles: profiles are
+  never deleted in use, and RESTRICT would break the cleanup of every existing
+  harness that signs in through the application. Indexed on
+  `(org_id, occurred_at desc)` and `(user_id, occurred_at desc)`.
+- RLS enabled; `revoke all` from `anon` and `authenticated`, then `grant
+  select` to `authenticated`; one policy, `activity_log_select_admin`
+  (`private.is_admin_of_org(org_id)`). No write grant and no write policy for
+  anyone but `service_role`, so a student can neither read, insert, forge,
+  update nor delete a row.
+- `public.record_activity(p_user_id, p_event_type, p_ip, p_meta)`, security
+  invoker, **execute granted to `service_role` only**. Files the row under the
+  profile's organisation and skips an `active` row when the same session was
+  seen from the same address in the last ten minutes. The throttle is in the
+  database, so nothing sits in server memory.
+
+The server writes through `src/features/auth/record-activity.ts` with the
+server key (the test engine's precedent), after the response via `after()`, and
+never throws: a log that cannot be written must not stop a sign-in. `sign_in`
+from `loginAction` (session id read from the access token Supabase just
+issued), `sign_out` from `logoutAction` (claims verified before the session
+ends), `active` from `requireProfile`, once per request through React `cache`.
+The address is the first entry of `x-forwarded-for`, which Vercel overwrites,
+validated as an IP and otherwise stored as null; nothing the browser posts is
+read. Until the migration is applied every write fails silently and
+`/admin/activity` says the log is not set up, so the code is safe to deploy
+first.
+
+**The flags** (`src/features/admin/activity-flags.ts`, pure, 11 unit tests),
+over the last `FLAG_WINDOW_HOURS = 24`:
+
+- *Concurrent sessions*: two different Auth sessions of one account in use over
+  an overlapping stretch. A session's rows form stretches, each from its first
+  row to its last plus `ACTIVE_THROTTLE_MINUTES = 10`, ended by a sign-out and
+  broken where rows are more than `SESSION_IDLE_MINUTES = 30` apart, so a
+  laptop left signed in overnight does not overlap the next morning's phone.
+  Two tabs share a session and never trip it.
+- *Several locations*: more than `MAX_DISTINCT_IPS = 3` distinct addresses for
+  one account in the window.
+
+Both are prompts for an admin to look, not verdicts, and the screen says so.
+The constants are the agent's choice and **want the owner's confirmation**.
+`ACTIVE_THROTTLE_MINUTES` must match the interval in `record_activity`. The
+screen reads the window in 1,000-row chunks up to 20,000 rows and says so if it
+stops there. `activity_log` is typed by hand (an untyped client view in
+`queries/activity-log.ts`, a cast `rpc` in `record-activity.ts`) until the
+owner applies the migration and runs `npm run db:types`; both places say what
+to drop then. Retention is unbounded: about 100 users at a ten-minute heartbeat
+is a few thousand rows a day.
+
+**3. D8: one importer, opened from an ARS aptitude round.** No migration. The
+round builder's mock panel links to `/admin/mocks/import-paper?round=<id>`,
+which names the round. Staging the paper writes `importBatchId` into the
+round's config through the admin's own session; only an off-platform round is
+marked, and anything else (a form round, a round this admin may not edit) is
+refused and the review says so. The mark, not the URL, carries the link: the
+review is many form posts long and none of them keep a query parameter. The
+review finds the waiting round from the mark, names it, opens the build step
+and preselects the round's process for access. Building the mock links it
+with the existing `withRoundMock` and clears the mark; the mock page says
+"linked to its ARS round". Linking or unlinking by hand also clears a stale
+mark. Starting a second import from the same round moves the mark to the
+newer batch, so the older one builds without linking.
+
+**Verification.** `scripts/verify/admin-gaps.mjs` against a local production
+build (`next start -p 3070`) and the hosted database: part A 13/13 (list,
+three filters, junk filters, detail, 300-second signed URL served by Storage,
+student and mentor refused both routes, signed-out sent to sign in) and part C
+7/7 (entry link, named wizard, a text round refused and untouched, the mark
+written, the review naming the round without it in the URL, the process
+preselected, the mock linked with the mark cleared), counts back to baseline.
+**Part B, 11 checks, has not run**: it needs the migration. It covers student
+and mentor refused the screen, crafted rows flagging both ways and a clean
+account not flagged, student and mentor reading nothing, the admin reading
+through their session, a student refused insert (own and another's), the RPC,
+delete and update, a sign-in through the application's own form recording
+the address and session, and two page views writing one throttled row. Run
+it after applying: `node --env-file=.env.local scripts/verify/admin-gaps.mjs
+http://127.0.0.1:3070` against a fresh build of this branch. `mock-import`
+26/26 and `ars-aptitude` 14/14 still pass on the same build. 577 unit tests,
+typecheck, lint and build pass. Not clicked through in a browser.
 
 ### Mock-first import with duplicate detection, 2026-10-02 (Phase 6.2-6.4)
 
