@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-09 (Asia/Calcutta)
+Last updated: 2026-10-08 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,10 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (owner's flow session) | `feat/mock-import` | Phase 6 steps 6.2 (marks onto the mock), 6.3 (duplicate detection, no model) and 6.4 (mock-first import wizard). Built at risk ahead of the clause 12 quote, by the owner's decision of 2026-10-02 | `src/features/question-bank/**`, `src/features/test-engine/{scoring,score-attempt}.ts`, `src/features/test-engine/queries/attempt-view.ts`, `src/features/analytics/**` (marks reads only), `src/app/admin/mocks/**`, `src/app/admin/questions/**`, new `supabase/migrations/20261002*` | **Built and verified locally; pushed, pull request open.** Migrations applied to the hosted database (owner, 2026-10-02). 556/556 unit tests; on a local production build against the hosted database `mock-import` 26/26 and every neighbouring harness green. Write-up: *Mock-first import with duplicate detection* in `docs/context/completed.md`. Rebased on `main` 2026-10-03, PR #69. Next: review and merge; `feat/exam-screen` stacks on it | 2026-10-03 |
-| Claude (subagent of the owner's session) | `feat/exam-screen` | Based on `feat/mock-import` (PR #69, unmerged). Phase 6 step 6.1 (D11): the exam screen rebuilt -- a section's questions switched in the browser, answers saved in the background, a fullscreen exam layout outside `RoleShell`, the no-JavaScript form path kept. D12: a real pending state on long admin saves. No migration | `src/features/test-engine/components/**`, `src/features/test-engine/actions/attempt-actions.ts`, `src/app/student/attempts/**`, `src/features/question-bank/components/{mock-editor,import-screen,mock-import-screen,pending-overlay}.tsx`, `scripts/verify/test-engine-sit.mjs` | **Built and verified locally; committed, not pushed** (the owner reviews first). `test-engine-sit.mjs` 59/59 with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; neighbouring harnesses green; 556/556 unit tests. **Not clicked through in a real browser.** No migration. Write-up: *The exam screen, 6.1* in `docs/context/completed.md`. Next: owner review and a browser pass; push and open a pull request stacked on PR #69 (or rebase onto `main` once #69 merges) | 2026-10-03 |
+| Claude (subagent of the owner's session) | `feat/exam-screen` | Rebased onto `main` after PR #69 merged (2026-10-08). Phase 6 step 6.1 (D11): the exam screen rebuilt -- a section's questions switched in the browser, answers saved in the background, a fullscreen exam layout outside `RoleShell`, the no-JavaScript form path kept. D12: a real pending state on long admin saves. No migration | `src/features/test-engine/components/**`, `src/features/test-engine/actions/attempt-actions.ts`, `src/app/student/attempts/**`, `src/features/question-bank/components/{mock-editor,import-screen,mock-import-screen,pending-overlay}.tsx`, `scripts/verify/test-engine-sit.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** `test-engine-sit.mjs` 59/59 with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; neighbouring harnesses green; 556/556 unit tests. **Not clicked through in a real browser.** No migration. Write-up: *The exam screen, 6.1* in `docs/context/completed.md`. Next: owner review and the browser click-through (desktop, then a phone) before merge | 2026-10-08 |
 
-**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. `feat/small-items` (Phase 6.5) merged as PR #71 (`a65a9d3`) on 2026-10-09. `feat/exam-screen` (PR #70) is rebased on `main` and in review, gated on the owner's browser click-through.
+**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. The branch is kept on `origin` until `feat/exam-screen`, which was stacked on it, is rebased.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -406,11 +405,11 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 
 ### Phase 6 step 6.1, the exam screen: built, unreviewed
 
-On `feat/exam-screen` (local only, based on `feat/mock-import`). Owed before
+On `feat/exam-screen`, rebased on `main` after PR #69 merged. Owed before
 merge: the owner's review, **a sitting in a real browser with JavaScript** --
 moving between questions, typing and watching "All answers saved", the dialog,
-full screen on Start, the countdown reaching zero -- and a pull request, which
-cannot target `main` until PR #69 merges. See *The exam screen, 6.1*.
+full screen on Start, the countdown reaching zero -- on desktop and then a
+phone. See *The exam screen, 6.1*.
 
 ### Phase 1, one step still unbuilt
 
