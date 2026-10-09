@@ -1105,6 +1105,12 @@ a.button {
     display: none;
   }
 
+  /* On a phone the area name wrapped onto two lines beside the page name.
+     The page name is what matters; the area is in the nav strip above. */
+  .app-breadcrumb > span:not(.app-breadcrumb__here) {
+    display: none;
+  }
+
   .app-content {
     padding: 1.625rem 1rem 4rem;
   }
@@ -3044,4 +3050,209 @@ form.panel > h2:first-child {
   align-items: center;
   display: flex;
   gap: 0.625rem;
+}
+
+/* ActionBoundary (src/shared/ui/action-boundary.tsx): invisible to layout, and
+   while a form's redirect is being followed the screen stays put, dimmed. */
+.action-boundary {
+  display: contents;
+}
+
+.action-boundary[aria-busy="true"] > * {
+  opacity: 0.6;
+  transition: opacity 120ms ease;
+}
+
+/* A programme's progress: the bar, then the count beneath it. */
+.progress-meter {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.progress-meter .step-progress__track {
+  background: var(--cream-deep);
+}
+
+.progress-meter__label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+/* A panel that is one row: no header rule, no empty band under it. */
+.panel--strip {
+  align-items: center;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1.125rem var(--panel-pad);
+}
+
+.panel--strip > .muted {
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+/* A card that is itself the link. */
+.course-card--link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.course-card--link:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.course-card--link h2 {
+  margin-top: 0;
+}
+
+.course-card--link .progress-meter {
+  margin-top: 0.75rem;
+}
+
+.course-card--link .course-card__bottom {
+  color: var(--ink-70);
+  margin-top: 1.25rem;
+}
+
+/* The student home: programmes beside "Next up", as in the prototype. */
+.home-grid {
+  align-items: start;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+}
+
+.home-grid__main,
+.home-grid__side {
+  display: grid;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.section-head {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* The prototype's small uppercase label over a group of cards. */
+.section-label {
+  color: var(--ink-55);
+  font-family: var(--font-sans, inherit);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.section-head__link {
+  font-size: 0.75rem;
+}
+
+.card-grid--stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.next-list {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.next-card {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem;
+}
+
+.next-card > div {
+  min-width: 0;
+}
+
+.next-card h3 {
+  font-size: 1.0625rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.next-card p {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin: 0.375rem 0 0;
+}
+
+@media (max-width: 56.25rem) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The admin overview's compact modules sit two to a line. */
+.module--half {
+  grid-column: auto;
+}
+
+@media (max-width: 44rem) {
+  .module--half {
+    grid-column: 1 / -1;
+  }
+}
+
+/* A mock's facts before it starts: duration, sections, marking, attempts. */
+.fact-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fact-chips li {
+  background: var(--cream-deep);
+  border-radius: var(--r-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.3125rem 0.75rem;
+}
+
+.fact-chips .fact-chips__lead {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.mock-intro__text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mock-intro__rules {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* SubmitButton's way out of a save that never came back. */
+.submit-slow {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.submit-slow__reload {
+  font-size: 0.75rem;
 }

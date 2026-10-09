@@ -73,25 +73,46 @@ export function StudentMockScreen({ error, mock, phone, profile }: { error?: str
   const blockedPhone = phone && !mock.allowMobile;
 
   return (
-    <RoleShell profile={profile} title={mock.title}>
+    <RoleShell back={{ href: "/student/mocks", label: "Back to mock tests" }} profile={profile} title={mock.title}>
       {error && startErrors[error] ? <p className="notice notice--error">{startErrors[error]}</p> : null}
       <section className="panel">
         <div className="panel__header">
           <div>
             <h2>Before you start</h2>
-            <p className="muted">
-              {mock.durationMinutes} minutes · {used} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
-            </p>
+            <p className="muted">Read this once: the clock starts when you press Start.</p>
           </div>
         </div>
-        {mock.instructions ? <p style={{ whiteSpace: "pre-wrap" }}>{mock.instructions}</p> : null}
-        <ul>
+        {/* The paper at a glance, as the approved prototype sets it out. */}
+        <ul aria-label="About this test" className="fact-chips">
+          <li className="fact-chips__lead">{mock.durationMinutes} min</li>
+          {mock.sections.length > 1 ? <li>{mock.sections.length} sections</li> : null}
+          <li>{mock.negativeMarking > 0 ? `−${formatMarks(mock.negativeMarking)} per wrong answer` : "No negative marking"}</li>
+          <li>
+            {used} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
+          </li>
+        </ul>
+        {sectional ? (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>Section</TableHeaderCell>
+                <TableHeaderCell>Time</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {mock.sections.map((section) => (
+                <TableRow key={section.id}>
+                  <TableCell>{section.title}</TableCell>
+                  <TableCell>{section.durationMinutes ? `${section.durationMinutes} min` : "Untimed"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : null}
+        {mock.instructions ? <p className="mock-intro__text">{mock.instructions}</p> : null}
+        <ul className="mock-intro__rules">
           {sectional ? (
-            <li>
-              The sections are timed and sat in order:{" "}
-              {mock.sections.map((section) => `${section.title} (${section.durationMinutes ?? "untimed"}${section.durationMinutes ? " min" : ""})`).join(", ")}.
-              You cannot return to a section once you leave it.
-            </li>
+            <li>The sections above are timed and sat in order. You cannot return to a section once you leave it.</li>
           ) : (
             <li>One timer for the whole paper. You can move between questions freely.</li>
           )}

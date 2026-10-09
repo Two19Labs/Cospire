@@ -14,6 +14,6 @@ export default async function StudentProgrammesPage({
 }) {
   const profile = await requireRole("student");
   const raw = (await searchParams).page;
-  const list = await listStudentProgrammes(parsePageNumber(typeof raw === "string" ? raw : undefined));
+  const list = await listStudentProgrammes(parsePageNumber(typeof raw === "string" ? raw : undefined), profile.id);
   return <StudentProgrammeList {...list} profile={profile} />;
 }

@@ -1,16 +1,10 @@
-import {
-  ShellSkeleton,
-  SkeletonList,
-  SkeletonPanel,
-} from "@/features/auth/components/shell-skeleton";
+import { ShellSkeleton, SkeletonCards } from "@/features/auth/components/shell-skeleton";
 
-// The student's programme list: one panel of rows.
+// The student's programme list: a grid of programme cards with progress.
 export default function Loading() {
   return (
     <ShellSkeleton role="student" title="Programmes">
-      <SkeletonPanel title={false}>
-        <SkeletonList items={3} />
-      </SkeletonPanel>
+      <SkeletonCards items={2} />
     </ShellSkeleton>
   );
 }
