@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-08 (Asia/Calcutta)
+Last updated: 2026-10-09 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -330,7 +330,7 @@ Two operational notes that cost time to rediscover:
 |---|---|---|---|---|---|
 | Claude agent (stream B) | `feat/curriculum` | Phase 2 steps 3, 4, 4b, 5 without video: `curriculum_items`, the builder, programme grants cascading (N11), `item_progress`, the student's programme page | `supabase/migrations/20261008120000_*`, `src/features/curriculum/**`, `src/app/admin/courses/[id]/**`, `src/app/student/programmes/**`, `scripts/verify/curriculum.mjs`; one nav line in `src/features/auth/components/app-nav.tsx` and one link in `src/features/student/components/student-home.tsx` | **Built and verified locally; pull request being opened.** Migration `20261008120000` **applied to the hosted database** (2026-10-08, by the owner's instruction, after a dry run listing only it). Typecheck, lint, 568/568 tests, build pass; `scripts/verify/curriculum.mjs` **35/35** on a local production build against the hosted database, counts back to baseline. `npm run db:types` not yet run (the clients are untyped, nothing depends on it). **Not clicked through in a browser.** Write-up: *Curriculums before video* in `docs/context/completed.md` | 2026-10-08 |
 
-**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. `feat/exam-screen` (PR #70) and `feat/small-items` (PR #71) are rebased on `main` and in review on their own branches.
+**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. `feat/small-items` (Phase 6.5) merged as PR #71 (`a65a9d3`) on 2026-10-09. `feat/exam-screen` (PR #70) is rebased on `main` and in review, gated on the owner's browser click-through.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -624,7 +624,7 @@ Client uses first. The quote and the clause 16.1 written amendment are **still
 owed**; building first does not settle them. Work happens on `feat/mock-import`
 in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
-5. **6.5 Small committed items: built on `feat/small-items`, not yet merged.**
+5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
    Watermark bottom left, viewer full screen, the landscape check, the stale
    Programmes card. Done: watermark drawn once per page as one small bottom-left
    mark; a full-screen button on the document viewer, hidden where the
