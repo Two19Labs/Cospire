@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-08 (Asia/Calcutta)
+Last updated: 2026-10-09 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -330,7 +330,7 @@ Two operational notes that cost time to rediscover:
 |---|---|---|---|---|---|
 | Claude (subagent of the owner's session) | `feat/exam-screen` | Rebased onto `main` after PR #69 merged (2026-10-08). Phase 6 step 6.1 (D11): the exam screen rebuilt -- a section's questions switched in the browser, answers saved in the background, a fullscreen exam layout outside `RoleShell`, the no-JavaScript form path kept. D12: a real pending state on long admin saves. No migration | `src/features/test-engine/components/**`, `src/features/test-engine/actions/attempt-actions.ts`, `src/app/student/attempts/**`, `src/features/question-bank/components/{mock-editor,import-screen,mock-import-screen,pending-overlay}.tsx`, `scripts/verify/test-engine-sit.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** `test-engine-sit.mjs` 59/59 with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; neighbouring harnesses green; 556/556 unit tests. **Not clicked through in a real browser.** No migration. Write-up: *The exam screen, 6.1* in `docs/context/completed.md`. Next: owner review and the browser click-through (desktop, then a phone) before merge | 2026-10-08 |
 
-**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. The branch is kept on `origin` until `feat/exam-screen`, which was stacked on it, is rebased.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -417,11 +417,10 @@ Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
 The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
 not a gate item.
 
-### Phase 2, video still blocked; curriculums built on `feat/curriculum`
+### Phase 2, video still blocked; curriculums merged
 
-Curriculums without video (steps 3, 4, 4b, 5) are built on `feat/curriculum`
-(see Active work): awaiting the owner applying `20261008120000`, the verify
-run, a browser click-through and a PR. **Video is still blocked on VdoCipher**
+Curriculums without video (steps 3, 4, 4b, 5) merged as PR #72 (`b0de34d`),
+verified 35/35; not yet clicked through in a browser. **Video is still blocked on VdoCipher**
 (expected the week of 12 October): the upload pipeline, playback, the `videos`
 table, the `video` branch of `private.validate_curriculum_item` and
 `student_has_programme_item('video', …)` in a video access helper, and
@@ -625,8 +624,7 @@ or read them from the main checkout. In order:
 risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
 was settled with the Client on 1 October, and the import route is what the
 Client uses first. The quote and the clause 16.1 written amendment are **still
-owed**; building first does not settle them. Work happens on `feat/mock-import`
-in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
+owed**; building first does not settle them. Merged as PR #69 (`92df9fc`). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
 5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
    Watermark bottom left, viewer full screen, the landscape check, the stale
