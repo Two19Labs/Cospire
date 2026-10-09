@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          event_type: string
+          id: number
+          ip: unknown
+          meta: Json
+          occurred_at: string
+          org_id: number
+          user_id: string
+        }
+        Insert: {
+          event_type: string
+          id?: never
+          ip?: unknown
+          meta?: Json
+          occurred_at?: string
+          org_id: number
+          user_id: string
+        }
+        Update: {
+          event_type?: string
+          id?: never
+          ip?: unknown
+          meta?: Json
+          occurred_at?: string
+          org_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_user_org_fkey"
+            columns: ["user_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       ars_attempt_grants: {
         Row: {
           created_at: string
@@ -818,6 +863,56 @@ export type Database = {
           },
         ]
       }
+      curriculum_items: {
+        Row: {
+          body: string | null
+          created_at: string
+          gating: string
+          id: number
+          org_id: number
+          ref_id: number | null
+          section_id: number
+          sort_order: number
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          gating?: string
+          id?: never
+          org_id: number
+          ref_id?: number | null
+          section_id: number
+          sort_order?: number
+          title?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          gating?: string
+          id?: never
+          org_id?: number
+          ref_id?: number | null
+          section_id?: number
+          sort_order?: number
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_items_section_fk"
+            columns: ["section_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string
@@ -860,6 +955,57 @@ export type Database = {
           {
             foreignKeyName: "documents_uploader_org_fkey"
             columns: ["uploaded_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      item_progress: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          item_id: number
+          last_position: number | null
+          org_id: number
+          percent: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          item_id: number
+          last_position?: number | null
+          org_id: number
+          percent?: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          item_id?: number
+          last_position?: number | null
+          org_id?: number
+          percent?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_progress_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_progress_student_fk"
+            columns: ["student_id", "org_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id", "org_id"]
@@ -1486,6 +1632,44 @@ export type Database = {
           },
         ]
       }
+      sections: {
+        Row: {
+          course_id: number
+          created_at: string
+          id: number
+          org_id: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: number
+          created_at?: string
+          id?: never
+          org_id: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: number
+          created_at?: string
+          id?: never
+          org_id?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sections_course_fk"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1545,6 +1729,15 @@ export type Database = {
           same_text: boolean
           similarity: number
         }[]
+      }
+      record_activity: {
+        Args: {
+          p_event_type: string
+          p_ip: unknown
+          p_meta?: Json
+          p_user_id: string
+        }
+        Returns: undefined
       }
       save_mock: {
         Args: {
