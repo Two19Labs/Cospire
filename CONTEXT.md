@@ -330,7 +330,7 @@ Two operational notes that cost time to rediscover:
 |---|---|---|---|---|---|
 | Claude (stream C agent) | `feat/admin-gaps` | Worktree `C:\Cospire\Cospire-admin-gaps`, port 3070. Phase 6.6: admin view of every ARS submission; `activity_log` with the concurrent-session and several-location flags; D8 (the mock-first importer opened from an ARS aptitude round, linking its mock) | `src/features/admin/**`, `src/features/ars-review/**`, `src/features/ars/{round-mock.ts,queries/round-import.ts,components/round-builder.tsx}`, `src/features/question-bank/{actions/import-actions.ts,actions/build-mock-actions.ts,components/import-screen.tsx,components/import-review-route.tsx,components/build-mock-panel.tsx,components/mock-editor.tsx}`, `src/features/auth/{guards.ts,record-activity.ts,activity-input.ts,actions/login.ts,actions/logout.ts,queries/get-current-profile.ts,components/app-nav.tsx}`, `src/app/admin/{ars-submissions,activity,mocks/import-paper,questions/import/[batch]}/**`, `supabase/migrations/20261008130000_activity_log.sql`, `scripts/verify/admin-gaps.mjs` | **Built and verified; pull request being opened.** Migration `20261008130000_activity_log.sql` **applied to the hosted database** 2026-10-09 (dry run listed only it). 589/589 unit tests; `scripts/verify/admin-gaps.mjs` **34/34** on a local production build against the hosted database (parts A, B and C), counts back to baseline. `npm run db:types` not yet run. Not clicked through in a browser. Flag thresholds (24 h window, more than 3 addresses, 30 min idle, 10 min throttle) want the owner's confirmation. Write-up: *Admin gaps, 2026-10-08* in `docs/context/completed.md`. Next: owner review and merge | 2026-10-09 |
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1) is PR #70, rebased on `main`, gated on the owner's browser click-through.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -403,10 +403,9 @@ disabling protection on previews.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### Phase 6 step 6.1, the exam screen: built, unreviewed
+### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
-On `feat/exam-screen`, rebased on `main` after PR #69 merged. Owed before
-merge: the owner's review, **a sitting in a real browser with JavaScript** --
+Merged as PR #70 (`9f808b3`) on 2026-10-09. Still owed: the owner's review, **a sitting in a real browser with JavaScript** --
 moving between questions, typing and watching "All answers saved", the dialog,
 full screen on Start, the countdown reaching zero -- on desktop and then a
 phone. See *The exam screen, 6.1*.
