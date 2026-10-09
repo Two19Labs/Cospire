@@ -35,7 +35,7 @@ export function MentorReports({ profile, reports, embedded = false }: { profile:
                   <form action={createReportAction}>
                     <input name="runId" type="hidden" value={row.runId} />
                     <input name="templateId" type="hidden" value={row.templateId} />
-                    <SubmitButton variant="primary">Start {row.templateName}</SubmitButton>
+                    <SubmitButton pendingLabel="Starting…" variant="primary">Start {row.templateName}</SubmitButton>
                   </form>
                 ) : <span className="pill pill--disabled">Admin template needed</span>}
               </article>
@@ -65,5 +65,5 @@ export function MentorReports({ profile, reports, embedded = false }: { profile:
         ) : null}
       </section>
   );
-  return embedded ? content : <RoleShell profile={profile} title="Mentor workspace">{content}</RoleShell>;
+  return embedded ? content : <RoleShell profile={profile} title="Review queue">{content}</RoleShell>;
 }

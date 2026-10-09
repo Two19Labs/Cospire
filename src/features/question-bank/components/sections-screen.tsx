@@ -7,7 +7,7 @@ import { sectionErrors, sectionNotices, type SectionError, type SectionNotice } 
 import type { QuestionSection } from "../queries/list-sections";
 
 // The page heading, shared with the loading skeleton.
-export const sectionsHeading = "A shared structure.";
+export const sectionsHeading = "Question sections";
 
 // The fixed list of sections the analytics group on. Plain forms throughout,
 // so every change here works with scripting off.

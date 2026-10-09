@@ -8,7 +8,7 @@ import { MentorReviewQueue, OfflineRoundQueue } from "@/features/ars-review/comp
 import { listMentorSubmissions, listOfflineRoundsToRecord } from "@/features/ars-review/queries/mentor-submissions";
 import { RoleShell } from "@/features/auth/components/role-shell";
 
-export const metadata: Metadata = { title: "Mentor workspace" };
+export const metadata: Metadata = { title: "Review queue" };
 
 export default async function MentorPage({
   searchParams,
@@ -20,7 +20,7 @@ export default async function MentorPage({
   const page = parsePage(query.page);
   const [reports, submissions, offlineRounds] = await Promise.all([listMentorReports({ page }), listMentorSubmissions(), listOfflineRoundsToRecord()]);
   return (
-    <RoleShell profile={profile} title="Mentor workspace">
+    <RoleShell profile={profile} title="Review queue">
       {query.notice === "offline-recorded" ? <p className="notice notice--success">Off-platform outcome recorded.</p> : null}
       {typeof query.error === "string" ? <p className="notice notice--error">{query.error === "earlier-round-first" ? "Finish the student’s earlier round before recording this outcome." : "That outcome could not be saved."}</p> : null}
       <MentorReviewQueue rows={submissions} />

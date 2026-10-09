@@ -32,7 +32,7 @@ const roleLabels: Record<Profile["role"], string> = {
 };
 
 // The page heading, shared with the loading skeleton so the two cannot drift.
-export const usersHeading = "People, thoughtfully connected.";
+export const usersHeading = "Users";
 
 interface UsersScreenProps {
   error: UserListError | null;

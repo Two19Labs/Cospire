@@ -11,7 +11,7 @@ import type { ActivityScreenData } from "../queries/activity-log";
 
 // Shared with the loading skeleton so the two cannot drift.
 export const activityTitle = "Activity log";
-export const activityHeading = "Who signed in, and anything unusual.";
+export const activityHeading = "Activity log";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 const eventLabels = { active: "Active", sign_in: "Signed in", sign_out: "Signed out" } as const;

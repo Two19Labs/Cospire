@@ -30,7 +30,7 @@ import type { QuestionSection } from "../queries/list-sections";
 import { CopyIds } from "./copy-ids";
 
 // The admin page heading, shared with the loading skeleton.
-export const questionBankHeading = "A stronger question bank.";
+export const questionBankHeading = "Question bank";
 
 // Sage for easy, gold for medium, rust for hard, as the prototype tags them.
 const difficultyTone: Record<string, string> = {

@@ -76,6 +76,13 @@ const modules: Module[] = [
   },
 ];
 
+const compactModules: Pick<Module, "description" | "href" | "icon" | "title" | "tone">[] = [
+  { description: "Every answer and upload students hand in.", href: "/admin/ars-submissions", icon: "queue", title: "ARS submissions", tone: "sage" },
+  { description: "Scores by mock, by student and by topic.", href: "/admin/analytics", icon: "grid", title: "Analytics" },
+  { description: "Who signed in, and anything unusual.", href: "/admin/activity", icon: "queue", title: "Activity log" },
+  { description: "The structure mentors write reports in.", href: "/admin/report-templates", icon: "template", title: "Report templates", tone: "rust" },
+];
+
 const quickActions: { href: string; icon: IconName; label: string }[] = [
   { href: "/admin/questions/new", icon: "plus", label: "Create a question" },
   { href: "/admin/questions/import", icon: "upload", label: "Import questions" },
@@ -98,7 +105,7 @@ export function AdminHome({ profile }: { profile: Profile }) {
           Add a user
         </Link>
       }
-      description="A clear view of your platform. A simple way to keep it moving."
+      description="Every part of the workspace, one click away."
       heading={`Welcome back, ${firstName}.`}
       profile={profile}
       title="Overview"
@@ -107,7 +114,7 @@ export function AdminHome({ profile }: { profile: Profile }) {
         <section aria-labelledby="workspace-title">
           <div className="section-heading">
             <h2 id="workspace-title">Manage your workspace</h2>
-            <p>Everything you need, thoughtfully organised.</p>
+            <p>Content, assessment and people.</p>
           </div>
           <div className="module-grid">
             {modules.map((module) => (
@@ -126,16 +133,19 @@ export function AdminHome({ profile }: { profile: Profile }) {
                 </span>
               </Link>
             ))}
-            <Link className="module module--wide" href="/admin/report-templates">
-              <span className="icon-box icon-box--rust">
-                <Icon name="template" />
-              </span>
-              <div>
-                <h3>Report templates</h3>
-                <p>Give mentor feedback a consistent, considered structure.</p>
-              </div>
-              <Icon name="arrow" />
-            </Link>
+            {/* The day-to-day screens, smaller: a row each, two to a line. */}
+            {compactModules.map((module) => (
+              <Link className="module module--wide module--half" href={module.href} key={module.href}>
+                <span className={iconBoxClass(module.tone)}>
+                  <Icon name={module.icon} />
+                </span>
+                <div>
+                  <h3>{module.title}</h3>
+                  <p>{module.description}</p>
+                </div>
+                <Icon name="arrow" />
+              </Link>
+            ))}
           </div>
         </section>
 
@@ -143,7 +153,7 @@ export function AdminHome({ profile }: { profile: Profile }) {
           <section className="quick">
             <div className="quick__head">
               <h2>Quick actions</h2>
-              <p>A shorter path to the everyday.</p>
+              <p>The tasks you do most.</p>
             </div>
             {quickActions.map((action) => (
               <Link className="quick__link" href={action.href} key={action.label}>
@@ -156,8 +166,8 @@ export function AdminHome({ profile }: { profile: Profile }) {
 
           <section className="guide">
             <p className="eyebrow">A useful starting point</p>
-            <h2>Make room for what comes next.</h2>
-            <p>Set up the essentials for a new learning journey.</p>
+            <h2>Setting up a new batch</h2>
+            <p>Three steps, in this order.</p>
             <ol className="guide__steps">
               <li>
                 <Link href="/admin/courses">Create a programme</Link>
@@ -166,7 +176,7 @@ export function AdminHome({ profile }: { profile: Profile }) {
                 <Link href="/admin/users/new">Add your students</Link>
               </li>
               <li>
-                <Link href="/admin/documents">Organise learning resources</Link>
+                <Link href="/admin/courses">Open the programme and grant them access</Link>
               </li>
             </ol>
           </section>
