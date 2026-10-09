@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-03 (Asia/Calcutta)
+Last updated: 2026-10-08 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,9 +328,11 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (owner's flow session) | `feat/mock-import` | Phase 6 steps 6.2 (marks onto the mock), 6.3 (duplicate detection, no model) and 6.4 (mock-first import wizard). Built at risk ahead of the clause 12 quote, by the owner's decision of 2026-10-02 | `src/features/question-bank/**`, `src/features/test-engine/{scoring,score-attempt}.ts`, `src/features/test-engine/queries/attempt-view.ts`, `src/features/analytics/**` (marks reads only), `src/app/admin/mocks/**`, `src/app/admin/questions/**`, new `supabase/migrations/20261002*` | **Built and verified locally; pushed, pull request open.** Migrations applied to the hosted database (owner, 2026-10-02). 556/556 unit tests; on a local production build against the hosted database `mock-import` 26/26 and every neighbouring harness green. Write-up: *Mock-first import with duplicate detection* in `docs/context/completed.md`. Rebased on `main` 2026-10-03, PR #69. Next: review and merge; `feat/exam-screen` stacks on it | 2026-10-03 |
+| Claude (owner session) | `feat/small-items` | Phase 6.5: watermark one small mark bottom left, document viewer full screen, stale Programmes card removed. No migration | `src/features/documents/components/document-viewer.tsx`, `src/features/curriculum/components/courses-screen.tsx`, `src/app/globals.css`, `scripts/verify/programmes-ars-split.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** Write-up: *Phase 6.5, small committed items* in `docs/context/completed.md`. Next: owner review and merge | 2026-10-08 |
 
-**Every feature branch is merged as of 2026-09-28.**
+**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. The branch is kept on `origin` until `feat/exam-screen`, which was stacked on it, is rebased.
+
+**Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
 `feat/analytics` as PR #65 and `feat/admin-ui` as PR #66 (`fe9e836`); all three
 branches are deleted from `origin`. **Cleaned up on 2026-10-02:** those
@@ -611,8 +613,25 @@ Client uses first. The quote and the clause 16.1 written amendment are **still
 owed**; building first does not settle them. Work happens on `feat/mock-import`
 in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
-5. **6.5 Small committed items**: watermark bottom left, viewer full screen, the
-   landscape check, the stale Programmes card.
+5. **6.5 Small committed items: built on `feat/small-items`, not yet merged.**
+   Watermark bottom left, viewer full screen, the landscape check, the stale
+   Programmes card. Done: watermark drawn once per page as one small bottom-left
+   mark; a full-screen button on the document viewer, hidden where the
+   Fullscreen API is unavailable; the stale "Aptitude preparation: not built
+   yet" card removed from the Programmes page. Typecheck, lint, 537/537 tests
+   and build pass; `verify.mjs` 35/36 and `programmes-ars-split.mjs` 19/19
+   against a local production build and the hosted database, both pre-existing
+   unrelated findings below; real-browser screenshots over Chrome's own
+   DevTools Protocol confirm the watermark and full screen render correctly
+   with the real landscape test PDF. See *Phase 6.5, small committed items* in
+   `docs/context/completed.md`. **Two pre-existing, unrelated findings
+   surfaced and are not fixed here:** a student refused a document gets HTTP
+   200 with a client-side 404 rather than a 404 status, a Next 15 streaming
+   artifact in the route guard this branch never touched; and three
+   `loading-coverage.mjs` checks fail because their `loading.tsx` skeletons
+   don't produce the marker the harness looks for (`/student/documents/[id]`,
+   `/admin/report-templates/import`, `/admin/ars/[id]/rounds/[roundId]`), none
+   of them touched here either. Both are worth a follow-up task.
 6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
    log and flags, bulk CSV once SMTP exists.
 7. **6.7 Real documents** through the paid Gemini path, once billing and their

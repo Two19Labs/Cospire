@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { Button } from "@/shared/ui";
 
 interface DocumentViewerProps {
   fileUrl: string;
@@ -9,37 +11,34 @@ interface DocumentViewerProps {
 
 // Draws the watermark over a page that has already been rendered.
 //
-// Tiled and rotated, so cropping one instance out of a screenshot leaves
-// several others. Low alpha, so the document stays readable -- an unreadable
-// watermark gets worked around, which defeats it more thoroughly than a faint
-// one does.
+// One small mark, bottom left, drawn once per page (D10) -- not the rotated
+// tiling this used to be. The earlier tiling argued that cropping one
+// instance out of a screenshot leaves several others, which is still true: a
+// single corner mark is weaker deterrence, and a crop tight enough to miss
+// the bottom-left corner escapes attribution entirely. The Client asked for
+// the lighter mark anyway because the tiling made the document harder to
+// read, and the owner has a standing action to tell them plainly what this
+// does and does not stop (see CONTEXT.md). The identity text is unchanged --
+// composed server-side in `composeWatermark`, never from anything the client
+// sends -- and the alpha is higher than the old tiling used, because one mark
+// now carries the whole burden of being legible that many tiles used to
+// share.
 function drawWatermark(
   context: CanvasRenderingContext2D,
   width: number,
   height: number,
   text: string,
 ): void {
-  const fontSize = Math.max(13, Math.round(width / 46));
+  const fontSize = Math.max(11, Math.round(width / 70));
+  const padding = Math.round(fontSize * 1.1);
 
   context.save();
-  context.globalAlpha = 0.16;
+  context.globalAlpha = 0.4;
   context.fillStyle = "#0f172a";
   context.font = `${fontSize}px ui-sans-serif, system-ui, sans-serif`;
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.translate(width / 2, height / 2);
-  context.rotate(-Math.PI / 7);
-
-  const stepX = context.measureText(text).width + fontSize * 4;
-  const stepY = fontSize * 7;
-  const reach = Math.ceil(Math.hypot(width, height) / 2);
-
-  for (let y = -reach; y <= reach; y += stepY) {
-    for (let x = -reach; x <= reach; x += stepX) {
-      context.fillText(text, x, y);
-    }
-  }
-
+  context.textAlign = "left";
+  context.textBaseline = "bottom";
+  context.fillText(text, padding, height - padding);
   context.restore();
 }
 
@@ -57,8 +56,47 @@ function drawWatermark(
 // trades real usability for the appearance of security.
 export function DocumentViewer({ fileUrl, watermark }: DocumentViewerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"error" | "loading" | "ready">("loading");
   const [message, setMessage] = useState("Loading the document...");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Most of the gate, not all of it. `document.fullscreenEnabled` is false on
+  // iOS Safari, which has no Fullscreen API at all -- the button is hidden
+  // there rather than shown and left to fail silently on tap.
+  const [fullscreenSupported, setFullscreenSupported] = useState(false);
+
+  useEffect(() => {
+    setFullscreenSupported(
+      typeof document !== "undefined" && document.fullscreenEnabled === true,
+    );
+  }, []);
+
+  useEffect(() => {
+    function handleFullscreenChange(): void {
+      setIsFullscreen(document.fullscreenElement === viewerRef.current);
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const element = viewerRef.current;
+    if (!element) return;
+
+    if (document.fullscreenElement === element) {
+      void document.exitFullscreen();
+    } else {
+      // The whole viewer goes fullscreen, not just the canvas host, so the
+      // exit control and any loading/error message stay visible too. The
+      // watermark needs no separate handling here: it is already painted
+      // into the canvas pixels, so it is on screen in fullscreen exactly
+      // because the canvas is.
+      void element.requestFullscreen();
+    }
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -165,7 +203,18 @@ export function DocumentViewer({ fileUrl, watermark }: DocumentViewerProps) {
   }, [fileUrl, watermark]);
 
   return (
-    <div className="document-viewer">
+    <div className="document-viewer" ref={viewerRef}>
+      {fullscreenSupported ? (
+        <div className="document-viewer__toolbar">
+          <Button
+            className="document-viewer__fullscreen-toggle"
+            onClick={toggleFullscreen}
+            variant="secondary"
+          >
+            {isFullscreen ? "Exit full screen" : "Full screen"}
+          </Button>
+        </div>
+      ) : null}
       {status === "ready" ? null : (
         <p
           aria-live="polite"
