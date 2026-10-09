@@ -20,9 +20,12 @@ export interface ReviewAnswer {
   value: unknown;
 }
 
-export interface MentorSubmissionDetail extends MentorSubmissionRow {
+// `draft` only when the caller asked for drafts: the admin's view of every
+// submission. The mentor's screens never see one.
+export interface MentorSubmissionDetail extends Omit<MentorSubmissionRow, "status"> {
   answers: ReviewAnswer[];
   reviewedAt: string | null;
+  status: "draft" | "reviewed" | "submitted";
 }
 
 export interface OfflineRoundRow {
@@ -110,14 +113,17 @@ export async function listOfflineRoundsToRecord(): Promise<OfflineRoundRow[]> {
   return rows;
 }
 
-export async function getMentorSubmission(id: number): Promise<MentorSubmissionDetail | null> {
+export async function getMentorSubmission(
+  id: number,
+  { includeDrafts = false }: { includeDrafts?: boolean } = {},
+): Promise<MentorSubmissionDetail | null> {
   const supabase = await createServerSupabaseClient();
   const { data: submission, error } = await supabase
     .from("ars_submissions")
     .select("id, round_id, student_id, attempt_no, answer, status, submitted_at, submitted_late, reviewed_at")
     .eq("id", id).maybeSingle();
   if (error) throw new Error(`Unable to load this submission: ${error.message}`);
-  if (!submission || submission.status === "draft") return null;
+  if (!submission || (submission.status === "draft" && !includeDrafts)) return null;
 
   const [roundResult, studentResult] = await Promise.all([
     supabase.from("ars_rounds").select("course_id, name, config, submission_mode").eq("id", submission.round_id).maybeSingle(),
@@ -139,7 +145,7 @@ export async function getMentorSubmission(id: number): Promise<MentorSubmissionD
     isLate: submission.submitted_late === true,
     reviewedAt: submission.reviewed_at,
     roundName: roundResult.data.name,
-    status: submission.status as "reviewed" | "submitted",
+    status: submission.status as MentorSubmissionDetail["status"],
     studentName: studentResult.data?.name ?? "Student",
     submittedAt: submission.submitted_at ?? submission.id.toString(),
   };

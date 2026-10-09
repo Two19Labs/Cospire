@@ -1,9 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { sessionIdFromAccessToken } from "../activity-input";
+import { currentRequestIp, recordActivity } from "../record-activity";
 import { isAppRole, roleHomePath } from "../types";
 
 import type { LoginState } from "./login-state";
@@ -42,6 +45,16 @@ export async function loginAction(
     if (error) {
       failure = "The email or password is incorrect.";
     } else if (data.user) {
+      // The activity log's sign-in row: who, from where (read from the request
+      // headers here, never from the form), and which Auth session.
+      // Written after the response, so it never slows the sign-in.
+      const entry = {
+        eventType: "sign_in" as const,
+        ip: await currentRequestIp(),
+        sessionId: sessionIdFromAccessToken(data.session?.access_token),
+        userId: data.user.id,
+      };
+      after(() => recordActivity(entry));
       // Straight to the role's home rather than through /dashboard, which costs
       // a second full round trip with nothing on screen. Anything unexpected --
       // no profile, inactive, unknown role -- still goes through /dashboard, and

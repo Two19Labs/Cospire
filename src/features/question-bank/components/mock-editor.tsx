@@ -89,6 +89,8 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
           {value ? <input name="mockId" type="hidden" value={value.id} /> : null}
           {notice === "saved" ? <p className="notice notice--success">Mock saved.</p> : null}
           {notice === "built" ? <p className="notice notice--success">Mock built from the paper. Check the settings, then it is ready.</p> : null}
+          {notice === "built-linked" ? <p className="notice notice--success">Mock built from the paper and linked to its ARS round. Check the settings, then it is ready.</p> : null}
+          {notice === "built-link-failed" ? <p className="notice notice--error">The mock was built, but linking it to the ARS round failed. Link it from the round&apos;s own page.</p> : null}
           {notice === "built-grant-failed" ? <p className="notice notice--error">The mock was built, but granting it to the students failed. Grant them below.</p> : null}
           {error && errors[error] ? <p className="notice notice--error">{errors[error]}</p> : null}
 

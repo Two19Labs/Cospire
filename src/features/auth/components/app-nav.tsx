@@ -49,6 +49,7 @@ const navByRole: Record<AppRole, NavGroup[]> = {
       items: [
         { href: "/admin/courses", icon: "book", label: "Programmes", eyebrow: "Learning" },
         { href: "/admin/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
+        { href: "/admin/ars-submissions", icon: "queue", label: "ARS submissions", eyebrow: "Admission readiness" },
         { href: "/admin/questions", icon: "question", label: "Question bank", eyebrow: "Assessment" },
         { href: "/admin/mocks", icon: "test", label: "Mock tests", eyebrow: "Assessment" },
         { href: "/admin/analytics", icon: "grid", label: "Analytics", eyebrow: "Assessment" },
@@ -58,6 +59,7 @@ const navByRole: Record<AppRole, NavGroup[]> = {
       title: "Management",
       items: [
         { href: "/admin/users", icon: "users", label: "Users", eyebrow: "People" },
+        { href: "/admin/activity", icon: "queue", label: "Activity log", eyebrow: "People" },
         { href: "/admin/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
         { href: "/admin/report-templates", icon: "template", label: "Report templates", eyebrow: "Reporting" },
       ],

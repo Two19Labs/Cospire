@@ -31,6 +31,7 @@ export default async function ReviewImportPage({
         notice={typeof query.notice === "string" ? query.notice : null}
         orgId={profile.orgId}
         page={typeof query.page === "string" ? query.page : undefined}
+        roundRefused={query.roundLink === "refused"}
       />
     </RoleShell>
   );

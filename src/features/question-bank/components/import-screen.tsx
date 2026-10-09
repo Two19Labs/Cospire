@@ -137,6 +137,7 @@ function StepTrail({ current }: { current: 1 | 2 | 3 }) {
 export function QuestionImportScreen({
   batches,
   buildMock = false,
+  linkRoundId = null,
   modelAvailable,
   modelLabel,
   notice,
@@ -149,6 +150,9 @@ export function QuestionImportScreen({
   // Opened from Mock tests (D7): the review offers to build a mock from the
   // paper once every question is decided.
   buildMock?: boolean;
+  // Opened from an ARS aptitude round (D8): the mock built at the end links
+  // itself to this round. Only with `buildMock`.
+  linkRoundId?: number | null;
   // Whether the server holds a model key, and what to call the service. No key
   // ever comes near this component -- only whether there is one.
   modelAvailable: boolean;
@@ -239,7 +243,7 @@ export function QuestionImportScreen({
           <WordUploadField onExtracted={setPaper} orgId={orgId} />
           <p className="muted">
             No Word file?{" "}
-            <Link href={`${buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}?paste=1`}>
+            <Link href={`${buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}?paste=1${buildMock && linkRoundId ? `&round=${linkRoundId}` : ""}`}>
               Paste a model&apos;s answer instead
             </Link>
           </p>
@@ -329,6 +333,7 @@ export function QuestionImportScreen({
             <input name="pasted" type="hidden" value={active.pasted} />
             <input name="documentName" type="hidden" value={active.documentName} />
             <input name="buildMock" type="hidden" value={buildMock ? "1" : ""} />
+            {buildMock && linkRoundId ? <input name="roundId" type="hidden" value={linkRoundId} /> : null}
             <FigureInputs figurePaths={figurePaths} />
             <PaperSettings defaultMarks={active.defaultMarks} sections={sections} />
             {problems.length > 0 ? (
