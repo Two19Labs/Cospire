@@ -6,7 +6,7 @@ import type { AppRole, Profile } from "../types";
 
 import { AppNav, PageEyebrow } from "./app-nav";
 import { Icon } from "./icon";
-import { SubmitButton } from "@/shared/ui";
+import { ActionBoundary, SubmitButton } from "@/shared/ui";
 
 // The application shell, in the shape of the approved admin workspace
 // prototype: an ink rail on the left with grouped navigation and the account
@@ -41,7 +41,10 @@ export const roleHomes: Record<AppRole, string> = {
   student: "/student",
 };
 
-export function initialOf(name: string | null | undefined, fallback?: string | null): string {
+export function initialOf(
+  name: string | null | undefined,
+  fallback?: string | null,
+): string {
   return (name || fallback || "?").trim().charAt(0).toUpperCase();
 }
 
@@ -79,7 +82,11 @@ export function RoleShell({
         Skip to main content
       </a>
       <aside className="app-sidebar">
-        <Link aria-label="Cospire home" className="app-brand" href={roleHomes[profile.role]}>
+        <Link
+          aria-label="Cospire home"
+          className="app-brand"
+          href={roleHomes[profile.role]}
+        >
           <span aria-hidden="true" className="app-brand__mark">
             C
           </span>
@@ -137,23 +144,29 @@ export function RoleShell({
         </header>
 
         <main className="app-content" id="main" tabIndex={-1}>
-          <div className="app-content__inner">
-            {back ? (
-              <Link className="back-link" href={back.href}>
-                <Icon name="arrow" />
-                {back.label}
-              </Link>
-            ) : null}
-            <div className="page-intro">
-              <div className="page-intro__text">
-                <PageEyebrow role={profile.role} />
-                <h1>{heading ?? title}</h1>
-                {description ? <p className="page-intro__lede">{description}</p> : null}
+          <ActionBoundary>
+            <div className="app-content__inner">
+              {back ? (
+                <Link className="back-link" href={back.href}>
+                  <Icon name="arrow" />
+                  {back.label}
+                </Link>
+              ) : null}
+              <div className="page-intro">
+                <div className="page-intro__text">
+                  <PageEyebrow role={profile.role} />
+                  <h1>{heading ?? title}</h1>
+                  {description ? (
+                    <p className="page-intro__lede">{description}</p>
+                  ) : null}
+                </div>
+                {actions ? (
+                  <div className="page-intro__actions">{actions}</div>
+                ) : null}
               </div>
-              {actions ? <div className="page-intro__actions">{actions}</div> : null}
+              {children}
             </div>
-            {children}
-          </div>
+          </ActionBoundary>
         </main>
       </div>
     </div>

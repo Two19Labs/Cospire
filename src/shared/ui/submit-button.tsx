@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { classNames } from "@/shared/utils/class-names";
@@ -41,8 +42,9 @@ export function SubmitButton({
   variant = "primary",
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
+  const slow = useSlow(pending);
 
-  return (
+  const button = (
     <button
       // Disabled only while this form is in flight. The double-submit it stops
       // is the one a person makes on purpose, believing the first click missed.
@@ -60,4 +62,34 @@ export function SubmitButton({
       {pending && pendingLabel ? pendingLabel : children}
     </button>
   );
+
+  // A way out when the save has outlived any reasonable wait. The 2026-10-09
+  // UI audit caught Next's client sometimes never following an action's
+  // redirect -- the write had landed, but the button stayed pending for good
+  // (reproduced on the deployed URL; see docs/ui-audit-2026-10-09.md, C2).
+  // A full load of the same address shows the saved state.
+  if (!slow) return button;
+  return (
+    <span className="submit-slow">
+      {button}
+      <a className="submit-slow__reload" href="">
+        Taking too long? Reload
+      </a>
+    </span>
+  );
+}
+
+const slowAfterMs = 8000;
+
+function useSlow(pending: boolean): boolean {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!pending) {
+      setSlow(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setSlow(true), slowAfterMs);
+    return () => window.clearTimeout(timer);
+  }, [pending]);
+  return slow;
 }
