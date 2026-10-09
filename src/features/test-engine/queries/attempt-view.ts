@@ -88,15 +88,28 @@ async function readOutline(supabase: SessionClient, attemptId: number): Promise<
 export async function getAttemptView(attemptId: number): Promise<AttemptView | null> {
   const supabase = await createServerSupabaseClient();
 
-  const { data: attempt, error } = await supabase
-    .from("attempts")
-    .select("id, mock_id, proctored, score, started_at, status, submitted_at, submitted_by")
-    .eq("id", attemptId)
-    .maybeSingle();
+  // Round trips that need only the attempt id go out together with the
+  // attempt itself; only the paper's reads wait for its mock id. The outline
+  // used to be read last, after the questions, which cost a round trip on
+  // every exam screen and result page (UI audit, 2026-10-09).
+  const [attemptResult, enteredResult, responseResult, outline] = await Promise.all([
+    supabase
+      .from("attempts")
+      .select("id, mock_id, proctored, score, started_at, status, submitted_at, submitted_by")
+      .eq("id", attemptId)
+      .maybeSingle(),
+    supabase.from("attempt_sections").select("mock_section_id, started_at, submitted_at").eq("attempt_id", attemptId),
+    supabase
+      .from("attempt_responses")
+      .select("question_id, answer, marked_for_review, is_correct, marks_awarded")
+      .eq("attempt_id", attemptId),
+    readOutline(supabase, attemptId),
+  ]);
+  const { data: attempt, error } = attemptResult;
   if (error) throw new Error(`Unable to read the attempt: ${error.message}`);
   if (!attempt) return null;
 
-  const [mockResult, sectionResult, placedResult, enteredResult, responseResult] = await Promise.all([
+  const [mockResult, sectionResult, placedResult] = await Promise.all([
     supabase
       .from("mocks")
       .select("title, duration_minutes, negative_marking, negative_marking_types, proctoring_enabled")
@@ -108,11 +121,6 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
       .select("question_id, mock_section_id, sort_order")
       .eq("mock_id", attempt.mock_id)
       .order("sort_order"),
-    supabase.from("attempt_sections").select("mock_section_id, started_at, submitted_at").eq("attempt_id", attemptId),
-    supabase
-      .from("attempt_responses")
-      .select("question_id, answer, marked_for_review, is_correct, marks_awarded")
-      .eq("attempt_id", attemptId),
   ]);
   for (const result of [mockResult, sectionResult, placedResult, enteredResult, responseResult]) {
     if (result.error) throw new Error(`Unable to read the paper: ${result.error.message}`);
@@ -138,7 +146,6 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
   // not yet entered are unreadable (20260927110000), so their ids, parents and
   // types come from the outline instead; without it (before that migration)
   // the readable rows are the whole paper anyway.
-  const outline = await readOutline(supabase, attemptId);
   const parentOf = new Map<number, number | null>(
     outline ? outline.map((row) => [row.question_id, row.parent_id]) : rows.map((row) => [row.id, row.parent_id]),
   );

@@ -40,28 +40,24 @@ interface ItemRow {
 export async function getCurriculum(courseId: number): Promise<CurriculumSection[]> {
   const supabase = await createServerSupabaseClient();
 
+  // Sections and their items in one round trip: PostgREST embeds the items
+  // through their foreign key, and RLS still applies to both tables. Measured
+  // 2026-10-09, the four queries this replaced ran one after another and were
+  // most of a programme page's half second.
   const { data: sections, error } = await supabase
     .from("sections")
-    .select("id, title, sort_order")
+    .select("id, title, sort_order, curriculum_items(id, section_id, type, ref_id, title, body, sort_order)")
     .eq("course_id", courseId)
     .order("sort_order")
     .order("id")
-    .limit(200);
+    .order("sort_order", { referencedTable: "curriculum_items" })
+    .order("id", { referencedTable: "curriculum_items" })
+    .limit(200)
+    .limit(2000, { referencedTable: "curriculum_items" });
   if (error) throw new Error(`Unable to load the curriculum: ${error.message}`);
+  if (!sections || sections.length === 0) return [];
 
-  const sectionIds = (sections ?? []).map((section) => section.id as number);
-  if (sectionIds.length === 0) return [];
-
-  const { data: items, error: itemError } = await supabase
-    .from("curriculum_items")
-    .select("id, section_id, type, ref_id, title, body, sort_order")
-    .in("section_id", sectionIds)
-    .order("sort_order")
-    .order("id")
-    .limit(2000);
-  if (itemError) throw new Error(`Unable to load the curriculum items: ${itemError.message}`);
-
-  const rows = (items ?? []) as ItemRow[];
+  const rows = sections.flatMap((section) => (section.curriculum_items ?? []) as ItemRow[]);
   const refIds = (type: CurriculumItemType) =>
     rows.filter((row) => row.type === type && row.ref_id !== null).map((row) => row.ref_id as number);
 
@@ -69,37 +65,27 @@ export async function getCurriculum(courseId: number): Promise<CurriculumSection
   const documentIds = refIds("document");
   const mockIds = refIds("test");
 
-  if (documentIds.length > 0) {
-    const { data, error: docError } = await supabase
-      .from("documents")
-      .select("id, title")
-      .in("id", documentIds);
-    if (docError) throw new Error(`Unable to load document titles: ${docError.message}`);
-    for (const row of data ?? []) titles.set(`document:${row.id}`, row.title as string);
-  }
+  // The two title lookups depend only on the items, not on each other.
+  const [documents, mocks] = await Promise.all([
+    documentIds.length > 0 ? supabase.from("documents").select("id, title").in("id", documentIds) : null,
+    mockIds.length > 0 ? supabase.from("mocks").select("id, title").in("id", mockIds) : null,
+  ]);
+  if (documents?.error) throw new Error(`Unable to load document titles: ${documents.error.message}`);
+  if (mocks?.error) throw new Error(`Unable to load mock titles: ${mocks.error.message}`);
+  for (const row of documents?.data ?? []) titles.set(`document:${row.id}`, row.title as string);
+  for (const row of mocks?.data ?? []) titles.set(`test:${row.id}`, row.title as string);
 
-  if (mockIds.length > 0) {
-    const { data, error: mockError } = await supabase
-      .from("mocks")
-      .select("id, title")
-      .in("id", mockIds);
-    if (mockError) throw new Error(`Unable to load mock titles: ${mockError.message}`);
-    for (const row of data ?? []) titles.set(`test:${row.id}`, row.title as string);
-  }
-
-  return (sections ?? []).map((section) => ({
+  return sections.map((section) => ({
     id: section.id as number,
-    items: rows
-      .filter((row) => row.section_id === section.id)
-      .map((row) => ({
-        body: row.body,
-        id: row.id,
-        refId: row.ref_id,
-        sectionId: row.section_id,
-        sortOrder: row.sort_order,
-        title: row.title ?? titles.get(`${row.type}:${row.ref_id}`) ?? "Unavailable",
-        type: row.type,
-      })),
+    items: ((section.curriculum_items ?? []) as ItemRow[]).map((row) => ({
+      body: row.body,
+      id: row.id,
+      refId: row.ref_id,
+      sectionId: row.section_id,
+      sortOrder: row.sort_order,
+      title: row.title ?? titles.get(`${row.type}:${row.ref_id}`) ?? "Unavailable",
+      type: row.type,
+    })),
     sortOrder: section.sort_order as number,
     title: section.title as string,
   }));
