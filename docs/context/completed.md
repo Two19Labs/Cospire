@@ -8,6 +8,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 |---|---|---|
 | 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
 | 2026-10-08 | **Curriculums before video, Phase 2 steps 3, 4, 4b, 5** (`feat/curriculum`, local commits, not pushed) | `sections`, `curriculum_items` (document, test, text; video refused until the video library), the admin builder on a programme, programme grants cascading to every item (N11), `item_progress` for documents and text, and the student programme page. Typecheck, lint, tests and `next build` pass. **Migration not applied and `scripts/verify/curriculum.mjs` never run**; not clicked through in a browser. See *Curriculums before video* |
+| 2026-10-03 | **The exam screen rebuilt, Phase 6 step 6.1 (D11), and long admin saves given a real loading state (D12)** (`feat/exam-screen`, local, not pushed; based on `feat/mock-import`) | A section arrives in one request and its questions are switched in the browser; answers and mark-for-review save in the background through a new server action; the sitting is a full-viewport exam frame outside `RoleShell`, entered in full screen from the Start and Begin buttons. The no-JavaScript form path is kept. No migration. `test-engine-sit.mjs` **59/59** (49 earlier checks plus 10 new) with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; `analytics` 53/53, `mock-import` 26/26, `ars-aptitude` 14/14, `mock-builder` 19/19; 556/556 unit tests. **Not clicked through in a real browser.** See *The exam screen, 6.1* |
 | 2026-09-28 | **Phase 4, the test engine, merged and deployed** (PR #63, `47beb72`) | Slices 4.1-4.4 and rescoring. All four migrations applied (the last three on 2026-09-28, before the merge); database probes 57/57, 15/15, 9/9 and 15/15 on the applied schema; **49/49 over HTTP against the deployed URL**, rescoring included. 4.5, the scheduled close of abandoned attempts, is not built. See *The test engine* |
 | 2026-09-27 | **Admin workspace re-skin** (PR #66, `fe9e836`, merged 2026-09-28; not clicked through in a browser) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
 | 2026-09-27 | **Analytics, Phase 4 step 5** (PR #65, `566e112`, merged 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
@@ -218,6 +219,73 @@ all pass. Against a local production build (port 3050) and the hosted database:
   route's own page chunk. Worth noting in case a future run hits the same dead
   end: find the chunk by the action's own function name, not just by the route
   folder.
+
+### The exam screen, 6.1, 2026-10-03
+
+Built on `feat/exam-screen`, worktree `C:\Cospire\Cospire-exam-screen`, branched
+from `origin/feat/mock-import` (PR #69) because both touch `attempt-view.ts`.
+
+**What the owner found.** Every move was a whole-form post: save, redirect,
+re-render, and the route's `loading.tsx` skeleton flashing between questions.
+The paper sat inside `RoleShell`, and full screen was only a button.
+
+**What it is now.**
+
+- `AttemptScreen` (server) hands the whole open section -- bodies, options,
+  signed images, saved answers, never a key -- to `ExamSitting` (client) in one
+  response. Sections not yet entered stay unreadable (RLS), so nothing beyond
+  the open section is sent.
+- `ExamSitting` keeps the current question in state and moves with no
+  navigation; `?q=` follows through `history.replaceState`, so a reload opens on
+  the same question. Each change is saved in the background through
+  `saveResponseAction(attemptId, questionId, values, markedForReview)`: choices
+  at once, typing after 800 ms, flushed on every move, on `pagehide` and when the
+  tab is hidden; one queue, so two saves of one answer never land out of order.
+  The bar says "Saving…" / "All answers saved", or that a save failed (retried
+  every 3 s offline). A refused save (clock or section over) refreshes the
+  page from the server.
+- `saveResponseAction` checks every argument's type, writes through the
+  student's own session, reads the question through RLS, validates with the
+  same `readAnswer` as the form, and leaves the clock and the section window to
+  the database triggers. **It reads no time from the browser.**
+- The exam frame (`exam-frame.tsx`) replaces `RoleShell` for every state of a
+  sitting -- question, next section, time up, confirm -- so nothing flashes the
+  application shell. The layout follows Aditya's prototype: ink bar, section
+  tabs, a timer box, question head with type and marking chips, DI passage
+  beside the question, the palette in five statuses (answered, not answered,
+  not visited, marked, answered and marked), submit in gold. "Not visited" is
+  kept in the browser only (no migration): a question with a saved row counts
+  as visited after a reload.
+- Full screen is requested as the Start or Begin form is submitted (a browser
+  allows it only inside a click); the server-action redirect is a client
+  navigation, so it carries into the exam. Proctored attempts keep
+  `ProctorWatch` unchanged (warn and log, never submit); others get an "Enter
+  full screen" button in the bar. A phone attempt is labelled "Unproctored
+  (phone)".
+- The countdown starts from the server's own reading, so it shows the time
+  even before hydration; at zero it still posts the form with `intent=timeup`,
+  which `onSubmit` lets through, so the answer on screen is saved inside the
+  grace and the server moves the paper on.
+- With JavaScript, Submit and Next section open a dialog with counts; its
+  confirm button waits for pending saves. Without it, `?confirm=` pages work
+  as before.
+
+**No-JavaScript path, kept.** The sitting is still one `<form
+action={saveAnswerAction}>`: every button is a submit carrying `goto` or
+`intent`, the inputs carry `name="answer"` and `name="review"`, and the server
+renders the question named by `?q=`. New: `intent=review-next` (mark for review
+and move to the hidden `next`). The harness drives all of it as plain posts.
+
+**D12.** `PendingOverlay` (question bank, client, `useFormStatus`) covers the
+page with a spinner and a sentence while a long form is in flight: Save mock,
+Build this mock (mock import), Read it with Gemini, and Send for review (import
+staging). Renders nothing without JavaScript.
+
+**Not verified:** nothing here has been clicked in a real browser with
+JavaScript -- in-place switching, the debounce, the dialog, full screen on
+Start, and the save-state text are proven only by typecheck, build, and the
+action calls the harness makes. Screenshots are server HTML with scripts
+removed. Not built: per-question time (N5), the scheduled close (4.5, N6).
 
 ### The test engine, 2026-09-26 and 27
 

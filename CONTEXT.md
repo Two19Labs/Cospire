@@ -328,9 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude agent (stream B) | `feat/curriculum` | Phase 2 steps 3, 4, 4b, 5 without video: `curriculum_items`, the builder, programme grants cascading (N11), `item_progress`, the student's programme page | `supabase/migrations/20261008120000_*`, `src/features/curriculum/**`, `src/app/admin/courses/[id]/**`, `src/app/student/programmes/**`, `scripts/verify/curriculum.mjs`; one nav line in `src/features/auth/components/app-nav.tsx` and one link in `src/features/student/components/student-home.tsx` | **Built and verified locally; pull request being opened.** Migration `20261008120000` **applied to the hosted database** (2026-10-08, by the owner's instruction, after a dry run listing only it). Typecheck, lint, 568/568 tests, build pass; `scripts/verify/curriculum.mjs` **35/35** on a local production build against the hosted database, counts back to baseline. `npm run db:types` not yet run (the clients are untyped, nothing depends on it). **Not clicked through in a browser.** Write-up: *Curriculums before video* in `docs/context/completed.md` | 2026-10-08 |
+| Claude (subagent of the owner's session) | `feat/exam-screen` | Rebased onto `main` after PR #69 merged (2026-10-08). Phase 6 step 6.1 (D11): the exam screen rebuilt -- a section's questions switched in the browser, answers saved in the background, a fullscreen exam layout outside `RoleShell`, the no-JavaScript form path kept. D12: a real pending state on long admin saves. No migration | `src/features/test-engine/components/**`, `src/features/test-engine/actions/attempt-actions.ts`, `src/app/student/attempts/**`, `src/features/question-bank/components/{mock-editor,import-screen,mock-import-screen,pending-overlay}.tsx`, `scripts/verify/test-engine-sit.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** `test-engine-sit.mjs` 59/59 with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; neighbouring harnesses green; 556/556 unit tests. **Not clicked through in a real browser.** No migration. Write-up: *The exam screen, 6.1* in `docs/context/completed.md`. Next: owner review and the browser click-through (desktop, then a phone) before merge | 2026-10-08 |
 
-**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. `feat/small-items` (Phase 6.5) merged as PR #71 (`a65a9d3`) on 2026-10-09. `feat/exam-screen` (PR #70) is rebased on `main` and in review, gated on the owner's browser click-through.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -403,17 +403,24 @@ disabling protection on previews.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
+### Phase 6 step 6.1, the exam screen: built, unreviewed
+
+On `feat/exam-screen`, rebased on `main` after PR #69 merged. Owed before
+merge: the owner's review, **a sitting in a real browser with JavaScript** --
+moving between questions, typing and watching "All answers saved", the dialog,
+full screen on Start, the countdown reaching zero -- on desktop and then a
+phone. See *The exam screen, 6.1*.
+
 ### Phase 1, one step still unbuilt
 
 Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
 The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
 not a gate item.
 
-### Phase 2, video still blocked; curriculums built on `feat/curriculum`
+### Phase 2, video still blocked; curriculums merged
 
-Curriculums without video (steps 3, 4, 4b, 5) are built on `feat/curriculum`
-(see Active work): awaiting the owner applying `20261008120000`, the verify
-run, a browser click-through and a PR. **Video is still blocked on VdoCipher**
+Curriculums without video (steps 3, 4, 4b, 5) merged as PR #72 (`b0de34d`),
+verified 35/35; not yet clicked through in a browser. **Video is still blocked on VdoCipher**
 (expected the week of 12 October): the upload pipeline, playback, the `videos`
 table, the `video` branch of `private.validate_curriculum_item` and
 `student_has_programme_item('video', …)` in a video access helper, and
@@ -540,13 +547,9 @@ time otherwise.
 
 ## Next recommended action
 
-**Stream B (`feat/curriculum`), 2026-10-08:** the owner reviews and applies
-`supabase/migrations/20261008120000_curriculum_items_and_programme_cascade.sql`,
-regenerates types, runs `node --env-file=.env.local scripts/verify/curriculum.mjs
-http://127.0.0.1:3060` against a local production build, clicks the builder and
-the student programme page through in a browser, then pushes and opens the PR.
-Three decisions to confirm are listed in *Curriculums before video* in
-`docs/context/completed.md`.
+**The exam screen (6.1, D11/D12) is built on `feat/exam-screen` and waits for
+the owner's review and a browser pass** before it is pushed; it stacks on PR
+#69. See *Phase 6 step 6.1* under Pending.
 
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
@@ -621,8 +624,7 @@ or read them from the main checkout. In order:
 risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
 was settled with the Client on 1 October, and the import route is what the
 Client uses first. The quote and the clause 16.1 written amendment are **still
-owed**; building first does not settle them. Work happens on `feat/mock-import`
-in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
+owed**; building first does not settle them. Merged as PR #69 (`92df9fc`). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
 5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
    Watermark bottom left, viewer full screen, the landscape check, the stale

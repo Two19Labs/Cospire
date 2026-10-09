@@ -35,7 +35,7 @@ export interface AttemptView {
   sections: PaperSection[];
 }
 
-function readOptions(raw: unknown): { id: string; text: string }[] {
+export function readOptions(raw: unknown): { id: string; text: string }[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((entry) =>
     entry && typeof entry === "object" && typeof entry.id === "string" && typeof entry.text === "string"

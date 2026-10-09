@@ -1,0 +1,50 @@
+/* The long-save overlay (D12). Fixed over the page so it shows wherever the
+   form sits; colours come from the global tokens. */
+
+.scrim {
+  background: rgb(250 245 230 / 72%);
+  backdrop-filter: blur(2px);
+  display: grid;
+  inset: 0;
+  place-items: center;
+  position: fixed;
+  z-index: 40;
+}
+
+.card {
+  align-items: center;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, rgb(24 43 80 / 12%));
+  border-radius: var(--r-xl, 14px);
+  box-shadow: 0 24px 90px rgb(24 43 80 / 20%);
+  display: flex;
+  gap: 14px;
+  max-width: 420px;
+  padding: 20px 24px;
+}
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+  border: 3px solid var(--tint-ink, #e9edf4);
+  border-radius: 50%;
+  border-top-color: var(--ink, #182b50);
+  flex: none;
+  height: 28px;
+  width: 28px;
+}
+
+.card strong {
+  display: block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}

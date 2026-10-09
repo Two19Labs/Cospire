@@ -7,6 +7,7 @@ import { SubmitButton } from "@/shared/ui";
 import { saveMockAction } from "../actions/mock-actions";
 import { maxMockSections } from "../mock-form";
 import type { MockEditorValue, PickerQuestion } from "../queries/mock-builder";
+import { PendingOverlay } from "./pending-overlay";
 
 const errors: Record<string, string> = {
   duration: "Section durations must add up exactly to the full mock duration.",
@@ -142,6 +143,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
           <div className="form-bar">
             <Link className="button button--ghost" href="/admin/mocks">Cancel</Link>
             <SubmitButton pendingLabel="Saving…">Save mock</SubmitButton>
+            <PendingOverlay label="Saving the mock…" detail="Every section and question is written in one go. Keep this tab open." />
           </div>
         </form>
 

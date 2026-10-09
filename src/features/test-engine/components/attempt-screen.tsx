@@ -1,16 +1,16 @@
 import Link from "next/link";
 
-import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
 
-import { nextSectionAction, saveAnswerAction, submitAttemptAction } from "../actions/attempt-actions";
+import { nextSectionAction, submitAttemptAction } from "../actions/attempt-actions";
 import { isAnswered } from "../answer";
 import { nextSection, paperState, type PaperItem } from "../paper";
 import type { AttemptView } from "../queries/attempt-view";
 import { AutoSubmit } from "./auto-submit";
-import { Countdown } from "./countdown";
-import { ProctorWatch } from "./proctor-watch";
+import { ExamCard, ExamFrame } from "./exam-frame";
+import { ExamSitting, type Draft, type SittingProps } from "./exam-sitting";
+import { FullscreenOnSubmit } from "./fullscreen";
 import styles from "./exam.module.css";
 
 const errors: Record<string, string> = {
@@ -38,9 +38,12 @@ function Counts({ items, view }: { items: PaperItem[]; view: AttemptView }) {
   );
 }
 
-// Sitting a mock. A Server Component throughout: every move is a form post that
-// saves first, so the paper works with scripting off. The only client pieces
-// are the countdown and the carry-on after time runs out.
+// Sitting a mock, in the exam's own full-viewport frame rather than the
+// application shell. The open section is handed whole to `ExamSitting`, which
+// moves between its questions in the browser and saves in the background; every
+// other state -- time up, the next section, a confirmation -- is a card drawn
+// here on the server. All of it still works as plain form posts with scripting
+// off: `?q=`, `?confirm=` and `?auto=` are read here as before.
 export function AttemptScreen({
   auto,
   confirm,
@@ -60,6 +63,11 @@ export function AttemptScreen({
   const state = paperState(view.sections, view.entered, new Date(view.attempt.startedAt), view.mock.durationMinutes, now);
   const attemptId = view.attempt.id;
   const notice = error && errors[error] ? <p className="notice notice--error">{errors[error]}</p> : null;
+  const frame = (children: React.ReactNode) => (
+    <ExamFrame sub={profile.name} title={view.mock.title}>
+      {children}
+    </ExamFrame>
+  );
 
   const submitForm = (label: string) => (
     <form action={submitAttemptAction} id="submit-form">
@@ -69,39 +77,36 @@ export function AttemptScreen({
   );
 
   if (state.kind === "over") {
-    return (
-      <RoleShell profile={profile} title={view.mock.title}>
+    return frame(
+      <ExamCard eyebrow="The clock has run out">
         {notice}
-        <section className="panel">
-          <h2>Time is up</h2>
-          <p>Your answers were saved as you went. Submit to see your result.</p>
-          <Counts items={view.items} view={view} />
-          {submitForm("Submit and see result")}
-          {auto ? <AutoSubmit formId="submit-form" /> : null}
-        </section>
-      </RoleShell>
+        <h2>Time is up</h2>
+        <p>Your answers were saved as you went. Submit to see your result.</p>
+        <Counts items={view.items} view={view} />
+        {submitForm("Submit and see result")}
+        {auto ? <AutoSubmit formId="submit-form" /> : null}
+      </ExamCard>,
     );
   }
 
   if (state.kind === "enter") {
     const section = view.sections.find((entry) => entry.id === state.sectionId);
-    return (
-      <RoleShell profile={profile} title={view.mock.title}>
+    return frame(
+      <ExamCard eyebrow="Next section">
         {notice}
-        <section className="panel">
-          <h2>Next: {section?.title}</h2>
-          <p>
-            {section?.durationMinutes ? `This section has ${section.durationMinutes} minutes. ` : ""}
-            Its clock starts when you begin it. You cannot return to earlier sections.
-          </p>
-          <form action={nextSectionAction} id="enter-form">
-            <input name="attemptId" type="hidden" value={attemptId} />
-            <input name="sectionId" type="hidden" value={state.sectionId} />
-            <SubmitButton pendingLabel="Opening…">Begin {section?.title}</SubmitButton>
-          </form>
-          {auto ? <AutoSubmit formId="enter-form" /> : null}
-        </section>
-      </RoleShell>
+        <h2>Next: {section?.title}</h2>
+        <p>
+          {section?.durationMinutes ? `This section has ${section.durationMinutes} minutes. ` : ""}
+          Its clock starts when you begin it. You cannot return to earlier sections.
+        </p>
+        <form action={nextSectionAction} id="enter-form">
+          <input name="attemptId" type="hidden" value={attemptId} />
+          <input name="sectionId" type="hidden" value={state.sectionId} />
+          <FullscreenOnSubmit />
+          <SubmitButton pendingLabel="Opening…">Begin {section?.title}</SubmitButton>
+        </form>
+        {auto ? <AutoSubmit formId="enter-form" /> : null}
+      </ExamCard>,
     );
   }
 
@@ -109,183 +114,121 @@ export function AttemptScreen({
   const currentSection = view.sections.find((section) => section.id === state.sectionId) ?? null;
   const following = state.sectionId === null ? null : nextSection(view.sections, state.sectionId);
 
+  // The no-JavaScript confirmation. With scripting on, the sitting draws its own
+  // dialog and never comes here.
   if (confirm === "submit" || confirm === "leave") {
     const leaving = confirm === "leave" && following;
-    return (
-      <RoleShell profile={profile} title={view.mock.title}>
-        <section className="panel">
-          <h2>{leaving ? `Leave ${currentSection?.title}?` : "Submit the test?"}</h2>
-          <p>
-            {leaving
-              ? `You will move to ${following.title} and cannot come back to this section.`
-              : "Once submitted, no answer can be changed."}
-          </p>
-          <Counts items={leaving ? visible : view.items} view={view} />
-          <div className="toolbar">
-            {leaving ? (
-              <form action={nextSectionAction}>
-                <input name="attemptId" type="hidden" value={attemptId} />
-                <input name="sectionId" type="hidden" value={state.sectionId ?? ""} />
-                <SubmitButton pendingLabel="Moving on…">Leave section</SubmitButton>
-              </form>
-            ) : (
-              submitForm("Submit test")
-            )}
-            <Link className="button button--secondary" href={`/student/attempts/${attemptId}`}>
-              Back to the questions
-            </Link>
-          </div>
-        </section>
-      </RoleShell>
-    );
-  }
-
-  const item = visible.find((entry) => entry.number === q) ?? visible[0];
-  if (!item) {
-    return (
-      <RoleShell profile={profile} title={view.mock.title}>
-        <section className="panel">
-          <h2>This section has no questions</h2>
-          {following ? (
+    return frame(
+      <ExamCard eyebrow={leaving ? currentSection?.title : "Final step"}>
+        <h2>{leaving ? `Leave ${currentSection?.title}?` : "Submit the test?"}</h2>
+        <p>
+          {leaving
+            ? `You will move to ${following.title} and cannot come back to this section.`
+            : "Once submitted, no answer can be changed."}
+        </p>
+        <Counts items={leaving ? visible : view.items} view={view} />
+        <div className="toolbar">
+          {leaving ? (
             <form action={nextSectionAction}>
               <input name="attemptId" type="hidden" value={attemptId} />
               <input name="sectionId" type="hidden" value={state.sectionId ?? ""} />
-              <SubmitButton pendingLabel="Moving on…">Go to {following.title}</SubmitButton>
+              <SubmitButton pendingLabel="Moving on…">Leave section</SubmitButton>
             </form>
           ) : (
             submitForm("Submit test")
           )}
-        </section>
-      </RoleShell>
+          <Link className="button button--secondary" href={`/student/attempts/${attemptId}`}>
+            Back to the questions
+          </Link>
+        </div>
+      </ExamCard>,
     );
   }
 
-  const question = view.questions.get(item.questionId);
-  const passage = item.stimulusId === null ? null : view.questions.get(item.stimulusId);
-  const response = view.responses.get(item.questionId);
-  const chosen = selectedValues(response?.answer ?? null);
-  const index = visible.indexOf(item);
-  const previous = visible[index - 1];
-  const next = visible[index + 1];
+  if (visible.length === 0) {
+    return frame(
+      <ExamCard>
+        <h2>This section has no questions</h2>
+        {following ? (
+          <form action={nextSectionAction}>
+            <input name="attemptId" type="hidden" value={attemptId} />
+            <input name="sectionId" type="hidden" value={state.sectionId ?? ""} />
+            <SubmitButton pendingLabel="Moving on…">Go to {following.title}</SubmitButton>
+          </form>
+        ) : (
+          submitForm("Submit test")
+        )}
+      </ExamCard>,
+    );
+  }
+
+  // The whole open section, in one response: bodies, options and images (signed
+  // for ten minutes), never a key. Questions of sections not yet entered are
+  // not readable at all (RLS), so nothing beyond this section is sent.
+  const passages: SittingProps["passages"] = {};
+  const saved: Record<number, Draft> = {};
+  const questions: SittingProps["questions"] = [];
+  for (const item of visible) {
+    const question = view.questions.get(item.questionId);
+    if (item.stimulusId !== null && !passages[item.stimulusId]) {
+      const passage = view.questions.get(item.stimulusId);
+      if (passage) passages[item.stimulusId] = { body: passage.body, imageUrls: passage.imageUrls };
+    }
+    const response = view.responses.get(item.questionId);
+    if (response) saved[item.questionId] = { review: response.markedForReview, values: selectedValues(response.answer) };
+    questions.push({
+      body: question?.body ?? "This question could not be loaded.",
+      id: item.questionId,
+      imageUrls: question?.imageUrls ?? [],
+      marks: question?.marks ?? 0,
+      number: item.number,
+      options: question?.options ?? [],
+      passageId: item.stimulusId,
+      type: question?.type ?? "mcq",
+    });
+  }
+
+  const sequential = state.sectionId !== null;
+  const doneIds = new Set(view.entered.filter((entry) => entry.submittedAt).map((entry) => entry.sectionId));
+  const sections = [...view.sections]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((section) => {
+      const size = view.items.filter((item) => item.sectionId === section.id).length;
+      return {
+        id: section.id,
+        state: !sequential
+          ? ("open" as const)
+          : section.id === state.sectionId
+            ? ("current" as const)
+            : doneIds.has(section.id) || view.entered.some((entry) => entry.sectionId === section.id)
+              ? ("done" as const)
+              : ("upcoming" as const),
+        sub: section.durationMinutes ? `${section.durationMinutes} min` : `${size} Q`,
+        title: section.title,
+      };
+    });
 
   return (
-    <RoleShell profile={profile} title={view.mock.title}>
-      {notice}
-      {view.mock.proctoringEnabled && view.attempt.proctored ? <ProctorWatch attemptId={attemptId} /> : null}
-      <form action={saveAnswerAction} id="question-form">
-        <input name="attemptId" type="hidden" value={attemptId} />
-        <input name="questionId" type="hidden" value={item.questionId} />
-        <input name="current" type="hidden" value={item.number} />
-        <button hidden id="timeup-button" name="intent" tabIndex={-1} type="submit" value="timeup" />
-
-        <div className={styles.bar}>
-          <strong>
-            {currentSection ? `${currentSection.title} · ` : ""}Question {item.number} of {view.items.length}
-          </strong>
-          <Countdown deadline={state.deadline.toISOString()} formId="question-form" serverNow={now.toISOString()} submitterId="timeup-button" />
-        </div>
-
-        <div className={styles.layout}>
-          <section className="panel">
-            {passage ? (
-              <div className={styles.passage}>
-                <p className={styles.body}>{passage.body}</p>
-                {passage.imageUrls.map((url) => (
-                  // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL, not optimisable
-                  <img alt="" className={styles.image} key={url} src={url} />
-                ))}
-              </div>
-            ) : null}
-            {question ? (
-              <>
-                <p className={styles.body}>{question.body}</p>
-                {question.imageUrls.map((url) => (
-                  // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL, not optimisable
-                  <img alt="" className={styles.image} key={url} src={url} />
-                ))}
-                <p className="muted">
-                  {question.marks} mark{question.marks === 1 ? "" : "s"}
-                  {question.type === "mcq_multi" ? " · choose every correct option" : ""}
-                </p>
-                {question.type === "numerical" ? (
-                  <label className="field">
-                    <span className="field__label">Your answer</span>
-                    <input autoComplete="off" className="input" defaultValue={chosen[0] ?? ""} inputMode="decimal" maxLength={50} name="answer" />
-                  </label>
-                ) : (
-                  <div className={styles.options}>
-                    {question.options.map((option) => (
-                      <label className={styles.option} key={option.id}>
-                        <input
-                          defaultChecked={chosen.includes(option.id)}
-                          name="answer"
-                          type={question.type === "mcq_multi" ? "checkbox" : "radio"}
-                          value={option.id}
-                        />
-                        <span className={styles.body}>{option.text}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                <label className="choice">
-                  <input defaultChecked={response?.markedForReview ?? false} name="review" type="checkbox" /> Mark for review
-                </label>
-              </>
-            ) : (
-              <p className="notice notice--error">This question could not be loaded.</p>
-            )}
-
-            <div className="toolbar">
-              {/* First in the form, so Enter in the answer box saves and moves on. */}
-              <button className="button button--primary" name="goto" type="submit" value={next?.number ?? item.number}>
-                {next ? "Save and next" : "Save"}
-              </button>
-              {previous ? (
-                <button className="button button--secondary" name="goto" type="submit" value={previous.number}>
-                  Previous
-                </button>
-              ) : null}
-              <button className="button button--secondary" name="intent" type="submit" value="clear">
-                Clear answer
-              </button>
-            </div>
-          </section>
-
-          <aside className="panel">
-            <h2>{currentSection ? currentSection.title : "Questions"}</h2>
-            <div className={styles.palette}>
-              {visible.map((entry) => {
-                const saved = view.responses.get(entry.questionId);
-                const classes = [
-                  styles.cell,
-                  isAnswered(saved?.answer ?? null) ? styles.answered : "",
-                  saved?.markedForReview ? styles.review : "",
-                  entry === item ? styles.current : "",
-                ].join(" ");
-                return (
-                  <button aria-current={entry === item ? "step" : undefined} className={classes} key={entry.questionId} name="goto" type="submit" value={entry.number}>
-                    {entry.number}
-                  </button>
-                );
-              })}
-            </div>
-            <div className={styles.legend}>
-              <span>Filled: answered</span>
-              <span>Gold ring: for review</span>
-            </div>
-            <div className="toolbar">
-              {following ? (
-                <button className="button button--secondary" name="intent" type="submit" value="leave">
-                  Next section
-                </button>
-              ) : null}
-              <button className="button button--danger" name="intent" type="submit" value="submit">
-                Submit test
-              </button>
-            </div>
-          </aside>
-        </div>
-      </form>
-    </RoleShell>
+    <ExamSitting
+      attemptId={attemptId}
+      deadline={state.deadline.toISOString()}
+      error={error ?? null}
+      following={following?.title ?? null}
+      // Keyed by section, so entering the next one starts a fresh sitting.
+      key={state.sectionId ?? "paper"}
+      name={profile.name}
+      negative={{ marks: view.mock.negativeMarking, types: view.mock.negativeMarkingTypes }}
+      passages={passages}
+      phone={!view.attempt.proctored}
+      proctored={view.mock.proctoringEnabled && view.attempt.proctored}
+      questions={questions}
+      saved={saved}
+      sectionTitle={currentSection?.title ?? null}
+      sections={sections}
+      serverNow={now.toISOString()}
+      startNumber={q ?? visible[0].number}
+      title={view.mock.title}
+      totalCount={view.items.length}
+    />
   );
 }

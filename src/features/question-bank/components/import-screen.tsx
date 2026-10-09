@@ -11,6 +11,7 @@ import { initialQuestionImportState } from "../import-state";
 import { questionTypeLabels } from "../question-input";
 import type { ImportBatchSummary } from "../queries/list-imports";
 import { WordUploadField, type ExtractedPaper } from "./word-upload-field";
+import { PendingOverlay } from "./pending-overlay";
 
 // Import questions: open a Word file, and then either let the platform read it
 // or copy the prompt into a model by hand.
@@ -278,6 +279,7 @@ export function QuestionImportScreen({
                 <FigureInputs figurePaths={figurePaths} />
                 <div className="form-actions">
                   <SubmitButton pendingLabel="Reading the paper…">{`Read it with ${modelLabel}`}</SubmitButton>
+                  <PendingOverlay label={`${modelLabel} is reading the paper…`} detail="This usually takes under a minute. Keep this tab open." />
                 </div>
                 {usage ? (
                   <p className="muted">
@@ -340,6 +342,7 @@ export function QuestionImportScreen({
             ) : null}
             <div className="form-actions">
               <SubmitButton pendingLabel="Comparing with the bank…">{`Send ${items.length} for review`}</SubmitButton>
+              <PendingOverlay label={`Staging ${items.length} questions for review…`} detail="Each is compared with the bank for duplicates. Keep this tab open." />
             </div>
           </form>
           <p>

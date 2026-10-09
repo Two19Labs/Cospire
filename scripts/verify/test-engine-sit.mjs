@@ -1,6 +1,7 @@
 // A student sits a mock end to end, over HTTP, with real session cookies, every
-// step a no-JavaScript form post, and the database read for ground truth after
-// each one. Throwaway accounts only; everything it creates is deleted at the end
+// move a no-JavaScript form post -- plus the exam screen's background save,
+// posted as the browser does, with no navigation -- and the database read for
+// ground truth after each one. Throwaway accounts only; everything it creates is deleted at the end
 // and the live counts are printed against the baseline.
 //
 //   node --env-file=.env.local scripts/verify/test-engine-sit.mjs http://127.0.0.1:3010
@@ -216,6 +217,39 @@ try {
   screen = await get(`/student/attempts/${attemptId}?q=1`, "student");
   check("returning to question 1 shows the saved choice", /value="b"[^>]*checked|checked[^>]*value="b"/.test(screen.body));
 
+  // ---- The exam screen with JavaScript (6.1): the section in one response,
+  // moves in the browser, answers saved in the background by an action call.
+  check("the whole section arrives with question 1: question 2 is in the same response", screen.body.includes(`Half ${stamp}`) && screen.body.includes(`Pick A ${stamp}`));
+  // Judged on the markup drawn, not the inline flight data, which carries every
+  // parent segment's loading skeleton for later client navigations.
+  const drawn = screen.body.replace(/<script[\s\S]*?<\/script>/g, "");
+  check("the exam has its own frame, without the application shell", drawn.includes("Time left") && !drawn.includes("app-sidebar") && !drawn.includes("Sign out"));
+  const saveAction = await findActionId(`/student/attempts/${attemptId}`, "student", "saveResponseAction");
+  const bg = await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [attemptId, q2, ["1/2"], false]);
+  const { data: bgRow } = await service.from("attempt_responses").select("answer, marked_for_review").eq("attempt_id", attemptId).eq("question_id", q2).single();
+  check("a background save is stored without any navigation", bg.status === 200 && bg.body.includes('"ok":true') && bgRow.answer?.value === "1/2" && bgRow.marked_for_review === false, `${bg.status} ${JSON.stringify(bgRow)}`);
+  await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [attemptId, q2, ["1/2"], true]);
+  const { data: bgReview } = await service.from("attempt_responses").select("marked_for_review").eq("attempt_id", attemptId).eq("question_id", q2).single();
+  check("mark for review saves in the background too", bgReview.marked_for_review === true);
+  const reloaded = await get(`/student/attempts/${attemptId}?q=2`, "student");
+  check("a reload mid-section loses no answer: the page shows the background-saved value", /name="answer"[^>]*value="1\/2"|value="1\/2"[^>]*name="answer"/.test(reloaded.body));
+  const badOption = await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [attemptId, q1, ["z"], false]);
+  const tooMany = await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [attemptId, q2, ["1/2", "9"], false]);
+  const notNumbers = await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [String(attemptId), q1, ["a"], false]);
+  const { data: afterBad } = await service.from("attempt_responses").select("question_id, answer").eq("attempt_id", attemptId);
+  check("a background save naming an unknown option, two typed answers, or malformed arguments is refused",
+    [badOption, tooMany, notNumbers].every((r) => r.body.includes('"reason":"invalid"')) && afterBad.find((r) => r.question_id === q1)?.answer?.options?.[0] === "b" && afterBad.find((r) => r.question_id === q2)?.answer?.value === "1/2");
+  await callAction(`/student/attempts/${attemptId}`, "other", saveAction, [attemptId, q1, ["a"], false]);
+  const { data: afterOtherBg } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
+  check("another student's background save changes nothing", afterOtherBg.answer.options[0] === "b");
+  // Put q2 back as the no-JavaScript post left it, so scoring below is unchanged.
+  await callAction(`/student/attempts/${attemptId}`, "student", saveAction, [attemptId, q2, [" .50 "], true]);
+
+  // ---- The same moves with scripting off still work, through the form.
+  const reviewNext = await post(`/student/attempts/${attemptId}`, "student", formWith(screen.body, 'name="questionId"'), [["answer", "b"], ["intent", "review-next"]]);
+  const { data: reviewRow } = await service.from("attempt_responses").select("answer, marked_for_review").eq("attempt_id", attemptId).eq("question_id", q1).single();
+  check("without JavaScript, 'Mark for review and next' saves, marks and moves on", pathOf(reviewNext.location) === `/student/attempts/${attemptId}?q=2` && reviewRow.marked_for_review === true && reviewRow.answer.options[0] === "b", reviewNext.location ?? "");
+
   // ---- Another student.
   {
     const page = await get(`/student/attempts/${attemptId}`, "other");
@@ -257,6 +291,9 @@ try {
   await post(`/student/attempts/${attemptId}`, "student", formWith(screen.body, 'name="questionId"'), [["answer", "a"], ["goto", "2"]]);
   const { data: afterSubmit } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
   check("no answer changes after submitting", afterSubmit.answer.options[0] === "b");
+  const afterSubmitBg = await callAction(attemptPath, "student", saveAction, [attemptId, q1, ["a"], false]);
+  const { data: afterSubmitRow } = await service.from("attempt_responses").select("answer").eq("attempt_id", attemptId).eq("question_id", q1).single();
+  check("nor through a background save", afterSubmitBg.body.includes('"reason":"closed"') && afterSubmitRow.answer.options[0] === "b");
 
   // ---- Rescoring: the admin corrects q1's key to B through the question editor.
   // Needs 20260927090000_test_engine_rescore applied; set SIT_RESCORE=1 once it is.
@@ -298,7 +335,7 @@ try {
   let { data: entered } = await service.from("attempt_sections").select("mock_section_id").eq("attempt_id", sAttempt);
   check("the first section opens on start", entered.length === 1);
   let sScreen = await get(`/student/attempts/${sAttempt}`, "student");
-  check("only the first section's question is on screen", sScreen.body.includes(`Pick A ${stamp}`) && !sScreen.body.includes(`DI child ${stamp}`) && sScreen.body.includes("QA · Question 1"));
+  check("only the first section's question is on screen", sScreen.body.includes(`Pick A ${stamp}`) && !sScreen.body.includes(`DI child ${stamp}`) && sScreen.body.includes("Question 1 of 2") && /aria-current="step"[^>]*>QA</.test(sScreen.body));
   const leave = await post(`/student/attempts/${sAttempt}`, "student", formWith(sScreen.body, 'name="questionId"'), [["answer", "a"], ["intent", "leave"]]);
   check("leaving a section asks for confirmation", pathOf(leave.location) === `/student/attempts/${sAttempt}?confirm=leave`);
   const leavePage = await get(`/student/attempts/${sAttempt}?confirm=leave`, "student");
@@ -306,10 +343,13 @@ try {
   ({ data: entered } = await service.from("attempt_sections").select("mock_section_id, submitted_at").eq("attempt_id", sAttempt));
   check("the first section is closed and the second opened", entered.length === 2 && entered.filter((e) => e.submitted_at).length === 1);
   sScreen = await get(`/student/attempts/${sAttempt}`, "student");
-  check("the DI sub-question shows with its passage, once", sScreen.body.includes(`DI passage ${stamp}`) && sScreen.body.includes(`DI child ${stamp}`) && sScreen.body.includes("DI · Question 2 of 2"));
+  check("the DI sub-question shows with its passage, once", sScreen.body.includes(`DI passage ${stamp}`) && sScreen.body.includes(`DI child ${stamp}`) && sScreen.body.includes("Question 2 of 2") && /aria-current="step"[^>]*>DI</.test(sScreen.body));
   const late = await post(`/student/attempts/${sAttempt}`, "student", formWith(sScreen.body, 'name="questionId"'), [["questionId", q1], ["answer", "b"], ["goto", "1"]]);
   const { data: q1After } = await service.from("attempt_responses").select("answer").eq("attempt_id", sAttempt).eq("question_id", q1).single();
   check("an answer posted into the closed section is refused by the database", (late.location ?? "").includes("error=closed") && q1After.answer.options[0] === "a");
+  const lateBg = await callAction(`/student/attempts/${sAttempt}`, "student", saveAction, [sAttempt, q1, ["b"], false]);
+  const { data: q1AfterBg } = await service.from("attempt_responses").select("answer").eq("attempt_id", sAttempt).eq("question_id", q1).single();
+  check("a background save into the closed section is refused too", !lateBg.body.includes('"ok":true') && q1AfterBg.answer.options[0] === "a");
 
   // ---- Phones.
   const phoneIntro = await get(`/student/mocks/${noPhones}`, "student", PHONE);
