@@ -266,7 +266,7 @@ export function ExamSitting(props: SittingProps) {
         <input name="current" type="hidden" value={question.number} />
         <input name="next" type="hidden" value={next?.number ?? question.number} />
 
-        <div className={styles.main}>
+        <main className={styles.main}>
           <div className={styles.sectionBar}>
             <span className={styles.eyebrow}>Sections</span>
             {props.sections.map((section) => (
@@ -392,7 +392,7 @@ export function ExamSitting(props: SittingProps) {
               </button>
             ) : null}
           </div>
-        </div>
+        </main>
 
         <aside className={styles.side}>
           <div className={styles.who}>
