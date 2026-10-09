@@ -234,8 +234,13 @@ try {
     check("crafted activity rows are written with the server key", !ins.error, ins.error?.message);
 
     const screen = await get("/admin/activity", "admin");
-    const flagsPart = screen.body.split("Sign-ins and sign-outs")[0] ?? "";
-    const otherFlags = flagsPart.split(people.other.name).length - 1;
+    // The heading of the log panel, not the page description above the flags,
+    // which also opens with "Sign-ins and sign-outs".
+    // Scripts are dropped first: the streamed RSC payload repeats every name,
+    // the log's rows included, and some of it arrives before this heading.
+    const html = screen.body.replace(/<script[\s\S]*?<\/script>/g, "");
+    const flagsPart = html.split("<h2>Sign-ins and sign-outs</h2>")[0] ?? "";
+    const otherFlags = (flagsPart.match(/<tr[\s\S]*?<\/tr>/g) ?? []).filter((row) => row.includes(people.other.name)).length;
     check("the admin's screen flags concurrent sessions and several locations",
       screen.status === 200 && otherFlags === 2 && flagsPart.includes("Concurrent sessions") && flagsPart.includes("Several locations"), `${screen.status} flagged rows for other=${otherFlags}`);
     check("one session at a time from one address is not flagged", !flagsPart.includes(people.student.name));

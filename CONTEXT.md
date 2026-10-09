@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-08 (Asia/Calcutta)
+Last updated: 2026-10-09 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,9 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (stream C agent) | `feat/admin-gaps` | Worktree `C:\Cospire\Cospire-admin-gaps`, port 3070. Phase 6.6: admin view of every ARS submission; `activity_log` with the concurrent-session and several-location flags; D8 (the mock-first importer opened from an ARS aptitude round, linking its mock) | `src/features/admin/**`, `src/features/ars-review/**`, `src/features/ars/{round-mock.ts,queries/round-import.ts,components/round-builder.tsx}`, `src/features/question-bank/{actions/import-actions.ts,actions/build-mock-actions.ts,components/import-screen.tsx,components/import-review-route.tsx,components/build-mock-panel.tsx,components/mock-editor.tsx}`, `src/features/auth/{guards.ts,record-activity.ts,activity-input.ts,actions/login.ts,actions/logout.ts,queries/get-current-profile.ts,components/app-nav.tsx}`, `src/app/admin/{ars-submissions,activity,mocks/import-paper,questions/import/[batch]}/**`, `supabase/migrations/20261008130000_activity_log.sql`, `scripts/verify/admin-gaps.mjs` | **Built, committed locally, not pushed, no PR.** Migration `20261008130000_activity_log.sql` written and **not applied**. Harness parts A and C 20/20 on a local production build against the hosted database; part B (activity log, 11 checks) not run until the migration is applied. Flag thresholds (24 h window, more than 3 addresses, 30 min idle, 10 min throttle) want the owner's confirmation. Write-up: *Admin gaps, 2026-10-08* in `docs/context/completed.md`. Next: owner applies the migration, runs `npm run db:types` and part B, then push and PR | 2026-10-08 |
+| Claude (stream C agent) | `feat/admin-gaps` | Worktree `C:\Cospire\Cospire-admin-gaps`, port 3070. Phase 6.6: admin view of every ARS submission; `activity_log` with the concurrent-session and several-location flags; D8 (the mock-first importer opened from an ARS aptitude round, linking its mock) | `src/features/admin/**`, `src/features/ars-review/**`, `src/features/ars/{round-mock.ts,queries/round-import.ts,components/round-builder.tsx}`, `src/features/question-bank/{actions/import-actions.ts,actions/build-mock-actions.ts,components/import-screen.tsx,components/import-review-route.tsx,components/build-mock-panel.tsx,components/mock-editor.tsx}`, `src/features/auth/{guards.ts,record-activity.ts,activity-input.ts,actions/login.ts,actions/logout.ts,queries/get-current-profile.ts,components/app-nav.tsx}`, `src/app/admin/{ars-submissions,activity,mocks/import-paper,questions/import/[batch]}/**`, `supabase/migrations/20261008130000_activity_log.sql`, `scripts/verify/admin-gaps.mjs` | **Built and verified; pull request being opened.** Migration `20261008130000_activity_log.sql` **applied to the hosted database** 2026-10-09 (dry run listed only it). 589/589 unit tests; `scripts/verify/admin-gaps.mjs` **34/34** on a local production build against the hosted database (parts A, B and C), counts back to baseline. `npm run db:types` not yet run. Not clicked through in a browser. Flag thresholds (24 h window, more than 3 addresses, 30 min idle, 10 min throttle) want the owner's confirmation. Write-up: *Admin gaps, 2026-10-08* in `docs/context/completed.md`. Next: owner review and merge | 2026-10-09 |
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1) is PR #70, rebased on `main`, gated on the owner's browser click-through.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -547,9 +547,9 @@ time otherwise.
 
 ## Next recommended action
 
-**The exam screen (6.1, D11/D12) is built on `feat/exam-screen` and waits for
-the owner's review and a browser pass** before it is pushed; it stacks on PR
-#69. See *Phase 6 step 6.1* under Pending.
+**Stream C (`feat/admin-gaps`):** apply `20261008130000_activity_log.sql`, run
+part B of `scripts/verify/admin-gaps.mjs`, open the PR, and have the owner confirm
+the flag thresholds in `src/features/admin/activity-flags.ts`.
 
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
