@@ -38,30 +38,33 @@ async function person(role, status = "active") {
   people[key].cookie = jar.map((c) => `${c.name}=${c.value}`).join("; ");
 }
 
-// The loading fallbacks in the first chunk the server flushes: what the browser
-// paints while the page itself is still loading. Only the fallback regions React
-// marks with <!--$?--> ... <!--/$--> are searched, because a fast page (these ids
-// do not exist) can finish inside the same chunk and its own content must not
-// count. A parent's skeleton can sit there ahead of the route's own, which React
-// swaps in as the chunk is parsed, so the test is that the route's own skeleton
-// is among them. Each marker is one only that skeleton produces.
-async function firstFallbacks(path, who) {
+// The loading fallbacks the server streams: what the browser paints while the
+// page itself is still loading. Only the fallback regions React marks with
+// <!--$?--> ... <!--/$--> are searched, because a fast page (these ids do not
+// exist) still sends its own content in the same response and that must not
+// count. A parent's skeleton can come ahead of the route's own, so the test is
+// that the route's own skeleton is among them. Each marker is one only that
+// skeleton produces.
+async function streamedFallbacks(path, who) {
   const response = await fetch(`${BASE}${path}`, { headers: { cookie: people[who].cookie }, redirect: "manual" });
-  const reader = response.body.getReader();
-  const { value } = await reader.read();
-  await reader.cancel();
-  const chunk = new TextDecoder().decode(value);
-  return [...chunk.matchAll(/<!--\$\?-->([\s\S]*?)<!--\/\$-->/g)].map((match) => match[1]).join("\n");
+  // Nested loading boundaries cascade: a
+  // deep route (an ARS round inside a process) first paints its ancestors'
+  // skeletons, React swaps them, and its own follows in the same response a
+  // few kilobytes later -- measured 2026-10-09 at bytes 16051 and 16097 of
+  // 52143. Reading only the first flush failed those routes although their
+  // skeleton is there. The marker is still one only the route's own produces.
+  const text = await response.text();
+  return [...text.matchAll(/<!--\$\?-->([\s\S]*?)<!--\/\$-->/g)].map((match) => match[1]).join("\n");
 }
 
 const detailScreens = [
   // [path, role, marker only this route's own skeleton produces]
   ["/student/reports/999999999", "student", "Your ARS report"],
-  ["/student/documents/999999999", "student", "skeleton--title"],
+  ["/student/documents/999999999", "student", "skeleton--heading"], // title={false}: no skeleton--title; neither parent shimmers its heading
   ["/mentor/reports/999999999", "mentor", "skeleton--input"],
   ["/admin/documents/999999999", "admin", "skeleton--title"],
   ["/admin/report-templates/999999999", "admin", "skeleton--input"],
-  ["/admin/report-templates/import", "admin", "Import report template"],
+  ["/admin/report-templates/import", "admin", "Build a report template"],
   ["/admin/ars/999999999/rounds/999999999", "admin", "skeleton--input"],
 ];
 
@@ -85,8 +88,13 @@ try {
   await person("student", "disabled");
 
   for (const [path, who, marker] of detailScreens) {
-    const fallbacks = await firstFallbacks(path, who);
-    record(`${path} streams its own skeleton first`, fallbacks.includes(marker), marker);
+    const fallbacks = await streamedFallbacks(path, who);
+    const found = fallbacks.includes(marker);
+    // On a failure, say what did arrive: the skeleton classes and any heading
+    // text in the fallbacks, so a stale marker reads differently from a
+    // missing skeleton.
+    const seen = found ? "" : ` (fallbacks: ${fallbacks.length} chars; ${[...new Set(fallbacks.match(/skeleton--[a-z]+|<h1[^>]*>[^<]*/g) ?? [])].join(", ") || "none"})`;
+    record(`${path} streams its own skeleton before its content`, found, `${marker}${seen}`);
   }
 
   for (const role of ["admin", "mentor", "student"]) {

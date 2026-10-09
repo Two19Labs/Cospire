@@ -328,9 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (stream C agent) | `feat/admin-gaps` | Worktree `C:\Cospire\Cospire-admin-gaps`, port 3070. Phase 6.6: admin view of every ARS submission; `activity_log` with the concurrent-session and several-location flags; D8 (the mock-first importer opened from an ARS aptitude round, linking its mock) | `src/features/admin/**`, `src/features/ars-review/**`, `src/features/ars/{round-mock.ts,queries/round-import.ts,components/round-builder.tsx}`, `src/features/question-bank/{actions/import-actions.ts,actions/build-mock-actions.ts,components/import-screen.tsx,components/import-review-route.tsx,components/build-mock-panel.tsx,components/mock-editor.tsx}`, `src/features/auth/{guards.ts,record-activity.ts,activity-input.ts,actions/login.ts,actions/logout.ts,queries/get-current-profile.ts,components/app-nav.tsx}`, `src/app/admin/{ars-submissions,activity,mocks/import-paper,questions/import/[batch]}/**`, `supabase/migrations/20261008130000_activity_log.sql`, `scripts/verify/admin-gaps.mjs` | **Built and verified; pull request being opened.** Migration `20261008130000_activity_log.sql` **applied to the hosted database** 2026-10-09 (dry run listed only it). 589/589 unit tests; `scripts/verify/admin-gaps.mjs` **34/34** on a local production build against the hosted database (parts A, B and C), counts back to baseline. `npm run db:types` not yet run. Not clicked through in a browser. Flag thresholds (24 h window, more than 3 addresses, 30 min idle, 10 min throttle) want the owner's confirmation. Write-up: *Admin gaps, 2026-10-08* in `docs/context/completed.md`. Next: owner review and merge | 2026-10-09 |
+| Claude (owner session) | `fix/main-faults` | The two faults on `main`: the refused-document check in `verify.mjs`, and `loading-coverage.mjs` at 8/11. Regenerated `src/shared/db/types.ts` after the curriculum and activity-log migrations. No migration, no application code | `scripts/verify/verify.mjs`, `scripts/verify/loading-coverage.mjs`, `src/shared/db/types.ts` (generated) | **Fixed and verified; pull request being opened.** `verify.mjs` 36/36 and `loading-coverage.mjs` 11/11 on a local production build of `main` (`ee1e0e8`) against the hosted database, counts back to baseline. Both were harness faults; nothing leaked. Detail in `docs/context/verification-log.md` | 2026-10-09 |
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) and `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), and `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -546,9 +546,11 @@ time otherwise.
 
 ## Next recommended action
 
-**Stream C (`feat/admin-gaps`):** apply `20261008130000_activity_log.sql`, run
-part B of `scripts/verify/admin-gaps.mjs`, open the PR, and have the owner confirm
-the flag thresholds in `src/features/admin/activity-flags.ts`.
+**Owner, after PRs #69-#73 (2026-10-09):** click through the new exam screen
+(desktop, then a phone), the curriculum builder and a student's programme page,
+and the admin submissions and activity screens on the deployed URL; confirm the
+flag thresholds in `src/features/admin/activity-flags.ts` and the five modelling
+choices listed in PR #72. Next build: video, once VdoCipher access arrives.
 
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
@@ -637,18 +639,12 @@ for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
    unrelated findings below; real-browser screenshots over Chrome's own
    DevTools Protocol confirm the watermark and full screen render correctly
    with the real landscape test PDF. See *Phase 6.5, small committed items* in
-   `docs/context/completed.md`. **Two pre-existing, unrelated findings
-   surfaced and are not fixed here:** a student refused a document gets HTTP
-   200 with a client-side 404 rather than a 404 status, a Next 15 streaming
-   artifact in the route guard this branch never touched; and three
-   `loading-coverage.mjs` checks fail because their `loading.tsx` skeletons
-   don't produce the marker the harness looks for (`/student/documents/[id]`,
-   `/admin/report-templates/import`, `/admin/ars/[id]/rounds/[roundId]`), none
-   of them touched here either. Both are worth a follow-up task.
+   `docs/context/completed.md`. The two findings it surfaced (the refused-document
+   status and `loading-coverage` at 8/11) were harness faults, fixed on
+   `fix/main-faults`.
 6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
-   log and flags, bulk CSV once SMTP exists. **Built on `feat/admin-gaps`
-   2026-10-08 with D8**, not pushed; its migration waits for the owner (see
-   Active work). Bulk CSV still waits for SMTP; the video-watching flag waits
+   log and flags, bulk CSV once SMTP exists. **Merged as PR #73 (`ee1e0e8`)
+   2026-10-09 with D8**, its migration applied, harness 34/34. Bulk CSV still waits for SMTP; the video-watching flag waits
    for video.
 7. **6.7 Real documents** through the paid Gemini path, once billing and their
    files exist.

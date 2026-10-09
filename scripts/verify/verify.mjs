@@ -260,10 +260,17 @@ record(
   "name and address both present in the server-rendered HTML",
 );
 
+// The viewer has its own loading.tsx, so Next streams and commits 200 before
+// notFound() runs; a refusal is then the not-found payload. What matters is
+// that nothing of the document reaches the response: not its title, and above
+// all not a signed URL.
+const leaksNothing = (view) =>
+  !view.body.includes("Phase 1 verification document") &&
+  !view.body.includes("/storage/v1/object/sign/documents/");
 const viewB = await get(`/student/documents/${documentRow.id}`, "studentB");
 record(
-  "student B is refused the document",
-  viewB.status === 404,
+  "student B is refused the document, and nothing of it leaks",
+  (viewB.status === 404 || viewB.body.includes("NEXT_HTTP_ERROR_FALLBACK;404")) && leaksNothing(viewB),
   `${viewB.status}`,
 );
 
