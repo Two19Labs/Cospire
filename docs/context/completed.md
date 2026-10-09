@@ -7,6 +7,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | Date | Work | Result / verification |
 |---|---|---|
 | 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
+| 2026-10-08 | **Curriculums before video, Phase 2 steps 3, 4, 4b, 5** (`feat/curriculum`, local commits, not pushed) | `sections`, `curriculum_items` (document, test, text; video refused until the video library), the admin builder on a programme, programme grants cascading to every item (N11), `item_progress` for documents and text, and the student programme page. Typecheck, lint, tests and `next build` pass. **Migration not applied and `scripts/verify/curriculum.mjs` never run**; not clicked through in a browser. See *Curriculums before video* |
 | 2026-09-28 | **Phase 4, the test engine, merged and deployed** (PR #63, `47beb72`) | Slices 4.1-4.4 and rescoring. All four migrations applied (the last three on 2026-09-28, before the merge); database probes 57/57, 15/15, 9/9 and 15/15 on the applied schema; **49/49 over HTTP against the deployed URL**, rescoring included. 4.5, the scheduled close of abandoned attempts, is not built. See *The test engine* |
 | 2026-09-27 | **Admin workspace re-skin** (PR #66, `fe9e836`, merged 2026-09-28; not clicked through in a browser) | The approved admin prototype applied to the real admin screens: shell, overview, users, programmes, ARS (list, process, round builder, import), question bank (list, editor, sections, import, review), mocks (list, import; the builder by CSS only), documents, report templates, error and 404. No query, action, route or schema change; every form still posts natively. Typecheck, lint, **469/469** tests and build pass; screens photographed from a local production build against the hosted database. Not verified in a real browser with JavaScript. See *The admin workspace re-skin* |
 | 2026-09-27 | **Analytics, Phase 4 step 5** (PR #65, `566e112`, merged 2026-09-28) | Student, admin and mentor analytics over submitted attempts, by section, topic and difficulty. **No migration**: aggregated in TypeScript over paged, indexed reads. `scripts/verify/analytics.mjs` **46/46** against a local production build and the hosted database, counts back to baseline; 11 new unit tests, 503 in all; typecheck, lint and build pass. See *Analytics, 2026-09-27* |
@@ -1436,3 +1437,86 @@ Two things follow, and both are cheap:
 - Navigation: local parent-workspace `C:\Cospire\.vscode\settings.json` hides
   generated/dependency folders and visually nests required root metadata under
   `package.json` without relocating tool-discovered files
+
+## Curriculums before video, 2026-10-08
+
+Stream B of the 8 October plan. Built on `feat/curriculum` (worktree
+`Cospire-curriculum`, port 3060). Nothing here needs VdoCipher.
+
+**Migration** `20261008120000_curriculum_items_and_programme_cascade.sql`,
+**not applied** (the owner applies it):
+
+- `sections` (`org_id`, `course_id`, `title`, `sort_order`), composite FK to
+  `courses (id, org_id)` on delete cascade. A trigger refuses a section on any
+  course whose `kind` is not `programme`.
+- `curriculum_items` (`org_id`, `section_id`, `type`, `ref_id`, `title`,
+  `body`, `sort_order`, `gating`), per manual §4. `type` check already allows
+  `video`; the validation trigger refuses video rows until the `videos` table
+  exists, and checks a document or mock `ref_id` exists in the same
+  organisation. **Text items store their words in `title` and `body` on the
+  item row**: a reading has no life outside the curriculum, so a separate table
+  would add a join and another polymorphic reference for nothing; a check
+  constraint keeps `title`/`body` set only for text and `ref_id` set only for
+  the others. Triggers on `documents` and `mocks` delete items naming a deleted
+  row.
+- **The cascade (N11).** `private.student_has_document_grant` and
+  `private.student_has_mock_grant` are redefined as their original direct-grant
+  body **OR** `private.student_has_programme_item(type, ref_id)`: an active
+  student holding a `resource_type = 'course'` grant (the value programme grants
+  already use) on a course of kind `programme` whose curriculum contains the
+  item. Every existing policy routes through those two helpers, so documents,
+  the viewer's signed-URL mint, mocks, mock sections and questions (via
+  `student_reaches_mock`) and `attempts_insert_own` all follow with no policy
+  rewritten. Item grants still work alone as overrides. Storage: direct reads on
+  the `documents` bucket are admin-only since `20260902201530`; a student's only
+  route to the bytes is the signed URL minted after `documents_select_authorized`
+  returns the row, so the cascade reaches it and no storage policy changes.
+- `item_progress` (`student_id`, `item_id`, `org_id`, `percent`,
+  `last_position`, `completed`, `completed_at`), PK `(student_id, item_id)`.
+  Students insert and update only their own rows, only for document and text
+  items in a programme they hold (`private.student_may_record_progress`);
+  admins and the assigned mentor read; admins delete. **Test completion is
+  derived, not stored**: a test item is complete when the student has a
+  submitted attempt on that mock. Attempts are already the truth, and the cron
+  auto-submit writes with the secret key, so a stored flag would need a trigger
+  on `attempts` to stay right.
+- RLS enabled and forced on all three tables in the same migration, with
+  INSERT, UPDATE and DELETE policies as well as SELECT. Every helper uses
+  `(select auth.uid())` and checks `status = 'active'`.
+
+**Application.** `/admin/courses/[id]` shows the builder only when
+`kind = 'programme'`: add, remove and reorder sections and items (Up/Down
+buttons; a move renumbers the whole list, so a half-finished write still leaves
+a valid order), and add a document or mock from a paginated picker (50 a page)
+or a reading. `/student/programmes`, `/student/programmes/[id]` (ordered
+sections, every item open, progress bar, complete/not started per item) and
+`/student/programmes/[id]/items/[itemId]` (a reading with "Mark as read"), each
+with its own `loading.tsx`. Opening a document posts a form that records
+completion and redirects to the existing viewer (a GET must not write: Next
+prefetches links); a test links to the existing mock screen. New tables are not
+in `src/shared/db/types.ts`; the Supabase clients are untyped, so queries use the
+same `as` narrowing the rest of the repo uses. Regenerate types after applying.
+
+Outside `src/features/curriculum/`: one nav entry in
+`src/features/auth/components/app-nav.tsx` and one link in
+`src/features/student/components/student-home.tsx`.
+
+**To confirm with the owner:**
+
+1. A programme moved to ARS (`kind` changed) keeps its sections but stops
+   cascading immediately. Refusing the move while a curriculum exists is the
+   alternative.
+2. Text items live on `curriculum_items` (`title`, `body`) rather than a
+   `curriculum_texts` table.
+3. `ref_id` stays polymorphic per the manual, validated by trigger. The
+   alternative was nullable `document_id` / `mock_id` / `video_id` columns with
+   real foreign keys.
+
+**Verification.** Typecheck, lint, the unit tests (12 new in
+`src/features/curriculum/curriculum.test.ts`: reorder, parsing, derived test
+completion) and `npx next build` pass. **Not verified:** the migration has
+never run anywhere; `scripts/verify/curriculum.mjs` (cascade opens a granted
+programme's document and mock, wrong student refused, item override alone,
+revoke closes the cascade, disabled student reads nothing, progress write-side
+RLS, section on an ARS process refused, video item refused) is written and
+**never run**; no browser click-through.

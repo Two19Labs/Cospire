@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-08 (Asia/Calcutta)
+Last updated: 2026-10-09 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,9 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (owner session) | `feat/small-items` | Phase 6.5: watermark one small mark bottom left, document viewer full screen, stale Programmes card removed. No migration | `src/features/documents/components/document-viewer.tsx`, `src/features/curriculum/components/courses-screen.tsx`, `src/app/globals.css`, `scripts/verify/programmes-ars-split.mjs` | **Built and verified locally; rebased on `main` 2026-10-08, pull request being opened.** Write-up: *Phase 6.5, small committed items* in `docs/context/completed.md`. Next: owner review and merge | 2026-10-08 |
+| Claude agent (stream B) | `feat/curriculum` | Phase 2 steps 3, 4, 4b, 5 without video: `curriculum_items`, the builder, programme grants cascading (N11), `item_progress`, the student's programme page | `supabase/migrations/20261008120000_*`, `src/features/curriculum/**`, `src/app/admin/courses/[id]/**`, `src/app/student/programmes/**`, `scripts/verify/curriculum.mjs`; one nav line in `src/features/auth/components/app-nav.tsx` and one link in `src/features/student/components/student-home.tsx` | **Built and verified locally; pull request being opened.** Migration `20261008120000` **applied to the hosted database** (2026-10-08, by the owner's instruction, after a dry run listing only it). Typecheck, lint, 568/568 tests, build pass; `scripts/verify/curriculum.mjs` **35/35** on a local production build against the hosted database, counts back to baseline. `npm run db:types` not yet run (the clients are untyped, nothing depends on it). **Not clicked through in a browser.** Write-up: *Curriculums before video* in `docs/context/completed.md` | 2026-10-08 |
 
-**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. The branch is kept on `origin` until `feat/exam-screen`, which was stacked on it, is rebased.
+**`feat/mock-import` (Phase 6.2-6.4) merged as PR #69 (`92df9fc`) on 2026-10-08**; its write-up is in `docs/context/completed.md`. `feat/small-items` (Phase 6.5) merged as PR #71 (`a65a9d3`) on 2026-10-09. `feat/exam-screen` (PR #70) is rebased on `main` and in review, gated on the owner's browser click-through.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -409,12 +409,15 @@ Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
 The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
 not a gate item.
 
-### Phase 2, deferred and still blocked
+### Phase 2, video still blocked; curriculums built on `feat/curriculum`
 
-Video and curriculums. **VdoCipher access has still not arrived** and nothing in
-the phase can start without it. Build it in its own worktree the day access lands.
-If that has not happened by the start of week four, it slips and clause 4.4
-applies — flagged in writing at the time, not at the end.
+Curriculums without video (steps 3, 4, 4b, 5) are built on `feat/curriculum`
+(see Active work): awaiting the owner applying `20261008120000`, the verify
+run, a browser click-through and a PR. **Video is still blocked on VdoCipher**
+(expected the week of 12 October): the upload pipeline, playback, the `videos`
+table, the `video` branch of `private.validate_curriculum_item` and
+`student_has_programme_item('video', …)` in a video access helper, and
+`item_progress` for video (percent, last position).
 
 ### Carried over from Phase 0
 
@@ -537,6 +540,14 @@ time otherwise.
 
 ## Next recommended action
 
+**Stream B (`feat/curriculum`), 2026-10-08:** the owner reviews and applies
+`supabase/migrations/20261008120000_curriculum_items_and_programme_cascade.sql`,
+regenerates types, runs `node --env-file=.env.local scripts/verify/curriculum.mjs
+http://127.0.0.1:3060` against a local production build, clicks the builder and
+the student programme page through in a browser, then pushes and opens the PR.
+Three decisions to confirm are listed in *Curriculums before video* in
+`docs/context/completed.md`.
+
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
 
@@ -613,7 +624,7 @@ Client uses first. The quote and the clause 16.1 written amendment are **still
 owed**; building first does not settle them. Work happens on `feat/mock-import`
 in `C:\Cospire\Cospire-mock-import` (port 3030). The exam-screen reference design
 for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
-5. **6.5 Small committed items: built on `feat/small-items`, not yet merged.**
+5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
    Watermark bottom left, viewer full screen, the landscape check, the stale
    Programmes card. Done: watermark drawn once per page as one small bottom-left
    mark; a full-screen button on the document viewer, hidden where the

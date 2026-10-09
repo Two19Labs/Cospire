@@ -7,8 +7,12 @@ import {
   parseCourseId,
   parseCourseListError,
   parseCourseNotice,
+  parsePageNumber,
 } from "@/features/curriculum/list-params";
+import { parseCurriculumMessage } from "@/features/curriculum/curriculum";
 import { getCourse } from "@/features/curriculum/queries/get-course";
+import { getCurriculum } from "@/features/curriculum/queries/get-curriculum";
+import { listPickerPage } from "@/features/curriculum/queries/list-picker";
 import { listCourseAccess } from "@/features/curriculum/queries/list-course-access";
 
 export const metadata: Metadata = { title: "Programme" };
@@ -38,11 +42,20 @@ export default async function AdminCoursePage({
   const course = await getCourse(courseId);
   if (!course) notFound();
 
-  const students = await listCourseAccess(courseId);
+  const [students, curriculum, documents, mocks] = await Promise.all([
+    listCourseAccess(courseId),
+    getCurriculum(courseId),
+    listPickerPage("documents", parsePageNumber(firstValue(query.documentsPage))),
+    listPickerPage("mocks", parsePageNumber(firstValue(query.mocksPage))),
+  ]);
 
   return (
     <CourseDetail
       course={course}
+      curriculum={curriculum}
+      curriculumMessage={parseCurriculumMessage(firstValue(query.curriculum))}
+      documents={documents}
+      mocks={mocks}
       error={parseCourseListError(firstValue(query.error))}
       notice={parseCourseNotice(firstValue(query.notice))}
       profile={profile}
