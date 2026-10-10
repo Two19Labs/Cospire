@@ -356,3 +356,26 @@ After cleanup: **0 mocks, 0 mock sections, 0 mock questions, 0 questions, 0
 question keys, 0 staged imports, 5 profiles, 2 documents** — and **1 question
 section** (id 39, "QA", created 2026-09-21) and **8 courses**, neither of which
 this run created and neither of which it may delete.
+
+## ui-audit-*.mjs — the UI audit tooling
+
+Written for `docs/ui-audit-2026-10-09.md`; rerun them to re-measure. Run in
+this order against a production build on port 3090 (`state.json` holds live
+session cookies and the run's password, so it stays under `coverage/`):
+
+```bash
+node --env-file=.env.local scripts/verify/ui-audit-fixture.mjs setup coverage/ui-audit/state.json http://127.0.0.1:3090
+# restart next start with the trace preloaded, for honest cold numbers and call counts:
+UI_AUDIT_TRACE=coverage/ui-audit/trace.ndjson NODE_OPTIONS="--import ./scripts/verify/ui-audit-trace.mjs" npx next start -p 3090
+node --env-file=.env.local scripts/verify/ui-audit-latency.mjs coverage/ui-audit/state.json <label>
+node --env-file=.env.local scripts/verify/ui-audit-browser.mjs coverage/ui-audit/state.json <label> all
+node --env-file=.env.local scripts/verify/ui-audit-flows.mjs   coverage/ui-audit/state.json <label>   # ONLY=<regex> to rerun some
+node --env-file=.env.local scripts/verify/ui-audit-fixture.mjs teardown coverage/ui-audit/state.json
+```
+
+`ui-audit-cdp.mjs` launches its own headless Chrome with a throwaway profile
+under `coverage/` and kills it on close; it never attaches to another browser.
+The flows write rows (an attempt, a user, grants, a mock) and are not
+idempotent: run them once per fixture. Teardown removes only what `state.json`
+names, plus every grant its admin made or that points at its records, and
+prints the live counts against the baseline setup recorded.
