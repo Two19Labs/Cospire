@@ -18,79 +18,53 @@ this file and not found here is in one of these; find it with
 | `docs/context/verification-log.md` | Every check run, with its result |
 | `docs/decisions/` | Decision statements from flow sessions with the owner. **Untracked**: whether to commit them is open (N13), so they exist only in the main checkout |
 
-## Status, 2026-10-02
+## Status, 2026-10-10
 
-- **Phase 6 is next**: the exam screen and mock-first import, before video. Its
-  plan and targets are *Phase 6* in `docs/implementation-plan.md`; the decisions
-  it builds are D7–D24 in `docs/decisions/2026-10-02-decision-statement.md`,
-  which continues the 28 September file. **Nothing in it is built.**
-- **The owner sat a mock on the deployed URL on 2026-10-01.** It scored
-  correctly, but the exam was poor to sit: a blank skeleton between every
-  question, because each move is a full form submission and server render, and
-  no full-screen layout. The import prompt is also hidden whenever a paper has
-  pictures and a Gemini key is configured. All three are in scope; the exam
-  comes first (D11).
-- **Client call, 2026-10-01** (*The status call* in `docs/context/meetings.md`):
-  - marks move to the mock (D19, verbal only; needs a written line)
-  - the duplicate rule is accepted
-  - the Client will pay for Gemini billing
-  - 200–300 question documents with no metadata
-  - five sections
-  - an Excel export promised
-  - AntiDeploy floated in place of Vercel
-  - their consolidated change list comes over the weekend, with a meeting on
-    4 or 5 October
-- **Synthetic test papers** for manual runs are in `C:\Cospire\Test Documents\`
-  (outside git). Its `README.md` maps each file to a screen; paper B is the
-  duplicate-detection test set.
+- **Everything built is merged to `main` and deployed** at
+  `https://cospire-roan.vercel.app` (`main` at `8137089`). No feature branch
+  is open; `main` is the only branch on `origin`.
+- **Built and verified (local production builds against the hosted
+  database):**
+  - users, roles, access granting; the document library and protected viewer
+    (watermark bottom left, full screen)
+  - the question bank: authoring, Word upload with pictures, paste-a-prompt and
+    Gemini import, the mock-first import wizard, duplicate detection with no
+    model, marks on the mock, readable IDs and ID-list mocks
+  - the test engine: server-authoritative timer, sections, negative marking per
+    type, phone attempts unproctored, warn-and-log proctoring, scoring,
+    rescoring; the rebuilt exam screen (PR #70)
+  - analytics for students, mentors and admins
+  - ARS: the round engine, private uploads, the mentor queue and reports, the
+    process importer, the aptitude round linked to a mock and opening the
+    importer (D8)
+  - **curriculums without video** (PR #72): sections and ordered items
+    (document, test, text) on a programme, the admin builder, programme grants
+    cascading to every item, `item_progress`, the student programme pages
+  - **admin gaps** (PR #73): every ARS submission for admins, `activity_log`
+    with concurrent-session and several-location flags
+  - **the UI audit and cleanup** (PR #75): no blank page after saves
+    (`src/shared/ui/action-boundary.tsx`), 268 to 203 ms average server time,
+    the prototype's student home. Report: `docs/ui-audit-2026-10-09.md`
+- **Both 2026-10-08 migrations are applied** (`20261008120000` curriculum,
+  `20261008130000` activity log); `main` and the database are in step, and
+  `src/shared/db/types.ts` is regenerated (PR #74).
+- **Open defect C2** (UI audit): a save sometimes never completes on screen
+  although the server finished it (about 40% of "Remove access" locally, 2 of 4
+  on the deployed URL). Stopgap: "Taking too long? Reload" after 8 s. Real fix
+  is the owner's call: a Next patch upgrade, or saves returning state instead
+  of redirecting.
+- **Not built:** video (VdoCipher credentials expected the week of 12 October),
+  bulk CSV creation (SMTP), closing abandoned attempts on a schedule (N6),
+  content migration and handover.
+- **Never clicked through in a real browser:** the new exam screen, the
+  curriculum builder and student programme pages, the admin submissions and
+  activity screens, the new student home.
+- **Blocked on the Client:** VdoCipher, Supabase Pro (overdue: ARS uploads are
+  live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
+  content, and the written amendment for clause 12 work already built.
 
-## Status, 2026-09-28
-
-- **On `main` and deployed** at `https://cospire-roan.vercel.app` (`main` at
-  `092d878`):
-  - Phase 0 and Phase 1: users, access granting, the document library and the
-    protected viewer. Bulk CSV creation is the one Phase 1 step unbuilt, blocked
-    on custom SMTP.
-  - Phase 5a, ARS, complete (exit gate 28/28 on the deployed URL, 2026-09-20):
-    programmes, rounds, submissions, private uploads, the mentor queue,
-    off-platform rounds, the ARS report and both paste-a-prompt importers.
-  - Phase 3, the question bank: authoring, paste-a-prompt import, Word upload
-    with pictures (PR #58), the Gemini path (PR #58; live round trip
-    UNVERIFIED, see below), the admin mock builder, and mocks built from
-    documents quoting question IDs (PR #61, 29/29 on the deployed URL).
-- **Phase 4, the test engine, is merged and deployed** (PR #63, `47beb72`,
-  2026-09-28) and verified **49/49 against the deployed URL**, rescoring
-  included. Slices 4.1 (attempt tables and guards), 4.2
-  (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
-  Attempts panel) and rescoring after a key correction. **All four of its migrations are applied to the hosted database** (the last three on
-  2026-09-28, with the owner's approval); database probes 57/57, 15/15, 9/9 and 15/15
-  against the applied schema. **4.5, closing abandoned attempts on a
-  schedule, is not built** -- a `pg_cron` job was refused by the agent's
-  permission classifier as unauthorised persistence and waits for the owner's
-  decision. Until then an abandoned attempt is closed as the timer's when its
-  student next opens it. Details: *The test engine* in
-  `docs/context/completed.md`.
-- **The admin re-skin to the Client's prototype is merged and deployed** (PR
-  #66, `fe9e836`, 2026-09-28), with the ARS aptitude round linked to a mock.
-  **Nobody has clicked through it in a browser**: the owner chose to merge it
-  on screenshots, so a visual pass on the deployed URL is still owed.
-- **Everything built is on `main` and deployed, as of 2026-09-28.** No feature
-  branch is open. On the deployed URL: `test-engine-sit.mjs` 49/49,
-  `analytics.mjs` 53/53, `ars-aptitude.mjs` 14/14.
-- **Analytics (Phase 4 step 5) is merged and deployed** (PR #65, `566e112`,
-  2026-09-28): student, admin and mentor views over submitted attempts, 53/53
-  on a local production build. **Two owner decisions remain open**: Recharts
-  (the bars are CSS) and replacing the server-key read of paper structure for
-  students and mentors with narrow RLS policies (a migration).
-- **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
-  has no billing enabled, so it runs on the free tier at five requests a minute.
-  Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
-- **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
-  Supabase Pro, Vercel Pro. See *External blockers*.
-- **1 October:** the Client was promised a tested mock engine. **It is on the
-  deployed URL and verified there** (2026-09-28). A clause 4.4 notice drafted
-  earlier at `docs/client/2026-10-01-delivery-notice.md` (untracked, unsent) is
-  now for the owner to send, revise or drop.
+Superseded status snapshots (2026-09-28 and 2026-10-02) are in
+`docs/context/phase-history.md`.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -207,6 +181,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Proctoring violation | Warn and log; never auto-submit |
 | Negative marking | Per mock and question type; defaults to MCQ types, not TITA |
 | Curriculum model | Ordered mixed `curriculum_items`, not a lessons-only model |
+| Programme grants (N11) | A programme grant opens every item in that programme's curriculum; individual item grants still work on their own (owner, 2026-10-08) |
+| Where programme items appear | Also in the student's Documents and Mock tests lists, next to items granted directly ("keep both", owner, 2026-10-09) |
 | ARS model | One data-driven round engine with text, file, and form modes |
 | Mobile mocks | Phone attempts are permanently unproctored; mock can disallow phones |
 | Timing | Server-authoritative, including sectional timing |
@@ -328,9 +304,8 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (UI audit agent) | `feat/ui-cleanup` | Full UI audit and cleanup, every role and screen: measured latency, real-browser click timings, task flows, craft and accessibility, then fixes by area. No migration, no `package.json` change, no business-logic change | `src/app/**` (presentation only), `src/features/*/components/**`, `src/shared/ui/**`, `src/app/globals.css`, `scripts/verify/ui-audit-*.mjs`, `docs/ui-audit-2026-10-09.md` | **Done, local commits, not pushed, no PR.** Audit and before/after tables in `docs/ui-audit-2026-10-09.md`. Fixed: blank page after every save (C1), slogan headings, student home per the prototype, programme page 505 → 195 ms; mean warm route 268 → 203 ms. **Open: C2**, Next's client sometimes never follows a save's redirect (button stays pending; reproduced on the deployed URL), mitigated with a reload link after 8 s. Every required check script passes on the final build; counts back to baseline. Write-up in `docs/context/completed.md` | 2026-10-10 |
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`), and `fix/main-faults` (both `main` faults were check faults; types regenerated) as PR #74 (`783aac8`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`), `fix/main-faults` (both `main` faults were check faults; types regenerated) as PR #74 (`783aac8`), and `feat/ui-cleanup` (the UI audit and cleanup) as PR #75 (`8137089`). **No feature branch is open.** Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -546,17 +521,25 @@ time otherwise.
 
 ## Next recommended action
 
-**Owner, on `feat/ui-cleanup` (2026-10-10):** review the seven local commits
-and `docs/ui-audit-2026-10-09.md`, open the PR when content, and decide C2 (a
-Next patch upgrade or saves returning state instead of redirecting). In a
-headed browser: save something on an admin screen (it should dim, not blank),
-the new student home, a phone width.
+**As of 2026-10-10, in order:**
 
-**Owner, after PRs #69-#73 (2026-10-09):** click through the new exam screen
-(desktop, then a phone), the curriculum builder and a student's programme page,
-and the admin submissions and activity screens on the deployed URL; confirm the
-flag thresholds in `src/features/admin/activity-flags.ts` and the five modelling
-choices listed in PR #72. Next build: video, once VdoCipher access arrives.
+1. **Owner, in a real browser on the deployed URL:** sit a mock on the new exam
+   screen (desktop, then a phone); build a curriculum and work through it as a
+   student; save on an admin screen a few times ("Grant access", "Remove
+   access": it should dim, never blank; note whether C2 happens); the new
+   student home at phone width; the admin submissions and activity screens.
+2. **Owner decisions:** C2 (Next patch upgrade, or saves returning state); the
+   activity-flag thresholds in `src/features/admin/activity-flags.ts` (24 h,
+   more than 3 addresses, 30 min idle); the five modelling choices listed in
+   PR #72; N6 (`pg_cron` or Vercel Cron); N1-N3, N10, N12, N13.
+3. **Video, the day VdoCipher access arrives:** one real video end to end first
+   (upload, `videos` row with processing status, server-side OTP after the
+   access check, per-viewer watermark, a copied link failing in a second
+   browser), then the video library, `video` as a curriculum item type
+   (`private.validate_curriculum_item` refuses it today), playback and
+   `item_progress` for video, and the video-watching flag.
+4. **Chase the Client:** VdoCipher, Supabase Pro, Vercel Pro, SMTP, Gemini
+   billing, their content, the written amendment.
 
 **First, three things that are not code**, from the meetings of 2026-09-16 and
 2026-09-21:
