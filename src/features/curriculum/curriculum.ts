@@ -1,3 +1,5 @@
+import { normaliseTitle as tidyTitle } from "@/shared/utils/normalise-title";
+
 // Pure rules for the curriculum builder and the student's programme page.
 //
 // Kept out of `queries/` and `actions/` because those are `server-only`, which
@@ -35,7 +37,7 @@ export function parseDirection(raw: unknown): "up" | "down" | null {
 // Mirrors the database checks, so an admin gets a sentence rather than a 23514.
 export function normaliseTitle(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
-  const title = raw.replace(/\s+/g, " ").trim();
+  const title = tidyTitle(raw);
   return title.length > 0 && title.length <= 200 ? title : null;
 }
 

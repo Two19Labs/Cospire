@@ -1,3 +1,5 @@
+import { normaliseTitle } from "@/shared/utils/normalise-title";
+
 // Validation for report-template authoring.
 //
 // Pure, and kept out of `queries/` and `actions/` for the reason the rounds
@@ -27,13 +29,13 @@ function asText(raw: FormDataEntryValue | null): string {
 }
 
 export function validateTemplateName(raw: FormDataEntryValue | null): string | null {
-  const name = asText(raw);
+  const name = normaliseTitle(asText(raw));
   if (!name || name.length > templateNameMaxLength) return null;
   return name;
 }
 
 export function validateComponentTitle(raw: FormDataEntryValue | null): string | null {
-  const title = asText(raw);
+  const title = normaliseTitle(asText(raw));
   if (!title || title.length > componentTitleMaxLength) return null;
   return title;
 }

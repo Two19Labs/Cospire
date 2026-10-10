@@ -135,7 +135,9 @@ describe("text fields", () => {
     expect(validateTemplateName("")).toBeNull();
     expect(validateTemplateName("   ")).toBeNull();
     expect(validateTemplateName("x".repeat(121))).toBeNull();
-    expect(validateComponentTitle("x".repeat(120))).toBe("x".repeat(120));
+    // Names and titles are saved with their first letter capitalised.
+    expect(validateComponentTitle("x".repeat(120))).toBe(`X${"x".repeat(119)}`);
+    expect(validateTemplateName("  final  assessment ")).toBe("Final assessment");
   });
 
   it("defaults the metric heading instead of refusing it", () => {

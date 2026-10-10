@@ -1,3 +1,5 @@
+import { normaliseTitle } from "@/shared/utils/normalise-title";
+
 // Validation for everything an admin types about a programme.
 //
 // The bounds here match the check constraints in
@@ -39,7 +41,7 @@ export function validateNewCourse(input: {
 }): NewCourseValidation {
   const errors: NewCourseFieldErrors = {};
 
-  const title = typeof input.title === "string" ? input.title.trim() : "";
+  const title = typeof input.title === "string" ? normaliseTitle(input.title) : "";
   if (!title) {
     errors.title = "Give the programme a name.";
   } else if (title.length > courseTitleMaxLength) {

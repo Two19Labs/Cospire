@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import { buildRoundsHref, parseRoundId } from "../list-params";
 import { parseImportedProcess } from "../import-spec";
 import { initialImportState, type ImportState } from "../import-state";
+import { normaliseTitle } from "@/shared/utils/normalise-title";
 
 // Reading a pasted process, and then writing it.
 //
@@ -138,7 +139,7 @@ export async function createImportedProcessAction(
       config: round.config,
       course_id: courseId,
       due_at: round.dueAt,
-      name: round.name,
+      name: normaliseTitle(round.name),
       opens_at: round.opensAt,
       org_id: admin.orgId,
       requires_review: round.requiresReview,

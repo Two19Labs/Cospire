@@ -5,6 +5,7 @@
 // and the injection guards below are exactly what must stay testable.
 
 import { difficulties, questionTypes, type Difficulty, type QuestionType } from "./question-input";
+import { normaliseTitle } from "@/shared/utils/normalise-title";
 
 export const questionsPageSize = 25;
 
@@ -157,6 +158,6 @@ export function buildSectionsHref(state: { error?: SectionError; notice?: Sectio
 
 export function normaliseSectionName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
-  const name = raw.trim().replace(/\s+/g, " ");
+  const name = normaliseTitle(raw);
   return name !== "" && name.length <= 60 ? name : null;
 }

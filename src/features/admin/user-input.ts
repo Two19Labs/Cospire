@@ -1,4 +1,5 @@
 import { isAppRole, type AppRole } from "@/features/auth/types";
+import { normaliseTitle } from "@/shared/utils/normalise-title";
 
 // Pure validation, deliberately free of any database or network call.
 //
@@ -60,7 +61,7 @@ export function validateNewUser(raw: {
 }): NewUserValidation {
   const errors: NewUserFieldErrors = {};
 
-  const name = typeof raw.name === "string" ? normalizeName(raw.name) : "";
+  const name = typeof raw.name === "string" ? normaliseTitle(raw.name) : "";
   if (!name) errors.name = "Enter a name.";
   else if (name.length > 120) errors.name = "Use 120 characters or fewer.";
 
