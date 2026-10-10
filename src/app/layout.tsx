@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree } from "next/font/google";
+import { Figtree, Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
@@ -12,13 +12,22 @@ import "./globals.css";
 // there is no layout shift on a slow connection at a coaching centre. And the
 // deployment has one fewer external dependency that can be slow or blocked.
 //
-// Weights are exactly the three the prototype uses. It declares 700 as well,
-// but every heading in the design is set in the serif, so 700 would ship bytes
-// nothing renders.
-const figtree = Figtree({
+// Inter, body and headings alike (2026-10-10, pending the Client's approval).
+// Figtree, the earlier body face, is still loaded but never preloaded: the
+// browser fetches it only when `data-font="original"` applies it, which only
+// the development-only switch does. globals.css maps both onto --font-sans.
+const inter = Inter({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
+
+const figtree = Figtree({
+  display: "swap",
+  preload: false,
+  subsets: ["latin"],
+  variable: "--font-figtree",
   weight: ["400", "500", "600"],
 });
 
@@ -32,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html className={figtree.variable} lang="en">
+    <html className={`${inter.variable} ${figtree.variable}`} lang="en">
       <body>{children}</body>
     </html>
   );

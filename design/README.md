@@ -38,6 +38,12 @@ meanings, which is what keeps the palette warm.
 
 ## Fonts
 
+**Inter, body and headings, since 2026-10-10, pending the Client's approval.**
+It is self-hosted through `next/font/google` in `src/app/layout.tsx` (weights
+400 to 700), and `--font-serif`, the heading token, points at it. To go back,
+load Figtree in `layout.tsx` and set `--font-serif` back to the serif stack;
+nothing else changes. What follows describes the earlier choice.
+
 **Figtree** (body and UI) is open source and self-hosted through
 `next/font/google` in `src/app/layout.tsx`. Only weights 400, 500 and 600 are
 used; the prototype declares 700 but every heading in the design is set in the

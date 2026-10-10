@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { logoutAction } from "../actions/logout";
 import type { AppRole, Profile } from "../types";
 
-import { AccentToggle } from "./accent-toggle";
+import { DesignToggles } from "./design-toggles";
 import { AppNav, PageEyebrow } from "./app-nav";
 import { Icon } from "./icon";
 import { ActionBoundary, SubmitButton } from "@/shared/ui";
@@ -170,7 +170,7 @@ export function RoleShell({
           </ActionBoundary>
         </main>
       </div>
-      {process.env.NODE_ENV === "development" ? <AccentToggle /> : null}
+      {process.env.NODE_ENV === "development" ? <DesignToggles /> : null}
     </div>
   );
 }
