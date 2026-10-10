@@ -2,21 +2,27 @@
 
 Last updated: 2026-10-10 (Asia/Calcutta)
 
-This file holds what is true **now**: status, active work, what is pending, the
-blockers and the next actions. History lives in `docs/context/`, one file per
-topic, and is read when the task touches that area. A section named elsewhere in
-this file and not found here is in one of these; find it with
-`grep -rn "<section name>" docs/context/`:
+This file holds what is true **now**: status, decisions, active work, pending
+work, blockers and the next actions. Read it in full; it is kept under 300
+lines, so that costs little. Everything else lives in the file for its topic,
+read only when the task touches that area:
 
 | File | Holds |
 |---|---|
-| `docs/agent-map.md` | **Start here if unsure where to look.** Diagrams of where everything lives, where to look by task, the route every piece of work takes, and what enforces it |
-| `docs/context/completed.md` | The Completed log and every detailed write-up behind it: the question bank, the process importer, the re-skin, the Phase 5a exit gate, the 1.3-second investigation, mistakes worth keeping |
-| `docs/context/meetings.md` | Client calls and what they settled: 2026-09-21 walkthrough (with the question-ID mock document design), 2026-09-16 ARS meeting, the Masters' Union process, content organisation, the 2026-09-08 sequencing change |
-| `docs/context/supabase.md` | Hosted Supabase state: applied migrations, Auth configuration, users, advisors, traps |
-| `docs/context/phase-history.md` | Phase 0, 1 and 5a progress records, exit gates and security audits |
+| `docs/agent-map.md` | **Start here if unsure where to look.** Where everything lives, where to look by task, the route every piece of work takes |
+| `docs/context/operations.md` | Environment, tooling and traps: merge-history lessons, dev servers, the Windows build gotcha, the editor's stage-all, Vercel previews, repository visibility |
+| `docs/context/backlog.md` | Open items off the immediate path (Phase 0 carry-overs, owner and Client lists, smaller things) and the earlier plan |
+| `docs/context/completed.md` | The Completed log and every detailed write-up |
 | `docs/context/verification-log.md` | Every check run, with its result |
-| `docs/decisions/` | Decision statements from flow sessions with the owner. **Untracked**: whether to commit them is open (N13), so they exist only in the main checkout |
+| `docs/context/meetings.md` | Client calls and what they settled |
+| `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
+| `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
+| `docs/context/branches/` | One notes file per open branch; see its README |
+| `docs/decisions/` | Decision statements D1-D24 and open questions N1-N13. **Untracked**, in the main checkout only (N13) |
+
+The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
+`node scripts/check-context.mjs` enforces it in CI. Never put secrets,
+credentials, student data or anyone's personal data here.
 
 ## Status, 2026-10-10
 
@@ -73,89 +79,19 @@ reproduced by any check on any pull request. Every probe count recorded in these
 files is a local run. Do not quote "verify is green" at a client checkpoint as
 evidence the database was verified.
 
-## Purpose and authority
+**What a green `verify` does and does not mean.** The CI job named `verify` runs
+`typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
+anything in `scripts/verify/`**, so no database probe and no HTTP check is
+reproduced by any check on any pull request. Every probe count recorded in these
+files is a local run. Do not quote "verify is green" at a client checkpoint as
+evidence the database was verified.
 
-This is the canonical operational handoff for every agent, developer, and chat
-working on this repository. It records current state, decisions, findings,
-completed work, active work, pending work, blockers, and verification results.
+## Authority
 
-It is not a substitute for the governing documents. Use this order of authority:
-
-1. The signed agreement defines what must be delivered.
-2. The parent operating manual (`../CLAUDE.md`) defines how it is built.
-3. `../Context/Cospire_LMS_Technical_Brief.md` explains the architecture.
-4. This file records current execution state and handoff context.
-
-If this file conflicts with a higher-authority document, correct this file rather
-than silently following it.
-
-## The context rule - non-negotiable, every agent, every session
-
-This file is the single source of truth for the state of this project. It is what
-lets a new chat, a new agent or a new engineer pick this up without anyone
-explaining it to them. Keeping it true is part of the work, not admin bolted on at
-the end.
-
-The same rule is in `AGENTS.md` and `CLAUDE.md`, so it binds whichever entry point
-you arrive through.
-
-**Before planning or editing anything**
-
-1. Read this file in full. Not skimmed, not searched for a keyword.
-   Then read the file in `docs/context/` for the area your task touches: the
-   history lives there, one file per topic, and `CONTEXT.md` lists which is
-   which. Reading all of them is not required.
-2. Add your entry to **Active work** - branch, scope, the files you will own -
-   before your first material change, so a parallel agent can see the collision
-   coming.
-3. Inspect `git status`, the current branch, recent commits, and the relevant
-   files. Do not trust this file over what the repository actually says; where
-   they disagree, the repository is right and this file gets corrected.
-
-**While working**
-
-4. Update it the moment something material changes: a decision, a discovery, a
-   blocker, a migration, a new dependency, an assumption about an external
-   service. Write it when you learn it, not at the end when you have forgotten why
-   it mattered.
-5. Do not edit files another agent has claimed under **Active work** without
-   coordinating first.
-
-**Before ending any turn, handing off, or going quiet**
-
-6. Move finished items out of **Active work** into the Completed log in
-   `docs/context/completed.md`. Put the detailed write-up there too, or in
-   whichever `docs/context/` file fits, and leave this file a line or two plus
-   a pointer. It holds what is true now, so a new session can read it whole
-   without cost.
-7. Record what you verified and how, **including what failed**. Never record an
-   assumption as a fact, and never record "should work" as "works". A green build
-   is not evidence a feature works.
-8. Update **Pending**, the blockers, and **Next recommended action**.
-9. **Replace stale statements. Do not append a correction beneath them.** A file
-   that contradicts itself is worse than one that is merely out of date, because
-   the reader cannot tell which half is true. Replace stale state rather than
-   accumulating an unbounded diary.
-10. Leave incomplete work explicitly marked as incomplete. Never imply completion
-    from partial scaffolding.
-
-**The test that decides whether you are finished**
-
-> A new session that reads this file, plus the `docs/context/` file for its
-> area, must be able to continue the work without asking a single question.
-
-If that is not true, this file is not finished and neither are you. Check it by
-reading your own entry as if you had never seen this project.
-
-**Never** put secrets, credentials, tokens, connection strings, student data or
-anyone's personal data in this file.
-
-This rule is not waived by being in a hurry, by the change being small, or by the
-work being unfinished. An unfinished task recorded honestly is useful. An
-unfinished task recorded as complete is worse than no record at all.
-
-In a feature worktree, update that worktree's copy. The integrating reviewer
-consolidates concurrent context changes when branches merge.
+The signed agreement defines what is delivered; the parent operating manual
+(`../CLAUDE.md`) defines how; `../Context/Cospire_LMS_Technical_Brief.md`
+explains the architecture. This file records state only: where it conflicts with
+any of them, correct this file.
 
 ## Product summary
 
@@ -191,94 +127,28 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Supabase plans | Free during build, Pro before handover/ARS and restore testing |
 | Application hosting | Vercel Pro; Hobby is not used for the commercial application |
 
-## Non-negotiable implementation rules
+## Rules this project adds to the manual
 
-- Never expose a Supabase secret or legacy `service_role` key to browser code.
-- Enforce user-data access with RLS, including write policies.
-- Protect Storage objects with Storage policies; table RLS does not protect files.
-- Every question requires section, topic, difficulty, and marks metadata.
-- Store all time columns as `timestamptz`.
-- Use the Supabase transaction pooler for direct Postgres connections and disable
-  named prepared statements in transaction mode.
-- No media bytes pass through the application server.
-- Heavy operations must be asynchronous, idempotent, and auditable.
-- Every committed migration must be sufficient to recreate the database.
-- Migrations are additive and must not break the code already deployed. Drops
-  and renames happen in a later release, once nothing reads the old thing. See
-  `docs/implementation-plan.md`.
-- `src/shared/db/types.ts` is generated from the database and never hand-edited.
-- **Never send a real Cospire question paper to a free model tier.** Free usage
-  is free because the provider may train on what it is given, and clause 13.1
-  makes the Client's content confidential. The second, OpenAI-compatible provider
-  exists to exercise the code against synthetic fixtures. Real papers go through
-  the paid Gemini path or through no API at all.
+- **Never send a real Cospire question paper to a free model tier** (clause
+  13.1). Real papers go through the paid Gemini path or no API at all.
+- Migrations are additive and must not break the deployed code (expand, then
+  contract); every committed migration must recreate the database.
+- `src/shared/db/types.ts` is generated, never hand-edited.
+- The full list, with the manual's own rules, is in `docs/context/operations.md`.
 
-## Current repository state
+## Repository and environment
 
-- Repository: `C:\Cospire\Cospire`.
-- **The question bank merged on 2026-09-23 as `1c7073d`** (PR #49), squashed
-  from `feat/question-bank` with all four checks green. Every earlier pull
-  request is merged or closed. The docs split (PR #54) is the only pull
-  request still to land.
-  PR #35 was **closed as
-  superseded** -- it corrected this file on 2026-09-20 and was overtaken by
-  #36-#42, so its corrections were restated against current `main` instead of
-  resolved through a stale conflict.
-- **Everything through PR #48 is merged and deployed.** The run of 2026-09-20
-  and 21, in order: **#36** private multi-file ARS uploads, **#38** the mentor
-  review workflow, **#40** the report-template document importer, **#42** the
-  first separation of Programmes and ARS administration, **#43** the Phase 5a
-  exit gate, **#44** `courses.kind` and the real separation, **#45** deleting
-  the duplicated ARS routes #42 left behind, **#46** loading states and pending
-  buttons. PR #48 makes ARS report-component round links manual. Each feature
-  has a documentation follow-up where the context gate required one (#37, #39,
-  #41).
-- **`main` and the hosted database are in step**: every migration on `main` is
-  applied, the test engine's four included (the last three on 2026-09-28,
-  before PR #63 merged).
-- Two things worth keeping from the earlier merge history, because both cost
-  time. **Do not delete the base branch of a stacked pull request**: merging #24
-  with `--delete-branch` closed #25 rather than retargeting it, and reopening
-  needed that branch pushed back before the base could move. And **the context
-  gate fails on `main` for any pull request that describes itself as open**,
-  which is why each feature is followed by a commit recording its own merge.
-- **PR #27 merged 2026-09-18** as `6a39649`, adding the documentation-only
-  review contract in `docs/review-checklist.md`. #25 was stacked on #24's branch, so
-  merging #24 with `--delete-branch` **closed** it rather than retargeting it;
-  reopening needed that branch pushed back before the base could be moved to
-  `main`. **Do not delete the base branch of a stacked pull request.** It was then
-  rebased onto `main`, where git skipped the squashed cleanup commit as already
-  applied.
-- **PR #28 merged 2026-09-18** as `17cc78d` and deployed: the report migrations,
-  the mentor and student screens, **admin template authoring**, pagination, and
-  the fix-forward migration `20260918153000`.
-- PR #36 merged as `0e0f14f` and Production deployed that commit. Its
-  multi-file Storage authorization is live.
-- **The context gate fails on `main` for any pull request that describes itself as
-  open.** It did so for #24: the file merged saying #24 was open, which by then it
-  was not. `verify` passed and only `context` failed. The fix is the follow-up
-  commit that records the merge, which is what this entry is; the alternative,
-  claiming a merge before it happens, would make the gate lie in the worse
-  direction.
-- **`origin` carries `main` and `feat/question-bank` only**, checked with
-  `git ls-remote --heads origin` on 2026-09-21. The PR #35 branch is gone.
-  `feat/question-bank` held the question-bank work from parts 1-4 and was
-  squashed into `main` on 2026-09-23; the branch is deleted once PR #54 is
-  retargeted off it.
-- `main` is protected by an active ruleset: pull request required, `verify` status
-  check required, branches must be up to date, force pushes and deletions blocked.
-  Required approvals are deliberately `0` while the team is one person, since
-  GitHub does not permit self-approval.
-- The repository is **public**, by the owner's decision, to be made private after
-  the project. See Repository visibility below.
-- Deployed on **Vercel** at `https://cospire-roan.vercel.app`, auto-deploying from
-  `main`, with a preview deployment per pull request. Currently on the **Hobby**
-  plan, which does not permit commercial use; the owner has chosen to build on it
-  and upgrade before handover.
-- Hosted Supabase project `eeeftjwvbppznsmcljnw` (Mumbai, **Free** plan). Every
-  migration on `main` is applied, and nothing else.
-  The Supabase MCP server points at this project (`get_project_url`, checked
-  2026-09-27); an earlier suspicion that it pointed elsewhere was wrong.
+- `C:\Cospire\Cospire` on `main`, which is protected: pull request required,
+  `verify` required, branches must be up to date, no force pushes. **Public**
+  repository; see *Repository visibility* in `docs/context/operations.md`.
+- Deployed from `main` to `https://cospire-roan.vercel.app` (Vercel **Hobby**).
+  Preview deployments cannot be driven by scripts (environment variables and
+  deployment protection; see `operations.md`).
+- Hosted Supabase `eeeftjwvbppznsmcljnw` (Mumbai, **Free**). Every migration on
+  `main` is applied, and nothing else.
+- Feature work happens in sibling worktrees (`scripts/wt-new.sh NAME PORT`).
+  Never build in the main checkout while a server runs there, and stop a
+  `next start` before deleting its folder.
 
 ### Tooling available to an agent in this repository
 
@@ -289,89 +159,13 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Supabase MCP | Available, **read-only by policy** | Inspecting tables, advisors, logs. Never DDL; see operating manual §4.5 |
 | Docker | **Unavailable** | `db:reset`, `db:lint` and `db:test` cannot run here |
 
-Two operational notes that cost time to rediscover:
-
-- **`gh` reads the same credentials from PowerShell and from Git Bash.** An earlier
-  note here claimed the token was visible only to PowerShell; that was checked on
-  2026-09-18 and is **wrong** -- both reported logged out because no login had
-  completed. After `gh auth login` both see the account. `gh.exe` sits at
-  `%ProgramFiles%\GitHub CLI\gh.exe`, which Git Bash must call by full path.
-- **Migrations go through the CLI**, now that the project is linked. The MCP
-  server is for reading. Phase 0 applied two migrations through MCP out of
-  necessity and reconciled the history afterwards; that route is no longer needed.
-
 ## Active work
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`), `fix/main-faults` (both `main` faults were check faults; types regenerated) as PR #74 (`783aac8`), and `feat/ui-cleanup` (the UI audit and cleanup) as PR #75 (`8137089`). **No feature branch is open.** Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
-
-**Earlier feature branches were all merged by 2026-09-28.**
-`feat/test-engine` merged as PR #63,
-`feat/analytics` as PR #65 and `feat/admin-ui` as PR #66 (`fe9e836`); all three
-branches are deleted from `origin`. **Cleaned up on 2026-10-02:** those
-worktrees, the orphan `Cospire-doc-import` folder and the seven merged local
-branches are removed. Three stale `next start` servers from 2026-09-28 (ports
-3010, 3050 and 3060) are stopped. `scripts/wt-done.sh` cannot remove a
-squash-merged branch: its `merge-base --is-ancestor` check refuses every one.
-Use `git worktree remove` and `git branch -D` once the PR is confirmed merged.
-A leftover `next start` locks `next-swc.win32-x64-msvc.node` and stops the
-folder being deleted, so stop the server first.
-
-`feat/doc-import` merged as PR #58 (`b2a4fb8`), `fix/docx-harness-assertion` as
-PR #59 (`6cc00f6`) and `feat/model-provider` as PR #60 (`51148e1`).
-`feat/mock-docs` merged as PR #61 and the stop-at-7% rule as PR #62; their
-branches and `feat/doc-import` were deleted from `origin` on 2026-09-28. Three things a new session should know before touching
-anything:
-
-- **A dev server may be running on port 3000** (none was on 2026-09-28) from the main checkout
-  (`C:\Cospire\Cospire`, on `main`). Leave it alone unless asked: Codex is
-  reading the code and working on UI there. **Never run `npm run build` in that
-  checkout while it is up** -- they share `.next`, and the build corrupts the
-  running server, which then answers 500 to everything. Do your own work in a
-  worktree (`scripts/wt-new.sh NAME PORT`).
-- **Tell the owner at once if anything changes that you did not do** -- a file
-  in the working tree, a branch, a commit, the dev server going down. They have
-  remote access and can intervene, but only if it is surfaced immediately.
-- **The editor's Commit button stages everything.** On 2026-10-01 at 10:43,
-  Commit was pressed in the Antigravity IDE's Source Control panel with nothing
-  staged. That makes VS Code-based editors run `git add -A` first, and it staged
-  the private `docs/client/` files in this **public** repository. The commit
-  aborted on an empty message, so nothing was committed or pushed. They were
-  unstaged on 2026-10-02, and `docs/client/` is now in `.git/info/exclude`, so a
-  "stage all" skips it. `docs/decisions/` is not excluded (N13). The editor's
-  record of every git command is its `vscode.git/Git.log`, under
-  `%APPDATA%\Antigravity IDE\logs\`.
-- **A new worktree may arrive without its dependencies.** `Cospire-mock-docs`
-  was handed over as ready and held one stray `next` directory in
-  `node_modules` and no `.bin`, so every script failed with "'vitest' is not
-  recognized" -- which reads like a broken install of vitest rather than an
-  absent `npm ci`. Check `node_modules/.bin` exists before concluding anything
-  about a tool. Its `.env.local` also has an empty `DATABASE_URL`; nothing the
-  application or the verify scripts do reads it, so it blocked nothing.
-
-**The Vercel preview deployments do not work.** `/dashboard` on a preview URL
-renders the application's error boundary while the same route on production
-answers 307 to `/login`. The application throws exactly one error of that shape,
-from `requirePublicSupabaseConfig`, so the likely cause is that
-`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are set for
-the Production environment only and not for Preview. **Unconfirmed**: nobody has
-looked at the Vercel environment-variable settings yet. It matters because this
-file claims every pull request gets a clickable URL, and it appears none of them
-ever has -- every verification row here is either a local production build or the
-deployed URL, never a preview.
-
-**And a second reason, measured on 2026-09-26:** a preview URL is behind
-**Vercel deployment protection**. Every path on
-`https://cospire-git-feat-mock-docs-cospire.vercel.app` -- `/login`,
-`/dashboard`, `/admin/mocks/import` alike -- answers `302` to
-`https://vercel.com/sso-api?...`, so **no verify script can drive a preview at
-all** without a protection-bypass token, whatever the environment variables say.
-A browser signed in to the Vercel account passes that gate, which is why the
-error boundary was what a person saw. Two separate things to fix, then: the
-Preview environment variables, and either a bypass token for the harness or
-disabling protection on previews.
+No feature branch is open. Recent merges: #69-#76 (2026-10-08 to 2026-10-10);
+write-ups in `docs/context/completed.md`.
 
 ## Pending
 
@@ -400,36 +194,6 @@ table, the `video` branch of `private.validate_curriculum_item` and
 `student_has_programme_item('video', …)` in a video access helper, and
 `item_progress` for video (percent, last position).
 
-### Carried over from Phase 0
-
-None of these block Phase 5a.
-
-| Item | Why it matters | Needs |
-|---|---|---|
-| **CODEOWNERS is inert** | It names two accounts that cannot access the repository, so GitHub ignores it and the review requirement on `/supabase/migrations/**` does not actually exist | The second engineer's real GitHub handle. The owner's account is `Two19Labs` |
-| **Vercel on Hobby** | Hobby forbids commercial use | Upgrade before the Client is told the platform is theirs. Clause 3.8 puts the account in Cospire's name |
-| **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Blocks ARS being **used** with real video essays, not built: Free's 1GB and 50MiB file limit are enough to build and test the upload path. Needed before students upload for real, and before the restore test. Clause 8.3 budgets for it |
-| **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
-| **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
-| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover. CI now also warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 and are being forced onto Node 24; bumping to `@v5` clears both the warning and the pinning item in one change |
-| **`site_url` points at a `vercel.app` address** | It goes into password-reset emails | Replace if a custom domain is added, then `supabase config push` |
-
-### Pulled forward from later phases
-
-Recorded in the implementation plan, repeated here because they are easy to lose.
-
-1. **Run one of Cospire's real documents through the importer during Phase 1 or 2.**
-   The delivery plan commits to the first fortnight. It needs no finished UI, and
-   poor accuracy on their older material is a conversation to have with four weeks
-   left rather than one.
-2. **Historical attempts and live edits: decided 2026-09-21.** Questions stay
-   editable. A past attempt's review shows the current question, and Phase 4
-   rescores every attempt a key, option or marks change affects. See the
-   Critical finding below.
-3. **Supabase Pro immediately, and a tested restore before handover.** Pro moved
-   from "before Phase 5" to "now" when ARS was brought forward. The deliverable is
-   a restore tested, not enabled, and database backups exclude Storage objects.
-
 ## External blockers and client-owned steps
 
 Every blocker recorded during Phase 0 is resolved: Supabase dashboard access, the
@@ -454,55 +218,6 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 The delivery plan also assumes **feedback within two working days**. Where that
 slips the delivery date moves by the same amount, and it must be flagged in
 writing at the time rather than absorbed silently.
-
-## Repository visibility
-
-`Two19Labs/Cospire` is **public** during the build. This was a deliberate choice by
-the repository owner on 2026-08-28: branch protection and rulesets are free on
-public repositories but require a paid plan on private ones, and the owner judged
-the exposure acceptable for a low-traffic repository. It is to be made private
-once the project completes.
-
-What this exposes, recorded so the decision can be reviewed on its facts:
-
-- No credentials. No keys, passwords, or connection strings are in any commit, and
-  `.env.local` has never been committed. Verified before the first push and again
-  afterwards.
-- The Supabase project reference. Low severity: it appears in every API URL the
-  browser calls once the application ships, and is not a credential. Access is
-  protected by RLS and by `anon` holding no grants, both verified against the live
-  API.
-- The full schema and every RLS policy. The access model does not depend on
-  secrecy, but publishing it does hand a reader a map of what to probe.
-- **This file's commercial commentary.** The findings table below carries candid
-  internal assessment of the agreement and delivery risk. It is the highest-value
-  content here for anyone outside the delivery team.
-
-Two points to revisit rather than assume:
-
-1. **The agreement answers whether the codebase may be public, and the answer is
-   no.** Checked 2026-09-12: clause 3.9 says that during the build the code "is
-   held in a private repository controlled by the Developer", and clause 13.1
-   lists source code among the confidential information neither party discloses.
-   The agreement outranks this file, so the public setting is a deviation awaiting
-   the owner's decision. Making it private means losing the free branch
-   protection, or paying for it.
-2. Cospire holds read access to this repository throughout the build, so the
-   commercial commentary is readable by the Client regardless of visibility. That
-   deserves a deliberate decision about what belongs in this file versus a
-   delivery-team-only document.
-
-## Local build gotcha, Windows
-
-Running `npm run build` while `next start` is still serving produces a corrupt
-`.next/server/middleware.js`, and every route then answers 500 with `EvalError:
-Code generation from strings disallowed for this context`. The build itself
-reports success, so this is invisible until a request is made.
-
-It is a Windows file-locking artifact, not a code defect: stop the server, delete
-`.next`, and rebuild. Vercel always builds clean, so it cannot occur there.
-Recorded because the symptom points convincingly at the middleware and wastes
-time otherwise.
 
 ## Findings and risks to preserve
 
@@ -541,248 +256,6 @@ time otherwise.
 4. **Chase the Client:** VdoCipher, Supabase Pro, Vercel Pro, SMTP, Gemini
    billing, their content, the written amendment.
 
-**First, three things that are not code**, from the meetings of 2026-09-16 and
-2026-09-21:
-
-1. **The 1 October commitment.** The Client was told ARS and the mock test
-   would be ready and tested "in the next 15 days", and on 2026-09-21 that the
-   project is on time; the owner confirmed on 2026-09-22 that the schedule
-   holds. ARS is done and deployed, and so are the question bank and the mock
-   builder. **On 2026-09-23 the owner put the import work ahead of the test
-   engine**, so what a student sits is now the last of the four items above.
-   **The test engine merged and was verified on the deployed URL on
-   2026-09-28**, so the 1 October commitment is met on the platform side. The owner promised
-   the Client on 2026-09-21 to raise any delay up front, and clause 4.4 wants
-   that in writing at the time rather than at the end.
-2. **Put the build-now, invoice-later arrangement in writing**, with the first
-   items named: feedback, onboarding, offboarding, student journey trackers,
-   the ARS report and the process importer. Clause 12 says quote first; clause
-   16.1 says amendments are written. Both sides want this, so it only needs
-   recording. **The same amendment should record that question import runs on
-   paste-a-prompt**, with figures pasted in on review, rather than the
-   automatic Google Docs image extraction clause 3.15 promises. The owner
-   accepted this on 2026-09-21. Add the two items the Client raised in the
-   call that day: **sub-admins**, once they define them, and **a parser for
-   the mentor's report**.
-3. **Send the Client access to the build**, as agreed at the end of the
-   2026-09-21 call, so their team can review the flow. Their feedback clock
-   starts when they have it.
-
-**The process importer is built, verified, merged and deployed** (2026-09-20,
-PR #30), together with the form engine it depends on. Two things follow from it
-that are not code:
-
-- **It is a clause 12 conversation, like the report.** The founder agreed the
-  paste-a-prompt mechanism on 2026-09-16 for *question* import. Pointing it at
-  whole ARS processes is more than Annexure A's words and was built on the
-  owner's instruction of 2026-09-20 for a client review the same evening. The
-  quotation and the clause 16.1 written amendment are outstanding, and are not
-  settled by having built it.
-- **Tell the Client what it does not do.** It reads what a model gives it. It
-  never invents a date, and it will not deliver an aptitude test, because the
-  test engine is unbuilt -- those rounds arrive as placeholders carrying their
-  specification. Both are visible in the preview, and both are better said than
-  discovered in front of a college.
-
-**Phase 5a is complete.** Its exit gate closed on 2026-09-20, **28 of 28 against
-the deployed URL**, and the draft/save path that previously lacked a
-browser-level harness is inside it. Nothing in the phase is outstanding.
-
-**Programmes and ARS are separated** (2026-09-20, PR #44/#45) and **every
-signed-in screen has a loading state** (2026-09-21, PR #46). Both are deployed
-and verified against the deployed URL.
-
-### Now: Phase 6, before video
-
-Decided 2026-10-01/02. Plan: *Phase 6* in `docs/implementation-plan.md`.
-Decisions: `docs/decisions/2026-10-02-decision-statement.md`. Both decision
-statements are **untracked**, so a worktree will not have them; copy them across
-or read them from the main checkout. In order:
-
-1. **6.1 The exam screen.** Instant question switching, background saving and a
-   full-screen layout, from Aditya's reference design, with every server-side
-   rule kept. Step 4.5 (closing abandoned attempts) comes with it. **In scope;
-   start now.**
-2. **6.2 Marks onto the mock (D19).** Expand first. Removing marks from
-   questions waits for the Client's written line.
-3. **6.3 Duplicate detection (D22–D24).** Exact fingerprint plus `pg_trgm`, **no
-   model**. A flagged match offers same / corrected version / different.
-   Clause 12.
-4. **6.4 The mock-first import wizard (D7–D9, D13–D15, D20).** Clause 12.
-
-**The owner decided on 2026-10-02 to start 6.2, 6.3 and 6.4 immediately, at
-risk, ahead of the clause 12 quote.** They gave two reasons: marks on the mock
-was settled with the Client on 1 October, and the import route is what the
-Client uses first. The quote and the clause 16.1 written amendment are **still
-owed**; building first does not settle them. **6.2-6.4 merged as PR #69
-(`92df9fc`, 2026-10-08)**; its two migrations were applied on 2026-10-02. The exam-screen reference design
-for 6.1 is `../design-previews/Cospire Mock Test (1).html`.
-5. **6.5 Small committed items: merged as PR #71 (`a65a9d3`) on 2026-10-09.**
-   Watermark bottom left, viewer full screen, the landscape check, the stale
-   Programmes card. Done: watermark drawn once per page as one small bottom-left
-   mark; a full-screen button on the document viewer, hidden where the
-   Fullscreen API is unavailable; the stale "Aptitude preparation: not built
-   yet" card removed from the Programmes page. Typecheck, lint, 537/537 tests
-   and build pass; `verify.mjs` 35/36 and `programmes-ars-split.mjs` 19/19
-   against a local production build and the hosted database, both pre-existing
-   unrelated findings below; real-browser screenshots over Chrome's own
-   DevTools Protocol confirm the watermark and full screen render correctly
-   with the real landscape test PDF. See *Phase 6.5, small committed items* in
-   `docs/context/completed.md`. The two findings it surfaced (the refused-document
-   status and `loading-coverage` at 8/11) were harness faults, fixed on
-   `fix/main-faults`.
-6. **6.6 Admin gaps Annexure A promises**: an ARS submissions view, the activity
-   log and flags, bulk CSV once SMTP exists. **Merged as PR #73 (`ee1e0e8`)
-   2026-10-09 with D8**, its migration applied, harness 34/34. Bulk CSV still waits for SMTP; the video-watching flag waits
-   for video.
-7. **6.7 Real documents** through the paid Gemini path, once billing and their
-   files exist.
-
-### What to build next, in the order it should be taken
-
-**Order changed by the owner on 2026-09-23: the import work comes before the
-test engine.** Question import and mock assembly are what the Client can use
-immediately on the material they already have; the test engine is the larger
-build and now follows them. The 1 October commitment covers a tested mock
-engine, so this order makes the written revision under clause 4.4 more likely
-to be needed, not less -- see *Next recommended action*, item 1.
-
-**1. Word upload: pictures out, numbered markers in. DONE.** Merged as PR #58
-(`b2a4fb8`) and verified **25/25 against the deployed URL** on 2026-09-25. No model call, so it
-works whatever the Client decides about cost. The admin uploads a `.docx`; the
-platform opens it (a zip), extracts each image in document order into the
-existing `question-images` bucket, and produces the paper's text with
-`[[figure:N]]` where each image sat. The admin copies that text into any model
-with the existing prompt, pastes the JSON back, and the platform resolves each
-marker to image N before the usual review and approval. Word tables become text
-tables. Flagged rather than guessed: an image inside an answer option, EMF/WMF
-drawings Word stores as vector art, and native Word charts.
-**Dependency: `fflate` 0.8.2, approved by the owner 2026-09-23 and now in
-`package.json`** -- Node cannot
-open a zip on its own, and a hand-written zip reader is the kind of code that
-works on one file and fails on the next. `@google/genai` was **declined in
-favour of plain `fetch`**, which was proven against the live key on 2026-09-23.
-
-**2. The Gemini path: three steps instead of six. MERGED AND DEPLOYED** in the
-same pull request. The Client has agreed all costs (owner, 2026-09-25). **The
-live round trip is still UNVERIFIED**, and the reason is known: the Google Cloud
-project behind the Client's key has no billing enabled, so it is served on
-leftover capacity at five requests a minute. A new key would fix nothing; see
-*The 503 that was a billing checkbox* in `docs/context/completed.md`. The platform sends the
-prepared text to Gemini itself and places the images, so the admin uploads,
-reviews and approves. Everything technical is in hand: the key works, returns
-schema-valid JSON, and is on the paid tier. Two things to settle first, neither
-of them code: the Client's agreement to the cost (about Rs 5 a paper, billed to
-their own Google account -- the drafted question still quotes Claude and Rs 20
-and needs redrafting before it is sent), and thinking turned low or off in the
-call, because thinking tokens bill as output. Details, limits and routing are
-under *Question import with pictures* below.
-
-**3. Mocks built from documents that quote question IDs. MERGED as PR #61
-(`092d878`), 29/29 on the deployed URL.** Readable IDs
-(`Q00042`, computed from `questions.id`, no migration), copyable ID lists on
-the bank and at the end of an import, and a plain-text mock template parsed
-directly -- no model, because an ID must match exactly -- which resolves to the
-existing `save_mock`. Built to the design under *Question IDs and mock
-documents: designed 2026-09-22* in `docs/context/meetings.md`; the write-up and
-what is still unverified are in `docs/context/completed.md`. **Item 5 of the
-design, pasting a whole new paper so the questions enter the bank and a draft
-mock is made in one step, is deliberately not built** -- the design marks it
-"later, and only if wanted".
-
-**4. The test engine (Phase 4). MERGED as PR #63 (`47beb72`), 49/49 on the
-deployed URL.**
-Everything operating manual §1 insists on is in the database, not in routes:
-the server-authoritative timer (answers refused after the clock plus 30s),
-sectional timing, per-question-type negative marking, the phone attempt
-permanently unproctored and refused where a mock bars phones, warn-and-log
-proctoring, keys readable only after the student's own submission, and
-rescoring with `rescore_events` when a key, option set, type or marks value
-changes. Left: **4.5, a scheduled close of abandoned attempts** (owner's
-decision: `pg_cron` in the database, or Vercel Cron, which on Hobby runs once a
-day), and analytics is merged (PR #65). **Attaching a mock to the ARS aptitude
-round** is merged (PR #66).
-
-**5. Run Cospire's real question documents through the importer** as soon as
-they supply them, and settle the model choice with the accuracy test described
-below rather than on price.
-
-**6. Video and curriculums (Phase 2)**, the day VdoCipher access arrives, in its
-own worktree. If it has not arrived by the start of week four it slips and
-clause 4.4 applies -- notified in writing at the time, not at the end.
-
-**7. Phase 1 step 5**, bulk CSV student creation, still blocked on custom SMTP.
-
-### Smaller things, none of them blocking
-
-- **The owner should decide where "Ashoka" belongs.** The `kind` backfill filed
-  it as an ARS process because it holds one round called "ARS Template". If it
-  is really aptitude-prep content, one click on its ARS page moves it back.
-- **The per-screen re-skin of the remaining panels.** The shell, the ARS form
-  and the loading states are done; the panels inside the admin and mentor
-  screens have not been gone through one by one. Start with the mentor report
-  screen, whose layout the owner called broken in the 2026-09-21 demo.
-- **From the 2026-09-21 call, all small, none built yet:**
-  - a full-screen mode for the document viewer
-  - the watermark as one small mark in the bottom left of each page, in place
-    of the rotated tiling
-  - a landscape PDF opened in the viewer to check how it fits
-
-  See *The walkthrough call, 2026-09-21* (`docs/context/meetings.md`).
-- **`src/shared/ui/submit-button.tsx` is new and shared**, which operating
-  manual §6.1 makes a human's call. It is used by 34 buttons across 16 files.
-  Flagged in PR #46 rather than assumed; confirm or move it.
-- **Vercel Pro.** It is owed for the commercial-use clause and it is also the
-  only thing that will move the 1.3-second page times, which are cold starts on
-  the Hobby tier rather than anything in this repository. See *Where the 1.3
-  seconds actually goes*.
-
-**The review contract is merged** (2026-09-18, `6a39649`), so `docs/review-checklist.md`
-is on `main` and is what a reviewer works from.
-
-**Put the MESA question-type fork to the Client.** Their benchmark process puts
-email writing and a video essay inside one timed test; Annexure A fixes the four
-question types to automatically scored ones. Either the writing becomes its own
-round, which costs nothing, or extending the engine is quoted under clause 12.
-
-Owed by the Client, to chase rather than work around:
-
-1. **VdoCipher access -- all of Phase 2.** Week 3 is burning. Notify in writing
-   now. Cite clause 4.4 (delivery extends day for day) and clause 4.2: the
-   Kickoff Date is the latest of signature, advance and the Client providing the
-   clause 6 access. Clause 6.4 sets no deadline for opening accounts, so 4.4 on
-   its own is arguable.
-2. **Supabase Pro**, before ARS is used with real video essays and before the
-   restore test.
-3. **Custom SMTP**, for bulk CSV creation (Phase 1 step 5), raising
-   `[auth.rate_limit] email_sent` at the same time.
-4. **Recoleta Bold `.woff2` and its web licence.** Headings use Georgia until then.
-5. **The written list of programmes**, and **what "ARS" stands for**.
-6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has
-   the Client's signature date blank; file the countersigned copy if one exists.
-7. **From the 2026-09-21 call:** two or three sample documents of each of the
-   five content kinds, their question lists for mocks, a definition of
-   sub-admin permissions, and one consolidated list of flow feedback.
-
-Owner decisions:
-
-1. **Repository visibility against clause 3.9.** See *Repository visibility*.
-2. **Tell Cospire what the document watermark does and does not stop**: a saved
-   page image is watermarked, but the signed URL can be read from the page source
-   to fetch the clean PDF within its ten minutes.
-3. **The leftover audit organisation**, which can only be removed by a migration
-   or a manual dashboard deletion.
-4. **Correct the parent operating manual.** `../CLAUDE.md` omits `profiles.status`
-   and does not note that `documents.id` must be `bigint`. The owner's file,
-   outside git.
-
-Carried from Phase 0, none of it blocking:
-
-1. **Fix CODEOWNERS.** Needs the second engineer's GitHub handle. Both engineers
-   currently commit as one shared account, so no review is enforceable.
-2. **Vercel Hobby to Pro**, before the Client is told this is their platform.
-3. **Run the pgTAP suites** on a Docker-enabled machine; neither has ever run.
-4. **Replace `site_url`** if a custom domain replaces the `vercel.app` address.
-5. **Pin Actions**, bumping `checkout` and `setup-node` to `@v5`.
-
-The route through the rest of the build is in `docs/implementation-plan.md`.
+Open items that are not next (Phase 0 carry-overs, the written amendment, the
+Ashoka question, the MESA fork, owner and Client lists) are in
+`docs/context/backlog.md`.
