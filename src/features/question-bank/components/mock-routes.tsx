@@ -17,8 +17,7 @@ export async function NewMockRoute({ searchParams }: { searchParams: Promise<Rec
 }
 export async function EditMockRoute({ children, mockId, searchParams }: { children?: React.ReactNode; mockId: number; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireRole("admin"); const params = await searchParams;
-  const value = await getMock(mockId);
-  const picker = await listPickerQuestions(parseMockPage(params.page));
+  const [value, picker] = await Promise.all([getMock(mockId), listPickerQuestions(parseMockPage(params.page))]);
   // Everything already in the mock that this page does not show, archived rows
   // included, so each one can be unticked here instead of being re-posted.
   const onPage = new Set(picker.rows.map((row) => row.id));

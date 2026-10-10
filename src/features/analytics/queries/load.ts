@@ -139,9 +139,17 @@ interface QuestionRecord {
   id: number;
   marks: number | string;
   parent_id: number | null;
+  // The question's bank section, embedded through its foreign key so the
+  // name arrives with the question rather than in a third round trip.
+  question_sections: { name: string } | { name: string }[] | null;
   section_id: number;
   topic: string;
   type: string;
+}
+
+function sectionNameOf(row: QuestionRecord): string | null {
+  const embedded = Array.isArray(row.question_sections) ? row.question_sections[0] : row.question_sections;
+  return embedded?.name ?? null;
 }
 
 // Every mock's answerable questions with their four tags, in paper order and
@@ -175,7 +183,7 @@ export async function readPapers(db: SupabaseClient, mockIds: number[]): Promise
 
   // Placed questions and, for each, every sub-question: archived or not, as the
   // engine scores and shows them.
-  const columns = "id, parent_id, type, section_id, topic, difficulty, marks";
+  const columns = "id, parent_id, type, section_id, topic, difficulty, marks, question_sections(name)";
   const topIds = [...new Set(placed.map((row) => row.question_id))];
   const [top, children] = await Promise.all([
     readChunks(topIds, (group) => readAll<QuestionRecord>((from, to) => db.from("questions").select(columns).in("id", group).order("id").range(from, to))),
@@ -185,15 +193,6 @@ export async function readPapers(db: SupabaseClient, mockIds: number[]): Promise
   ]);
   const records = new Map([...top, ...children].map((row) => [row.id, row]));
 
-  const sectionIds = [...new Set([...records.values()].map((row) => row.section_id))];
-  const sectionNames = new Map(
-    (
-      await readChunks(sectionIds, (group) =>
-        checked<{ id: number; name: string }>(db.from("question_sections").select("id, name").in("id", group), "sections"),
-      )
-    ).map((row) => [row.id, row.name]),
-  );
-
   const tags = new Map<number, QuestionTags>(
     [...records.values()].map((row) => [
       row.id,
@@ -202,7 +201,7 @@ export async function readPapers(db: SupabaseClient, mockIds: number[]): Promise
         id: row.id,
         marks: Number(row.marks),
         parentId: row.parent_id,
-        section: sectionNames.get(row.section_id) ?? "Unnamed section",
+        section: sectionNameOf(row) ?? "Unnamed section",
         topic: row.topic,
         type: row.type,
       },

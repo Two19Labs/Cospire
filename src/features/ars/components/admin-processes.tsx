@@ -35,7 +35,7 @@ interface AdminProcessesProps {
 }
 
 // The page heading, shared with the loading skeleton.
-export const arsHeading = "A clearer path to readiness.";
+export const arsHeading = "ARS processes";
 
 export function AdminProcesses({ error, notice, processes, profile }: AdminProcessesProps) {
   return (

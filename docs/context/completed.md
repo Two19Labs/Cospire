@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-10 | **UI audit and cleanup** (`feat/ui-cleanup`, local commits, not pushed, no PR) | Every screen of every role measured (latency with a Supabase-call trace, headless Chrome over CDP, 13 task flows), then fixed: the blank page after every save (C1), slogan headings, the student home per the prototype, programme page 505 → 195 ms, mean warm route 268 → 203 ms. **C2 open**: Next sometimes never follows a save's redirect. All required check scripts pass on the final build. See *UI audit and cleanup, 2026-10-10* below and `docs/ui-audit-2026-10-09.md` |
 | 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
 | 2026-10-08 | **Curriculums before video, Phase 2 steps 3, 4, 4b, 5** (`feat/curriculum`, local commits, not pushed) | `sections`, `curriculum_items` (document, test, text; video refused until the video library), the admin builder on a programme, programme grants cascading to every item (N11), `item_progress` for documents and text, and the student programme page. Typecheck, lint, tests and `next build` pass. **Migration not applied and `scripts/verify/curriculum.mjs` never run**; not clicked through in a browser. See *Curriculums before video* |
 | 2026-10-03 | **The exam screen rebuilt, Phase 6 step 6.1 (D11), and long admin saves given a real loading state (D12)** (`feat/exam-screen`, local, not pushed; based on `feat/mock-import`) | A section arrives in one request and its questions are switched in the browser; answers and mark-for-review save in the background through a new server action; the sitting is a full-viewport exam frame outside `RoleShell`, entered in full screen from the Start and Begin buttons. The no-JavaScript form path is kept. No migration. `test-engine-sit.mjs` **59/59** (49 earlier checks plus 10 new) with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; `analytics` 53/53, `mock-import` 26/26, `ars-aptitude` 14/14, `mock-builder` 19/19; 556/556 unit tests. **Not clicked through in a real browser.** See *The exam screen, 6.1* |
@@ -1698,3 +1699,64 @@ programme's document and mock, wrong student refused, item override alone,
 revoke closes the cascade, disabled student reads nothing, progress write-side
 RLS, section on an ARS process refused, video item refused) is written and
 **never run**; no browser click-through.
+
+## UI audit and cleanup, 2026-10-10
+
+Branch `feat/ui-cleanup`, worktree `C:\Cospire\Cospire-ui-cleanup`, port 3090.
+The full audit, its method, every measurement table before and after, and the
+ranked findings are in `docs/ui-audit-2026-10-09.md`. This is the short form.
+
+**Measured, not guessed.** A traced `next start` (preloading
+`scripts/verify/ui-audit-trace.mjs`) logged every Supabase call, so each route's
+latency could be read as a chain of 40-90 ms round trips. A headless Chrome of
+the agent's own, driven over the DevTools Protocol with Node's global
+`WebSocket`, timed every screen and 41 client clicks, and 13 task flows were
+driven by visible text. All against throwaway fixtures
+(`scripts/verify/ui-audit-fixture.mjs`), torn down to the baseline each time.
+
+**What it found and what changed**, by commit:
+
+- `ca9e9a1` perf: the curriculum read as one embedded query with titles in
+  parallel; admin programme and mock pages read the record beside their panels;
+  analytics embeds section names; the attempt view (exam and result) sends
+  attempt-only reads with the attempt; prefetches no longer each cost a
+  `record_activity` round trip. Programme page depth 8 → 3, 505 → 195 ms.
+- `c8b2d88` saves: **C1, critical** -- with JavaScript the page went blank
+  after almost every save, because Next's boundary renders nothing while it
+  follows the action's `redirect()`; reproduced on the deployed URL.
+  `src/shared/ui/action-boundary.tsx` keeps the screen in view, dimmed and
+  inert, and follows the redirect exactly as Next does. **C2, open** -- Next's
+  client sometimes never follows the redirect at all (about 40% of "Remove
+  access" clicks locally, 2 of 4 on the deployed URL; the action answers 303 in
+  ~200 ms and no navigation is dispatched). Not caused by `revalidatePath`
+  (removing it made it worse). Mitigated by a reload link on `SubmitButton`
+  after 8 s.
+- `02eaae4` the student home per the prototype (programmes with progress,
+  *Next up*, reports); programme cards; progress strip; mock intro facts and
+  section table; ARS Start versus Continue.
+- `2fe30e1` plain headings in place of slogans; the admin overview lists every
+  section; the mentor page is "Review queue" as its nav and skeleton say.
+- `e234b38` heading order and labels on import screens, an exam `main`
+  landmark, named and pending buttons, a favicon, the phone breadcrumb.
+
+**Left, with reasons** (all in the audit document): C2; the admin programme
+page's unpaginated student panel above the curriculum (a layout decision); the
+rail redrawn on every click (moving it into the layouts conflicts with the
+exam and result sharing one route); the round builder's heading jump; a few
+copy inconsistencies.
+
+**Traps worth keeping.**
+
+- A save that "works" over HTTP proves nothing about the browser. Every
+  harness here posts forms without JavaScript; the blank page only exists with
+  it. Check a save in a real browser, or with `scripts/verify/ui-audit-flows.mjs`.
+- `"Page not found"` is in every page's inline flight data, so a not-found
+  check must strip `<script>` first.
+- `next start` loads `.env.local` after a `--import` preload runs, so a preload
+  must read environment variables lazily.
+- `/student/ars/[id]` takes a **round** id, not a process id.
+- Probing a grant toggle by "the first row" can hit a real student: the
+  probe loop used for C2 toggled a real student's grant on a fixture mock; the
+  grant went with the mock at teardown and the live counts matched the
+  baseline. The fixture teardown now also deletes every grant its admin made
+  and every grant on its own records.

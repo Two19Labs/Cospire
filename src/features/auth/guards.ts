@@ -1,5 +1,6 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -12,7 +13,13 @@ import { roleHomePath, type AppRole, type Profile } from "./types";
 // page ask for the profile, and written after the response so it never slows a
 // page. The database throttles it further to once per session, address and ten
 // minutes.
+//
+// A link prefetch is not activity: the router fires one per visible nav link on
+// every page load, and each one paid a `record_activity` round trip for a row
+// the database's throttle then discarded (measured 2026-10-09: eleven extra
+// calls per admin page view). The page view itself still records.
 const noteActive = cache(async (userId: string, sessionId: string | null) => {
+  if ((await headers()).get("next-router-prefetch")) return;
   const ip = await currentRequestIp();
   after(() => recordActivity({ eventType: "active", ip, sessionId, userId }));
 });

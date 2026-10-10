@@ -116,7 +116,7 @@ export function ImportScreen({
   return (
     <>
       <section className="panel">
-        <h3>Step 1 — copy this prompt</h3>
+        <h2>Step 1 — copy this prompt</h2>
         <p className="muted">
           Paste it into the model, attach or paste the document underneath it, and send.
         </p>
@@ -134,7 +134,7 @@ export function ImportScreen({
       </section>
 
       <form action={action} className="panel stack-form">
-        <h3>Step 2 — paste the model&apos;s answer</h3>
+        <h2>Step 2 — paste the model&apos;s answer</h2>
         <label className="field">
           <span className="visually-hidden">The model&apos;s answer</span>
           <textarea
@@ -153,7 +153,7 @@ export function ImportScreen({
 
       {problems.length > 0 ? (
         <section className="panel" role="alert">
-          <h3>That could not be used</h3>
+          <h2>That could not be used</h2>
           <ul className="form-error">
             {problems.map((problem) => (
               <li key={problem}>{problem}</li>
@@ -169,7 +169,7 @@ export function ImportScreen({
       {rounds && rounds.length > 0 ? (
         <>
           <section className="panel">
-            <h3>Step 3 — check, then create</h3>
+            <h2>Step 3 — check, then create</h2>
             <p>
               This will create <strong>{rounds.length}</strong> round
               {rounds.length === 1 ? "" : "s"} in <strong>{courseTitle}</strong>.

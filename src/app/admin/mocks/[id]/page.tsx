@@ -11,11 +11,26 @@ import { listMockAttempts } from "@/features/test-engine/queries/mock-attempts";
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const mockId = parseId((await params).id); if (mockId === null) notFound();
   const access = (await searchParams).access;
-  const [students, attempts] = await Promise.all([listMockAccess(mockId), listMockAttempts(mockId)]);
+  // Started now and awaited inside the editor's children, so they run alongside
+  // the editor's own reads instead of before them (one round trip saved).
+  const students = listMockAccess(mockId);
+  const attempts = listMockAttempts(mockId);
+  // Marked handled: if the editor 404s first, nobody awaits these.
+  students.catch(() => {});
+  attempts.catch(() => {});
   return (
     <EditMockRoute mockId={mockId} searchParams={searchParams}>
-      <MockAccessPanel access={typeof access === "string" ? access : undefined} mockId={mockId} students={students} />
-      <MockAttemptsPanel attempts={attempts} />
+      <MockPanels access={typeof access === "string" ? access : undefined} attempts={attempts} mockId={mockId} students={students} />
     </EditMockRoute>
+  );
+}
+
+async function MockPanels({ access, attempts, mockId, students }: { access?: string; attempts: ReturnType<typeof listMockAttempts>; mockId: number; students: ReturnType<typeof listMockAccess> }) {
+  const [studentRows, attemptRows] = await Promise.all([students, attempts]);
+  return (
+    <>
+      <MockAccessPanel access={access} mockId={mockId} students={studentRows} />
+      <MockAttemptsPanel attempts={attemptRows} />
+    </>
   );
 }

@@ -26,7 +26,7 @@ import type { ArsSubmissionListPage } from "../queries/list-ars-submissions";
 
 // Shared with the loading skeletons so the two cannot drift.
 export const arsSubmissionsTitle = "ARS submissions";
-export const arsSubmissionsHeading = "Every ARS submission, in one place.";
+export const arsSubmissionsHeading = "ARS submissions";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 const statusTag = { draft: "tag", reviewed: "tag tag--sage", submitted: "tag tag--gold" } as const;

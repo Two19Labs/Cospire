@@ -52,7 +52,7 @@ function MoveButtons({
       {first ? null : (
         <form action={action}>
           <Hidden fields={{ ...fields, direction: "up" }} />
-          <SubmitButton compact variant="secondary">
+          <SubmitButton compact pendingLabel="Moving…" variant="secondary">
             Up
           </SubmitButton>
         </form>
@@ -60,7 +60,7 @@ function MoveButtons({
       {last ? null : (
         <form action={action}>
           <Hidden fields={{ ...fields, direction: "down" }} />
-          <SubmitButton compact variant="secondary">
+          <SubmitButton compact pendingLabel="Moving…" variant="secondary">
             Down
           </SubmitButton>
         </form>

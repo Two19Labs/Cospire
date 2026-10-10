@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { ActionBoundary } from "@/shared/ui";
+
 import styles from "./exam.module.css";
 
 // The exam's own frame: the whole viewport, an ink bar with the mock's name,
@@ -19,7 +21,7 @@ export function ExamFrame({ children, right, sub, title }: { children: ReactNode
         <span className={styles.spacer} />
         {right}
       </header>
-      {children}
+      <ActionBoundary>{children}</ActionBoundary>
     </div>
   );
 }

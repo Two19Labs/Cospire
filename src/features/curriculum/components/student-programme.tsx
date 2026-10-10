@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -8,7 +7,9 @@ import { SubmitButton } from "@/shared/ui";
 import { markTextReadAction, openDocumentItemAction } from "../actions/record-progress";
 import { itemTypeLabels, studentItemHref } from "../curriculum";
 import type { CurriculumItem } from "../queries/get-curriculum";
-import type { ProgrammeView, StudentProgramme } from "../queries/student-programmes";
+import type { ProgrammeView, StudentProgrammeRow } from "../queries/student-programmes";
+
+import { ProgressMeter } from "./progress-meter";
 
 export function StudentProgrammeList({
   page,
@@ -19,40 +20,46 @@ export function StudentProgrammeList({
   page: number;
   pageCount: number;
   profile: Profile;
-  rows: StudentProgramme[];
+  rows: StudentProgrammeRow[];
 }) {
   return (
-    <RoleShell description="The programmes you have been given." profile={profile} title="Programmes">
-      <section className="panel">
-        {rows.length === 0 ? (
-          <p className="panel-empty">No programmes yet. Your admin grants them.</p>
-        ) : (
-          <ol className="round-list">
-            {rows.map((row, index) => (
-              <li className="round-row" key={row.id}>
-                <span aria-hidden="true" className="round-number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="round-row__main">
-                  <h3>
-                    <Link className="title-link" href={`/student/programmes/${row.id}`}>
-                      {row.title}
-                    </Link>
-                  </h3>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-        {pageCount > 1 ? (
-          <p className="pagination">
+    <RoleShell description="Every programme you have been given, and how far through each you are." profile={profile} title="Programmes">
+      {rows.length === 0 ? (
+        <section className="panel">
+          <p className="panel-empty">No programmes yet. Your admin adds you to them.</p>
+        </section>
+      ) : (
+        <div className="card-grid card-grid--two">
+          {rows.map((row) => (
+            <ProgrammeCard key={row.id} row={row} />
+          ))}
+        </div>
+      )}
+      {pageCount > 1 ? (
+        <nav aria-label="Pagination" className="pagination">
+          {page > 1 ? <Link href={`/student/programmes?page=${page - 1}`} rel="prev">Previous</Link> : <span className="muted">Previous</span>}
+          <span className="muted">
             Page {page} of {pageCount}
-            {page > 1 ? <Link href={`/student/programmes?page=${page - 1}`}> Previous</Link> : null}
-            {page < pageCount ? <Link href={`/student/programmes?page=${page + 1}`}> Next</Link> : null}
-          </p>
-        ) : null}
-      </section>
+          </span>
+          {page < pageCount ? <Link href={`/student/programmes?page=${page + 1}`} rel="next">Next</Link> : <span className="muted">Next</span>}
+        </nav>
+      ) : null}
     </RoleShell>
+  );
+}
+
+// One programme as a card: the whole card is the link, so a phone has a large
+// target, and the progress sits under the title as in the prototype.
+export function ProgrammeCard({ row }: { row: StudentProgrammeRow }) {
+  return (
+    <Link className="course-card course-card--link" href={`/student/programmes/${row.id}`}>
+      <h2>{row.title}</h2>
+      <ProgressMeter complete={row.complete} percent={row.percent} total={row.total} />
+      <span className="course-card__bottom">
+        <span>{row.percent}% complete</span>
+        <span aria-hidden="true">{row.complete === 0 ? "Start" : row.complete === row.total ? "Review" : "Continue"} →</span>
+      </span>
+    </Link>
   );
 }
 
@@ -95,7 +102,7 @@ export function StudentProgrammeScreen({
   return (
     <RoleShell
       back={{ href: "/student/programmes", label: "Back to programmes" }}
-      description={`${view.complete.size} of ${total} items complete`}
+      description="Every item is open: take them in order, or in the order that suits you."
       profile={profile}
       title={view.programme.title}
     >
@@ -105,21 +112,9 @@ export function StudentProgrammeScreen({
         </p>
       ) : null}
 
-      <section className="panel">
-        <div className="panel__header">
-          <h2>Your progress</h2>
-          <div className="step-progress">
-            <p className="muted">{view.percent}% complete</p>
-            <div
-              aria-hidden="true"
-              className="step-progress__track"
-              // The value is data, not design.
-              style={{ "--progress": `${view.percent}%` } as CSSProperties}
-            >
-              <span className="step-progress__fill" />
-            </div>
-          </div>
-        </div>
+      <section aria-label="Your progress" className="panel panel--strip">
+        <ProgressMeter complete={view.complete.size} percent={view.percent} total={total} />
+        <p className="muted">{view.percent}% complete</p>
       </section>
 
       {view.sections.length === 0 ? (
@@ -128,12 +123,14 @@ export function StudentProgrammeScreen({
         </section>
       ) : null}
 
-      {view.sections.map((section, sectionIndex) => (
+      {view.sections.map((section) => (
         <section className="panel" key={section.id}>
           <div className="panel__header">
             <div>
               <h2>{section.title}</h2>
-              <p className="muted">Section {sectionIndex + 1}</p>
+              <p className="muted">
+                {section.items.length} {section.items.length === 1 ? "item" : "items"}
+              </p>
             </div>
           </div>
           {section.items.length === 0 ? (

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import type { MockSummary } from "../queries/mock-builder";
 
 // The page heading, shared with the loading skeleton.
-export const mocksHeading = "Practice with purpose.";
+export const mocksHeading = "Mock tests";
 
 export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Profile; mocks: MockSummary[]; page: number; pageCount: number }) {
   return (

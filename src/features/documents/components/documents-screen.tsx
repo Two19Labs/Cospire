@@ -23,7 +23,7 @@ import type { DocumentListPage } from "../queries/list-documents";
 import { UploadForm } from "./upload-form";
 
 // The page heading, shared with the loading skeleton.
-export const documentsHeading = "A library worth returning to.";
+export const documentsHeading = "Documents";
 
 interface DocumentsScreenProps {
   documents: DocumentListPage;

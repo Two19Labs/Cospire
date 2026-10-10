@@ -63,7 +63,7 @@ export function MockAccessPanel({ access, mockId, students }: { access?: string;
                     <SubmitButton
                       className={student.granted ? "button--ghost" : undefined}
                       compact
-                      pendingLabel={student.granted ? "Removing..." : "Adding..."}
+                      pendingLabel={student.granted ? "Removing…" : "Adding…"}
                       variant={student.granted ? "secondary" : "primary"}
                     >
                       {student.granted ? "Remove access" : "Grant access"}

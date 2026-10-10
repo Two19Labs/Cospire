@@ -49,21 +49,19 @@ function toAttempt(row: {
 // (`mocks_select_student`), so nothing here filters by grant.
 export async function listStudentMocks(): Promise<StudentMock[]> {
   const supabase = await createServerSupabaseClient();
-  const { data: mocks, error } = await supabase
-    .from("mocks")
-    .select(mockColumns)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  // Both at once: RLS returns a student only their own attempts, so the
+  // attempt read needs no mock ids and need not wait for the mock list.
+  const [mockResult, attemptResult] = await Promise.all([
+    supabase.from("mocks").select(mockColumns).order("created_at", { ascending: false }).limit(100),
+    supabase
+      .from("attempts")
+      .select("id, mock_id, proctored, score, started_at, status, submitted_at, submitted_by")
+      .order("started_at", { ascending: false })
+      .limit(1000),
+  ]);
+  const { data: mocks, error } = mockResult;
   if (error) throw new Error(`Unable to list mocks: ${error.message}`);
-
-  const ids = (mocks ?? []).map((mock) => mock.id);
-  const { data: attempts, error: attemptError } = ids.length
-    ? await supabase
-        .from("attempts")
-        .select("id, mock_id, proctored, score, started_at, status, submitted_at, submitted_by")
-        .in("mock_id", ids)
-        .order("started_at", { ascending: false })
-    : { data: [], error: null };
+  const { data: attempts, error: attemptError } = attemptResult;
   if (attemptError) throw new Error(`Unable to list attempts: ${attemptError.message}`);
 
   return (mocks ?? []).map((mock) => ({

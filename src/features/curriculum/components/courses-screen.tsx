@@ -19,7 +19,7 @@ import {
 import type { CourseListPage } from "../queries/list-courses";
 
 // The page heading, shared with the loading skeleton.
-export const programmesHeading = "Room to learn.";
+export const programmesHeading = "Programmes";
 
 interface CoursesScreenProps {
   courses: CourseListPage;

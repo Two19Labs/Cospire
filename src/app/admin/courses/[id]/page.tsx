@@ -39,15 +39,17 @@ export default async function AdminCoursePage({
   // Not a 403: telling a rival organisation's admin that a programme exists but
   // is not theirs is a disclosure in itself, and there is nothing they could do
   // with the distinction.
-  const course = await getCourse(courseId);
-  if (!course) notFound();
-
-  const [students, curriculum, documents, mocks] = await Promise.all([
+  // Read alongside everything else rather than before it: the other reads are
+  // scoped by RLS and harmless for a programme that turns out not to exist,
+  // and waiting for this one first cost a whole round trip on every view.
+  const [course, students, curriculum, documents, mocks] = await Promise.all([
+    getCourse(courseId),
     listCourseAccess(courseId),
     getCurriculum(courseId),
     listPickerPage("documents", parsePageNumber(firstValue(query.documentsPage))),
     listPickerPage("mocks", parsePageNumber(firstValue(query.mocksPage))),
   ]);
+  if (!course) notFound();
 
   return (
     <CourseDetail

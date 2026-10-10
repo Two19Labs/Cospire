@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-09 (Asia/Calcutta)
+Last updated: 2026-10-10 (Asia/Calcutta)
 
 This file holds what is true **now**: status, active work, what is pending, the
 blockers and the next actions. History lives in `docs/context/`, one file per
@@ -328,9 +328,9 @@ Two operational notes that cost time to rediscover:
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (owner session) | `fix/main-faults` | The two faults on `main`: the refused-document check in `verify.mjs`, and `loading-coverage.mjs` at 8/11. Regenerated `src/shared/db/types.ts` after the curriculum and activity-log migrations. No migration, no application code | `scripts/verify/verify.mjs`, `scripts/verify/loading-coverage.mjs`, `src/shared/db/types.ts` (generated) | **Fixed and verified; pull request being opened.** `verify.mjs` 36/36 and `loading-coverage.mjs` 11/11 on a local production build of `main` (`ee1e0e8`) against the hosted database, counts back to baseline. Both were harness faults; nothing leaked. Detail in `docs/context/verification-log.md` | 2026-10-09 |
+| Claude (UI audit agent) | `feat/ui-cleanup` | Full UI audit and cleanup, every role and screen: measured latency, real-browser click timings, task flows, craft and accessibility, then fixes by area. No migration, no `package.json` change, no business-logic change | `src/app/**` (presentation only), `src/features/*/components/**`, `src/shared/ui/**`, `src/app/globals.css`, `scripts/verify/ui-audit-*.mjs`, `docs/ui-audit-2026-10-09.md` | **Done, local commits, not pushed, no PR.** Audit and before/after tables in `docs/ui-audit-2026-10-09.md`. Fixed: blank page after every save (C1), slogan headings, student home per the prototype, programme page 505 → 195 ms; mean warm route 268 → 203 ms. **Open: C2**, Next's client sometimes never follows a save's redirect (button stays pending; reproduced on the deployed URL), mitigated with a reload link after 8 s. Every required check script passes on the final build; counts back to baseline. Write-up in `docs/context/completed.md` | 2026-10-10 |
 
-**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), and `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
+**Merged since 2026-10-08:** `feat/mock-import` (Phase 6.2-6.4) as PR #69 (`92df9fc`), `feat/small-items` (6.5) as PR #71 (`a65a9d3`) `feat/curriculum` (curriculums before video, migration `20261008120000` applied) as PR #72 (`b0de34d`), `feat/admin-gaps` (6.6 and D8, migration `20261008130000` applied) as PR #73 (`ee1e0e8`), and `fix/main-faults` (both `main` faults were check faults; types regenerated) as PR #74 (`783aac8`). Write-ups are in `docs/context/completed.md`. `feat/exam-screen` (6.1, the exam rebuild) merged as PR #70 (`9f808b3`) on 2026-10-09, after `test-engine-sit.mjs` 59/59 on the rebased branch; **no real-browser sitting yet**.
 
 **Earlier feature branches were all merged by 2026-09-28.**
 `feat/test-engine` merged as PR #63,
@@ -545,6 +545,12 @@ time otherwise.
 | Medium | Agreement kickoff prerequisites and week-four content deadline are ambiguous | Record the exact written Kickoff Date and dependency deadlines |
 
 ## Next recommended action
+
+**Owner, on `feat/ui-cleanup` (2026-10-10):** review the seven local commits
+and `docs/ui-audit-2026-10-09.md`, open the PR when content, and decide C2 (a
+Next patch upgrade or saves returning state instead of redirecting). In a
+headed browser: save something on an admin screen (it should dim, not blank),
+the new student home, a phone width.
 
 **Owner, after PRs #69-#73 (2026-10-09):** click through the new exam screen
 (desktop, then a phone), the curriculum builder and a student's programme page,

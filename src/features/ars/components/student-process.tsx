@@ -84,7 +84,7 @@ function RoundRow({ round }: { round: ProcessRound }) {
         )
       ) : reachable && round.submissionMode !== "offline" ? (
         <Link className="button button--primary" href={`/student/ars/${round.id}`}>
-          Continue
+          {round.started ? "Continue" : "Start"}
         </Link>
       ) : round.submissionMode === "offline" ? (
         <span className="pill">Scheduled</span>

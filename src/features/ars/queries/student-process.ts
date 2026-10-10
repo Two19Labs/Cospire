@@ -18,6 +18,8 @@ export interface ProcessRound {
   name: string;
   opensAt: string | null;
   sortOrder: number;
+  // A draft has been saved: the button says Continue rather than Start.
+  started?: boolean;
   state: RoundState;
   submissionMode: RoundMode;
 }
@@ -139,6 +141,7 @@ export async function listStudentProcesses(): Promise<StudentProcess[]> {
     for (const round of rounds) {
       const status = submissions.get(round.id)?.status ?? null;
       round.state = decideState({ hasEarlierUnanswered: earlierUnanswered, opensAt: round.opensAt, status });
+      round.started = status === "draft";
       if (status === null || status === "draft") earlierUnanswered = true;
     }
 

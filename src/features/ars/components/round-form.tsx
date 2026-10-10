@@ -295,7 +295,7 @@ export function RoundForm({
                 ))}
 
                 <div className="form-actions">
-                  <SubmitButton variant="primary">
+                  <SubmitButton pendingLabel={isLast ? "Handing in…" : "Saving…"} variant="primary">
                     {isLast ? "Hand in" : "Save & continue →"}
                   </SubmitButton>
                 </div>

@@ -155,8 +155,9 @@ function FieldRow({
             <Ids courseId={courseId} roundId={roundId} />
             <input name="fieldKey" type="hidden" value={field.key} />
             <input name="direction" type="hidden" value={direction} />
-            <SubmitButton className="button--ghost" compact variant="secondary">
-              {direction === "up" ? "↑" : "↓"}
+            <SubmitButton className="button--ghost" compact pendingLabel="…" variant="secondary">
+              <span aria-hidden="true">{direction === "up" ? "↑" : "↓"}</span>
+              <span className="visually-hidden">{direction === "up" ? "Move up" : "Move down"}</span>
             </SubmitButton>
           </form>
         ))}

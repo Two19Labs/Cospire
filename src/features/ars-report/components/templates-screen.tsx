@@ -16,7 +16,7 @@ import type { TemplateListPage } from "../queries/list-templates";
 import { SubmitButton } from "@/shared/ui";
 
 // The page heading, shared with the loading skeleton.
-export const templatesHeading = "Feedback with a shared language.";
+export const templatesHeading = "Report templates";
 
 export function TemplatesScreen({
   error,
