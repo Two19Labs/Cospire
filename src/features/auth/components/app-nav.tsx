@@ -8,9 +8,8 @@ import type { AppRole } from "../types";
 
 import { Icon, type IconName } from "./icon";
 
-// The left panel's navigation, as the approved admin workspace prototype draws
-// it: an ink rail, grouped items under small uppercase labels, and the current
-// item filled in gold with an ink dot.
+// The left panel's navigation: grouped items under small uppercase labels on a
+// near-white sidebar, the current item a soft grey filled block.
 //
 // A Client Component for one reason only -- `usePathname`, to know which item is
 // current. That runs during server rendering too, so the active item is already

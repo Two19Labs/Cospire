@@ -4,14 +4,15 @@ import type { ReactNode } from "react";
 import { logoutAction } from "../actions/logout";
 import type { AppRole, Profile } from "../types";
 
+import { AccentToggle } from "./accent-toggle";
 import { AppNav, PageEyebrow } from "./app-nav";
 import { Icon } from "./icon";
 import { ActionBoundary, SubmitButton } from "@/shared/ui";
 
-// The application shell, in the shape of the approved admin workspace
-// prototype: an ink rail on the left with grouped navigation and the account
-// at its foot, and a column on the right carrying a breadcrumb title bar over
-// a cream content area.
+// The application shell: a near-white sidebar on the left, separated by a
+// hairline, with grouped navigation and the account at its foot, and a column
+// on the right carrying a quiet breadcrumb title bar over the canvas. (Restyled
+// 2026-10-10 from the ink rail to the AfterBoards shape, Cospire's colours.)
 //
 // Every signed-in screen renders through here, so this is the one place the
 // layout is decided. Screens pass their own panels as children and know
@@ -169,6 +170,7 @@ export function RoleShell({
           </ActionBoundary>
         </main>
       </div>
+      {process.env.NODE_ENV === "development" ? <AccentToggle /> : null}
     </div>
   );
 }
