@@ -27,20 +27,14 @@
   --table-head: #fdfcf8;
   --card: #ffffff;
 
-  /* UI refresh, 2026-10-10: the AfterBoards shape in Cospire's colours. Three
-     near-whites that differ only just -- canvas, sidebar, card -- separated by
-     hairlines rather than shadows. */
-  --canvas: #f8f7f3;
-  --sidebar: #fdfcfa;
-  --nav-active: #f1f0ec;
   /* The 2px rule round a card that sits inside another card. Outer cards have
-     no border at all. */
-  --card-line: #edebe5;
+     no border at all (the 2026-10-10 card shape, kept in the original colours
+     the Client chose on 2026-10-12). */
+  --card-line: var(--line);
 
   /* Accents. Rust carries emphasis and destructive alike; the design has no
      separate red, and inventing one would break the warmth. */
   --rust: #b5471f;
-  --rust-bright: #c84a1a;
   --gold: #ffc24b;
   --sage: #7e9682;
 
@@ -94,31 +88,22 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --dur: 0.3s;
 
-  /* The one accent: primary actions, progress bars, the current tab. Plain
-     rust by default; the brighter rust is selected with data-accent="bright"
-     on <html> (dev-only toggle, for the owner to compare). White text on
-     plain rust is 5.40:1, on bright rust 4.72:1 -- both pass WCAG AA. */
-  --accent: var(--rust);
-  --accent-dark: #9a3c1a;
-
   /* Roles, mapped onto the palette so component rules never name a colour. */
-  --background: var(--canvas);
+  --background: var(--cream);
   --foreground: var(--ink);
   --muted: #647086;
-  --primary: var(--accent);
-  --primary-dark: var(--accent-dark);
+  --primary: var(--ink);
+  --primary-dark: #2d4265;
   --danger: var(--rust);
   --focus: var(--gold);
 
-  /* next/font sets `--font-inter` and `--font-figtree` on a class on <html>;
-     these two tokens choose between them. They must not share a name with a
-     next/font variable: a class and `:root` carry the same specificity, so
+  /* next/font sets `--font-inter` on a class on <html>. The tokens below must
+     not share its name: a class and `:root` carry the same specificity, so
      whichever is emitted last would win.
 
-     `--font-serif` is the HEADING face, whatever its name says. Since
-     2026-10-10 it is Inter, like the body, pending the Client's approval. To
-     go back to the serif (Recoleta Bold once its files arrive, Georgia until
-     then), set it to: Georgia, "Times New Roman", serif. */
+     `--font-serif` is the HEADING face, whatever its name says. It is Inter,
+     like the body: the Client chose it over Figtree and the serif on
+     2026-10-12. */
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-serif: var(--font-inter), system-ui, sans-serif;
 
@@ -126,18 +111,6 @@
   font-family:
     var(--font-sans, ui-sans-serif), system-ui, -apple-system, "Segoe UI",
     sans-serif;
-}
-
-/* The earlier fonts, for comparison: Figtree body, serif headings. Set only
-   by the development-only switch. */
-html[data-font="original"] {
-  --font-sans: var(--font-figtree), system-ui, sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
-}
-
-html[data-accent="bright"] {
-  --accent: var(--rust-bright);
-  --accent-dark: #ad3f16;
 }
 
 /* Small uppercase labels, tracked. */
@@ -481,7 +454,7 @@ textarea.input {
 }
 
 .step-progress__fill {
-  background: var(--accent);
+  background: var(--gold);
   transition: width var(--dur) var(--ease);
   border-radius: var(--r-pill);
   display: block;
@@ -581,7 +554,7 @@ textarea.input {
 }
 
 .button--secondary:hover:not(:disabled) {
-  background: var(--nav-active);
+  background: var(--cream-deep);
 }
 
 .button--ghost {
@@ -591,7 +564,7 @@ textarea.input {
 }
 
 .button--ghost:hover:not(:disabled) {
-  background: var(--nav-active);
+  background: var(--cream-deep);
   color: var(--ink);
 }
 
@@ -747,9 +720,8 @@ a.button {
 }
 
 .app-sidebar {
-  background: var(--sidebar);
-  border-right: 1px solid var(--line);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--cream);
   display: flex;
   flex: none;
   flex-direction: column;
@@ -792,7 +764,7 @@ a.button {
 
 /* The rail's group label, light on dark, tracked wider. */
 .app-nav__group {
-  color: var(--ink-45);
+  color: #a8b2c2;
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -807,7 +779,7 @@ a.button {
 .app-nav__link {
   align-items: center;
   border-radius: var(--r-btn);
-  color: var(--ink-70);
+  color: #dce0e7;
   display: flex;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -826,16 +798,24 @@ a.button {
 }
 
 .app-nav__link:hover {
-  background: var(--canvas);
-  color: var(--ink);
+  background: rgb(255 255 255 / 6%);
+  color: white;
 }
 
-/* The current item: a soft grey filled block, nothing louder. */
 .app-nav__link--active,
 .app-nav__link--active:hover {
-  background: var(--nav-active);
+  background: var(--gold);
   color: var(--ink);
   font-weight: 600;
+}
+
+.app-nav__link--active::after {
+  background: var(--ink);
+  border-radius: 50%;
+  content: "";
+  height: 5px;
+  margin-left: auto;
+  width: 5px;
 }
 
 .app-sidebar__spacer {
@@ -845,7 +825,7 @@ a.button {
 
 .app-account {
   align-items: center;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgb(255 255 255 / 12%);
   display: grid;
   gap: 0.875rem 0.625rem;
   grid-template-columns: auto minmax(0, 1fr);
@@ -853,7 +833,7 @@ a.button {
 }
 
 .app-avatar {
-  background: var(--tint-sage);
+  background: #e7ebdf;
   border-radius: 50%;
   color: var(--ink);
   display: grid;
@@ -879,7 +859,7 @@ a.button {
 }
 
 .app-account__email {
-  color: var(--muted);
+  color: #a8b2c2;
   font-size: 0.6875rem;
   margin: 0.125rem 0 0;
   overflow: hidden;
@@ -895,14 +875,14 @@ a.button {
 
 .app-account .app-account__signout {
   background: transparent;
-  border-color: var(--line);
-  color: var(--ink-70);
+  border-color: rgb(255 255 255 / 16%);
+  color: #bfc8d6;
   width: 100%;
 }
 
 .app-account .app-account__signout:hover:not(:disabled) {
-  background: var(--canvas);
-  color: var(--ink);
+  background: rgb(255 255 255 / 6%);
+  color: var(--gold);
 }
 
 .app-main {
@@ -914,7 +894,7 @@ a.button {
 
 .app-topbar {
   align-items: center;
-  background: var(--sidebar);
+  background: var(--paper-raised);
   border-bottom: 1px solid var(--line);
   display: flex;
   flex: none;
@@ -965,7 +945,7 @@ a.button {
 }
 
 .app-topbar__avatar {
-  background: var(--tint-sage);
+  background: #eee8d7;
   border-radius: 50%;
   color: var(--ink);
   display: grid;
@@ -1086,8 +1066,6 @@ a.button {
 
   .app-sidebar {
     align-items: center;
-    border-bottom: 1px solid var(--line);
-    border-right: 0;
     display: grid;
     gap: 0.75rem;
     grid-template-columns: auto minmax(0, 1fr);
@@ -1138,7 +1116,8 @@ a.button {
   }
 
   .app-nav__group,
-  .app-sidebar__spacer {
+  .app-sidebar__spacer,
+  .app-nav__link--active::after {
     display: none;
   }
 
@@ -1900,7 +1879,7 @@ form.panel > h2:first-child {
 }
 
 .tabs__link--current {
-  border-color: var(--accent);
+  border-color: var(--rust);
   color: var(--ink);
   font-weight: 600;
 }
@@ -2893,6 +2872,19 @@ form.panel > h2:first-child {
   }
 }
 
+/* The rail is ink, and an ink-tinted skeleton on ink is invisible -- the
+   account block simply looked empty while it loaded. Same sweep, cream. */
+.skeleton--on-dark {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(251 246 227 / 10%) 25%,
+      rgb(251 246 227 / 18%) 37%,
+      rgb(251 246 227 / 10%) 63%
+    )
+    0 0 / 400% 100%;
+}
+
 .skeleton {
   max-width: 100%;
 }
@@ -3111,7 +3103,7 @@ form.panel > h2:first-child {
 }
 
 .progress-meter .step-progress__track {
-  background: var(--nav-active);
+  background: var(--cream-deep);
 }
 
 .progress-meter__label {
@@ -3352,51 +3344,6 @@ form.panel > h2:first-child {
   }
 }
 
-/* The development-only design switches (design-toggles.tsx): a small panel
-   in the bottom-right corner. Never rendered in a production build. */
-.design-toggles {
-  background: var(--card);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-btn);
-  bottom: 0.75rem;
-  display: grid;
-  font-size: var(--fs-label);
-  gap: 0.25rem;
-  padding: 0.375rem;
-  position: fixed;
-  right: 0.75rem;
-  z-index: 60;
-}
-
-.design-toggles__row {
-  align-items: center;
-  display: flex;
-  gap: 0.25rem;
-}
-
-.design-toggles__label {
-  color: var(--muted);
-  font-weight: 600;
-  padding: 0 0.375rem;
-  width: 3.5rem;
-}
-
-.design-toggles__option {
-  background: transparent;
-  border: 0;
-  border-radius: var(--r-sm);
-  color: var(--ink-70);
-  cursor: pointer;
-  font-size: var(--fs-label);
-  padding: 0.25rem 0.5rem;
-}
-
-.design-toggles__option[aria-pressed="true"] {
-  background: var(--nav-active);
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* The admin overview's compact modules sit two to a line. */
 .module--half {
   grid-column: auto;
@@ -3419,7 +3366,7 @@ form.panel > h2:first-child {
 }
 
 .fact-chips li {
-  background: var(--nav-active);
+  background: var(--cream-deep);
   border-radius: var(--r-pill);
   font-size: 0.75rem;
   font-weight: 500;

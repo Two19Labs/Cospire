@@ -9,7 +9,7 @@ import { ProgressMeter } from "@/features/curriculum/components/progress-meter";
 import type { StudentProgrammeRow } from "@/features/curriculum/queries/student-programmes";
 import type { StudentMock } from "@/features/test-engine/queries/student-mocks";
 
-// The student's home: two big white cards on the canvas. One holds the
+// The student's home: two big white cards on the cream page. One holds the
 // programmes they are working through, each with its percentage set large;
 // the other what is waiting for them next -- a test to start or finish, an ARS
 // round that is their turn. Then the mentor's released reports.
@@ -130,7 +130,7 @@ export function StudentHome({
                     <p>{item.detail}</p>
                   </div>
                   {/* The first item is the one thing to do now, so it alone
-                      carries the accent. */}
+                      is a primary button. */}
                   <Link className={`button ${index === 0 ? "button--primary" : "button--secondary"}`} href={item.href}>
                     {item.action}
                   </Link>

@@ -210,8 +210,8 @@ export function ShellSkeleton({
         <div className="app-account">
           <span aria-hidden="true" className="app-avatar" />
           <div className="app-account__who skeleton-lines">
-            <Skeleton width="70%" />
-            <Skeleton className="skeleton--small" width="90%" />
+            <Skeleton className="skeleton--on-dark" width="70%" />
+            <Skeleton className="skeleton--on-dark skeleton--small" width="90%" />
           </div>
         </div>
       </aside>

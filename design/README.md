@@ -38,28 +38,23 @@ meanings, which is what keeps the palette warm.
 
 ## Fonts
 
-**Inter, body and headings, since 2026-10-10, pending the Client's approval.**
-It is self-hosted through `next/font/google` in `src/app/layout.tsx` (weights
-400 to 700), and `--font-serif`, the heading token, points at it. To go back,
-load Figtree in `layout.tsx` and set `--font-serif` back to the serif stack;
-nothing else changes. What follows describes the earlier choice.
+**Inter, body and headings.** The Client chose it on 2026-10-12 over the
+prototype's Figtree body and Recoleta headings, which they found tiring to read
+and less professional for an LMS. It is self-hosted through `next/font/google`
+in `src/app/layout.tsx` (weights 400 to 700), and `--font-serif`, the heading
+token, points at it too.
 
-**Figtree** (body and UI) is open source and self-hosted through
-`next/font/google` in `src/app/layout.tsx`. Only weights 400, 500 and 600 are
-used; the prototype declares 700 but every heading in the design is set in the
-serif, so shipping it would send bytes nothing renders.
+Figtree is no longer loaded, and the Recoleta Bold files the prototype named are
+no longer owed by the Client.
 
-**Recoleta Bold** is the heading face, and **it is not yet available**. The
-prototype's three `@font-face` blocks point at asset ids the manifest does not
-contain, so the export itself falls back to a system serif. The Client holds a
-licence and will supply the files.
+## Colours
 
-Until then `--font-serif` resolves to Georgia. Swapping it in is a one-line
-change to that token plus a `@font-face` block. Only **weight 700** is needed —
-all thirty heading usages in the prototype are Bold.
-
-Recorded as an outstanding Client-owned item in `CONTEXT.md` and
-`docs/implementation-plan.md`.
+**The prototype's own colours, kept by the Client on 2026-10-12**: the ink rail,
+cream page, white cards, gold for the current item and progress, rust for
+emphasis and danger. A near-white sidebar with a rust accent was shown as the
+alternative and declined, for consistency with Cospire's videos and brand
+material. The card shape of 2026-10-10 stays: 20px outer cards with no border,
+16px inner cards with a 2px rule, no shadows, pill primary buttons.
 
 ## Scope: the prototype shows more than the agreement covers
 
