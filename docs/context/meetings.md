@@ -2,6 +2,47 @@
 
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
+## Agenda prepared for the client meeting, October 2026: answers not yet recorded
+
+Prepared 2026-10-10 for the owner's next scheduled meeting. **No outcome is
+recorded yet**; whoever learns the answers replaces this list with them.
+
+- **Accounts:**
+  - VdoCipher access with a firm date and one real test video
+  - Supabase Pro (overdue: ARS uploads live on Free, no backups, pauses idle)
+  - Vercel Pro in Cospire's name, unless N3 changes hosting
+  - custom SMTP and its DNS
+  - billing switched on for the Gemini project
+- **Content:**
+  - their videos, question banks and documents, with a written list of what
+    is still in use
+  - two or three samples of each of the five content kinds, plus mock
+    question lists
+  - the five section names (N4)
+  - the written list of programmes and what "ARS" stands for
+  - where "Ashoka" belongs
+- **Design** (shown on localhost through the switch panel):
+  - Inter or Recoleta
+  - plain or bright rust
+  - the white sidebar and card style
+  - the exam screen staying CAT-like
+  - an on-screen number pad and calculator: new work, clause 12
+  - mocks opening in their own window
+- **Paperwork:**
+  - the clause 16.1 amendment and clause 12 quote for work already built
+    (process importer, ARS report, mock-first import and duplicate detection,
+    paste-a-prompt import instead of Google Docs image extraction)
+  - sub-admins and a mentor-report parser to quote
+  - the countersigned agreement with the Kickoff Date
+  - written clause 4.4 notice that video slips
+- **Questions:**
+  - time-per-question analytics (N5)
+  - Excel export (N2)
+  - the MESA question-type fork
+  - one consolidated feedback list
+- **Tell them:** a determined user can fetch the clean PDF through its signed
+  URL within ten minutes; the watermark covers page images only.
+
 ## The status call, 2026-10-01
 
 The owner and Aditya Singhani with the Client's founder, about 22 minutes. The
