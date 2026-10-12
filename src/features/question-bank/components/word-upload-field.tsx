@@ -4,11 +4,14 @@ import { useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/shared/db/supabase/browser";
 
-import { DocxError, readDocx } from "../docx";
+import { type DocxPaper, DocxError, readDocx } from "../docx";
+import { PdfError, readPdf } from "../pdf";
 import { buildQuestionImagePath, questionImagesBucket } from "../storage";
 
-// Step 1 of the Word import: open the document, put its pictures in the bucket,
-// and hand back the paper's text with `[[figure:N]]` where each one sat.
+// Step 1 of the import: open a Word file or a PDF, put its pictures in the
+// bucket, and hand back the paper's text with `[[figure:N]]` where each one sat.
+// The two readers return the same shape, so nothing after this knows which it
+// was.
 //
 // **It runs in the browser, and that is deliberate.** Every upload in this
 // project goes from the browser straight to Storage under the author's own
@@ -38,9 +41,17 @@ export interface ExtractedPaper {
   text: string;
 }
 
-// A Word file larger than this is not a question paper, and reading one in the
+// A file larger than this is not a question paper, and reading one in the
 // browser would hang the tab before it failed.
-const maxDocxBytes = 25 * 1024 * 1024;
+const maxPaperBytes = 25 * 1024 * 1024;
+
+// PDF.js, loaded only when a PDF is chosen and only in the browser: it reaches
+// for browser globals as it initialises, as the document viewer notes.
+async function loadPdfJs() {
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+  return pdfjs;
+}
 
 export function WordUploadField({
   onExtracted,
@@ -60,11 +71,12 @@ export function WordUploadField({
     setError(null);
     onExtracted(null);
 
-    if (!/\.docx$/i.test(file.name)) {
-      setError("That is not a .docx file. Open it in Word and use File → Save As → Word Document (.docx).");
+    const isPdf = /\.pdf$/i.test(file.name);
+    if (!isPdf && !/\.docx$/i.test(file.name)) {
+      setError("That is not a .docx or .pdf file. Save the paper from Word as .docx, or export it as a PDF.");
       return;
     }
-    if (file.size > maxDocxBytes) {
+    if (file.size > maxPaperBytes) {
       setError("That file is larger than 25 MB. Split the paper and import it in parts.");
       return;
     }
@@ -78,11 +90,16 @@ export function WordUploadField({
         setPrevious([]);
       }
 
-      let paper;
+      let paper: DocxPaper;
       try {
-        paper = readDocx(new Uint8Array(await file.arrayBuffer()));
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        paper = isPdf ? await readPdf(bytes, await loadPdfJs()) : readDocx(bytes);
       } catch (cause) {
-        setError(cause instanceof DocxError ? cause.message : "That Word file could not be read.");
+        setError(
+          cause instanceof DocxError || cause instanceof PdfError
+            ? cause.message
+            : `That ${isPdf ? "PDF" : "Word file"} could not be read.`,
+        );
         return;
       }
 
@@ -100,12 +117,24 @@ export function WordUploadField({
         });
         // A Uint8Array from the zip, not the File: the picture is one entry
         // inside it, so there is nothing else to upload.
-        const { error: uploadError } = await supabase.storage
-          .from(questionImagesBucket)
-          .upload(path, new Blob([new Uint8Array(figure.bytes)], { type: figure.contentType }), {
-            contentType: figure.contentType,
-            upsert: false,
-          });
+        const upload = () =>
+          supabase.storage
+            .from(questionImagesBucket)
+            .upload(path, new Blob([new Uint8Array(figure.bytes!)], { type: figure.contentType! }), {
+              contentType: figure.contentType!,
+              upsert: false,
+            });
+        // Tried twice. A paper with twenty pictures is twenty requests in a
+        // row, and one dropped connection among them is common enough on a
+        // real network (seen locally against the hosted project) that it
+        // should not cost the admin a hand-pasted figure.
+        let { error: uploadError } = await upload();
+        if (uploadError) {
+          ({ error: uploadError } = await upload());
+          // The first attempt can land before its connection drops, and then
+          // the second finds the picture already there.
+          if (uploadError && /already exists/i.test(uploadError.message)) uploadError = null;
+        }
         if (uploadError) {
           failed.push(figure.n);
           continue;
@@ -122,7 +151,7 @@ export function WordUploadField({
 
       setPrevious(stored);
       onExtracted({
-        documentName: file.name.replace(/\.docx$/i, "").replace(/[\s_]+/g, " ").trim().slice(0, 200),
+        documentName: file.name.replace(/\.(docx|pdf)$/i, "").replace(/[\s_]+/g, " ").trim().slice(0, 200),
         figureCount: paper.figures.length,
         figurePaths,
         notes,
@@ -136,9 +165,9 @@ export function WordUploadField({
   return (
     <div className="field">
       <label className="button button--secondary button--compact">
-        {busy ? "Opening…" : "Choose a Word file"}
+        {busy ? "Opening…" : "Choose a Word file or PDF"}
         <input
-          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           className="visually-hidden"
           disabled={busy}
           onChange={(event) => {
@@ -150,8 +179,10 @@ export function WordUploadField({
         />
       </label>
       <span className="field__hint">
-        A .docx saved from Word, up to 25 MB. The pictures are taken out here and
-        the text below comes back with a numbered marker where each one sat.
+        A .docx saved from Word, or a PDF that is not a scan, up to 25 MB. The
+        pictures are taken out here and the text below comes back with a numbered
+        marker where each one sat. A long PDF full of pictures can take a few
+        seconds.
       </span>
       {busy ? (
         <span aria-live="polite" className="muted">

@@ -6,9 +6,10 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
-| 2026-10-10 | **UI audit and cleanup** (`feat/ui-cleanup`, local commits, not pushed, no PR) | Every screen of every role measured (latency with a Supabase-call trace, headless Chrome over CDP, 13 task flows), then fixed: the blank page after every save (C1), slogan headings, the student home per the prototype, programme page 505 → 195 ms, mean warm route 268 → 203 ms. **C2 open**: Next sometimes never follows a save's redirect. All required check scripts pass on the final build. See *UI audit and cleanup, 2026-10-10* below and `docs/ui-audit-2026-10-09.md` |
+| 2026-10-10 | **UI audit and cleanup** (`feat/ui-cleanup`, PR #75) | Every screen of every role measured (latency with a Supabase-call trace, headless Chrome over CDP, 13 task flows), then fixed: the blank page after every save (C1), slogan headings, the student home per the prototype, programme page 505 → 195 ms, mean warm route 268 → 203 ms. **C2 open**: Next sometimes never follows a save's redirect. All required check scripts pass on the final build. See *UI audit and cleanup, 2026-10-10* below and `docs/ui-audit-2026-10-09.md` |
 | 2026-10-03 | **Phase 6.5, small committed items** (`feat/small-items`, not yet merged): watermark to one bottom-left mark, document-viewer full screen, the stale Programmes card removed | `npm run typecheck`, `lint`, `test` (537/537) and `npx next build` all pass. `scripts/verify/verify.mjs` 35/36 against a local production build and the hosted database (one pre-existing, unrelated failure -- see below); `scripts/verify/programmes-ars-split.mjs` 19/19 after updating its stale assertion. Real-browser screenshots (Chrome via raw CDP, JavaScript on, so pdfjs-dist actually painted) confirm the watermark and full screen both work. See *Phase 6.5, small committed items* |
 | 2026-10-08 | **Curriculums before video, Phase 2 steps 3, 4, 4b, 5** (`feat/curriculum`, local commits, not pushed) | `sections`, `curriculum_items` (document, test, text; video refused until the video library), the admin builder on a programme, programme grants cascading to every item (N11), `item_progress` for documents and text, and the student programme page. Typecheck, lint, tests and `next build` pass. **Migration not applied and `scripts/verify/curriculum.mjs` never run**; not clicked through in a browser. See *Curriculums before video* |
 | 2026-10-03 | **The exam screen rebuilt, Phase 6 step 6.1 (D11), and long admin saves given a real loading state (D12)** (`feat/exam-screen`, local, not pushed; based on `feat/mock-import`) | A section arrives in one request and its questions are switched in the browser; answers and mark-for-review save in the background through a new server action; the sitting is a full-viewport exam frame outside `RoleShell`, entered in full screen from the Start and Begin buttons. The no-JavaScript form path is kept. No migration. `test-engine-sit.mjs` **59/59** (49 earlier checks plus 10 new) with `SIT_RESCORE=1` on a local production build against the hosted database, counts back to baseline; `analytics` 53/53, `mock-import` 26/26, `ars-aptitude` 14/14, `mock-builder` 19/19; 556/556 unit tests. **Not clicked through in a real browser.** See *The exam screen, 6.1* |
@@ -65,6 +66,53 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-09-20 | The importer's own harness found two false passes before it found anything else | A probe asserting on the word "Application" passed against a page that had parsed nothing, because the copyable prompt contains that word in its own example. And a `\b` written into a regex through a Python patch became a literal backspace byte, so the hidden-field reader silently matched nothing and every action post returned 500. Both are the same class of error: a probe that matches prose rather than behaviour |
 | 2026-09-18 | **ARS report database and mentor/student workflow** | Four report/late-stamp migrations are applied. Mentor queue/editor and student released-report view built, including weighted totals, configurable metric rows and optional narrative. Database probe 17/17; production-build HTTP workflow 12/12; baseline restored. **Admin template authoring is not built**, so this is not yet deploy-ready as a self-service feature |
 | 2026-09-20 | **Multi-file ARS upload UI built, merged and deployed** | A file question uploads directly from the browser to the private `ars-uploads` bucket, attaches metadata under its stable field key, and can be replaced or removed only while the submission is a draft. Multiple questions in one form are supported. Migration `20260920150318` is applied; live Storage verification is 10/10; typecheck, lint, 226 tests and production build pass. PR #36 merged as `0e0f14f`; Production deployed it and a signed-in live capture confirmed a real file input with no placeholder |
+
+### PDF upload, 2026-10-12
+
+**Why.** The Client's mock papers arrived as PDFs (11 files: 4 Ashoka, 1 MESA,
+6 MU), and the import only took pictures out of Word files, so every chart and
+diagram would have been lost. PDF import is in scope (operating manual §4,
+`question_imports` is "staging for Doc and PDF import"); guaranteed figure
+extraction is not (Annexure B), so this is best effort and says so on screen.
+
+**What.** `src/features/question-bank/pdf.ts` drives PDF.js (already a
+dependency, for the viewer) and returns the same shape as `readDocx`, so
+everything after the upload is shared. `pdf-text.ts` is the pure layout step:
+text in PDF.js's order, each picture placed before the first line wholly below
+it, so an option letter level with its picture comes first. `png.ts` encodes
+PDF.js's decoded pixels as PNG with `fflate`. The upload field takes `.pdf`;
+one retry per picture upload was added for both formats.
+
+**Decided along the way.**
+- Pictures smaller than 12 points either side are icons or rules and are left
+  out; a picture drawn on 3 or more pages is a logo and is left out. Repeats are
+  found by a hash of the pixels, because PDF.js names a picture per page.
+- A PDF with almost no text is refused as a scan rather than imported empty.
+- A chart the PDF *draws* (vector) has no picture to take; the admin is told to
+  check picture questions on review. None of the 11 Client papers needed it as
+  far as the counts show (every embedded image came out), but that is not proof
+  there are no vector charts in them.
+- Reading and PNG encoding run on the page's main thread: MU Mock 1 (44 pages,
+  22 pictures) took 35 s in headless Chrome including uploads. A Web Worker
+  would keep the tab responsive; not done.
+
+**Verified** (local production build against the hosted database, counts back
+to baseline each time):
+- all 11 Client PDFs through `readPdf` locally: 136/136 pictures, largest PNG
+  3.16 MB (limit 5 MB); MU Mock-6 left out 11 icons; text clean, MESA in full
+- `scripts/verify/pdf-import.mjs` 11/11 with MU Mock 1 and with MU Mock 2 as the
+  real paper (22/22 and 23/23 pictures accepted by the bucket)
+- `scripts/verify/docx-import.mjs` 25/25 (no regression)
+- `scripts/verify/pdf-import-browser.mjs` 6/6 in headless Chrome for MU Mock 1
+  (22 pictures, 35.4 s), Ashoka Mock 1 (14, 8.9 s) and MESA Mock 2 (none)
+
+**Found while verifying.** Uploads to the hosted project from this machine
+sometimes fail with `fetch failed` or `ERR_HTTP2_PROTOCOL_ERROR` (1-2 of 22),
+which is why each upload is now tried twice.
+
+**Not verified.** Gemini reading a PDF-derived paper (billing is still off, and
+a real paper must not go to the free tier), and a full mock built from one of
+these papers: that needs the Client's settings and corrected keys first.
 
 ### Admin gaps, 2026-10-08 (Phase 6.6 and D8)
 

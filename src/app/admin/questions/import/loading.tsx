@@ -1,6 +1,6 @@
 import { ShellSkeleton, SkeletonForm, SkeletonLines, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
 
-// The four steps of an import: open a Word file, copy the prompt, paste the
+// The four steps of an import: open a Word file or PDF, copy the prompt, paste the
 // answer, send it for review. The last panel is the list of earlier imports.
 export default function Loading() {
   return (
