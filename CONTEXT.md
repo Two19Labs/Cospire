@@ -32,6 +32,7 @@ credentials, student data or anyone's personal data here.
   in the AfterBoards card shape; typed names and titles normalised on save.
   See *UI refresh* under Pending and the 2026-10-10 rows of the Completed log in
   `docs/context/completed.md`.
+- **Question import reads PDFs** beside Word files, pictures included (best effort, Annexure B): *PDF upload, 2026-10-12* in `docs/context/completed.md`.
 - **Built and verified (local production builds against the hosted
   database):**
   - users, roles, access granting; the document library and protected viewer

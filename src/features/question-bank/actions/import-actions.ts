@@ -135,7 +135,7 @@ export async function askGeminiAction(
   };
 
   if (text.trim() === "") {
-    return { ...echo, problems: ["There is no document text to send. Open a Word file first."], usage: null };
+    return { ...echo, problems: ["There is no document text to send. Open a Word file or PDF first."], usage: null };
   }
   const defaultMarks = parseDefaultMarks(rawDefault);
   if (defaultMarks === null) {

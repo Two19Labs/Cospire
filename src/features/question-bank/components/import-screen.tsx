@@ -237,12 +237,12 @@ export function QuestionImportScreen({
         <section className="panel stack-form">
           <h2>Step 1 — open the paper</h2>
           <p className="muted">
-            Choose the paper as a <code>.docx</code>. Its pictures are taken out here and numbered where each one sat.
+            Choose the paper as a <code>.docx</code> or a PDF. Its pictures are taken out here and numbered where each one sat.
             {buildMock ? " After review, its questions go into the bank and the mock is built from them." : ""}
           </p>
           <WordUploadField onExtracted={setPaper} orgId={orgId} />
           <p className="muted">
-            No Word file?{" "}
+            No file?{" "}
             <Link href={`${buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}?paste=1${buildMock && linkRoundId ? `&round=${linkRoundId}` : ""}`}>
               Paste a model&apos;s answer instead
             </Link>
