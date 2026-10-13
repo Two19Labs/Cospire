@@ -5,14 +5,14 @@ import type { StudentReportPage } from "@/features/ars-report/queries/list-repor
 import type { StudentProcess } from "@/features/ars/queries/student-process";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
-import { ProgrammeCard } from "@/features/curriculum/components/student-programme";
+import { ProgressMeter } from "@/features/curriculum/components/progress-meter";
 import type { StudentProgrammeRow } from "@/features/curriculum/queries/student-programmes";
 import type { StudentMock } from "@/features/test-engine/queries/student-mocks";
 
-// The student's home, in the shape of the approved prototype: the programmes
-// they are working through, with progress, and what is waiting for them next
-// -- a test to start or finish, an ARS round that is their turn -- then the
-// mentor's released reports.
+// The student's home: two big white cards on the cream page. One holds the
+// programmes they are working through, each with its percentage set large;
+// the other what is waiting for them next -- a test to start or finish, an ARS
+// round that is their turn. Then the mentor's released reports.
 //
 // The prototype also shows a study streak and "mocks attempted / average
 // score" tiles. Those are prototype scope, not Annexure A (design/README.md),
@@ -80,7 +80,7 @@ export function StudentHome({
   return (
     <RoleShell description="Your programmes, and what is waiting for you next." heading={`Welcome back, ${firstName}.`} profile={profile} title="Home">
       <div className="home-grid">
-        <section aria-labelledby="home-programmes" className="home-grid__main">
+        <section aria-labelledby="home-programmes" className="home-card home-grid__main">
           <div className="section-head">
             <h2 className="section-label" id="home-programmes">
               My programmes
@@ -92,33 +92,46 @@ export function StudentHome({
             ) : null}
           </div>
           {programmes.rows.length === 0 ? (
-            <p className="panel panel-empty">No programmes yet. Your admin adds you to them.</p>
+            <p className="panel-empty">No programmes yet. Your admin adds you to them.</p>
           ) : (
-            <div className="card-grid card-grid--stack">
+            <ul className="home-rows">
               {programmes.rows.slice(0, shown).map((row) => (
-                <ProgrammeCard key={row.id} row={row} />
+                <li key={row.id}>
+                  <Link className="home-row" href={`/student/programmes/${row.id}`}>
+                    <span className="home-row__text">
+                      <h3>{row.title}</h3>
+                      <ProgressMeter complete={row.complete} percent={row.percent} total={row.total} />
+                    </span>
+                    <span className="home-row__figure">
+                      <strong>{row.percent}%</strong>
+                      <small>{row.complete === 0 ? "Start" : row.complete === row.total ? "Review" : "Continue"} →</small>
+                    </span>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
 
-        <section aria-labelledby="home-next" className="home-grid__side">
+        <section aria-labelledby="home-next" className="home-card home-grid__side">
           <div className="section-head">
             <h2 className="section-label" id="home-next">
               Next up
             </h2>
           </div>
           {upcoming.length === 0 ? (
-            <p className="panel panel-empty">Nothing is waiting for you. New tests and ARS rounds appear here.</p>
+            <p className="panel-empty">Nothing is waiting for you. New tests and ARS rounds appear here.</p>
           ) : (
             <ul className="next-list">
-              {upcoming.map((item) => (
+              {upcoming.map((item, index) => (
                 <li className="next-card" key={item.key}>
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.detail}</p>
                   </div>
-                  <Link className="button button--secondary button--compact" href={item.href}>
+                  {/* The first item is the one thing to do now, so it alone
+                      is a primary button. */}
+                  <Link className={`button ${index === 0 ? "button--primary" : "button--secondary"}`} href={item.href}>
                     {item.action}
                   </Link>
                 </li>

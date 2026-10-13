@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import { maxMockDocumentLength, parseMockDocument } from "../mock-document";
 import { initialMockDocumentState, type MockDocumentState } from "../mock-document-state";
 import { resolveMockDocument } from "../queries/resolve-mock-document";
+import { normaliseTitle } from "@/shared/utils/normalise-title";
 
 // Building a mock from a document that quotes question IDs.
 //
@@ -71,8 +72,8 @@ export async function importMockDocumentAction(
     p_negative_marking: spec.negativeMarking,
     p_negative_marking_types: spec.negativeMarkingTypes,
     p_proctoring_enabled: spec.proctoringEnabled,
-    p_sections: resolved.sections,
-    p_title: spec.title,
+    p_sections: resolved.sections.map((section) => ({ ...section, title: normaliseTitle(section.title) })),
+    p_title: normaliseTitle(spec.title),
   });
   if (error || data === null) {
     // The database's own refusal, shown as itself. It is the authority on mock

@@ -1,3 +1,5 @@
+import { normaliseTitle } from "@/shared/utils/normalise-title";
+
 // Validation for everything an admin types about an ARS round.
 //
 // The bounds match the check constraints in `20260910144415_ars_rounds.sql` and
@@ -128,7 +130,7 @@ export function validateNewRound(input: {
     errors.dates = "The deadline cannot fall before the opening date.";
   }
 
-  const name = typeof input.name === "string" ? input.name.trim() : "";
+  const name = typeof input.name === "string" ? normaliseTitle(input.name) : "";
   if (!name) {
     errors.name = "Give the round a name.";
   } else if (name.length > roundNameMaxLength) {

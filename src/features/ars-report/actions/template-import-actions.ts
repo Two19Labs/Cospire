@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import { parseOptionalId } from "../template-input";
 import { parseImportedTemplate } from "../template-import-spec";
 import { initialTemplateImportState, type TemplateImportState } from "../template-import-state";
+import { normaliseTitle } from "@/shared/utils/normalise-title";
 
 function paste(formData: FormData): string {
   const raw = formData.get("pasted");
@@ -38,7 +39,7 @@ export async function createImportedTemplateAction(_state: TemplateImportState, 
   if (unmatched.length) return { pasted, problems: unmatched.map((component) => `No round named “${component.roundName}” exists in the selected programme. Remove that round name or choose the matching programme.`), template: parsed.template };
 
   const { data: created, error } = await supabase.from("ars_report_templates").insert({
-    course_id: course.value, is_active: false, name: parsed.template.name, org_id: admin.orgId,
+    course_id: course.value, is_active: false, name: normaliseTitle(parsed.template.name), org_id: admin.orgId,
     overall_levels: parsed.template.overallLevels, readiness_tags: parsed.template.readinessTags,
   }).select("id").single();
   if (error || !created) return { pasted, problems: ["The template could not be created."], template: parsed.template };
@@ -47,7 +48,7 @@ export async function createImportedTemplateAction(_state: TemplateImportState, 
     metric_has_notes: component.metricHasNotes, metric_has_scores: component.metricHasScores,
     metric_label: component.metricLabel, metric_names: component.metricNames, org_id: admin.orgId,
     round_id: null,
-    sort_order: index, template_id: created.id, title: component.title,
+    sort_order: index, template_id: created.id, title: normaliseTitle(component.title),
     uses_action_plan: component.usesActionPlan, uses_development_areas: component.usesDevelopmentAreas,
     uses_strengths: component.usesStrengths, weightage_pct: component.weightagePct,
   })));

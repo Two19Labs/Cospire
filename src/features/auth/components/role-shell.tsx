@@ -11,7 +11,8 @@ import { ActionBoundary, SubmitButton } from "@/shared/ui";
 // The application shell, in the shape of the approved admin workspace
 // prototype: an ink rail on the left with grouped navigation and the account
 // at its foot, and a column on the right carrying a breadcrumb title bar over
-// a cream content area.
+// a cream content area. (The cards inside took the AfterBoards shape on
+// 2026-10-10; the Client kept these colours on 2026-10-12.)
 //
 // Every signed-in screen renders through here, so this is the one place the
 // layout is decided. Screens pass their own panels as children and know

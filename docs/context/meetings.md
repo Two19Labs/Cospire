@@ -2,6 +2,77 @@
 
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
+## The design and content call, October 2026 (recorded 2026-10-12)
+
+The owner with the Client. **The exact date of the call was not given**; it
+took place shortly before 2026-10-12, when the owner's summary was recorded
+here. No transcript is in the repository yet; the Client is to send one. The
+decisions are D25–D32 in `docs/decisions/2026-10-12-decision-statement.md`
+(untracked).
+
+### Shown
+
+- The built platform in its new UI. The owner said the whole platform is built,
+  with some flow changes still pending. Of the admin flows, mock building from
+  documents and the rest are set up; programmes and video remain.
+- Two colour systems: the original navy and cream, and a plain white
+  alternative.
+
+### Settled
+
+- **Font: Inter**, for body and headings. The Client found the earlier Cospire
+  fonts tiring to read and less professional for an LMS. Recoleta is no longer
+  owed.
+- **Colours: the original navy and cream**, for consistency with their existing
+  video colours and brand material. The white system is dropped.
+- **Content migration starts now, with ARS and mocks**, ahead of video
+  production.
+
+### Learned
+
+- **Timeline:** the Client expects **student access by the end of October** and
+  a **fully stable product by the end of November**, after testing.
+- **Billing:** the Client had seen three small charges. The owner explained they
+  were ₹2 card-verification deductions, refunded.
+- **Supabase Pro** will be needed for student video submissions (Free holds
+  1 GB) and daily backups. The Client is to come back on it.
+
+### Next steps
+
+- **Owner:**
+  - send a list of pending items with the payments they need (the video cycle,
+    Gemini API billing)
+  - look into the Gemini billing deductions
+  - share the Supabase link
+  - import the existing content, and later train the Client's team to upload
+    content themselves
+- **Client:**
+  - send a rough curriculum flow for a programme such as Ashoka Aptitude prep
+    (video, document, mock or sectional test). The curriculum builder exists
+    (PR #72), so this is content plus a check of the builder against their
+    flow, not a new build
+  - decide on Supabase Pro
+  - send the ARS and mock documents through a shared drive, organised and
+    rechecked
+  - send the meeting transcript
+
+### Not covered in the summary
+
+These were on the agenda prepared on 2026-10-10 and the summary does not mention
+them, so they remain open as before:
+
+- VdoCipher access and date, Vercel Pro or the hosting choice (N3), custom SMTP
+- the five section names (N4), the written list of programmes and what "ARS"
+  stands for, where "Ashoka" belongs
+- the exam screen staying CAT-like, the on-screen number pad and calculator,
+  mocks opening in their own window
+- the clause 16.1 amendment and clause 12 quote for work already built, sub-admins
+  and the mentor-report parser, the countersigned agreement with the Kickoff
+  Date, the written clause 4.4 notice that video slips
+- time-per-question analytics (N5), the Excel export (N2), the MESA
+  question-type fork, the consolidated feedback list
+- the signed-URL limit of the document watermark
+
 ## The status call, 2026-10-01
 
 The owner and Aditya Singhani with the Client's founder, about 22 minutes. The

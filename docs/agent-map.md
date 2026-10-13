@@ -33,6 +33,9 @@ flowchart LR
     H3["supabase.md<br/>hosted database state"]
     H4["phase-history.md<br/>phases, gates, audits"]
     H5["verification-log.md<br/>every check run"]
+    H6["operations.md<br/>environment, tooling, traps"]
+    H7["backlog.md<br/>open but not next, earlier plan"]
+    H8["branches/BRANCH.md<br/>one notes file per open branch"]
   end
 
   subgraph DEC["Decisions from owner sessions"]
@@ -79,6 +82,9 @@ flowchart LR
 | What is applied to the hosted database, Auth settings, advisors | `docs/context/supabase.md` |
 | How a phase, exit gate or security audit went | `docs/context/phase-history.md` |
 | The result of any check ever run | `docs/context/verification-log.md` |
+| Dev servers, worktrees, the Windows build trap, Vercel previews, repository visibility | `docs/context/operations.md` |
+| Something still open that is not next (Phase 0 carry-overs, owner and Client lists) | `docs/context/backlog.md` |
+| A branch in progress: its decisions, findings and checks so far | `docs/context/branches/<branch>.md` |
 | The order phases are built in, and each phase's tests | `docs/implementation-plan.md` |
 | What a PR description must contain, what a reviewer checks | `docs/review-checklist.md` |
 | A section named somewhere and not found | `grep -rn "<section name>" CONTEXT.md docs/context/` |
@@ -134,7 +140,7 @@ flowchart TD
 
   G1 & G2 & G3 --> H["npm run typecheck, lint, test, build"]
   H --> I["Prove it works: scripts/verify/ against a<br/>running build and the hosted database.<br/>Throwaway accounts, counts back to baseline"]
-  I --> J["Update context: CONTEXT.md now;<br/>write-up and log rows in docs/context/"]
+  I --> J["Update context: branch notes file while open;<br/>before merge fold it into completed.md and<br/>verification-log.md, CONTEXT.md for what is now true"]
   J --> K["node scripts/check-context.mjs"]
   K --> L["PR: what, tables touched, Claims, look-at-carefully"]
   L --> M{"CI: verify, context,<br/>Vercel preview"}
@@ -174,8 +180,10 @@ flowchart LR
   end
   CX --> C1["merged PR described as open,<br/>in CONTEXT.md or docs/context/"]
   CX --> C2["Active work naming a deleted branch"]
-  CX --> C3["src/ or supabase/ changed, CONTEXT.md not"]
+  CX --> C3["src/ or supabase/ changed,<br/>neither CONTEXT.md nor branch notes"]
   CX --> C4["stale Last updated date"]
+  CX --> C5["CONTEXT.md over 300 lines"]
+  CX --> C6["branch notes file with no Active work row"]
   UT --> U1["a role page with no loading.tsx of its own"]
   V --> RV --> OW
 ```

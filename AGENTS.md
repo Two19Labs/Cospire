@@ -105,21 +105,25 @@ at the end.
    which. Reading all of them is not required.
 2. Add your entry to **Active work** - branch, scope, the files you will own -
    before your first material change, so a parallel agent can see the collision
-   coming.
+   coming. Create your branch notes file, `docs/context/branches/<branch>.md`
+   (`/` written as `-`); its README says how.
 
 **While working**
 
-3. Update it the moment something material changes: a decision, a discovery, a
+3. Record it the moment something material changes: a decision, a discovery, a
    blocker, a migration, a new dependency, an assumption about an external
    service. Write it when you learn it, not at the end when you have forgotten
-   why it mattered.
+   why it mattered. Your branch's running record goes in its notes file;
+   `CONTEXT.md` changes only for what becomes true for the whole project.
 
 **Before ending any turn, handing off, or going quiet**
 
 4. Move finished items out of **Active work**.
-   Put the detailed write-up of finished work in the right `docs/context/`
-   file, and leave `CONTEXT.md` a line or two plus a pointer. It holds what is
-   true now, so a new session can read it whole without cost.
+   Before your pull request merges, fold your notes file into the right
+   `docs/context/` file (write-up to `completed.md`, checks to
+   `verification-log.md`) and delete it. Leave `CONTEXT.md` a line or two plus a
+   pointer. It holds what is true now, kept under 300 lines, so a new session
+   can read it whole without cost.
 5. Record what you verified and how, **including what failed**. Never record an
    assumption as a fact, and never record "should work" as "works".
 6. Update **Pending**, the blockers, and **Next recommended action**.
@@ -163,8 +167,12 @@ contradicting the repository. It checks facts, never wording:
 
 1. A pull request `CONTEXT.md` calls open that GitHub says is merged.
 2. A branch claimed under **Active work** that no longer exists on `origin`.
-3. Changes under `src/` or `supabase/` with no change to `CONTEXT.md`.
+3. Changes under `src/` or `supabase/` with no change to `CONTEXT.md` or to the
+   branch's notes file.
 4. A `Last updated` date older than the file's own newest commit.
+5. `CONTEXT.md` longer than 300 lines.
+6. A branch notes file in `docs/context/branches/` whose branch is not under
+   **Active work**.
 
 Run it before you push. It needs no dependencies and takes a second.
 

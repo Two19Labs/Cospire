@@ -1,3 +1,5 @@
+import { normaliseTitle } from "@/shared/utils/normalise-title";
+
 export const mockPageSize = 50;
 export const maxMockSections = 10;
 
@@ -34,8 +36,9 @@ export function parseMarks(value: FormDataEntryValue | null): number | null | un
   return parsed > 0 && parsed <= 100 ? parsed : undefined;
 }
 
+// Mock titles and mock section titles only -- never the instructions.
 export function normaliseMockText(value: FormDataEntryValue | null): string {
-  return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
+  return typeof value === "string" ? normaliseTitle(value) : "";
 }
 
 export function parseMockPage(value: string | string[] | undefined): number {

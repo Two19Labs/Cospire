@@ -571,3 +571,81 @@ bucket has a fixed shape. Deleting a round with submissions now returns "Student
 have already answered this round" instead of the generic failure.
 
 Build order and tests are in `docs/implementation-plan.md` under Phase 5a.
+
+## Status snapshots superseded on 2026-10-10
+
+Moved here from `CONTEXT.md` when its status was rewritten.
+
+### Status, 2026-10-02
+
+- **Phase 6 is next**: the exam screen and mock-first import, before video. Its
+  plan and targets are *Phase 6* in `docs/implementation-plan.md`; the decisions
+  it builds are D7–D24 in `docs/decisions/2026-10-02-decision-statement.md`,
+  which continues the 28 September file. **Nothing in it is built.**
+- **The owner sat a mock on the deployed URL on 2026-10-01.** It scored
+  correctly, but the exam was poor to sit: a blank skeleton between every
+  question, because each move is a full form submission and server render, and
+  no full-screen layout. The import prompt is also hidden whenever a paper has
+  pictures and a Gemini key is configured. All three are in scope; the exam
+  comes first (D11).
+- **Client call, 2026-10-01** (*The status call* in `docs/context/meetings.md`):
+  - marks move to the mock (D19, verbal only; needs a written line)
+  - the duplicate rule is accepted
+  - the Client will pay for Gemini billing
+  - 200–300 question documents with no metadata
+  - five sections
+  - an Excel export promised
+  - AntiDeploy floated in place of Vercel
+  - their consolidated change list comes over the weekend, with a meeting on
+    4 or 5 October
+- **Synthetic test papers** for manual runs are in `C:\Cospire\Test Documents\`
+  (outside git). Its `README.md` maps each file to a screen; paper B is the
+  duplicate-detection test set.
+
+### Status, 2026-09-28
+
+- **On `main` and deployed** at `https://cospire-roan.vercel.app` (`main` at
+  `092d878`):
+  - Phase 0 and Phase 1: users, access granting, the document library and the
+    protected viewer. Bulk CSV creation is the one Phase 1 step unbuilt, blocked
+    on custom SMTP.
+  - Phase 5a, ARS, complete (exit gate 28/28 on the deployed URL, 2026-09-20):
+    programmes, rounds, submissions, private uploads, the mentor queue,
+    off-platform rounds, the ARS report and both paste-a-prompt importers.
+  - Phase 3, the question bank: authoring, paste-a-prompt import, Word upload
+    with pictures (PR #58), the Gemini path (PR #58; live round trip
+    UNVERIFIED, see below), the admin mock builder, and mocks built from
+    documents quoting question IDs (PR #61, 29/29 on the deployed URL).
+- **Phase 4, the test engine, is merged and deployed** (PR #63, `47beb72`,
+  2026-09-28) and verified **49/49 against the deployed URL**, rescoring
+  included. Slices 4.1 (attempt tables and guards), 4.2
+  (sitting a mock), 4.3 (scoring), 4.4 (warn-and-log proctoring and the admin
+  Attempts panel) and rescoring after a key correction. **All four of its migrations are applied to the hosted database** (the last three on
+  2026-09-28, with the owner's approval); database probes 57/57, 15/15, 9/9 and 15/15
+  against the applied schema. **4.5, closing abandoned attempts on a
+  schedule, is not built** -- a `pg_cron` job was refused by the agent's
+  permission classifier as unauthorised persistence and waits for the owner's
+  decision. Until then an abandoned attempt is closed as the timer's when its
+  student next opens it. Details: *The test engine* in
+  `docs/context/completed.md`.
+- **The admin re-skin to the Client's prototype is merged and deployed** (PR
+  #66, `fe9e836`, 2026-09-28), with the ARS aptitude round linked to a mock.
+  **Nobody has clicked through it in a browser**: the owner chose to merge it
+  on screenshots, so a visual pass on the deployed URL is still owed.
+- **Everything built is on `main` and deployed, as of 2026-09-28.** No feature
+  branch is open. On the deployed URL: `test-engine-sit.mjs` 49/49,
+  `analytics.mjs` 53/53, `ars-aptitude.mjs` 14/14.
+- **Analytics (Phase 4 step 5) is merged and deployed** (PR #65, `566e112`,
+  2026-09-28): student, admin and mentor views over submitted attempts, 53/53
+  on a local production build. **Two owner decisions remain open**: Recharts
+  (the bars are CSS) and replacing the server-key read of paper structure for
+  students and mentors with narrow RLS policies (a migration).
+- **The Gemini `503`s were a billing fault**: the Client's Google Cloud project
+  has no billing enabled, so it runs on the free tier at five requests a minute.
+  Linking billing is the whole fix. See *The 503 that was a billing checkbox*.
+- **Blocked on the Client:** VdoCipher (all of Phase 2), custom SMTP (bulk CSV),
+  Supabase Pro, Vercel Pro. See *External blockers*.
+- **1 October:** the Client was promised a tested mock engine. **It is on the
+  deployed URL and verified there** (2026-09-28). A clause 4.4 notice drafted
+  earlier at `docs/client/2026-10-01-delivery-notice.md` (untracked, unsent) is
+  now for the owner to send, revise or drop.

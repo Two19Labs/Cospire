@@ -1,3 +1,5 @@
+import { normaliseTitle } from "@/shared/utils/normalise-title";
+
 // Validation for everything an admin types about a document.
 //
 // The bounds here match the check constraints in
@@ -29,7 +31,7 @@ export function validateNewDocument(input: {
 }): NewDocumentValidation {
   const errors: NewDocumentFieldErrors = {};
 
-  const title = typeof input.title === "string" ? input.title.trim() : "";
+  const title = typeof input.title === "string" ? normaliseTitle(input.title) : "";
   if (!title) {
     errors.title = "Give the document a title.";
   } else if (title.length > documentTitleMaxLength) {
@@ -38,7 +40,7 @@ export function validateNewDocument(input: {
 
   // A folder is optional. Empty means unfiled, which the library shows as its
   // own group rather than hiding.
-  const folder = typeof input.folder === "string" ? input.folder.trim() : "";
+  const folder = typeof input.folder === "string" ? normaliseTitle(input.folder) : "";
   if (folder.length > documentFolderMaxLength) {
     errors.folder = `Use at most ${documentFolderMaxLength} characters.`;
   } else if (/[/\\]/.test(folder)) {

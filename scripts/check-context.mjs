@@ -47,6 +47,20 @@ try {
   historyFiles = [];
 }
 
+// One notes file per open branch since 2026-10-10 (see its README), so that
+// branches stop colliding on CONTEXT.md. They are read by check 1 like any
+// history file, and check 6 holds them to Active work.
+const branchNotesDir = `${historyDir}/branches`;
+let branchNotes = [];
+try {
+  branchNotes = readdirSync(branchNotesDir)
+    .filter((name) => name.endsWith(".md") && name !== "README.md")
+    .map((name) => `${branchNotesDir}/${name}`);
+} catch {
+  branchNotes = [];
+}
+historyFiles.push(...branchNotes);
+
 // The base to compare against. On a pull request the runner checks out a merge
 // ref, so origin/main is the honest base; locally it is the same thing.
 const baseRef = git(["rev-parse", "--verify", "--quiet", "origin/main"])
@@ -188,6 +202,9 @@ async function checkPullRequests() {
 // never cleared, or someone is about to collide with a ghost.
 // ---------------------------------------------------------------------------
 
+// Branch names claimed under Active work, filled by check 2 and read by check 6.
+const claimedBranches = new Set();
+
 function checkActiveWorkBranches() {
   const start = lines.findIndex((line) => /^##\s+Active work/i.test(line));
   if (start === -1) {
@@ -213,6 +230,7 @@ function checkActiveWorkBranches() {
 
     const name = branchCell.replace(/`/g, "").trim();
     if (!name || name === "-") continue;
+    claimedBranches.add(name);
 
     const exists = git(["ls-remote", "--heads", "origin", name]);
     if (!exists) {
@@ -251,6 +269,8 @@ function checkContextAccompaniesCode() {
   );
   if (!touchesCode) return;
   if (changed.includes(contextPath)) return;
+  // A branch's own notes file is where its running record now lives.
+  if (changed.some((file) => file.startsWith(`${branchNotesDir}/`) && !file.endsWith("README.md"))) return;
 
   const messages = git(["log", "--format=%B", range]);
   if (/^Context-Exempt:/im.test(messages)) return;
@@ -303,11 +323,53 @@ function checkLastUpdated() {
 }
 
 // ---------------------------------------------------------------------------
+// 5. CONTEXT.md grown past what a session can read whole.
+//
+// By 2026-10-10 it had reached 805 lines, most of it September history, and
+// every agent paid for all of it before starting. It was cut to what is true
+// now; history belongs in docs/context/.
+// ---------------------------------------------------------------------------
+
+const maxContextLines = 300;
+
+function checkContextSize() {
+  if (lines.length > maxContextLines) {
+    problems.push(
+      `${contextPath} is ${lines.length} lines; the limit is ${maxContextLines}.\n` +
+        `    Move finished write-ups and history to the docs/context/ file for their topic,\n` +
+        `    and leave a line and a pointer here.`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 6. A branch notes file with no branch under Active work.
+//
+// Notes are folded into completed.md and deleted before a branch merges. One
+// left behind means a merge that skipped that step.
+// ---------------------------------------------------------------------------
+
+function checkBranchNotes() {
+  const claimedFiles = new Set([...claimedBranches].map((name) => `${name.replace(/\//g, "-")}.md`));
+  for (const path of branchNotes) {
+    const file = path.slice(branchNotesDir.length + 1);
+    if (!claimedFiles.has(file)) {
+      problems.push(
+        `${path} belongs to no branch under Active work. Fold it into docs/context/completed.md\n` +
+          `    and delete it, or add the branch's Active work row.`,
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 await checkPullRequests();
 checkActiveWorkBranches();
 checkContextAccompaniesCode();
 checkLastUpdated();
+checkContextSize();
+checkBranchNotes();
 
 for (const note of skipped) console.log(`skipped  ${note}`);
 
