@@ -8,11 +8,13 @@ export function StudentVideoScreen({
   backHref,
   backLabel,
   profile,
+  progress,
   view,
 }: {
   backHref: string;
   backLabel: string;
   profile: Profile;
+  progress: { itemId: number; resumeAt: number };
   view: VideoPlayback;
 }) {
   return (
@@ -23,7 +25,7 @@ export function StudentVideoScreen({
       title={view.title}
     >
       <section className="panel">
-        <VideoPlayer view={view} />
+        <VideoPlayer progress={progress} view={view} />
       </section>
     </RoleShell>
   );

@@ -51,3 +51,15 @@ export async function getVideoPlayback({
     title: row.title,
   };
 }
+
+// Where the signed-in student left this video item, in seconds. RLS
+// (`item_progress_select_own`) limits the read to their own row.
+export async function getResumePosition(itemId: number): Promise<number> {
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase
+    .from("item_progress")
+    .select("last_position")
+    .eq("item_id", itemId)
+    .maybeSingle();
+  return (data?.last_position as number | null) ?? 0;
+}

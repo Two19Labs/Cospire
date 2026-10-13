@@ -62,6 +62,15 @@ table, so this file is the only pending migration.
   webhook: a button is enough at this scale. Needs JavaScript, like the
   document upload. No progress bar (fetch has none); add XHR progress if
   admins ask.
+- Video progress: the student item page wraps the iframe in
+  `TrackedVideoFrame`, which loads `https://player.vdocipher.com/v2/api.js`,
+  takes `VdoPlayer.getInstance(iframe).video`, seeks to the stored
+  `last_position` on `loadedmetadata`, and reports the position every 15 s of
+  play and on pause and end through `recordVideoProgressAction`. The server
+  computes percent from `videos.duration_seconds` (never the browser's
+  length); percent never goes down, completion at 90% and one-way
+  (`planVideoProgress`, unit tested). If the API script fails, playback still
+  works and only progress is lost.
 - Direct `video` grants are accepted by the database but there is no screen to
   make one: students reach videos through programmes, as decided in N11.
 
@@ -75,11 +84,28 @@ table, so this file is the only pending migration.
 
 ## Verification
 
-- 2026-10-13: `npm run typecheck`, `lint`, `test` (617 passed, 6 in
+- 2026-10-13: `npm run typecheck`, `lint`, `test` (621 passed, 10 in
   `src/features/video/video.test.ts`: no OTP fetch when RLS returns no row or
   the video is not ready; OTP request URL, header, ttl and double-encoded
-  `annotate`; id format refusal), `npm run build` passed. No
+  `annotate`; id format refusal; upload credentials; progress planning),
+  `npm run build` passed. No
   `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`.
 - **NOT verified live:** `VDOCIPHER_API_SECRET` is empty in `.env.local` and the
   migration is not applied, so no real OTP, no playback, no watermark on screen,
-  and no RLS probe of `videos` has run.
+  and no RLS probe of `videos` has run. The upload POST to VdoCipher's
+  storage and the player API events (`timeupdate`, seeking on
+  `loadedmetadata`) are written from VdoCipher's docs and never exercised.
+
+## Next, for the owner
+
+1. Review and apply `20261013120000_videos.sql` from the main checkout
+   (`npm run db:migrate`, after `npx supabase db push --dry-run` lists only
+   it), then `npm run db:types`. **Before merging** this branch.
+2. Fill `VDOCIPHER_API_SECRET` in this worktree's `.env.local`.
+3. Live pass on port 3010: add one ready video by its id from the VdoCipher
+   dashboard; preview it as admin (moving watermark with name, email, IST
+   time); put it in a programme; watch as a granted student; confirm a second
+   student without the grant gets a 404 and no OTP; paste the iframe URL into
+   another browser after five minutes and confirm it fails; upload a small
+   file from "Upload a video" and refresh until ready; leave and reopen the
+   item and confirm it resumes and the programme percentage moves.

@@ -128,3 +128,22 @@ describe("createUploadCredentials", () => {
     await expect(createUploadCredentials("T")).rejects.toThrow();
   });
 });
+
+describe("planVideoProgress", () => {
+  it("computes percent from the stored length and completes at 90%", async () => {
+    const { planVideoProgress } = await import("./video");
+    expect(planVideoProgress(null, 30, 100)).toEqual({ completed: false, lastPosition: 30, percent: 30 });
+    expect(planVideoProgress(null, 95, 100)).toEqual({ completed: true, lastPosition: 95, percent: 95 });
+  });
+
+  it("never lowers percent or undoes completion, and clamps a position past the end", async () => {
+    const { planVideoProgress } = await import("./video");
+    expect(planVideoProgress({ completed: true, percent: 95 }, 5, 100)).toEqual({
+      completed: true,
+      lastPosition: 5,
+      percent: 95,
+    });
+    expect(planVideoProgress(null, 5000, 100).lastPosition).toBe(100);
+    expect(planVideoProgress(null, 40, null).percent).toBe(0);
+  });
+});

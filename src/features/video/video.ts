@@ -36,3 +36,22 @@ export function formatDuration(seconds: number | null): string {
   const two = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
 }
+
+// A video counts as watched at 90%: the closing seconds are usually credits.
+export const watchedPercent = 90;
+
+// The next item_progress values from a reported position. Percent never goes
+// down, so rewatching the opening does not undo progress, and completion is
+// one-way, as for documents and readings. `duration` is the stored length,
+// never the browser's.
+export function planVideoProgress(
+  existing: { completed: boolean; percent: number } | null,
+  positionSeconds: number,
+  durationSeconds: number | null,
+): { completed: boolean; lastPosition: number; percent: number } {
+  const position = Math.max(0, Math.floor(positionSeconds));
+  const lastPosition = durationSeconds ? Math.min(position, durationSeconds) : position;
+  const reported = durationSeconds ? Math.min(100, Math.floor((lastPosition / durationSeconds) * 100)) : 0;
+  const percent = Math.max(existing?.percent ?? 0, reported);
+  return { completed: existing?.completed === true || percent >= watchedPercent, lastPosition, percent };
+}
