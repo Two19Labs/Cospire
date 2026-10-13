@@ -76,11 +76,11 @@ table, so this file is the only pending migration.
 
 ## Traps
 
-- **Apply the migration before merging.** The admin programme page now reads
-  `videos` for its picker, so deployed code without the table would fail that
-  page. Expand first, as always.
-- `supabase db push --dry-run` needs the main checkout (this worktree is not
-  linked).
+- The admin programme page reads `videos` for its picker, so deployed code
+  without the table would fail that page. The migration is applied (below),
+  so merging is safe.
+- A fresh worktree is not linked to Supabase: copy `supabase/.temp` from the
+  main checkout (it is gitignored) before `supabase db push`.
 
 ## Verification
 
@@ -90,19 +90,23 @@ table, so this file is the only pending migration.
   `annotate`; id format refusal; upload credentials; progress planning),
   `npm run build` passed. No
   `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`.
-- **NOT verified live:** `VDOCIPHER_API_SECRET` is empty in `.env.local` and the
-  migration is not applied, so no real OTP, no playback, no watermark on screen,
-  and no RLS probe of `videos` has run. The upload POST to VdoCipher's
-  storage and the player API events (`timeupdate`, seeking on
-  `loadedmetadata`) are written from VdoCipher's docs and never exercised.
+- 2026-10-13: `20261013120000_videos.sql` applied to the hosted project with
+  the owner's go (dry run listed only it; `list_migrations` shows it);
+  `src/shared/db/types.ts` regenerated, typecheck passes. Security advisors:
+  nothing new (the three warnings predate it: `attempt_outline`, leaked
+  passwords, MFA).
+- 2026-10-13: the owner filled `VDOCIPHER_API_SECRET`; `GET /api/videos` with
+  it returns 200 and 0 videos (the trial account is empty).
+- **NOT verified live:** no video exists yet, so no real OTP, no playback, no
+  watermark on screen, and no RLS probe of `videos` with a row has run. The
+  upload POST to VdoCipher's storage and the player API events (`timeupdate`,
+  seeking on `loadedmetadata`) are written from VdoCipher's docs and never
+  exercised.
 
 ## Next, for the owner
 
-1. Review and apply `20261013120000_videos.sql` from the main checkout
-   (`npm run db:migrate`, after `npx supabase db push --dry-run` lists only
-   it), then `npm run db:types`. **Before merging** this branch.
-2. Fill `VDOCIPHER_API_SECRET` in this worktree's `.env.local`.
-3. Live pass on port 3010: add one ready video by its id from the VdoCipher
+1. A test video in the VdoCipher trial account (the owner will add one later),
+   then the live pass on port 3010: add one ready video by its id from the VdoCipher
    dashboard; preview it as admin (moving watermark with name, email, IST
    time); put it in a programme; watch as a granted student; confirm a second
    student without the grant gets a 404 and no OTP; paste the iframe URL into

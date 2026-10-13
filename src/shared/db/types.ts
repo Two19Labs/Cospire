@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1667,6 +1667,57 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_seconds: number | null
+          id: number
+          org_id: number
+          status: string
+          title: string
+          updated_at: string
+          vdocipher_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_seconds?: number | null
+          id?: never
+          org_id: number
+          status?: string
+          title: string
+          updated_at?: string
+          vdocipher_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_seconds?: number | null
+          id?: never
+          org_id?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          vdocipher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_creator_org_fkey"
+            columns: ["created_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "videos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
           },
         ]
       }
