@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-10 (Asia/Calcutta)
+Last updated: 2026-10-13 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -14,7 +14,7 @@ read only when the task touches that area:
 | `docs/context/backlog.md` | Open items off the immediate path (Phase 0 carry-overs, owner and Client lists, smaller things) and the earlier plan |
 | `docs/context/completed.md` | The Completed log and every detailed write-up |
 | `docs/context/verification-log.md` | Every check run, with its result |
-| `docs/context/meetings.md` | Client calls and what they settled |
+| `docs/context/meetings.md` | Client calls and what they settled, newest first: the October 2026 design and content call, then 2026-10-01 and earlier |
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
@@ -24,11 +24,14 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-10
+## Status, 2026-10-13
 
-- **Everything built is merged to `main` and deployed** at
-  `https://cospire-roan.vercel.app` (`main` at `8137089`). No feature branch
-  is open; `main` is the only branch on `origin`.
+- **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
+- **UI refresh slice 1** (`feat/ui-refresh`): Inter for body and headings and
+  the original navy and cream colours, both the Client's choice on 2026-10-12,
+  in the AfterBoards card shape; typed names and titles normalised on save.
+  See *UI refresh* under Pending and the 2026-10-10 rows of the Completed log in
+  `docs/context/completed.md`.
 - **Built and verified (local production builds against the hosted
   database):**
   - users, roles, access granting; the document library and protected viewer
@@ -71,13 +74,6 @@ credentials, student data or anyone's personal data here.
 
 Superseded status snapshots (2026-09-28 and 2026-10-02) are in
 `docs/context/phase-history.md`.
-
-**What a green `verify` does and does not mean.** The CI job named `verify` runs
-`typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
-anything in `scripts/verify/`**, so no database probe and no HTTP check is
-reproduced by any check on any pull request. Every probe count recorded in these
-files is a local run. Do not quote "verify is green" at a client checkpoint as
-evidence the database was verified.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -172,6 +168,33 @@ write-ups in `docs/context/completed.md`.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
+### UI refresh: slice 1 done, slice 2 next
+
+All of slice 1's questions are settled (D25-D31 in the untracked
+`docs/decisions/2026-10-12-decision-statement.md`):
+
+- **Inter** for body and headings, platform-wide; the exam screen's own styling
+  stays CAT-like and untouched.
+- **The original colours**: ink rail `#182b50`, cream page `#faf5e6`, navy
+  primary buttons, gold for progress and the current nav item, rust for
+  emphasis and danger only.
+- **The AfterBoards card shape**: 20px cards, no shadows, pill primary buttons,
+  larger type, one motion curve. The sidebar keeps its line icons.
+- **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
+  wording, orange or the licensed MADE Gentle font.
+
+Next:
+1. Slice 2: the remaining student screens (programmes, documents, mock list,
+   results and attempt review, analytics, ARS).
+2. **A mock opens in its own window on Start** (decided, not built). Without
+   JavaScript it falls back to the same tab; switching back is an expected
+   proctoring focus loss; on submit the window closes and the dashboard
+   refreshes.
+3. N16, owner: documents 7 and 8 keep the lowercase title "number system".
+
+The owner promised AfterBoards references: phone view, popups, empty states,
+post-mock review, video page.
+
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
 Merged as PR #70 (`9f808b3`) on 2026-10-09. Still owed: the owner's review, **a sitting in a real browser with JavaScript** --
@@ -205,10 +228,8 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
 | **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
 | **Billing on the Gemini project** (**agreed by the Client on 2026-10-01**, about ₹1,000 prepaid; owner to set up, in Cospire's name) | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
-| ~~**A Google account** (Docs API)~~ **Received 2026-09-23** | The owner holds a Google account from the Client. It covers clause 3.15 and the Gemini key for the question-import model path. Still needed on it: the Gemini API key itself, and **billing enabled** -- the free tier is rate limited and Google may use free-tier content to improve its products, which the Client's own question papers should not be exposed to. Not blocking; nothing consumes it until the API path is built | Two19 to set up on the Client's account |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
-| ~~**One real question document**~~ **Offered 2026-09-25** | The owner will supply real question papers on request. The importer and the Word path are built and waiting for them, so this is now a matter of asking rather than a blocker. It remains the accuracy test the delivery plan commits to in the first fortnight | Two19 to ask |
 | **Supabase Pro** | Real ARS video uploads (capacity, not building), plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
 | **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
@@ -235,6 +256,22 @@ writing at the time rather than absorbed silently.
 | Medium | Agreement kickoff prerequisites and week-four content deadline are ambiguous | Record the exact written Kickoff Date and dependency deadlines |
 
 ## Next recommended action
+
+**From the design and content call** (recorded 2026-10-12; *The design and
+content call, October 2026* in `docs/context/meetings.md`):
+
+- **The Client's timeline:** student access by the **end of October**, a stable
+  product by the **end of November** after testing.
+- **Content migration starts now, with ARS and mock documents**, before video.
+  The Client sends them through a shared drive, organised and rechecked; the
+  owner imports them. Each mock type still needs its settings (duration, marks,
+  negative marking, section timing and locking) and the answer-key errors fixed.
+- **The Client sends a curriculum flow** (for example Ashoka Aptitude prep). The
+  builder exists (PR #72): this is content plus a check against their flow.
+- **Supabase Pro:** the Client's decision is pending.
+- **Owner:** send the pending-items list with the payments it needs (the video
+  cycle, Gemini billing); look into the Gemini billing deductions; share the
+  Supabase link; import the content, then train the Client's team.
 
 **As of 2026-10-10, in order:**
 

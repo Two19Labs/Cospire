@@ -255,7 +255,7 @@ Owed by the Client, to chase rather than work around:
    restore test.
 3. **Custom SMTP**, for bulk CSV creation (Phase 1 step 5), raising
    `[auth.rate_limit] email_sent` at the same time.
-4. **Recoleta Bold `.woff2` and its web licence.** Headings use Georgia until then.
+4. ~~**Recoleta Bold `.woff2` and its web licence.**~~ No longer owed: the Client chose Inter on 2026-10-12.
 5. **The written list of programmes**, and **what "ARS" stands for**.
 6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has
    the Client's signature date blank; file the countersigned copy if one exists.
