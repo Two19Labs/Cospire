@@ -37,6 +37,14 @@ table, so this file is the only pending migration.
 - Students are not filtered on `status`: a granted video that is still
   processing shows a "still processing" message rather than vanishing.
 
+- The OTP request (`src/features/video/vdocipher.ts`): `POST
+  https://dev.vdocipher.com/api/videos/{id}/otp`, `Authorization: Apisecret …`,
+  `ttl` 300 s, `annotate` a JSON **string** holding one moving `rtext` watermark
+  whose text is `composeWatermark` from the documents feature (name · email ·
+  IST time), so video and document watermarks read the same.
+- The access check is `getVideoPlayback`: the `videos` row is read as the
+  signed-in user (RLS), and only a returned, `ready` row leads to an OTP.
+
 ## Traps
 
 ## Verification
