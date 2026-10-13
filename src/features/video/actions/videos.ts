@@ -7,7 +7,7 @@ import { requireRole } from "@/features/auth/guards";
 import { normaliseTitle, parsePositiveId } from "@/features/curriculum/curriculum";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import { fetchVideoInfo, isVdocipherId } from "../vdocipher";
+import { createUploadCredentials, fetchVideoInfo, isVdocipherId } from "../vdocipher";
 import type { VideoMessage } from "../video";
 
 function back(message: VideoMessage): never {
@@ -75,4 +75,38 @@ export async function refreshVideoAction(formData: FormData): Promise<void> {
     .eq("id", videoId)
     .select("id");
   back(error || (data ?? []).length !== 1 ? "refresh-failed" : "refreshed");
+}
+
+// Step one of an upload from the platform. VdoCipher issues a signed storage
+// policy and a video id; the row is written now, as `pre_upload`, so a video
+// whose upload is abandoned is visible rather than lost in VdoCipher. The
+// browser then posts the file straight to VdoCipher's storage: no video byte
+// passes through this server (manual §8). The policy is VdoCipher's own
+// browser-upload design; it carries no API secret.
+export async function startVideoUploadAction(
+  rawTitle: string,
+): Promise<{ clientPayload: Record<string, string> } | { error: string }> {
+  const admin = await requireRole("admin");
+  const title = normaliseTitle(rawTitle);
+  if (title === null) return { error: "A title of up to 200 characters is required." };
+
+  let credentials;
+  try {
+    credentials = await createUploadCredentials(title);
+  } catch {
+    return { error: "VdoCipher could not start the upload. Check the API secret and try again." };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("videos").insert({
+    created_by: admin.id,
+    org_id: admin.orgId,
+    status: "pre_upload",
+    title,
+    vdocipher_id: credentials.videoId,
+  });
+  if (error) return { error: "The video could not be added to the library." };
+
+  revalidatePath("/admin/videos");
+  return { clientPayload: credentials.clientPayload };
 }

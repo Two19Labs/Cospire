@@ -19,7 +19,6 @@ export const videoMessages = {
   refreshed: { error: false, text: "Status refreshed from VdoCipher." },
   "refresh-failed": { error: true, text: "VdoCipher could not be reached. Nothing changed." },
   "upload-ready": { error: false, text: "Upload finished. VdoCipher is processing it; refresh its status in a few minutes." },
-  "upload-failed": { error: true, text: "The upload could not be started. Nothing was added." },
 } as const;
 
 export type VideoMessage = keyof typeof videoMessages;

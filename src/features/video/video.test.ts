@@ -90,3 +90,41 @@ describe("parseVideoStatus", () => {
     expect(parseVideoStatus("Queued")).toBe("processing");
   });
 });
+
+describe("createUploadCredentials", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("asks VdoCipher with a PUT and hands back only the string payload fields", async () => {
+    const { createUploadCredentials } = await import("./vdocipher");
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ clientPayload: { key: "k", policy: "p", uploadLink: "https://s3.example/x" }, videoId: id }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("VDOCIPHER_API_SECRET", "test-secret");
+
+    const result = await createUploadCredentials("Number systems 1");
+    expect(result).toEqual({
+      clientPayload: { key: "k", policy: "p", uploadLink: "https://s3.example/x" },
+      videoId: id,
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://dev.vdocipher.com/api/videos?title=Number%20systems%201");
+    expect(init.method).toBe("PUT");
+  });
+
+  it("refuses a response with no upload link", async () => {
+    const { createUploadCredentials } = await import("./vdocipher");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ clientPayload: {}, videoId: id }), { status: 200 })),
+    );
+    vi.stubEnv("VDOCIPHER_API_SECRET", "test-secret");
+    await expect(createUploadCredentials("T")).rejects.toThrow();
+  });
+});

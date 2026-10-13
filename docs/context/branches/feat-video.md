@@ -53,6 +53,15 @@ table, so this file is the only pending migration.
   (`?videosPage=`); a student opens it at
   `/student/programmes/[id]/items/[itemId]`, which renders the VdoCipher v2
   iframe (`player.vdocipher.com/v2/?otp=…&playbackInfo=…`).
+- Upload from the platform (`/admin/videos`, "Upload a video"):
+  `startVideoUploadAction` gets credentials from VdoCipher (`PUT /api/videos?
+  title=`), writes the row as `pre_upload`, and returns VdoCipher's signed
+  storage policy; the browser posts the file straight to `uploadLink`
+  (policy fields, `success_action_status=201`, file last) and expects 201.
+  The admin then presses "Refresh status" until VdoCipher reports ready. No
+  webhook: a button is enough at this scale. Needs JavaScript, like the
+  document upload. No progress bar (fetch has none); add XHR progress if
+  admins ask.
 - Direct `video` grants are accepted by the database but there is no screen to
   make one: students reach videos through programmes, as decided in N11.
 

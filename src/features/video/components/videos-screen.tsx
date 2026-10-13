@@ -21,6 +21,7 @@ import {
   videoStatusLabels,
   type VideoMessage,
 } from "../video";
+import { VideoUploadForm } from "./video-upload-form";
 
 // The page heading, shared with the loading skeleton.
 export const videosHeading = "Videos";
@@ -132,6 +133,19 @@ export function VideosScreen({
             ) : null}
           </nav>
         )}
+      </section>
+
+      <section className="panel" id="upload">
+        <div className="panel__header">
+          <div>
+            <h2>Upload a video</h2>
+            <p className="muted">
+              The file goes straight to VdoCipher; it never passes through this
+              application. VdoCipher then processes it, which takes a few minutes.
+            </p>
+          </div>
+        </div>
+        <VideoUploadForm />
       </section>
 
       <section className="panel" id="add">
