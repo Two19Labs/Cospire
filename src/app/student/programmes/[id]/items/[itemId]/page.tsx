@@ -5,12 +5,14 @@ import { requireRole } from "@/features/auth/guards";
 import { StudentReadingScreen } from "@/features/curriculum/components/student-programme";
 import { parsePositiveId } from "@/features/curriculum/curriculum";
 import { getStudentProgramme } from "@/features/curriculum/queries/student-programmes";
+import { StudentVideoScreen } from "@/features/video/components/student-video-screen";
+import { getVideoPlayback } from "@/features/video/queries/get-video-playback";
 
-export const metadata: Metadata = { title: "Reading" };
+export const metadata: Metadata = { title: "Programme item" };
 
-// A text item. Documents open in the existing viewer and tests in the mock
-// screen, so only readings have a page of their own.
-export default async function StudentReadingPage({
+// A text or video item. Documents open in the existing viewer and tests in the
+// mock screen, so only readings and videos have a page of their own.
+export default async function StudentProgrammeItemPage({
   params,
 }: {
   params: Promise<{ id: string; itemId: string }>;
@@ -24,8 +26,22 @@ export default async function StudentReadingPage({
   const view = await getStudentProgramme(courseId, profile.id);
   const item = view?.sections
     .flatMap((section) => section.items)
-    .find((entry) => entry.id === parsedItemId && entry.type === "text");
+    .find((entry) => entry.id === parsedItemId && (entry.type === "text" || entry.type === "video"));
   if (!view || !item) notFound();
+
+  if (item.type === "video") {
+    // The OTP is minted only if `videos_select_authorized` returns the row.
+    const playback = item.refId === null ? null : await getVideoPlayback({ videoId: item.refId, viewer: profile });
+    if (!playback) notFound();
+    return (
+      <StudentVideoScreen
+        backHref={`/student/programmes/${courseId}`}
+        backLabel={`Back to ${view.programme.title}`}
+        profile={profile}
+        view={playback}
+      />
+    );
+  }
 
   return (
     <StudentReadingScreen

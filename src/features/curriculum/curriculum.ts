@@ -5,11 +5,9 @@ import { normaliseTitle as tidyTitle } from "@/shared/utils/normalise-title";
 // Kept out of `queries/` and `actions/` because those are `server-only`, which
 // makes them unreachable from a unit test.
 
-// 'video' is in the database check constraint already; it becomes creatable
-// when the video library lands. Until then the builder offers these three.
-export const buildableItemTypes = ["document", "test", "text"] as const;
+export const buildableItemTypes = ["document", "test", "text", "video"] as const;
 export type BuildableItemType = (typeof buildableItemTypes)[number];
-export type CurriculumItemType = BuildableItemType | "video";
+export type CurriculumItemType = BuildableItemType;
 
 export const itemTypeLabels: Record<CurriculumItemType, string> = {
   document: "Document",
@@ -109,7 +107,9 @@ export function studentItemHref(
   item: { id: number; refId: number | null; type: CurriculumItemType },
 ): string | null {
   if (item.type === "test") return item.refId === null ? null : `/student/mocks/${item.refId}`;
-  if (item.type === "text") return `/student/programmes/${courseId}/items/${item.id}`;
+  if (item.type === "text" || item.type === "video") {
+    return `/student/programmes/${courseId}/items/${item.id}`;
+  }
   return null;
 }
 

@@ -45,8 +45,32 @@ table, so this file is the only pending migration.
 - The access check is `getVideoPlayback`: the `videos` row is read as the
   signed-in user (RLS), and only a returned, `ready` row leads to an OTP.
 
+- Admin: `/admin/videos` (paginated list, add by VdoCipher id with title
+  optional, "Refresh status" for a video not yet ready) and
+  `/admin/videos/[id]` (a preview through the same access check and OTP).
+  "Videos" sits under Management in the admin nav.
+- Curriculum: `video` is a buildable item type with its own paginated picker
+  (`?videosPage=`); a student opens it at
+  `/student/programmes/[id]/items/[itemId]`, which renders the VdoCipher v2
+  iframe (`player.vdocipher.com/v2/?otp=…&playbackInfo=…`).
+- Direct `video` grants are accepted by the database but there is no screen to
+  make one: students reach videos through programmes, as decided in N11.
+
 ## Traps
+
+- **Apply the migration before merging.** The admin programme page now reads
+  `videos` for its picker, so deployed code without the table would fail that
+  page. Expand first, as always.
+- `supabase db push --dry-run` needs the main checkout (this worktree is not
+  linked).
 
 ## Verification
 
-Nothing verified yet.
+- 2026-10-13: `npm run typecheck`, `lint`, `test` (617 passed, 6 in
+  `src/features/video/video.test.ts`: no OTP fetch when RLS returns no row or
+  the video is not ready; OTP request URL, header, ttl and double-encoded
+  `annotate`; id format refusal), `npm run build` passed. No
+  `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`.
+- **NOT verified live:** `VDOCIPHER_API_SECRET` is empty in `.env.local` and the
+  migration is not applied, so no real OTP, no playback, no watermark on screen,
+  and no RLS probe of `videos` has run.

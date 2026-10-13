@@ -42,12 +42,13 @@ export default async function AdminCoursePage({
   // Read alongside everything else rather than before it: the other reads are
   // scoped by RLS and harmless for a programme that turns out not to exist,
   // and waiting for this one first cost a whole round trip on every view.
-  const [course, students, curriculum, documents, mocks] = await Promise.all([
+  const [course, students, curriculum, documents, mocks, videos] = await Promise.all([
     getCourse(courseId),
     listCourseAccess(courseId),
     getCurriculum(courseId),
     listPickerPage("documents", parsePageNumber(firstValue(query.documentsPage))),
     listPickerPage("mocks", parsePageNumber(firstValue(query.mocksPage))),
+    listPickerPage("videos", parsePageNumber(firstValue(query.videosPage))),
   ]);
   if (!course) notFound();
 
@@ -58,6 +59,7 @@ export default async function AdminCoursePage({
       curriculumMessage={parseCurriculumMessage(firstValue(query.curriculum))}
       documents={documents}
       mocks={mocks}
+      videos={videos}
       error={parseCourseListError(firstValue(query.error))}
       notice={parseCourseNotice(firstValue(query.notice))}
       profile={profile}

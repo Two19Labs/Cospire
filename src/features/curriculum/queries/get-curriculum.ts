@@ -64,16 +64,20 @@ export async function getCurriculum(courseId: number): Promise<CurriculumSection
   const titles = new Map<string, string>();
   const documentIds = refIds("document");
   const mockIds = refIds("test");
+  const videoIds = refIds("video");
 
-  // The two title lookups depend only on the items, not on each other.
-  const [documents, mocks] = await Promise.all([
+  // The title lookups depend only on the items, not on each other.
+  const [documents, mocks, videos] = await Promise.all([
     documentIds.length > 0 ? supabase.from("documents").select("id, title").in("id", documentIds) : null,
     mockIds.length > 0 ? supabase.from("mocks").select("id, title").in("id", mockIds) : null,
+    videoIds.length > 0 ? supabase.from("videos").select("id, title").in("id", videoIds) : null,
   ]);
   if (documents?.error) throw new Error(`Unable to load document titles: ${documents.error.message}`);
   if (mocks?.error) throw new Error(`Unable to load mock titles: ${mocks.error.message}`);
+  if (videos?.error) throw new Error(`Unable to load video titles: ${videos.error.message}`);
   for (const row of documents?.data ?? []) titles.set(`document:${row.id}`, row.title as string);
   for (const row of mocks?.data ?? []) titles.set(`test:${row.id}`, row.title as string);
+  for (const row of videos?.data ?? []) titles.set(`video:${row.id}`, row.title as string);
 
   return sections.map((section) => ({
     id: section.id as number,

@@ -15,11 +15,11 @@ export interface PickerPage {
   pageCount: number;
 }
 
-// The documents and mocks an admin can place in a curriculum, a page at a time
+// The documents, mocks and videos an admin can place in a curriculum, a page at a time
 // (manual §8: every list query is paginated). RLS scopes both to the admin's
 // organisation.
 export async function listPickerPage(
-  kind: "documents" | "mocks",
+  kind: "documents" | "mocks" | "videos",
   page: number,
 ): Promise<PickerPage> {
   const supabase = await createServerSupabaseClient();
@@ -34,6 +34,13 @@ export async function listPickerPage(
           .order("folder")
           .order("title")
           .order("id")
+          .range(...range)
+      : kind === "videos"
+      ? await supabase
+          .from("videos")
+          .select("id, title", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(...range)
       : await supabase
           .from("mocks")

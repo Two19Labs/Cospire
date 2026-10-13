@@ -20,6 +20,7 @@ interface CourseDetailProps {
   curriculumMessage: CurriculumMessage | null;
   documents: PickerPage;
   mocks: PickerPage;
+  videos: PickerPage;
   error: CourseListError | null;
   notice: CourseNotice | null;
   profile: Profile;
@@ -32,6 +33,7 @@ export function CourseDetail({
   curriculumMessage,
   documents,
   mocks,
+  videos,
   error,
   notice,
   profile,
@@ -82,6 +84,7 @@ export function CourseDetail({
           documents={documents}
           message={curriculumMessage}
           mocks={mocks}
+          videos={videos}
           sections={curriculum}
         />
       ) : null}

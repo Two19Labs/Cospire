@@ -90,7 +90,11 @@ function ItemAction({ courseId, done, item }: { courseId: number; done: boolean;
       className={`button button--compact ${done ? "button--secondary" : "button--primary"}`}
       href={href}
     >
-      {item.type === "test" ? (done ? "View test" : "Start test") : done ? "Read again" : "Read"}
+      {item.type === "test"
+        ? done ? "View test" : "Start test"
+        : item.type === "video"
+          ? done ? "Watch again" : "Watch"
+          : done ? "Read again" : "Read"}
     </Link>
   );
 }

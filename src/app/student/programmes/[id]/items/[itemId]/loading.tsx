@@ -1,6 +1,6 @@
 import { ShellSkeleton, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
 
-// A reading: its title is the data still loading, then one panel of text.
+// A reading or a video: its title is the data still loading, then one panel.
 export default function Loading() {
   return (
     <ShellSkeleton heading={null} role="student">

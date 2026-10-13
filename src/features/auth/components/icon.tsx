@@ -27,6 +27,7 @@ const paths = {
     </>
   ),
   logout: <path d="M9 4H4v16h5m4-13 5 5-5 5M9 12h12" />,
+  play: <path d="M8 5v14l11-7Z" />,
   plus: <path d="M12 5v14M5 12h14" />,
   question: (
     <>
