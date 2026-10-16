@@ -159,7 +159,6 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Engine worker (`Cospire-engine`, port 3040) | `fix/save-completion` | Defect C2, and the exam keeping full screen | `scripts/verify/c2-repro.mjs`, `scripts/verify/exam-fullscreen.mjs`, `package.json`/`package-lock.json` (`next` only), `src/shared/ui/action-boundary.tsx`, `src/features/test-engine/components/exam-sitting.tsx`, `.../fullscreen.tsx` | 0/40 stuck, 13/13 flows, full screen held through Start, section change and time-up with 0 false proctoring rows; PR #80 awaiting the owner | 2026-10-16 |
 
 In progress, each branch carrying its own row until it merges: `feat/video`
 (migration `20261013120000` applied; live pass waits for a test video) and

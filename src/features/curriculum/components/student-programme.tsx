@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
@@ -25,11 +26,18 @@ export function StudentProgrammeList({
   return (
     <RoleShell description="Every programme you have been given, and how far through each you are." profile={profile} title="Programmes">
       {rows.length === 0 ? (
-        <section className="panel">
-          <p className="panel-empty">No programmes yet. Your admin adds you to them.</p>
+        <section className="empty-state">
+          <span aria-hidden="true" className="empty-state__mark">
+            <Icon name="book" />
+          </span>
+          <h2>No programmes yet.</h2>
+          <p>When an administrator adds you to a programme, it appears here.</p>
         </section>
       ) : (
-        <div className="card-grid card-grid--two">
+        // `card-grid--wide`, not `--two`: `--two` uses auto-fit, which collapses
+        // the empty track, so a student with one programme got a card stretched
+        // across the whole page and reading as a panel rather than a card.
+        <div className="card-grid card-grid--wide">
           {rows.map((row) => (
             <ProgrammeCard key={row.id} row={row} />
           ))}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
@@ -17,45 +18,37 @@ function attemptLabel(attempt: AttemptSummary): string {
   return attempt.score === null ? "Submitted" : `Score ${formatMarks(attempt.score)}`;
 }
 
+// Cards rather than the admin's table (UI refresh slice 2). A student's list is
+// short by construction and carries three facts per mock, and the whole card is
+// one large target on a phone.
 export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; profile: Profile }) {
   return (
-    <RoleShell profile={profile} title="Mock tests">
-      <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>Your mock tests</h2>
-            <p className="muted">
-              {mocks.length === 0 ? "No mock tests have been shared with you yet." : "Open a mock to read its instructions and start."}
-            </p>
-          </div>
+    <RoleShell description="Open a mock to read its instructions and start." profile={profile} title="Mock tests">
+      {mocks.length === 0 ? (
+        <section className="empty-state">
+          <span aria-hidden="true" className="empty-state__mark">
+            <Icon name="test" />
+          </span>
+          <h2>No mock tests yet.</h2>
+          <p>When an administrator shares a mock test with you, it appears here.</p>
+        </section>
+      ) : (
+        <div className="card-grid card-grid--wide">
+          {mocks.map((mock) => (
+            <Link className="course-card course-card--link" href={`/student/mocks/${mock.id}`} key={mock.id}>
+              <h2>{mock.title}</h2>
+              <p>
+                {mock.durationMinutes} min · {mock.attempts.length} of {mock.maxAttempts} attempt
+                {mock.maxAttempts === 1 ? "" : "s"} used
+              </p>
+              <span className="course-card__bottom">
+                <span>{mock.attempts[0] ? attemptLabel(mock.attempts[0]) : "Not started"}</span>
+                <span aria-hidden="true">Open →</span>
+              </span>
+            </Link>
+          ))}
         </div>
-        {mocks.length === 0 ? null : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Mock</TableHeaderCell>
-                <TableHeaderCell>Duration</TableHeaderCell>
-                <TableHeaderCell>Attempts</TableHeaderCell>
-                <TableHeaderCell>Latest</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {mocks.map((mock) => (
-                <TableRow key={mock.id}>
-                  <TableCell>
-                    <Link href={`/student/mocks/${mock.id}`}>{mock.title}</Link>
-                  </TableCell>
-                  <TableCell>{mock.durationMinutes} min</TableCell>
-                  <TableCell>
-                    {mock.attempts.length} of {mock.maxAttempts}
-                  </TableCell>
-                  <TableCell>{mock.attempts[0] ? attemptLabel(mock.attempts[0]) : <span className="muted">Not started</span>}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </section>
+      )}
     </RoleShell>
   );
 }
