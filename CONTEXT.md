@@ -63,10 +63,9 @@ credentials, student data or anyone's personal data here.
   followed by the client router and never reaches `ActionBoundary`, so only the
   countdown's native form post ever lost full screen, and it no longer posts.
   Stopgap meanwhile: "Taking too long? Reload" after 8 s.
-- **Video is built and live-verified** (PR #86, `feat/video`): library,
-  server-side OTP with a per-viewer watermark, `video` curriculum items, upload
-  from the platform, video `item_progress`. Migration `20261013120000` is
-  applied, so the database is one migration ahead of `main` until this merges.
+- **Video is built and live-verified** (PR #86): library, server-side OTP with
+  a per-viewer watermark, `video` curriculum items, upload from the platform,
+  video `item_progress`. Migration `20261013120000` is applied.
   17/17 and 4/4 on the two `video-*` verify scripts against the hosted database;
   **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
   in `docs/context/completed.md`.
@@ -166,7 +165,6 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude (subagent) | `feat/video` | VdoCipher video: library, playback, upload, progress | `src/features/video/**`, `src/app/admin/videos/**`, video branches in `src/features/curriculum/**` and the programme item page, `supabase/migrations/20261013120000_videos.sql`, `scripts/verify/video-*.mjs` | PR #86, awaiting review; live pass 17/17, migration applied | 2026-10-16 |
 
 In progress, each branch carrying its own row until it merges: `feat/video`
 (PR #86) and `fix/save-completion` (C2). Merged: #69-#75, #77-#79; #76 closed unmerged
