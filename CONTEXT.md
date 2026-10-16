@@ -165,7 +165,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Engine worker (`Cospire-engine`, port 3040) | `feat/essay-question` | The `essay` question type: authoring, import, sitting, marking by an admin or the assigned mentor, pending in results | `supabase/migrations/20261014110000_essay_questions.sql`, `supabase/tests/004_*`, `src/features/test-engine/**`, `src/features/question-bank/**`, `src/features/analytics/**` | Built, 626 unit tests; **the SQL has never been executed, Docker unavailable**; the owner applies the migration | 2026-10-16 |
+| Engine worker (`Cospire-engine`, port 3040) | `feat/essay-question` | The `essay` question type: authoring, import, sitting, marking by an admin or the assigned mentor, pending in results | `supabase/migrations/20261014110000_essay_questions.sql`, `supabase/tests/004_*`, `src/features/test-engine/**`, `src/features/question-bank/**`, `src/features/analytics/**` | Built, 626 unit tests, pull request raised; **the SQL has never been executed, Docker unavailable**; the owner applies the migration | 2026-10-16 |
 
 In progress, a row each until they merge: `feat/video` (migration
 `20261013120000` applied; live pass waits for a test video),
