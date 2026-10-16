@@ -18,7 +18,7 @@ read only when the task touches that area:
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
-| `docs/decisions/` | Decision statements D1-D53 and open questions to N18 (newest: `2026-10-16-decision-statement.md`). **Untracked and private**, in the main checkout only (D43) |
+| `docs/decisions/` | Decision statements D1-D54 and open questions to N18 (newest: `2026-10-16-decision-statement.md`). **Untracked and private**, in the main checkout only (D43) |
 
 The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
@@ -276,8 +276,10 @@ content call, October 2026* in `docs/context/meetings.md`):
    student; save on an admin screen a few times ("Grant access", "Remove
    access": it should dim, never blank; note whether C2 happens); the new
    student home at phone width; the admin submissions and activity screens.
-2. **Owner decisions still open:** N3 hosting (deferred), N17 what delete does
-   to records in use. Settled on 2026-10-16: D33-D53.
+2. **Owner decisions still open:** N3 hosting (deferred). Settled on
+   2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
+   off the deleted thing, guards against orphans, and takes two to three
+   confirming steps.
 3. **Video:** built on `feat/video`; the live pass with the Client's test video
    runs next, then its PR.
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
