@@ -1877,33 +1877,59 @@ drop. Versions are pinned exactly: `npm install` writes a caret, which was
 corrected with `npm pkg set` and a reinstall. The 8 s "Taking too long?
 Reload" stopgap in `SubmitButton` is untouched.
 
-**Full screen in the exam, measured 2026-10-16.** A document load drops full
-screen and the browser will not grant it again without a fresh click, which the
-owner raised against this branch. Where it bites is narrower than it looks:
-question-to-question moves **never navigate** (`exam-sitting.tsx` calls
-`preventDefault` and moves with `setIndex` plus `history.replaceState`), so only
-"Leave this section", time-up and the final submit post and therefore reload. A
-sectioned paper therefore asks the student to press the full-screen button again
-at each section change. **No false proctoring row is written:** `ProctorWatch`
-records on `fullscreenchange`, and a freshly loaded document fires none.
+**Full screen in the exam, measured 2026-10-16.** The owner held this branch
+until a proctored sitting was shown to keep its full screen. It does, and the
+reason is not the one the hold assumed. `scripts/verify/exam-fullscreen.mjs`
+drives a real headless Chrome through a proctored sitting of a two-section mock
+and scores every hop three ways: `document.fullscreenElement`, a token on the
+window plus a count of document requests (either would change across a document
+load), and the `proctor_events` rows for the attempt. Clicks go through
+`Input.dispatchMouseEvent`, so Chrome counts them as a user gesture and
+`requestFullscreen` is actually granted -- `element.click()` is refused and
+would have proved nothing.
 
-A `keepFullscreen` mode on `ActionBoundary` -- the client router first, with a
-2.5 s fallback to a document load -- was built and **measured as not working**:
-10 of 12 clicks still froze, because a component reading `usePathname()` and
-`useSearchParams()` never mounts on a stalled click (its render is the one the
-stalled transition discards), so its effects and its timer never run. The two
-that recovered did so only through the fallback's document load. That is C2
-restated: anything that keeps full screen depends on this boundary releasing,
-and releasing is what does not work. The attempt was reverted rather than left
-as a second code path buying nothing.
+**A redirect from a Server Action never reaches `ActionBoundary`.** Measured on
+the pre-fix build: Start, "Leave this section" and the final submit each
+`redirect()`, and each stayed inside one document with the full screen intact,
+including from a `?q=4` address where the redirect target is a different url.
+React dispatches those actions and the client router follows their redirect
+itself. The boundary only sees a redirect thrown during render, which is the
+admin-console case C2 is about. So PR #80 did **not** cost the exam its full
+screen at a section change, and the hold comment's second bullet does not
+reproduce.
 
-**The fix that would work** is to stop the exam's redirects reaching this
-boundary at all, the way question moves already avoid it: on the JavaScript
-path, have the section change and time-up return their next state instead of
-`redirect()` and let the client move as `go()` does. That is plan B scoped to
-two actions instead of every action in the application. It touches
-`exam-sitting.tsx`, which the UI worker is changing for "a mock opens in its own
-window", so it wants sequencing rather than a race.
+**One hop did lose it, and predates PR #80.** Time-up let the form post
+natively -- `onSubmit` returned early so the answer on screen was saved inside
+the server's grace -- and a native form post is a real browser navigation to a
+new document. Measured pre-fix: `fullscreenElement` null afterwards, token
+gone, and the student left sitting the rest of the paper outside full screen.
+The fix is in `exam-sitting.tsx` only: flush the waiting answers through
+`saveResponseAction` first, which is the same grace the native post relied on,
+then move with `router.replace(?auto=1)`. Without JavaScript the button still
+posts and the server still redirects, unchanged.
+
+**No proctoring row is written for a move the platform made**, measured at 0
+across Start, the section change and time-up, and a real exit still is: Escape
+wrote exactly one `fullscreen_exit`.
+
+**What was tried and rejected.** A `keepFullscreen` mode on `ActionBoundary`
+(client router first, 2.5 s fallback to a document load) was built and measured
+as not working -- 10 of 12 clicks still froze, because a component reading
+`usePathname()`/`useSearchParams()` never mounts on a stalled click, so its
+effects and its timer never run -- and was reverted. Plan B, having
+`nextSectionAction` and `submitAttemptAction` return state instead of
+redirecting, was then built, measured, and **also reverted**: it needed a
+`revalidatePath` in each action and a flag on the no-JavaScript confirmation
+screen to stop it asking the same question twice, and the measurement showed
+the redirects it removed were never document loads in the first place. The
+branch carries the one change the evidence supports.
+
+**For the UI worker.** Nothing here depends on full screen surviving the Start
+navigation, although today it does. When a mock opens in a window of its own,
+full screen must be asked for by a click inside that window: `ProctorWatch`'s
+banner already carries one for a proctored attempt, and `FullscreenButton` sits
+in the exam bar for the rest. `FullscreenOnSubmit` on the Start button becomes
+dead at that point and should be deleted with the change.
 
 **Traps for the next agent.** `next build` failed once on `next/font/google`
 with `TypeError: Cannot read properties of null (reading '1')`, a transient

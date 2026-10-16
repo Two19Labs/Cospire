@@ -14,6 +14,19 @@ function enter() {
 // Begin buttons -- because a browser grants full screen only inside a click.
 // The page that follows is a client-side navigation, so the document, and its
 // full screen, carry over into the exam. Without JavaScript it does nothing.
+//
+// **Measured, not assumed** (`scripts/verify/exam-fullscreen.mjs`, 2026-10-16).
+// PR #80 made `ActionBoundary` follow a caught redirect with `window.location`
+// and a document load always exits full screen, so this looked doomed. It is
+// not: a redirect from a Server Action dispatched by React is followed by the
+// client router and never reaches the boundary, so Start, Begin and the
+// section change all stay inside one document and keep the full screen. Only
+// the countdown's native form post left it, and that post is gone.
+//
+// Nothing relies on this surviving, though. The mock is to open in a window of
+// its own shortly, and full screen will then have to be asked for by a click
+// inside that window: `ProctorWatch`'s banner carries one for a proctored
+// attempt and `FullscreenButton` sits in the exam bar for the rest.
 export function FullscreenOnSubmit() {
   const marker = useRef<HTMLSpanElement>(null);
   useEffect(() => {
