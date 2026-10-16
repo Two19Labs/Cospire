@@ -1877,6 +1877,34 @@ drop. Versions are pinned exactly: `npm install` writes a caret, which was
 corrected with `npm pkg set` and a reinstall. The 8 s "Taking too long?
 Reload" stopgap in `SubmitButton` is untouched.
 
+**Full screen in the exam, measured 2026-10-16.** A document load drops full
+screen and the browser will not grant it again without a fresh click, which the
+owner raised against this branch. Where it bites is narrower than it looks:
+question-to-question moves **never navigate** (`exam-sitting.tsx` calls
+`preventDefault` and moves with `setIndex` plus `history.replaceState`), so only
+"Leave this section", time-up and the final submit post and therefore reload. A
+sectioned paper therefore asks the student to press the full-screen button again
+at each section change. **No false proctoring row is written:** `ProctorWatch`
+records on `fullscreenchange`, and a freshly loaded document fires none.
+
+A `keepFullscreen` mode on `ActionBoundary` -- the client router first, with a
+2.5 s fallback to a document load -- was built and **measured as not working**:
+10 of 12 clicks still froze, because a component reading `usePathname()` and
+`useSearchParams()` never mounts on a stalled click (its render is the one the
+stalled transition discards), so its effects and its timer never run. The two
+that recovered did so only through the fallback's document load. That is C2
+restated: anything that keeps full screen depends on this boundary releasing,
+and releasing is what does not work. The attempt was reverted rather than left
+as a second code path buying nothing.
+
+**The fix that would work** is to stop the exam's redirects reaching this
+boundary at all, the way question moves already avoid it: on the JavaScript
+path, have the section change and time-up return their next state instead of
+`redirect()` and let the client move as `go()` does. That is plan B scoped to
+two actions instead of every action in the application. It touches
+`exam-sitting.tsx`, which the UI worker is changing for "a mock opens in its own
+window", so it wants sequencing rather than a race.
+
 **Traps for the next agent.** `next build` failed once on `next/font/google`
 with `TypeError: Cannot read properties of null (reading '1')`, a transient
 font fetch, and the identical build then succeeded — retry before believing
