@@ -9,6 +9,7 @@ import { startAttemptAction } from "../actions/attempt-actions";
 import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
 import { FullscreenOnSubmit } from "./fullscreen";
+import { OpenInOwnWindow } from "./own-window";
 import { TouchFlag } from "./touch-flag";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
@@ -130,6 +131,9 @@ export function StudentMockScreen({ error, mock, phone, profile }: { error?: str
             <form action={startAttemptAction}>
               <input name="mockId" type="hidden" value={mock.id} />
               <TouchFlag />
+              {/* Opens the exam in a window of its own, and cancels this click
+                  when it succeeds -- so exactly one of the two below acts. */}
+              <OpenInOwnWindow mockId={mock.id} />
               <FullscreenOnSubmit />
               <SubmitButton pendingLabel="Starting…">{used === 0 ? "Start test" : "Start another attempt"}</SubmitButton>
             </form>

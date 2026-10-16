@@ -37,12 +37,16 @@ const RECORDER = String.raw`
   if (document.documentElement) start(); else addEventListener("DOMContentLoaded", start);
 })();`;
 
-export async function launch({ port = 9333, profileRoot = "coverage/ui-audit" } = {}) {
+// `args` adds browser-wide switches. Needed for anything a per-page CDP
+// override cannot reach: `Network.setUserAgentOverride` applies to the target it
+// is sent to and NOT to a window that target opens, so measuring a phone that
+// opens a second window needs `--user-agent` on the browser itself.
+export async function launch({ args = [], port = 9333, profileRoot = "coverage/ui-audit" } = {}) {
   const profile = resolve(profileRoot, `chrome-${Date.now()}`);
   mkdirSync(profile, { recursive: true });
   const proc = spawn(CHROME, [
     "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "--no-first-run",
-    "--no-default-browser-check", "--disable-extensions", "--hide-scrollbars", "--mute-audio", "about:blank",
+    "--no-default-browser-check", "--disable-extensions", "--hide-scrollbars", "--mute-audio", ...args, "about:blank",
   ], { stdio: "ignore" });
   let target = null;
   for (let i = 0; i < 50 && !target; i += 1) {

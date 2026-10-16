@@ -8,6 +8,7 @@ import { isAnswered } from "../answer";
 import type { AttemptView, PaperQuestion } from "../queries/attempt-view";
 import type { QuestionKey } from "../queries/attempt-keys";
 import { formatMarks } from "../marks";
+import { CloseOnSubmit } from "./close-on-submit";
 import styles from "./exam.module.css";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
@@ -38,6 +39,8 @@ export function ResultScreen({ keys, profile, view }: { keys: Map<number, Questi
 
   return (
     <RoleShell profile={profile} title={view.mock.title}>
+      {/* Only does anything when the exam was sat in its own window. */}
+      <CloseOnSubmit />
       <section className="panel">
         <div className="panel__header">
           <div>
