@@ -219,7 +219,6 @@ svg.icon {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-xl);
-  box-shadow: 0 1.5rem 4rem rgb(24 43 80 / 8%);
   max-width: 30rem;
   padding: clamp(1.5rem, 5vw, 3rem);
   width: 100%;
@@ -1219,6 +1218,14 @@ a.button {
   padding: 1.3125rem var(--panel-pad);
 }
 
+/* A panel that is nothing but its header -- the ARS report's title card, for
+   one. Left alone the header's rule and the panel's own bottom padding draw an
+   empty band under the title. */
+.panel > .panel__header:first-of-type:last-child {
+  border-bottom: 0;
+  margin-bottom: calc(var(--panel-pad) * -1);
+}
+
 .panel > .table-scroll {
   margin: 0 calc(var(--panel-pad) * -1);
   max-width: none;
@@ -1413,7 +1420,6 @@ form.panel > h2:first-child {
 
 /* The error and not-found pages: the empty state as a card on its own. */
 .state-card {
-  box-shadow: 0 1.5rem 4rem rgb(24 43 80 / 8%);
   max-width: 30rem;
   width: 100%;
 }
@@ -1669,6 +1675,14 @@ form.panel > h2:first-child {
 
 .card-grid--two {
   grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+}
+
+/* Cards that carry a long title and a progress bar: two to a row on a desktop,
+   one on a phone. `auto-fill` rather than `auto-fit` on purpose -- auto-fit
+   collapses the empty track, so a student with one programme got a card
+   stretched across the whole page, which read as a panel rather than a card. */
+.card-grid--wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
 }
 
 .card-grid--two h3 .tag,

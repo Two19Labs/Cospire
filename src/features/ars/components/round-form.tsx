@@ -207,13 +207,17 @@ export function RoundForm({
   const locked = round.status === "submitted" || round.status === "reviewed";
 
   return (
-    <RoleShell profile={profile} title={round.name}>
+    <RoleShell
+      back={{ href: "/student/ars", label: `Back to ${round.courseTitle}` }}
+      profile={profile}
+      title={round.name}
+    >
       {error ? (
         <p className="form-error" role="alert">{errorMessages[error] ?? errorMessages["save-failed"]}</p>
       ) : null}
-      {notice ? <p className="muted">{noticeMessages[notice] ?? "Saved."}</p> : null}
-
-      <p><Link href="/student/ars">← {round.courseTitle}</Link></p>
+      {notice ? (
+        <p className="notice notice--success" role="status">{noticeMessages[notice] ?? "Saved."}</p>
+      ) : null}
 
       {round.submissionMode === "offline" ? (
         <section className="panel">
