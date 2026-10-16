@@ -165,10 +165,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Engine worker (`Cospire-engine`, port 3040) | `feat/abandoned-attempts` | N6: closing abandoned attempts (step 4.5) | `supabase/migrations/20261014100000_close_expired_attempts.sql`, `supabase/tests/003_close_expired_attempts.test.sql` | Migration and pgTAP test written, pull request raised; **the SQL has never been executed, Docker unavailable**; the owner applies it | 2026-10-16 |
 
 Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), #87 (mock in its
-own window), then #81 and #84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed
+own window), #81 (abandoned attempts closed by `pg_cron` every minute; migration
+`20261014100000` applied), then #84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed
 unmerged (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
