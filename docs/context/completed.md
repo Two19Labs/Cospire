@@ -1993,3 +1993,21 @@ worktree-prefixed paths (`Cospire-ui/**`).
   The mock has to be built with a client bearing the admin JWT
   (`admin.rpc("save_mock")`, as `ui-audit-fixture.mjs` does), not the service
   client, which the database correctly refuses.
+
+### Slice 2 part B, same branch, 2026-10-16
+
+- **Programmes:** `card-grid--two` replaced by `card-grid--wide`, and the empty
+  case moved from a bare `panel-empty` line to a real `empty-state`.
+- **Mock tests:** the admin-shaped table replaced by a card grid — title, then
+  duration and attempts used, with the latest result and "Open →" on the card's
+  bottom rule — plus an `empty-state` and `loading.tsx` reshaped to
+  `SkeletonCards`.
+
+Both touch files another worker is editing in its own worktree, so the diffs are
+deliberately confined to markup and class names: no query, action or type was
+changed, and the mock detail screen below the list is untouched.
+
+Verified the same way: 14/14 student routes at 1440x900 and 390x844, 0 console
+errors, 0 failed requests, 0 accessibility findings, 0 px phone overflow; both
+screens read as cards at desktop and stack on a phone. 611 tests, typecheck,
+lint and build pass.
