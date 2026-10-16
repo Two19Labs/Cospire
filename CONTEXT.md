@@ -159,7 +159,6 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| UI worker (`Cospire-ui`, port 3050) | `feat/ui-refresh-2` | UI refresh slice 2: the remaining student screens onto slice 1's shape | `src/app/globals.css`, `src/features/documents/components/student-documents-screen.tsx`, `src/app/student/documents/loading.tsx`, `src/features/ars/components/round-form.tsx` | Part A pushed and verified; pull request raised | 2026-10-16 |
 
 In progress, each branch carrying its own row until it merges: `feat/video`
 (migration `20261013120000` applied; live pass waits for a test video) and
