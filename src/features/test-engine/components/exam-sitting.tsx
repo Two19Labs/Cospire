@@ -205,12 +205,31 @@ export function ExamSitting(props: SittingProps) {
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     const name = submitter?.name ?? "goto";
     const value = submitter?.value ?? "";
-    // Time is up: let the form post, so the answer on screen is saved inside
-    // the grace and the server moves the paper on.
-    if (name === "intent" && value === "timeup") return;
     event.preventDefault();
     if (!question) return;
     const current = draftsRef.current[question.id] ?? { review: false, values: [] };
+
+    // Time is up. This used to let the form post natively, which is a real
+    // browser navigation to a new document, and a new document always exits
+    // full screen -- measured, with the full screen gone and the exam carrying
+    // on without it (`scripts/verify/exam-fullscreen.mjs`). Every other move
+    // in a sitting stays inside this document, so this was the one that cost a
+    // proctored student their full screen and could have written a
+    // `fullscreen_exit` nobody caused.
+    //
+    // So the answers waiting go first, inside the server's grace the database
+    // allows, and only then does the paper move on, as a client navigation
+    // carrying `auto=1`. Without JavaScript the button still posts the form
+    // and the server still redirects, exactly as before.
+    if (name === "intent" && value === "timeup") {
+      void flushAll().then(() => {
+        // Already there, because the countdown ran out without the student
+        // moving a question since the last one did.
+        if (window.location.search.includes("auto=1")) router.refresh();
+        else router.replace(`/student/attempts/${attemptId}?auto=1`);
+      });
+      return;
+    }
 
     if (name === "goto") {
       const target = questions.findIndex((entry) => entry.number === Number(value));

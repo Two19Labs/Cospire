@@ -24,7 +24,7 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-13
+## Status, 2026-10-16
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
 - **UI refresh slice 1** (`feat/ui-refresh`): Inter for body and headings and
@@ -58,14 +58,19 @@ credentials, student data or anyone's personal data here.
 - **The database is one migration ahead of `main`:** `20261013120000_videos`
   is applied (owner's go, 2026-10-13) and lands on `main` with `feat/video`.
 - **Defect C2** (a save never completes on screen although it landed): fixed
-  on PR #80, held until the exam keeps full screen (a full page load drops it).
+  on PR #80, 0/40 stuck. The full-screen hold is answered and measured: a
+  proctored sitting keeps full screen from Start through every section change
+  and time-up, with no `proctor_events` row for a move the platform made
+  (`scripts/verify/exam-fullscreen.mjs`). A Server Action's `redirect()` is
+  followed by the client router and never reaches `ActionBoundary`, so only the
+  countdown's native form post ever lost full screen, and it no longer posts.
   Stopgap meanwhile: "Taking too long? Reload" after 8 s.
 - **Not built:** bulk CSV creation (SMTP), a mock draft state (D41), delete for
   programmes, documents and mocks (D42), content migration and handover. In
   progress: video, abandoned attempts (`pg_cron`, D35), the essay type (D34).
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
-  activity screens, the new student home.
+  activity screens, the new student home, and saves after the C2 fix.
 - **Blocked on the Client:** VdoCipher, Supabase Pro (overdue: ARS uploads are
   live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
   content, and per-question metadata (a meeting, D39).
@@ -154,6 +159,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Engine worker (`Cospire-engine`, port 3040) | `fix/save-completion` | Defect C2, and the exam keeping full screen | `scripts/verify/c2-repro.mjs`, `scripts/verify/exam-fullscreen.mjs`, `package.json`/`package-lock.json` (`next` only), `src/shared/ui/action-boundary.tsx`, `src/features/test-engine/components/exam-sitting.tsx`, `.../fullscreen.tsx` | 0/40 stuck, 13/13 flows, full screen held through Start, section change and time-up with 0 false proctoring rows; PR #80 awaiting the owner | 2026-10-16 |
 
 In progress, each branch carrying its own row until it merges: `feat/video`
 (migration `20261013120000` applied; live pass waits for a test video) and
@@ -274,7 +280,7 @@ content call, October 2026* in `docs/context/meetings.md`):
 1. **Owner, in a real browser on the deployed URL:** sit a mock on the new exam
    screen (desktop, then a phone); build a curriculum and work through it as a
    student; save on an admin screen a few times ("Grant access", "Remove
-   access": it should dim, never blank; note whether C2 happens); the new
+   access": it should dim, then show the save at once -- C2 is fixed); the new
    student home at phone width; the admin submissions and activity screens.
 2. **Owner decisions still open:** N3 hosting (deferred). Settled on
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
