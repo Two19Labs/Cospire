@@ -7,6 +7,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | Date | Work | Result / verification |
 |---|---|---|
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
+| 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
 | 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
@@ -1939,3 +1940,56 @@ Classify a click by whether the save showed on screen, never by whether signal
 X fired: two earlier classifications scored the defect itself as a harness
 fault. The 63% here against the audit's ~40% is the harness clicking faster
 than a person, so only compare numbers within this harness.
+## UI refresh slice 2, 2026-10-16
+
+Part A of slice 2, on `feat/ui-refresh-2` from `4b1fbdc`. Slice 1 (PR #77) set
+the rules and the tokens; this brings the remaining student screens onto them.
+Almost none of it is new CSS vocabulary: `globals.css` already carried
+`.panel`, `.card-grid`, `.course-card`, `.empty-state` and the rest, and the
+student routes are thin shells, so the work is moving feature components onto
+classes that exist.
+
+| Change | Why |
+|---|---|
+| `.auth-card` and `.state-card`: `box-shadow` removed | Slice 1 is "no shadows" and `--shadow` is already `none`. These two were the last literal shadows on a student-visible page (login, and the error/not-found card). The headless browser pass found the second one |
+| `.panel > .panel__header:first-of-type:last-child`: no bottom rule, negative bottom margin | A panel that is only a header -- the ARS report's title card -- drew the header's rule and then an empty white band of panel padding under it |
+| `.card-grid--wide` added | `.card-grid--two` uses `auto-fit`, which collapses the empty track, so a student with one programme saw a card stretched across the whole page, reading as a panel rather than a card. `auto-fill` at a 26rem minimum gives two to a desktop row and one on a phone |
+| Student **Documents**: the admin table replaced by a `card-grid` of `course-card--link` cards, with a `list-bar` count, a real `empty-state`, and `loading.tsx` reshaped to `SkeletonCards` | A student's library is short by construction and has two facts per row. A card is also one large target on a phone |
+| Student **ARS round**: the back link moved into `RoleShell`'s `back` prop; the post-save confirmation is now `notice notice--success` with `role="status"` instead of muted body text | Every other student screen puts its back link in the same place, and a confirmation said in grey body text does not read as a confirmation |
+
+Deliberately left: the `.dialog` and question-bank pending-overlay shadows.
+Both are overlays over a backdrop rather than cards in the page flow.
+
+**Not verified:** the confirmation *notice* itself, which needs a round actually
+submitted in a browser; and the login and error pages in a browser, because the
+audit harness only drives signed-in routes -- the shadow removal was confirmed
+in the built stylesheet instead.
+
+**A trap worth recording.** ShareLane's `run_check` runs
+`npm --prefix Cospire run test`, so it tests the **main checkout**, not the
+worktree the agent is working in. Checks for a branch must be run in that
+branch's own worktree. Related: the claim guard resolves paths against the
+shell's current directory, so an agent that `cd`s into its worktree and stays
+there claims bare repo-relative paths (`CONTEXT.md`) that collide with every
+other worker's. Run commands in a subshell from `C:\Cospire` and claim
+worktree-prefixed paths (`Cospire-ui/**`).
+
+### Still owed from slice 2
+
+- **Part B:** the programme list needs `card-grid--wide` in place of
+  `card-grid--two` (the CSS is already on this branch, the swap is one word),
+  and the student mock list is still an admin-shaped table that should be a
+  card grid.
+- **A mock opening in its own window on Start** (decided, not built). The Start
+  form carries no `target` in the HTML; a client component of the same shape as
+  the existing `FullscreenOnSubmit` calls `window.open("", "cospire-exam", ...)`
+  on submit and sets `form.target`, so with JavaScript off the attempt opens in
+  the same tab. The submitted result page calls `window.opener.location.reload()`
+  and then `window.close()`; the opener is same-origin, so no `BroadcastChannel`
+  is needed and both calls no-op where there is no opener (same tab, or a phone).
+  Switching back to the dashboard is an ordinary focus loss: warn and log, never
+  auto-submit. Phone attempts stay `proctored = false`.
+- **A short mock's countdown reaching zero** is still unverified in a browser.
+  The mock has to be built with a client bearing the admin JWT
+  (`admin.rpc("save_mock")`, as `ui-audit-fixture.mjs` does), not the service
+  client, which the database correctly refuses.
