@@ -50,6 +50,8 @@ as $$
       -- essay is marked by a person.
       when p_type in ('di_stimulus', 'essay') then p_answer is null
       when jsonb_typeof(p_answer) is distinct from 'object' then false
+      -- Separate arms so no array function ever meets a non-array: CASE arms
+      -- are evaluated in order, AND operands are not.
       when p_type in ('mcq', 'mcq_multi')
            and jsonb_typeof(p_answer -> 'options') is distinct from 'array' then false
       when p_type = 'numerical'
@@ -85,11 +87,15 @@ as $$
              or char_length(form_row.value #>> '{}') > 50
         )
         and (
-          p_answer -> 'tolerance' is null
-          or (jsonb_typeof(p_answer -> 'tolerance') = 'number'
-              and (p_answer ->> 'tolerance')::numeric >= 0)
+          not (p_answer ? 'tolerance')
+          or (
+            case
+              when jsonb_typeof(p_answer -> 'tolerance') = 'number'
+                then (p_answer ->> 'tolerance')::numeric >= 0
+              else false
+            end
+          )
         )
-        and (p_answer - 'accepted' - 'tolerance') = '{}'::jsonb
       else false
     end,
     false
