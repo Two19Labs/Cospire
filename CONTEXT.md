@@ -55,8 +55,6 @@ credentials, student data or anyone's personal data here.
   - **the UI audit and cleanup** (PR #75): no blank page after saves
     (`src/shared/ui/action-boundary.tsx`), 268 to 203 ms average server time,
     the prototype's student home. Report: `docs/ui-audit-2026-10-09.md`
-- **The database is one migration ahead of `main`:** `20261013120000_videos`
-  is applied (owner's go, 2026-10-13) and lands on `main` with `feat/video`.
 - **Defect C2** (a save never completes on screen although it landed): fixed
   on PR #80, 0/40 stuck. The full-screen hold is answered and measured: a
   proctored sitting keeps full screen from Start through every section change
@@ -65,13 +63,21 @@ credentials, student data or anyone's personal data here.
   followed by the client router and never reaches `ActionBoundary`, so only the
   countdown's native form post ever lost full screen, and it no longer posts.
   Stopgap meanwhile: "Taking too long? Reload" after 8 s.
+- **Video is built and live-verified** (PR #86): library, server-side OTP with
+  a per-viewer watermark, `video` curriculum items, upload from the platform,
+  video `item_progress`. Migration `20261013120000` is applied.
+  17/17 and 4/4 on the two `video-*` verify scripts against the hosted database;
+  **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
+  in `docs/context/completed.md`.
 - **Not built:** bulk CSV creation (SMTP), a mock draft state (D41), delete for
   programmes, documents and mocks (D42), content migration and handover. In
-  progress: video, abandoned attempts (`pg_cron`, D35), the essay type (D34).
+  progress: abandoned attempts (`pg_cron`, D35), the essay type (D34).
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
-  activity screens, the new student home, and saves after the C2 fix.
-- **Blocked on the Client:** VdoCipher, Supabase Pro (overdue: ARS uploads are
+  activity screens, the new student home, and **video playback** -- no video
+  frame has ever decoded here, so the watermark has not been seen on screen.
+- **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
+  (overdue: ARS uploads are
   live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
   content, and per-question metadata (a meeting, D39).
 
@@ -160,17 +166,16 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-In progress, each branch carrying its own row until it merges: `feat/video`
-(migration `20261013120000` applied; live pass waits for a test video) and
-`fix/save-completion` (C2). Merged: #69-#75, #77-#79; #76 closed unmerged
-(its content is in #77). Write-ups: `docs/context/completed.md`.
+Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), then #87, #81 and
+#84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
+Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: slice 1 done, slice 2 next
+### UI refresh: slices 1 and 2 merged
 
 All of slice 1's questions are settled (D25-D31 in the untracked
 `docs/decisions/2026-10-12-decision-statement.md`):
@@ -185,15 +190,8 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 - **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
   wording, orange or the licensed MADE Gentle font.
 
-Next:
-1. Slice 2: the remaining student screens (programmes, documents, mock list,
-   results and attempt review, analytics, ARS).
-2. **A mock opens in its own window on Start** (decided, not built). Without
-   JavaScript it falls back to the same tab; switching back is an expected
-   proctoring focus loss; on submit the window closes and the dashboard
-   refreshes.
-Build desktop first, then derive the phone layout (D52); no further
-AfterBoards references are owed.
+Slice 2 (the remaining student screens, desktop first, D52) merged as #85.
+A mock opening in its own window on Start is PR #87.
 
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
@@ -208,14 +206,15 @@ Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
 The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
 not a gate item.
 
-### Phase 2, video still blocked; curriculums merged
+### Phase 2 is built; a real browser is owed
 
-Curriculums without video (steps 3, 4, 4b, 5) merged as PR #72 (`b0de34d`),
-verified 35/35; not yet clicked through in a browser. **Video is still blocked on VdoCipher**
-(expected the week of 12 October): the upload pipeline, playback, the `videos`
-table, the `video` branch of `private.validate_curriculum_item` and
-`student_has_programme_item('video', …)` in a video access helper, and
-`item_progress` for video (percent, last position).
+Curriculums without video merged as PR #72 (`b0de34d`), verified 35/35; video
+followed on `feat/video` (PR #86), live-verified 17/17. What is owed is the
+picture itself: nothing played, because headless Chrome has no Widevine CDM, so
+no frame decoded, the watermark was never painted, and the player API's seek and
+reporting were never exercised -- the server action behind them was driven
+directly. The owner should watch one granted video in a real browser, desktop
+then a phone, and check the watermark carries their own name.
 
 ## External blockers and client-owned steps
 
@@ -226,7 +225,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | Needed | Blocks | Owner |
 |---|---|---|
 | **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
-| **VdoCipher** account and API access | **All of Phase 2.** Nothing in that phase starts without it | Cospire |
+| **VdoCipher beyond the 30-day trial** | Nothing today: the trial account is in the Client's name and video is built and verified against it. A paid plan is needed before handover, and the trial's expiry date is not recorded | Cospire |
 | **Billing on the Gemini project** (**agreed by the Client on 2026-10-01**, about ₹1,000 prepaid; owner to set up, in Cospire's name) | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
@@ -285,8 +284,9 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Video:** built on `feat/video`; the live pass with the Client's test video
-   runs next, then its PR.
+3. **Video:** built and live-verified; PR #86 awaits review and merge. The one
+   thing the pass could not do is play a frame, so the owner watching one
+   granted video in a real browser is the remaining check.
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 

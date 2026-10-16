@@ -64,7 +64,7 @@ describe("input parsing", () => {
   it("accepts only buildable item types; video waits for the video library", () => {
     expect(parseItemType("document")).toBe("document");
     expect(parseItemType("text")).toBe("text");
-    expect(parseItemType("video")).toBeNull();
+    expect(parseItemType("video")).toBe("video");
     expect(parseItemType("lesson")).toBeNull();
   });
 
@@ -109,5 +109,8 @@ describe("progress", () => {
       "/student/programmes/4/items/2",
     );
     expect(studentItemHref(4, { id: 3, refId: 5, type: "document" })).toBeNull();
+    expect(studentItemHref(4, { id: 6, refId: 5, type: "video" })).toBe(
+      "/student/programmes/4/items/6",
+    );
   });
 });

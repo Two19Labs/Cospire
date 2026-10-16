@@ -379,3 +379,55 @@ The flows write rows (an attempt, a user, grants, a mock) and are not
 idempotent: run them once per fixture. Teardown removes only what `state.json`
 names, plus every grant its admin made or that points at its records, and
 prints the live counts against the baseline setup recorded.
+
+## video-live.mjs — the VdoCipher live pass
+
+The Phase 2 video pass: a real video in the Client's VdoCipher account added by
+its id, previewed, put in a programme, granted, watched, refused, resumed. Needs
+a production build on port 3010 started with `VIDEO_OTP_LOG` pointing at a
+writable file, and `PROGRESS_ACTION_ID`, the server-action id of
+`recordVideoProgressAction` (from `.next/server/server-reference-manifest.json`:
+the key whose entry names `record-video-progress`).
+
+```bash
+node --env-file=.env.local scripts/verify/setup.mjs coverage/verify/video-state.json
+VIDEO_OTP_LOG=<abs path> npx next start -p 3010
+VIDEO_OTP_LOG=<abs path> PROGRESS_ACTION_ID=<id> \
+  node --env-file=.env.local scripts/verify/video-live.mjs \
+    coverage/verify/video-state.json http://127.0.0.1:3010 <vdocipher video id>
+node --env-file=.env.local scripts/verify/video-teardown.mjs <vdocipher video id>
+node --env-file=.env.local scripts/verify/teardown.mjs coverage/verify/video-state.json
+```
+
+`VIDEO_OTP_LOG` is read by a **temporary** three-line instrumentation of
+`requestOtp` that appends each OTP request body to that file. It is the only way
+to read the watermark VdoCipher is asked to draw -- the player's iframe is
+cross-origin -- and to prove an unauthorised student causes no call at all. It
+was removed again before the pull request; re-add it for a rerun.
+
+The run takes about six minutes: it waits 330 s for an OTP to pass its 300 s ttl,
+then loads the copied player URL top level (same origin as itself, so it can be
+read) and asserts `license.vdocipher.com` answers 403 where it did not before.
+`VIDEO_TTL_WAIT=skip` drops that step; a number overrides the wait.
+
+**What it cannot prove.** Nothing plays: headless Chrome has no Widevine CDM, so
+no DRM frame decodes, the watermark is never painted on screen, and the player
+API never fires `timeupdate`. Progress is therefore driven through the same
+server action the player calls, over the `Next-Action` protocol. A real browser
+is still owed for the picture itself.
+
+`video-teardown.mjs` deletes the programmes this pass names and the one video by
+its VdoCipher id -- never a video or programme it did not create. Run it before
+`teardown.mjs`, which deletes the accounts those rows point at.
+
+## video-upload-live.mjs — upload from the platform
+
+Uploads one tiny generated clip through the real browser form, refreshes it to
+ready, and then **deletes it from VdoCipher and from `videos`** in a `finally`
+block. The account is the Client's, so nothing may be left behind.
+
+```bash
+ffmpeg -f lavfi -i testsrc=duration=2:size=320x240:rate=15 -pix_fmt yuv420p coverage/video-live/clip.mp4
+node --env-file=.env.local scripts/verify/video-upload-live.mjs \
+  coverage/verify/video-state.json http://127.0.0.1:3010 coverage/video-live/clip.mp4
+```

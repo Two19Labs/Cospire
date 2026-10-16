@@ -24,6 +24,7 @@ interface CurriculumBuilderProps {
   message: CurriculumMessage | null;
   mocks: PickerPage;
   sections: CurriculumSection[];
+  videos: PickerPage;
 }
 
 function Hidden({ fields }: { fields: Record<string, string | number> }) {
@@ -69,20 +70,25 @@ function MoveButtons({
   );
 }
 
+type PickerName = "documentsPage" | "mocksPage" | "videosPage";
+
 function PickerPager({
   courseId,
   name,
-  other,
+  pages,
   page,
 }: {
   courseId: number;
-  name: "documentsPage" | "mocksPage";
-  other: { name: string; page: number };
+  name: PickerName;
+  // Every picker's current page, so paging one keeps the others where they are.
+  pages: Record<PickerName, number>;
   page: PickerPage;
 }) {
   if (page.pageCount <= 1) return null;
   const href = (target: number) =>
-    `/admin/courses/${courseId}?${name}=${target}&${other.name}=${other.page}#add-item`;
+    `/admin/courses/${courseId}?${new URLSearchParams(
+      Object.entries({ ...pages, [name]: target }).map(([key, value]) => [key, String(value)]),
+    ).toString()}#add-item`;
   return (
     <p className="muted">
       Page {page.page} of {page.pageCount}
@@ -138,15 +144,17 @@ export function CurriculumBuilder({
   message,
   mocks,
   sections,
+  videos,
 }: CurriculumBuilderProps) {
   const notice = message ? curriculumMessages[message] : null;
+  const pages = { documentsPage: documents.page, mocksPage: mocks.page, videosPage: videos.page };
 
   return (
     <>
       <div className="section-heading" id="curriculum">
         <h2>Curriculum</h2>
         <p>
-          Sections in order, each holding documents, tests and readings in order.
+          Sections in order, each holding videos, documents, tests and readings in order.
           Every item is open to a student on this programme: granting the
           programme grants everything in it.
         </p>
@@ -255,6 +263,23 @@ export function CurriculumBuilder({
           </div>
 
           <form action={addItemAction} className="stack-form">
+            <h3>Video</h3>
+            <Hidden fields={{ courseId, type: "video" }} />
+            <SectionSelect sections={sections} />
+            {videos.options.length === 0 ? (
+              <p className="muted">
+                No videos in the library yet. <Link href="/admin/videos">Add one</Link>.
+              </p>
+            ) : (
+              <RefSelect label="Video" page={videos} />
+            )}
+            <PickerPager courseId={courseId} name="videosPage" pages={pages} page={videos} />
+            {videos.options.length === 0 ? null : (
+              <SubmitButton pendingLabel="Adding…">Add video</SubmitButton>
+            )}
+          </form>
+
+          <form action={addItemAction} className="stack-form">
             <h3>Document</h3>
             <Hidden fields={{ courseId, type: "document" }} />
             <SectionSelect sections={sections} />
@@ -266,7 +291,7 @@ export function CurriculumBuilder({
             <PickerPager
               courseId={courseId}
               name="documentsPage"
-              other={{ name: "mocksPage", page: mocks.page }}
+              pages={pages}
               page={documents}
             />
             {documents.options.length === 0 ? null : (
@@ -286,7 +311,7 @@ export function CurriculumBuilder({
             <PickerPager
               courseId={courseId}
               name="mocksPage"
-              other={{ name: "documentsPage", page: documents.page }}
+              pages={pages}
               page={mocks}
             />
             {mocks.options.length === 0 ? null : (
