@@ -11,7 +11,7 @@
 import { numericalAnswerMaxLength, parseNumericalAnswer } from "./numerical";
 import { isQuestionImagePath } from "./storage";
 
-export const questionTypes = ["mcq", "mcq_multi", "numerical", "di_stimulus"] as const;
+export const questionTypes = ["mcq", "mcq_multi", "numerical", "di_stimulus", "essay"] as const;
 export type QuestionType = (typeof questionTypes)[number];
 
 export const difficulties = ["easy", "medium", "hard"] as const;
@@ -19,6 +19,7 @@ export type Difficulty = (typeof difficulties)[number];
 
 export const questionTypeLabels: Record<QuestionType, string> = {
   di_stimulus: "DI set (shared chart or passage)",
+  essay: "Essay (marked by a person)",
   mcq: "Single correct",
   mcq_multi: "Multiple correct",
   numerical: "Typed answer (TITA)",
@@ -110,7 +111,15 @@ export function validateQuestion(draft: QuestionDraft, orgId: number): QuestionV
   if (!type) problems.push("Choose a question type.");
 
   const body = draft.body.replace(/\r\n/g, "\n").trim();
-  if (body === "") problems.push(type === "di_stimulus" ? "Write the shared passage or describe the chart." : "Write the question.");
+  if (body === "") {
+    problems.push(
+      type === "di_stimulus"
+        ? "Write the shared passage or describe the chart."
+        : type === "essay"
+          ? "Write the essay prompt."
+          : "Write the question.",
+    );
+  }
   if (body.length > questionBodyMaxLength) problems.push(`The question is longer than ${questionBodyMaxLength} characters.`);
 
   if (draft.sectionId === null) problems.push("Choose a section.");
@@ -135,6 +144,12 @@ export function validateQuestion(draft: QuestionDraft, orgId: number): QuestionV
 
   if (type === "di_stimulus" && draft.parentId !== null) {
     problems.push("A DI set cannot sit inside another DI set.");
+  }
+
+  // An essay stands on its own: it is marked by a person against the prompt,
+  // and a DI set's sub-questions are scored against a key.
+  if (type === "essay" && draft.parentId !== null) {
+    problems.push("An essay cannot sit inside a DI set.");
   }
 
   const images = [...new Set(draft.images.map((path) => path.trim()).filter((path) => path !== ""))];

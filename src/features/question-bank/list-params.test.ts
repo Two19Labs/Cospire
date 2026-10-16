@@ -45,7 +45,7 @@ describe("parseQuestionFilters", () => {
       topic: "Percentages",
       type: "numerical",
     });
-    expect(parseQuestionFilters({ difficulty: "brutal", section: "x", type: "essay" })).toMatchObject({
+    expect(parseQuestionFilters({ difficulty: "brutal", section: "x", type: "sonnet" })).toMatchObject({
       difficulty: null,
       sectionId: null,
       type: null,

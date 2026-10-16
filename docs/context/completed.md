@@ -10,6 +10,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
 | 2026-10-13, live pass 2026-10-16 | **Video, Phase 2** (`feat/video`) | VdoCipher playback, the video library, `video` as a curriculum item type, upload from the platform and `item_progress` for video. Migration `20261013120000_videos.sql` applied 2026-10-13; `db push --dry-run` on 2026-10-16 reports the remote up to date. 621 unit tests, typecheck, lint and `next build` pass; no `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`. **Live pass 17/17** against the hosted database on a local production build (port 3010, headless Chrome, throwaway accounts), plus the upload path 4/4 with the clip deleted from VdoCipher again. **Still owed: a real browser** -- nothing plays headless, so the watermark has never been seen on screen. See *Video, Phase 2* |
 | 2026-10-16 | **Abandoned attempts close on a schedule** (`feat/abandoned-attempts`, N6, step 4.5) | pg_cron runs `private.close_expired_attempts()` every minute: it submits every in-progress attempt that can no longer be answered, as the timer, stamped at the moment its clock ran out. It does **not** score — `score` stays null, which is already the "awaiting a score" state `rescoreAwaiting` drains — so there is no second scoring routine. Migration `20261014100000`, 14 pgTAP assertions in `supabase/tests/003`. **The SQL has not been executed anywhere:** Docker is unavailable and `DATABASE_URL` is empty, so `db:test` and `db lint` cannot run; `db push --dry-run` offers this one migration. The owner applies it. See *Abandoned attempts, 2026-10-16* |
+| 2026-10-16 | **The `essay` question type** (`feat/essay-question`) | A question type beside mcq, numerical and di_stimulus: no options, no key, answered as typed text under the section timer through the existing background save, with a word count. Marked by an admin or the student's assigned mentor on the attempt review; `essay_marks` holds the marker's input, awarding clears `attempts.score` and the one scorer recomputes. An unmarked essay is **pending**, never wrong, in results and analytics alike. "Choose 1 of 2" counts the better-marked essay in a section, with no choice column — **a decision for the owner**. Migration `20261014110000`, 16 pgTAP assertions, 626 unit tests (20 new). **The SQL has never been executed:** no Docker, no reachable Postgres; `db push --dry-run` offers this one migration. See *The essay question type, 2026-10-16* |
 | 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
@@ -2221,3 +2222,86 @@ entered, an untimed section alongside an expired timed one, and an attempt the
 student submitted by hand -- because a sweep that closes early would end a real
 student's exam, the same failure the warn-and-log proctoring decision exists to
 avoid.
+## The essay question type, 2026-10-16
+
+Branch `feat/essay-question`, worktree `Cospire-engine`. The on-the-spot essays
+in the full MESA and Ashoka mocks, decided by the owner on 2026-10-13 with no
+quote needed.
+
+**`essay` is a question type, not a feature of its own.** It sits in
+`questions.type` beside `mcq`, `numerical` and `di_stimulus`, so it is authored,
+imported, placed in a mock, sat under the section timer and reviewed by
+everything that already handles a question. Two places differ, and only those
+two are special-cased: an essay has no key, and a person awards its marks.
+
+**The answer is `{ "text": "..." }`**, the same shape family as
+`{ "options": [...] }` and `{ "value": "..." }`, validated by
+`private.answer_fits_question` up to 20000 characters -- about 3000 words, past
+any on-the-spot essay, and the ceiling `questions.body` already carries. The
+exam screen writes it in a textarea with a live word count, saved by the same
+background save every other answer uses.
+
+**An essay keeps a `question_keys` row with a null answer.** `save_question`
+writes one for every type but a stimulus, and that row is where the solution
+lives, so the essay keeps the shape rather than `save_question` being changed.
+`private.question_key_valid` now accepts "no answer" for an essay exactly as it
+does for a stimulus, and refuses one that carries an answer.
+
+**The awarded mark is its own table.** `essay_marks` holds the **marker's
+input**, which has to survive every recomputation; `marks_awarded` on
+`attempt_responses` is the **scorer's output** and is rewritten on every
+rescore. They are different facts, and a table of its own also carries who
+marked it and when, and lets the write be governed by its own policies instead
+of widening a student-facing table. `attempt_responses_scored_together` is
+widened so marks may stand without a verdict, because a person's mark is not
+right-or-wrong; a verdict with no marks is still refused.
+
+**Nothing new scores.** Awarding, changing or removing a mark clears
+`attempts.score` (`essay_marks_awaits_score`), which is this repository's
+existing awaiting-a-score state: `rescoreAwaiting` and the result screen drain
+it, and `scoreAndStore` -- the one scorer, the same one the Annexure A rescore
+calls -- reads `essay_marks` as an input.
+
+**Pending is never wrong.** An answered, unmarked essay stores exactly what an
+unscored answer stores, so the question's type is what tells them apart
+(`isEssayPending`). The tally counts it as `pending`, leaves `correct` and
+`wrong` alone, and accuracy is now taken over the answers that have a verdict --
+which for a paper of auto-scored questions is every attempted one, exactly as
+before. The student's result screen and the admin and mentor review both say
+the score is not final while an essay is pending.
+
+**"Choose 1 of 2" is the scorer's rule, with no column to model it.** A
+section's essays are a choice: the student answers either, and if both are
+answered the higher-marked one counts (`bestEssayPerSection`); a section with
+one essay is the same rule with one entrant. **This is a decision for the
+owner** -- if a mock ever needs two essays that both count, the upgrade path is
+a `choice_group` column on `mock_questions`, which nothing here forecloses.
+
+**Who may mark is RLS, not a route.** `essay_marks_insert_staff` and
+`essay_marks_update_staff` admit an admin of the organisation or this student's
+assigned mentor; there is no student write policy at all, so a student cannot
+mark their own essay whatever a route does. `private.guard_essay_mark_write`
+refuses a mark above what the essay is worth on that mock (the section's marks
+when it sets them, the question's own when it does not -- decision D19), a
+question that is not an essay in that paper, and an attempt that is not
+submitted, and it stamps `org_id`, `marked_by` and `marked_at` itself. The
+student reads the mark only once the attempt is submitted, the rule the answer
+key follows.
+
+**The importer** takes `essay`, `WAT` and `long answer` as type words, drops any
+options or key a model invents for an essay with a note saying so, and the model
+is told an essay has neither and that "answer any one of the following two" is
+two essay questions.
+
+**What is not verified.** The SQL has not been executed anywhere: Docker is
+unavailable, so `npm run db:test` and `supabase db lint` cannot run, and
+`DATABASE_URL` in `.env.local` is empty, so there is no reachable Postgres. The
+migration and the 16 pgTAP assertions are written and reviewed but never run.
+Nothing was exercised in a browser either, because the type does not exist in
+the hosted database until the owner applies the migration: no essay has been
+authored, sat or marked. The feature is verified by 626 unit tests -- 20 new,
+covering pending, the never-penalised rule, the awarded mark in the score, the
+best-of-two choice, the per-section grouping, the ceiling, an unanswered essay,
+reading a typed answer, the tally's treatment of pending and marked essays, and
+the importer -- and by nothing else. Three existing tests had used `"essay"` as
+their stand-in for an *invalid* question type and now use `"sonnet"`.

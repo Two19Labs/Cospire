@@ -122,7 +122,7 @@ describe("validateQuestion", () => {
   });
 
   it("refuses an unknown question type", () => {
-    expect(validateQuestion(draft({ type: "essay" }), 1).problems).toContain("Choose a question type.");
+    expect(validateQuestion(draft({ type: "sonnet" }), 1).problems).toContain("Choose a question type.");
   });
 
   it("keeps line breaks and Unicode notation in the body", () => {

@@ -7,6 +7,7 @@ import type { QuestionType } from "@/features/question-bank/question-input";
 import { SubmitButton } from "@/shared/ui";
 
 import { nextSectionAction, saveAnswerAction, saveResponseAction, submitAttemptAction } from "../actions/attempt-actions";
+import { essayAnswerMaxLength } from "../answer";
 import { formatMarks } from "../marks";
 import { Countdown } from "./countdown";
 import { ExamFrame } from "./exam-frame";
@@ -61,10 +62,18 @@ const errors: Record<string, string> = {
 };
 
 const typeLabels: Record<string, string> = {
+  essay: "Essay",
   mcq: "Single correct",
   mcq_multi: "Multiple correct",
   numerical: "Typed answer",
 };
+
+// Words, counted the way a person would: runs of non-space. Shown because an
+// essay prompt gives a length and nothing else on this screen would say.
+function wordCount(text: string): number {
+  const trimmed = text.trim();
+  return trimmed === "" ? 0 : trimmed.split(/\s+/).length;
+}
 
 type Status = "answered" | "both" | "notAnswered" | "review" | "unseen";
 
@@ -350,7 +359,26 @@ export function ExamSitting(props: SittingProps) {
               {question.type === "mcq_multi" ? (
                 <span className={styles.hint}>Select all that apply. Marks are given only when every correct option is chosen.</span>
               ) : null}
-              {question.type === "numerical" ? (
+              {question.type === "essay" ? (
+                <label className={styles.typed}>
+                  <span className={styles.eyebrow}>Write your essay</span>
+                  <textarea
+                    className={styles.essay}
+                    maxLength={essayAnswerMaxLength}
+                    name="answer"
+                    // The same background save every other answer uses, on the
+                    // same delay as the typed answer box: a keystroke does not
+                    // post, a pause does.
+                    onChange={(event) => update(question.id, { ...draft, values: [event.target.value] }, 800)}
+                    placeholder="Your answer"
+                    rows={14}
+                    value={draft.values[0] ?? ""}
+                  />
+                  <span className={styles.hint}>
+                    {wordCount(draft.values[0] ?? "")} words. Marked by your mentor after you submit, not by the computer.
+                  </span>
+                </label>
+              ) : question.type === "numerical" ? (
                 <label className={styles.typed}>
                   <span className={styles.eyebrow}>Type your answer</span>
                   <input

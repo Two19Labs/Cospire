@@ -138,6 +138,8 @@ const typeWords: Record<string, QuestionType | "set"> = {
   "multiple choice": "mcq",
   "multiple correct": "mcq_multi",
   "multiple select": "mcq_multi",
+  "essay": "essay",
+  "long answer": "essay",
   "numeric": "numerical",
   "numerical": "numerical",
   "single": "mcq",
@@ -145,6 +147,8 @@ const typeWords: Record<string, QuestionType | "set"> = {
   "single correct": "mcq",
   "tita": "numerical",
   "type in the answer": "numerical",
+  "wat": "essay",
+  "written ability test": "essay",
 };
 
 const difficultyWords: Record<string, string> = {
@@ -335,6 +339,16 @@ function readQuestion(
         type = "mcq_multi";
         notes.push("Two or more answers were given, so this is set as multiple correct.");
       }
+    }
+  }
+
+  // An essay carries no key and no options: it is marked by a person against
+  // the prompt. Either given is the model guessing, so both are dropped and
+  // said so, rather than refused -- the paper is right, the extras are not.
+  if (type === "essay") {
+    if (options.length > 0) notes.push("Options were given for an essay and were left out: an essay has no options.");
+    if (answerParts(answer, false).length > 0) {
+      notes.push("An answer was given for an essay and was left out: an essay is marked by a person, not against a key.");
     }
   }
 

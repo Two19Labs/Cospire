@@ -15,6 +15,8 @@ import type {
 } from "../queries/views";
 import { analyticsPageSize, type Capped } from "../queries/views";
 import styles from "./analytics.module.css";
+import { EssayMarkingPanel } from "@/features/test-engine/components/essay-marking-panel";
+
 import { Bar, BreakdownPanels, dateFormat, Pager, showMarks, Stat, Stats, TallyTable } from "./parts";
 
 const share = (value: number | null, max: number) => (value === null || max <= 0 ? null : value / max);
@@ -51,10 +53,13 @@ function proctoring(proctored: boolean): string {
 export function AttemptAnalyticsScreen({
   back,
   data,
+  essayNotice,
   profile,
 }: {
   back: { href: string; label: string };
   data: AttemptAnalytics;
+  // The outcome of a marker's last save, from the query string.
+  essayNotice?: string;
   profile: Profile;
 }) {
   const { attempt, breakdown, maxMarks } = data;
@@ -78,15 +83,30 @@ export function AttemptAnalyticsScreen({
               <Stat label="correct" value={breakdown.total.correct} />
               <Stat label="wrong" value={breakdown.total.wrong} />
               <Stat label="not answered" value={breakdown.total.unattempted} />
+              {breakdown.total.pending ? <Stat label="awaiting marking" value={breakdown.total.pending} /> : null}
               <Stat label="accuracy" value={percent(breakdown.total.accuracy)} />
             </Stats>
-            <p className="muted">Accuracy is correct answers out of those attempted. Time per question is not recorded.</p>
+            <p className="muted">
+              Accuracy is correct answers out of those with a right answer to compare against. Time per question is not
+              recorded.
+            </p>
+            {breakdown.total.pending ? (
+              <p className="notice">
+                {breakdown.total.pending === 1 ? "One essay is" : `${breakdown.total.pending} essays are`} waiting to be
+                marked, so this score is not final. An unmarked essay counts as neither right nor wrong.
+              </p>
+            ) : null}
           </>
         ) : (
           <p className="notice">This attempt is awaiting its score. The breakdown appears once it has been scored.</p>
         )}
       </section>
       {breakdown ? <BreakdownPanels breakdown={breakdown} /> : null}
+      {/* Nothing is drawn when the paper carries no essay, which is every mock
+          today. A student never sees the marking form: the panel is drawn for
+          an admin or a mentor only, and the write is theirs alone by policy in
+          any case. */}
+      {profile.role === "student" ? null : <EssayMarkingPanel attemptId={attempt.id} notice={essayNotice} />}
       <div className="toolbar">
         <Link className="button button--secondary" href={back.href}>
           {back.label}

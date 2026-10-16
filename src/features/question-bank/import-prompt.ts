@@ -72,6 +72,8 @@ Rules:
    - "mcq"       one correct option
    - "mcq_multi" more than one correct option
    - "tita"      a typed numerical answer, no options
+   - "essay"     an essay or written-ability prompt the student writes prose for,
+                 no options and no answer key
    - "di_set"    a shared passage, table or chart followed by its own questions
                  (data interpretation, caselets, reading comprehension)
 3. Every question needs "question" (its text), "topic", "difficulty" ("easy", "medium" or
@@ -84,6 +86,10 @@ Rules:
    mcq_multi a list: ["A", "C"].
 6. For "tita", give "answer" as the number, exactly as the key states it. If several
    forms are acceptable, give a list: ["0.5", "1/2"].
+   For "essay", give NO "options" and NO "answer": an essay is marked by a person, so
+   there is no key to find. Give the prompt as "question", and include "marks" only if
+   the document states them. A choice such as "answer any one of the following two" is
+   two separate "essay" questions, both included.
 7. For "di_set", give the shared text as "passage", plus "section", "topic" and
    "difficulty", and put its questions in "questions". Sub-questions need "type",
    "question", "answer" and, if stated, "marks".

@@ -370,6 +370,24 @@
   padding: 13px 15px;
 }
 
+/* An essay needs the width of the pane, not an answer box's 340px, and reads
+   as prose rather than as a value: regular weight and a generous line height. */
+.typed:has(.essay) {
+  max-width: none;
+}
+
+.essay {
+  background: #fff;
+  border: 1.5px solid var(--ink, #182b50);
+  border-radius: 9px;
+  color: var(--ink, #182b50);
+  font: inherit;
+  line-height: 1.6;
+  padding: 13px 15px;
+  resize: vertical;
+  width: 100%;
+}
+
 .actions {
   align-items: center;
   background: var(--paper-raised, #fffdf7);
