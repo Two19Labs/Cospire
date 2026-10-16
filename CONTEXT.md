@@ -18,7 +18,7 @@ read only when the task touches that area:
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
-| `docs/decisions/` | Decision statements D1-D24 and open questions N1-N13. **Untracked**, in the main checkout only (N13) |
+| `docs/decisions/` | Decision statements D1-D53 and open questions to N18 (newest: `2026-10-16-decision-statement.md`). **Untracked and private**, in the main checkout only (D43) |
 
 The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
@@ -55,23 +55,20 @@ credentials, student data or anyone's personal data here.
   - **the UI audit and cleanup** (PR #75): no blank page after saves
     (`src/shared/ui/action-boundary.tsx`), 268 to 203 ms average server time,
     the prototype's student home. Report: `docs/ui-audit-2026-10-09.md`
-- **Both 2026-10-08 migrations are applied** (`20261008120000` curriculum,
-  `20261008130000` activity log); `main` and the database are in step, and
-  `src/shared/db/types.ts` is regenerated (PR #74).
-- **Open defect C2** (UI audit): a save sometimes never completes on screen
-  although the server finished it (about 40% of "Remove access" locally, 2 of 4
-  on the deployed URL). Stopgap: "Taking too long? Reload" after 8 s. Real fix
-  is the owner's call: a Next patch upgrade, or saves returning state instead
-  of redirecting.
-- **Not built:** video (VdoCipher credentials expected the week of 12 October),
-  bulk CSV creation (SMTP), closing abandoned attempts on a schedule (N6),
-  content migration and handover.
+- **The database is one migration ahead of `main`:** `20261013120000_videos`
+  is applied (owner's go, 2026-10-13) and lands on `main` with `feat/video`.
+- **Defect C2** (a save never completes on screen although it landed): fixed
+  on PR #80, held until the exam keeps full screen (a full page load drops it).
+  Stopgap meanwhile: "Taking too long? Reload" after 8 s.
+- **Not built:** bulk CSV creation (SMTP), a mock draft state (D41), delete for
+  programmes, documents and mocks (D42), content migration and handover. In
+  progress: video, abandoned attempts (`pg_cron`, D35), the essay type (D34).
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home.
 - **Blocked on the Client:** VdoCipher, Supabase Pro (overdue: ARS uploads are
   live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
-  content, and the written amendment for clause 12 work already built.
+  content, and per-question metadata (a meeting, D39).
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -190,10 +187,8 @@ Next:
    JavaScript it falls back to the same tab; switching back is an expected
    proctoring focus loss; on submit the window closes and the dashboard
    refreshes.
-3. N16, owner: documents 7 and 8 keep the lowercase title "number system".
-
-The owner promised AfterBoards references: phone view, popups, empty states,
-post-mock review, video page.
+Build desktop first, then derive the phone layout (D52); no further
+AfterBoards references are owed.
 
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
@@ -269,9 +264,10 @@ content call, October 2026* in `docs/context/meetings.md`):
 - **The Client sends a curriculum flow** (for example Ashoka Aptitude prep). The
   builder exists (PR #72): this is content plus a check against their flow.
 - **Supabase Pro:** the Client's decision is pending.
-- **Owner:** send the pending-items list with the payments it needs (the video
-  cycle, Gemini billing); look into the Gemini billing deductions; share the
-  Supabase link; import the content, then train the Client's team.
+- **Owner:** tell the Client the answer-key errors and ask Ashoka's order
+  (D48); hold the per-question metadata meeting (D39); payments still owed are
+  Gemini billing, Supabase Pro and Vercel Pro (D49); import the content, then
+  train the Client's team.
 
 **As of 2026-10-10, in order:**
 
@@ -280,19 +276,13 @@ content call, October 2026* in `docs/context/meetings.md`):
    student; save on an admin screen a few times ("Grant access", "Remove
    access": it should dim, never blank; note whether C2 happens); the new
    student home at phone width; the admin submissions and activity screens.
-2. **Owner decisions:** C2 (Next patch upgrade, or saves returning state); the
-   activity-flag thresholds in `src/features/admin/activity-flags.ts` (24 h,
-   more than 3 addresses, 30 min idle); the five modelling choices listed in
-   PR #72; N6 (`pg_cron` or Vercel Cron); N1-N3, N10, N12, N13.
-3. **Video, the day VdoCipher access arrives:** one real video end to end first
-   (upload, `videos` row with processing status, server-side OTP after the
-   access check, per-viewer watermark, a copied link failing in a second
-   browser), then the video library, `video` as a curriculum item type
-   (`private.validate_curriculum_item` refuses it today), playback and
-   `item_progress` for video, and the video-watching flag.
-4. **Chase the Client:** VdoCipher, Supabase Pro, Vercel Pro, SMTP, Gemini
-   billing, their content, the written amendment.
+2. **Owner decisions still open:** N3 hosting (deferred), N17 what delete does
+   to records in use. Settled on 2026-10-16: D33-D53.
+3. **Video:** built on `feat/video`; the live pass with the Client's test video
+   runs next, then its PR.
+4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
+   content.
 
-Open items that are not next (Phase 0 carry-overs, the written amendment, the
-Ashoka question, the MESA fork, owner and Client lists) are in
+Open items that are not next (Phase 0 carry-overs, the Ashoka question, owner
+and Client lists) are in
 `docs/context/backlog.md`.
