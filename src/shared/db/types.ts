@@ -961,6 +961,68 @@ export type Database = {
           },
         ]
       }
+      essay_marks: {
+        Row: {
+          attempt_id: number
+          created_at: string
+          id: number
+          marked_at: string
+          marked_by: string
+          marks: number
+          org_id: number
+          question_id: number
+        }
+        Insert: {
+          attempt_id: number
+          created_at?: string
+          id?: never
+          marked_at?: string
+          marked_by: string
+          marks: number
+          org_id: number
+          question_id: number
+        }
+        Update: {
+          attempt_id?: number
+          created_at?: string
+          id?: never
+          marked_at?: string
+          marked_by?: string
+          marks?: number
+          org_id?: number
+          question_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "essay_marks_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "essay_marks_marker_fk"
+            columns: ["marked_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "essay_marks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "essay_marks_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_progress: {
         Row: {
           completed: boolean

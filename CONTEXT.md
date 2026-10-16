@@ -55,14 +55,18 @@ credentials, student data or anyone's personal data here.
   - **the UI audit and cleanup** (PR #75): no blank page after saves
     (`src/shared/ui/action-boundary.tsx`), 268 to 203 ms average server time,
     the prototype's student home. Report: `docs/ui-audit-2026-10-09.md`
-- **Defect C2** (a save never completes on screen although it landed): fixed
-  on PR #80, 0/40 stuck. The full-screen hold is answered and measured: a
-  proctored sitting keeps full screen from Start through every section change
-  and time-up, with no `proctor_events` row for a move the platform made
-  (`scripts/verify/exam-fullscreen.mjs`). A Server Action's `redirect()` is
-  followed by the client router and never reaches `ActionBoundary`, so only the
-  countdown's native form post ever lost full screen, and it no longer posts.
-  Stopgap meanwhile: "Taking too long? Reload" after 8 s.
+- **Defect C2 is fixed** (#80, 0/40 stuck); a proctored sitting keeps full
+  screen from Start through every section change and time-up, with no
+  `proctor_events` row for a move the platform made
+  (`scripts/verify/exam-fullscreen.mjs`). The 8 s "Taking too long? Reload"
+  stopgap stays.
+- **Abandoned attempts close every minute** via `pg_cron` (#81, D35; migration
+  `20261014100000` applied, job runs and succeeds). They are left unscored for
+  `rescoreAwaiting`, so there is one scorer.
+- **Essay questions** (#84, D34; migration `20261014110000` applied): typed in
+  the mock, marked by an admin or the assigned mentor in `essay_marks` (forced
+  RLS, no student write), pending until marked. No essay has yet been authored,
+  sat and marked end to end.
 - **Video is built and live-verified** (PR #86): library, server-side OTP with
   a per-viewer watermark, `video` curriculum items, upload from the platform,
   video `item_progress`. Migration `20261013120000` is applied.
@@ -70,8 +74,7 @@ credentials, student data or anyone's personal data here.
   **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
   in `docs/context/completed.md`.
 - **Not built:** bulk CSV creation (SMTP), a mock draft state (D41), delete for
-  programmes, documents and mocks (D42), content migration and handover. In
-  progress: abandoned attempts (`pg_cron`, D35), the essay type (D34).
+  programmes, documents and mocks (D42, D54), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home, and **video playback** -- no video
@@ -165,13 +168,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Engine worker (`Cospire-engine`, port 3040) | `feat/essay-question` | The `essay` question type: authoring, import, sitting, marking by an admin or the assigned mentor, pending in results | `supabase/migrations/20261014110000_essay_questions.sql`, `supabase/tests/004_*`, `src/features/test-engine/**`, `src/features/question-bank/**`, `src/features/analytics/**` | Built, 626 unit tests, pull request raised; **the SQL has never been executed, Docker unavailable**; the owner applies the migration | 2026-10-16 |
 
-In progress, a row each until they merge: `feat/video` (migration
-`20261013120000` applied; live pass waits for a test video),
-`fix/save-completion` (C2), `feat/abandoned-attempts` (N6),
-`feat/essay-question`. Merged: #69-#75, #77-#79; #76 closed unmerged (its
-content is in #77). Write-ups: `docs/context/completed.md`.
+No feature branch is open. Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
+#86 (video), #87 (mock in its own window), #81 (abandoned attempts), #84
+(essays). Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
+Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
@@ -199,28 +200,20 @@ screen kept). **Owner:** the exam window closes as soon as the result renders, s
 the result shows on the refreshed dashboard; showing it in the exam window is one
 line if wanted.
 
-### Phase 6 step 6.1, the exam screen: merged, browser pass owed
+### Owed in a real browser (owner)
 
-Merged as PR #70 (`9f808b3`) on 2026-10-09. Still owed: the owner's review, **a sitting in a real browser with JavaScript** --
-moving between questions, typing and watching "All answers saved", the dialog,
-full screen on Start, the countdown reaching zero -- on desktop and then a
-phone. See *The exam screen, 6.1*.
+Headless Chrome covered everything else; these need a person. **The exam**
+(#70, #80, #87): a sitting on desktop then a phone, moving between questions,
+"All answers saved", full screen, the countdown reaching zero, the mock opening
+in its own window. **Video** (#86): nothing has played, because headless Chrome
+has no Widevine CDM; watch one granted video, desktop then a phone, and check the
+watermark carries your own name. **Essays** (#84): author, sit and mark one.
 
 ### Phase 1, one step still unbuilt
 
 Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
 The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
 not a gate item.
-
-### Phase 2 is built; a real browser is owed
-
-Curriculums without video merged as PR #72 (`b0de34d`), verified 35/35; video
-followed on `feat/video` (PR #86), live-verified 17/17. What is owed is the
-picture itself: nothing played, because headless Chrome has no Widevine CDM, so
-no frame decoded, the watermark was never painted, and the player API's seek and
-reporting were never exercised -- the server action behind them was driven
-directly. The owner should watch one granted video in a real browser, desktop
-then a phone, and check the watermark carries their own name.
 
 ## External blockers and client-owned steps
 
