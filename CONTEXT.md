@@ -165,25 +165,17 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| UI worker (`Cospire-ui`, port 3050) | `feat/mock-window` | A mock opening in its own window on Start | `src/features/test-engine/components/{own-window,close-on-submit,student-mock-screens,result-screen}.tsx`, `scripts/verify/{mock-window,ui-audit-cdp}.mjs` | PR #87, awaiting review. `mock-window.mjs` 9/9 in a browser. The earlier "blocked on an owner decision" is withdrawn: no route handler and no convention change were needed. Write-up in `docs/context/completed.md` | 2026-10-16 |
 
-In progress, each branch carrying its own row until it merges: `feat/video`
-(migration `20261013120000` applied; live pass waits for a test video),
-`fix/save-completion` (C2) and `feat/ui-refresh-2` (PR #85, UI refresh slice 2,
-CI green). Merged: #69-#75, #77-#79; #76 closed unmerged
-(its content is in #77). Write-ups: `docs/context/completed.md`.
-
-One thing for the owner on `feat/mock-window`: the student does not see their
-result in the exam window, because it closes as soon as the result renders and
-the refreshed dashboard lists the new attempt instead. That is what was asked
-for; showing the result in the dashboard window instead is one line.
+Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), #87 (mock in its
+own window), then #81 and #84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed
+unmerged (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: slices 1 and 2 done, the mock window in review
+### UI refresh: slices 1 and 2 merged, mock in its own window
 
 All of slice 1's questions are settled (D25-D31 in the untracked
 `docs/decisions/2026-10-12-decision-statement.md`):
@@ -198,13 +190,11 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 - **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
   wording, orange or the licensed MADE Gentle font.
 
-Both slices are now in review. Slice 2 is PR #85 (the remaining student screens:
-programmes, documents, the mock list, ARS and the last two literal shadows;
-results, attempt review and analytics already held slice 1's rules, so the
-browser pass found nothing to change there). **A mock opening in its own window
-on Start** is built and verified in a browser — see Active work.
-Build desktop first, then derive the phone layout (D52); no further
-AfterBoards references are owed.
+Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
+Start (#87; popup refused or no JavaScript falls back to the same tab, full
+screen kept). **Owner:** the exam window closes as soon as the result renders, so
+the result shows on the refreshed dashboard; showing it in the exam window is one
+line if wanted.
 
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
