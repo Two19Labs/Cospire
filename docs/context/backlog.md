@@ -8,6 +8,12 @@ right.
 
 ## Pending items carried from earlier phases
 
+> **Closed by the owner on 2026-10-16** (D51, D34 in the untracked decision
+> statement): no clause 12 quote or clause 16.1 written amendment for the extras
+> already built, and no written clause 4.4 notice for video; the essay question
+> type is built at no charge, which settles the MESA fork. Statements below
+> that call these owed are history.
+
 ### Carried over from Phase 0
 
 None of these block Phase 5a.
