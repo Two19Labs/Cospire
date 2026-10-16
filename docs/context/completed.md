@@ -2082,3 +2082,83 @@ seen on screen, and the player API's `timeupdate` and `loadedmetadata` paths are
 still only read from VdoCipher's docs -- the progress action behind them was
 driven directly instead. A sitting in a real browser is owed, on desktop and a
 phone.
+## A mock opens in its own window on Start, 2026-10-16
+
+`feat/mock-window`. Pressing Start opens the exam in a window of its own, so the
+dashboard stays where the student left it, and handing in closes that window and
+refreshes the dashboard behind it. The exam screen's own styling is untouched.
+
+**The two browser facts that decided the shape**, both measured in headless
+Chrome against a production build rather than reasoned from the markup:
+
+- **A server action ignores `form.target`.** React submits a server action with
+  `fetch`, so the form is never natively submitted and its `target` is never
+  consulted. Setting it opens the attempt in the dashboard tab and leaves an
+  empty popup behind, which is worse than not trying. Observed: targets `1 -> 2`,
+  the new one `blank`, the attempt on the dashboard target.
+- **A click carries one transient user activation**, and full screen and the
+  popup compete for it. `requestFullscreen()` consumes it, and the `window.open()`
+  that follows is refused.
+
+An earlier pass read the first fact as needing Start to become a native form
+POST — a route handler, and a departure from "Server Actions for mutations" in
+operating manual §8 — and stopped for the owner's decision. It does not. The
+decision is withdrawn and **no convention changed**: nothing targets the form at
+all. `OpenInOwnWindow` intercepts the **click**, in the capture phase, before any
+submit event exists.
+
+- Window opened: the click is cancelled, so this tab never submits and
+  `FullscreenOnSubmit` never runs — the window is the containment and full screen
+  is not wanted as well, which also dissolves the activation conflict rather than
+  working around it. The new window loads the same mock screen with `?start=1`
+  and submits the Start form itself, so the server action, the attempt limit and
+  the phone check are exactly the ones already there, run under that window's own
+  session and user agent.
+- Window refused, or no JavaScript: the click is left alone, the attempt opens in
+  this tab, full screen and all, unchanged.
+
+`CloseOnSubmit`, on the result screen, reloads `window.opener` and closes the
+window; `window.opener` being null is the test for every other way a result is
+reached, so it does nothing on those paths. No `BroadcastChannel`: the opener is
+same-origin, so a reload is the whole of it.
+
+A phone gets a tab rather than a window, which is the degradation, and the
+attempt is still recorded unproctored because the exam window carries the phone's
+own user agent into the request. Measured, not assumed — see the verification
+log. Switching back to the dashboard remains an ordinary proctoring focus loss:
+warn and log, never auto-submit, unchanged from `main`.
+
+**Still open for the owner.** The student does not see their result in the exam
+window — it closes as soon as the result renders, and the refreshed dashboard
+lists the new attempt for them to open. That is what was asked for; if the result
+should be shown instead, point the opener at `/student/attempts/<id>` rather than
+reloading it, which is the same one line.
+
+**Traps worth keeping**, all three found by this branch producing confident false
+failures, all three now guarded inside `scripts/verify/mock-window.mjs`:
+
+- **A `next start` left over from an earlier session keeps the port.** The new
+  one fails with `EADDRINUSE` into its log and the old one answers every request
+  from its old build, so the page's chunk 400s and React never hydrates. The
+  symptom is a `ChunkLoadError` and an error card where the screen should be, and
+  it reads exactly like a hydration bug in the code under test. Check the server
+  log said it started.
+- **A headless Chrome left over from an earlier run keeps the debugging port**,
+  and `launch()` then silently attaches to *that* browser rather than its own —
+  the run drives another run's tabs and cookies and reports windows at paths it
+  never visited. The port is now per-run and a port that answers is a refusal.
+- **A click landing before hydration measures nothing**: the popup is opened by a
+  listener an effect attaches. Without a wait the attempt opens in the dashboard
+  tab and the run reads as a feature failure.
+- `Runtime.evaluate` is not a user gesture unless `userGesture: true` is passed,
+  and without a gesture every `window.open` is popup-blocked. That same fact is
+  now used deliberately to test the refused-popup fallback.
+- A `Network.setUserAgentOverride` applies to the target it is sent to and **not**
+  to a window that target opens, so measuring a phone that opens a second window
+  needs `--user-agent` on the browser itself. `launch()` grew an optional `args`.
+
+**One real bug the type checker did not catch.** A helper exported from a
+`"use client"` module and called in a server component crashes the server render:
+every export of such a module is a client reference. `typecheck`, `lint`, `test`
+and `next build` all passed with it in place; only the browser showed it, as
+"Something went wrong". The URL is now built inside the client component.

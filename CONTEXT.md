@@ -166,16 +166,16 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), then #87, #81 and
-#84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
-Write-ups: `docs/context/completed.md`.
+Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), #87 (mock in its
+own window), then #81 and #84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed
+unmerged (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: slices 1 and 2 merged
+### UI refresh: slices 1 and 2 merged, mock in its own window
 
 All of slice 1's questions are settled (D25-D31 in the untracked
 `docs/decisions/2026-10-12-decision-statement.md`):
@@ -190,8 +190,11 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 - **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
   wording, orange or the licensed MADE Gentle font.
 
-Slice 2 (the remaining student screens, desktop first, D52) merged as #85.
-A mock opening in its own window on Start is PR #87.
+Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
+Start (#87; popup refused or no JavaScript falls back to the same tab, full
+screen kept). **Owner:** the exam window closes as soon as the result renders, so
+the result shows on the refreshed dashboard; showing it in the exam window is one
+line if wanted.
 
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
