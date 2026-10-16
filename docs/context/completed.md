@@ -9,6 +9,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
 | 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
 | 2026-10-13, live pass 2026-10-16 | **Video, Phase 2** (`feat/video`) | VdoCipher playback, the video library, `video` as a curriculum item type, upload from the platform and `item_progress` for video. Migration `20261013120000_videos.sql` applied 2026-10-13; `db push --dry-run` on 2026-10-16 reports the remote up to date. 621 unit tests, typecheck, lint and `next build` pass; no `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`. **Live pass 17/17** against the hosted database on a local production build (port 3010, headless Chrome, throwaway accounts), plus the upload path 4/4 with the clip deleted from VdoCipher again. **Still owed: a real browser** -- nothing plays headless, so the watermark has never been seen on screen. See *Video, Phase 2* |
+| 2026-10-16 | **Abandoned attempts close on a schedule** (`feat/abandoned-attempts`, N6, step 4.5) | pg_cron runs `private.close_expired_attempts()` every minute: it submits every in-progress attempt that can no longer be answered, as the timer, stamped at the moment its clock ran out. It does **not** score — `score` stays null, which is already the "awaiting a score" state `rescoreAwaiting` drains — so there is no second scoring routine. Migration `20261014100000`, 14 pgTAP assertions in `supabase/tests/003`. **The SQL has not been executed anywhere:** Docker is unavailable and `DATABASE_URL` is empty, so `db:test` and `db lint` cannot run; `db push --dry-run` offers this one migration. The owner applies it. See *Abandoned attempts, 2026-10-16* |
 | 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
@@ -2162,3 +2163,61 @@ failures, all three now guarded inside `scripts/verify/mock-window.mjs`:
 every export of such a module is a client reference. `typecheck`, `lint`, `test`
 and `next build` all passed with it in place; only the browser showed it, as
 "Something went wrong". The URL is now built inside the client component.
+## Abandoned attempts, 2026-10-16
+
+Branch `feat/abandoned-attempts`, worktree `C:\Cospire\Cospire-engine`. N6,
+step 4.5. One migration, one pgTAP test, no application code.
+
+**The defect is a wrong record, not a risk.** An attempt whose clock ran out
+but which nobody submitted stayed `in_progress` for ever: the student's results
+list showed it running, the admin's attempts list showed it too, and it was
+never scored. Nothing could be answered in it --
+`private.guard_attempt_response_write` already refuses every answer past the
+clock plus `private.attempt_grace()`.
+
+**pg_cron, every minute** (owner, 2026-10-13). Vercel Cron on the Hobby plan
+runs once a day, which would leave an abandoned attempt open for up to 24
+hours, and Vercel Pro is not in place yet. pg_cron sits in the database that
+already owns the clock and waits on nobody.
+
+**It submits; it does not score.** Scoring is TypeScript
+(`src/features/test-engine/score-attempt.ts`) because it needs the keys, the
+section marks and the negative-marking rules, and there is deliberately one
+implementation (Annexure A rescoring calls the same function). The sweep
+therefore leaves `score` null, which is already this repository's "awaiting a
+score" state: `rescoreAwaiting` drains it, and it is drained when the student
+opens the result (`src/app/student/attempts/[id]/page.tsx`) or an admin opens a
+mock's attempts list (`src/features/test-engine/queries/mock-attempts.ts`). A
+swept attempt is scored by exactly the path a rescored one is.
+
+**The expiry rule is the response guard's own**, not a second one that would
+eventually disagree with it: the paper's clock
+(`started_at + mocks.duration_minutes`), or every section of the mock entered
+and each closed or past its own clock capped at the paper's end, both plus the
+same 30-second grace. A section with no duration follows the paper's clock, so
+its end *is* the paper's end and a mock carrying one never closes early --
+which is what `paperState` in `src/features/test-engine/paper.ts` does on
+screen. An unentered section is never treated as over, because the student may
+still enter it. `submitted_at` is the moment nothing more could be answered,
+not the moment the sweep noticed; `guard_attempt_write` was written for this
+sweep from the start ("the expiry sweep may say the timer ended it, and when
+the clock ran out") and clamps the value into `[started_at, now()]` anyway.
+
+**No new table, so no new RLS.** The function is `security definer` with
+`search_path = ''` and execute revoked from `public, anon, authenticated`, like
+every other `private.` function here; it sets the transaction-local
+`cospire.system_write` flag that `private.is_trusted_writer` reads, the same
+pattern as `private.mark_for_rescore`. **No index was added:**
+`attempts_open_idx` already exists for this sweep.
+
+**What is not verified, and why.** The SQL has not been executed anywhere.
+Docker is unavailable in this environment, so `npm run db:test` and
+`supabase db lint` cannot run; `DATABASE_URL` in `.env.local` is empty, so
+there is no reachable Postgres for even a read-only parse; and applying DDL is
+the owner's step by policy. The 14 pgTAP assertions are written and reviewed
+but never run, so the test file itself may need a correction. Each closing case
+in it has its negative twin -- still inside the clock, a section not yet
+entered, an untimed section alongside an expired timed one, and an attempt the
+student submitted by hand -- because a sweep that closes early would end a real
+student's exam, the same failure the warn-and-log proctoring decision exists to
+avoid.
