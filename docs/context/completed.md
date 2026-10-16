@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
 | 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
@@ -1810,3 +1811,77 @@ copy inconsistencies.
   grant went with the mock at teardown and the live counts matched the
   baseline. The fixture teardown now also deletes every grant its admin made
   and every grant on its own records.
+
+## Defect C2, 2026-10-16
+
+Branch `fix/save-completion`, worktree `C:\Cospire\Cospire-engine`, port 3040.
+C2 in `docs/ui-audit-2026-10-09.md`: a save sometimes never completed on screen
+although the server had finished the write. Started 2026-10-13, handed off at
+the five-hour allowance with the cause located but unexplained, finished
+2026-10-16.
+
+**It was never a lost save and never a lost navigation.** Across 120 clicks at
+baseline, 0 writes failed to land, and on every stuck click `location.search`
+had already become `?notice=granted`/`?notice=revoked` with the row's pill and
+button showing the new state. The screen was correct, frozen and unclickable:
+`.action-boundary` stayed `aria-busy` and `inert`, with no console error,
+exception or failed request in any run. So the audit's attribution ("Next's
+client never dispatches the navigation") is wrong, and `ActionBoundary`'s
+`reset()` was the thing that never took effect.
+
+**The mechanism, instrumented rather than guessed.** `ActionBoundary` wrote its
+own lifecycle to `window.__ab` and the reproduction read it back on every
+click. On a stuck click the boundary caught the redirect, `FollowRedirect`'s
+effect ran, `router.push` was dispatched and `reset()` was called — and the
+boundary then re-rendered with `redirect: null` while `componentDidUpdate` and
+`setState`'s callback **never fired**. The reset render is produced and then
+discarded, because the update is entangled with the transition `router.push`
+starts, that transition never settles, and nothing inside the boundary's
+subtree commits again afterwards to carry the reset. On the clicks that did
+work, one committed render (`didUpdate busy->busy`) appeared first and the
+reset went through on its back. The ~8.4 s cluster of recoveries is that same
+late commit arriving.
+
+**Two fixes were measured and rejected before this one.** Resetting off
+`useTransition`'s pending flag instead of inside the transition: 24/40 stuck,
+no change. Resetting synchronously in the effect, before the navigation: it
+remounts the children while React is still streaming the target in and throws
+`TypeError: Cannot read properties of null (reading 'parentNode')` inside
+react-dom's `$RS`, breaking the screen outright. Waiting for the URL to change
+as a commit signal: 14/20 stuck, because a redirect to the URL already shown
+changes nothing and the transition's pending flag never falls.
+
+**The fix is to stop needing a reset.** `FollowRedirect` now calls
+`window.location.assign(url)`, or `replace` for a replace redirect. The
+document is replaced, so there is no state left behind to clear and no reset to
+lose; `Boundary.reset` is deleted and its state is deliberately terminal. The
+boundary still catches only redirect errors, still rethrows everything else,
+still keeps the old screen dimmed and `inert` with its screen-reader status
+line — and the browser keeps painting that screen until the new document
+arrives, so the blank frame C1 fixed does not come back.
+
+**What it costs.** Every save is now a full document load rather than a client
+navigation: median 1.2 s to the saved state on screen (min 0.9 s, one outlier
+at 8.9 s), against 0.7 s on the old client-router path when it worked and never
+when it did not. The exam screen moves question to question through a
+redirecting action too, so those moves are full loads as well; sitting a
+sectioned mock end to end measured **14.7 s against 26.3 s** in the audit, so
+in practice it is faster there, not slower. The owner's plan B — same-screen
+saves returning their notice through `useActionState` instead of redirecting —
+would keep client navigation, and is a much larger diff across every action.
+
+**`next` 15.5.24 → 15.5.27 is on the branch and did not fix C2** (25/40 stuck
+at both versions; 15.5.27 is the newest 15.5.x). It is kept only so the
+before and after numbers sit on one version, and is the owner's to keep or
+drop. Versions are pinned exactly: `npm install` writes a caret, which was
+corrected with `npm pkg set` and a reinstall. The 8 s "Taking too long?
+Reload" stopgap in `SubmitButton` is untouched.
+
+**Traps for the next agent.** `next build` failed once on `next/font/google`
+with `TypeError: Cannot read properties of null (reading '1')`, a transient
+font fetch, and the identical build then succeeded — retry before believing
+it. `npm run build 2>&1 | tail -25` reports tail's exit code, not the build's.
+Classify a click by whether the save showed on screen, never by whether signal
+X fired: two earlier classifications scored the defect itself as a harness
+fault. The 63% here against the audit's ~40% is the harness clicking faster
+than a person, so only compare numbers within this harness.
