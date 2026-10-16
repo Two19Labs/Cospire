@@ -28,12 +28,16 @@ async function readPaper(admin: Admin, mockId: number): Promise<ScoringQuestion[
   // builder refuses a DI set that is not whole in one section.
   const marksBySection = new Map((sectionResult.data ?? []).map((row) => [row.id, row.marks === null ? null : Number(row.marks)]));
   const sectionMarksOf = new Map(placed.map((row) => [row.question_id, marksBySection.get(row.mock_section_id) ?? null]));
+  // Which section each question sits in. Only the essay choice uses it, and an
+  // essay is always placed directly, but a sub-question inherits its
+  // stimulus's section below, so the field is true for every row.
+  const sectionOf = new Map(placed.map((row) => [row.question_id, row.mock_section_id]));
 
   // Every question in the paper as it was sat, archived or not: archiving a
   // question does not change what the student answered.
   const [topResult, childResult] = await Promise.all([
     admin.from("questions").select("id, type, marks").in("id", topIds),
-    admin.from("questions").select("id, type, marks").in("parent_id", topIds),
+    admin.from("questions").select("id, type, marks, parent_id").in("parent_id", topIds),
   ]);
   if (topResult.error || childResult.error) throw new Error("Unable to read questions to score.");
 
@@ -47,10 +51,13 @@ async function readPaper(admin: Admin, mockId: number): Promise<ScoringQuestion[
   if (keyError) throw new Error(`Unable to read keys to score: ${keyError.message}`);
   const keyById = new Map((keys ?? []).map((key) => [key.question_id, key.correct_answer]));
 
+  const parentOf = new Map((childResult.data ?? []).map((row) => [row.id, row.parent_id as number]));
+
   return rows.map((row) => ({
     id: row.id,
     key: keyById.get(row.id) ?? null,
     marks: effectiveMarks(row, sectionMarksOf.get(row.id)),
+    sectionId: sectionOf.get(row.id) ?? sectionOf.get(parentOf.get(row.id) ?? -1) ?? null,
     type: row.type as QuestionType,
   }));
 }
@@ -70,25 +77,36 @@ export async function scoreAndStore(attemptId: number): Promise<number> {
   if (error) throw new Error(`Unable to read the attempt to score: ${error.message}`);
   if (attempt.status !== "submitted") throw new Error("Only a submitted attempt is scored.");
 
-  const [mockResult, responseResult] = await Promise.all([
+  const [mockResult, responseResult, essayResult] = await Promise.all([
     admin.from("mocks").select("negative_marking, negative_marking_types").eq("id", attempt.mock_id).single(),
     admin.from("attempt_responses").select("question_id, answer").eq("attempt_id", attemptId),
+    // What a person awarded for each essay. Unlike a key, these cannot move
+    // underneath the scorer without clearing the score first: awarding a mark
+    // is itself what clears it (`essay_marks_awaits_score`).
+    admin.from("essay_marks").select("question_id, marks").eq("attempt_id", attemptId),
   ]);
   if (mockResult.error) throw new Error(`Unable to read the mock to score: ${mockResult.error.message}`);
   if (responseResult.error) throw new Error(`Unable to read answers to score: ${responseResult.error.message}`);
+  if (essayResult.error) throw new Error(`Unable to read awarded essay marks: ${essayResult.error.message}`);
   // A submitted attempt's answers never change (the response guard), so they
   // are read once; only the keys can move underneath.
   const answers = new Map((responseResult.data ?? []).map((row) => [row.question_id, row.answer as unknown]));
+  const essayMarks = new Map((essayResult.data ?? []).map((row) => [row.question_id as number, Number(row.marks)]));
 
   // Three tries is generous: a retry is needed only when a question in this
   // paper is edited in the moments between reading its key and storing the
   // score, and each edit clears the score again for a later rescore anyway.
   for (let tries = 0; tries < 3; tries += 1) {
     const questions = await readPaper(admin, attempt.mock_id);
-    const result = scoreAttempt(questions, answers, {
-      negativeMarking: mockResult.data.negative_marking,
-      negativeMarkingTypes: mockResult.data.negative_marking_types,
-    });
+    const result = scoreAttempt(
+      questions,
+      answers,
+      {
+        negativeMarking: mockResult.data.negative_marking,
+        negativeMarkingTypes: mockResult.data.negative_marking_types,
+      },
+      essayMarks,
+    );
 
     // Only rows the student created are updated; a question never opened has
     // no row, which is how "not answered" is told apart from "seen".

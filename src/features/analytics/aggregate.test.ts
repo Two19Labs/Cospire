@@ -32,7 +32,7 @@ describe("tallying one attempt", () => {
 
   it("counts attempted, correct, wrong and unattempted, never-opened included", () => {
     expect(overall(sittings)).toEqual({
-      accuracy: 0.5, attempted: 2, correct: 1, label: "All questions", marksAvailable: 12, marksScored: 2, questions: 4, unattempted: 2, wrong: 1,
+      accuracy: 0.5, attempted: 2, correct: 1, label: "All questions", marksAvailable: 12, marksScored: 2, pending: 0, questions: 4, unattempted: 2, wrong: 1,
     });
   });
 
@@ -151,5 +151,43 @@ describe("attempts awaiting a score", () => {
     expect(awaiting).toBe(1);
     // A score of zero is a score, not a missing one.
     expect(scored.map((row) => row.id)).toEqual([1, 3]);
+  });
+});
+
+describe("an essay in the tally", () => {
+  const essay: PaperQuestion = { difficulty: "hard", id: 90, marks: 20, number: 5, section: "WAT", topic: "Essay" };
+  const pendingEssay: ResponseFact = { answered: true, isCorrect: null, marksAwarded: null };
+  const markedEssay: ResponseFact = { answered: true, isCorrect: null, marksAwarded: 14 };
+
+  it("counts an unmarked essay as pending, never as wrong", () => {
+    const row = overall([{ question: essay, response: pendingEssay }]);
+    expect(row.pending).toBe(1);
+    expect(row.wrong).toBe(0);
+    expect(row.correct).toBe(0);
+    expect(row.attempted).toBe(1);
+    expect(row.unattempted).toBe(0);
+    expect(row.marksScored).toBe(0);
+  });
+
+  it("counts a marked essay's marks and still calls it neither right nor wrong", () => {
+    const row = overall([{ question: essay, response: markedEssay }]);
+    expect(row.marksScored).toBe(14);
+    expect(row.pending).toBe(0);
+    expect(row.wrong).toBe(0);
+    expect(row.correct).toBe(0);
+  });
+
+  it("leaves accuracy to the questions that have a verdict", () => {
+    const row = overall([
+      { question: { ...essay, id: 91 }, response: right },
+      { question: essay, response: pendingEssay },
+    ]);
+    expect(row.accuracy).toBe(1);
+  });
+
+  it("still counts an unanswered essay as unattempted", () => {
+    const row = overall([{ question: essay, response: undefined }]);
+    expect(row.unattempted).toBe(1);
+    expect(row.pending).toBe(0);
   });
 });

@@ -31,6 +31,8 @@ export interface PaperQuestion {
 export interface ResponseFact {
   // Whether an answer was actually given; a response row can exist with none.
   answered: boolean;
+  // Null for an essay, which is marked by a person and is never right or
+  // wrong, and for an answer not yet scored at all.
   isCorrect: boolean | null;
   marksAwarded: number | null;
 }
@@ -41,13 +43,17 @@ export interface Sitting {
 }
 
 export interface Tally {
-  // Correct as a share of attempted. Null when nothing was attempted.
+  // Correct as a share of those with a verdict. Null when there are none.
   accuracy: number | null;
   attempted: number;
   correct: number;
   label: string;
   marksAvailable: number;
   marksScored: number;
+  // Answered, and waiting for a person to mark it: an essay nobody has marked
+  // yet. **Never counted as wrong**, and the marks it may still earn are not
+  // in `marksScored`, so a tally with a pending answer is provisional.
+  pending: number;
   // How many question-sittings: one per question per attempt.
   questions: number;
   unattempted: number;
@@ -68,7 +74,7 @@ export function sittingsFor(paper: PaperQuestion[], responses: Map<number, Respo
 }
 
 function empty(label: string): Tally {
-  return { accuracy: null, attempted: 0, correct: 0, label, marksAvailable: 0, marksScored: 0, questions: 0, unattempted: 0, wrong: 0 };
+  return { accuracy: null, attempted: 0, correct: 0, label, marksAvailable: 0, marksScored: 0, pending: 0, questions: 0, unattempted: 0, wrong: 0 };
 }
 
 // Grouped by `keyOf`, in the order each label first appears.
@@ -81,8 +87,16 @@ export function tally(sittings: Sitting[], keyOf: (question: PaperQuestion) => s
     group.available += hundredths(question.marks);
     if (response?.answered) {
       group.attempted += 1;
-      if (response.isCorrect) group.correct += 1;
-      else group.wrong += 1;
+      // No verdict means nothing auto-scored it: an essay. Marked or not, it
+      // is neither correct nor wrong, and counting it as wrong would be a
+      // false figure -- the same reason `splitAwaiting` exists.
+      if (response.isCorrect === null) {
+        if (response.marksAwarded === null) group.pending += 1;
+      } else if (response.isCorrect) {
+        group.correct += 1;
+      } else {
+        group.wrong += 1;
+      }
     } else {
       group.unattempted += 1;
     }
@@ -91,7 +105,9 @@ export function tally(sittings: Sitting[], keyOf: (question: PaperQuestion) => s
   }
   return [...groups.values()].map(({ available, scored, ...rest }) => ({
     ...rest,
-    accuracy: rest.attempted ? rest.correct / rest.attempted : null,
+    // Out of those that have a verdict, which for a paper of auto-scored
+    // questions is every attempted one, exactly as before.
+    accuracy: rest.correct + rest.wrong ? rest.correct / (rest.correct + rest.wrong) : null,
     marksAvailable: available / 100,
     marksScored: scored / 100,
   }));

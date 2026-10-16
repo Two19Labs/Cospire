@@ -165,11 +165,13 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Engine worker (`Cospire-engine`, port 3040) | `feat/essay-question` | The `essay` question type: authoring, import, sitting, marking by an admin or the assigned mentor, pending in results | `supabase/migrations/20261014110000_essay_questions.sql`, `supabase/tests/004_*`, `src/features/test-engine/**`, `src/features/question-bank/**`, `src/features/analytics/**` | Built, 626 unit tests; **the SQL has never been executed, Docker unavailable**; the owner applies the migration | 2026-10-16 |
 
-Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), #87 (mock in its
-own window), #81 (abandoned attempts closed by `pg_cron` every minute; migration
-`20261014100000` applied), then #84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed
-unmerged (in #77). Write-ups: `docs/context/completed.md`.
+In progress, a row each until they merge: `feat/video` (migration
+`20261013120000` applied; live pass waits for a test video),
+`fix/save-completion` (C2), `feat/abandoned-attempts` (N6),
+`feat/essay-question`. Merged: #69-#75, #77-#79; #76 closed unmerged (its
+content is in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 

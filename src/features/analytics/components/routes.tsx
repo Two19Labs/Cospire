@@ -37,19 +37,24 @@ const backFor: Record<AppRole, { href: string; label: string }> = {
   student: { href: "/student/analytics", label: "My analytics" },
 };
 
-async function attemptRoute(role: AppRole, params: Params) {
+async function attemptRoute(role: AppRole, params: Params, searchParams?: SearchParams) {
   const profile = await requireRole(role);
   const attemptId = parseId((await params).id);
   if (attemptId === null) notFound();
   // Null for anyone whose own session is not shown the attempt.
   const data = await getAttemptAnalytics(attemptId, role);
   if (!data) notFound();
-  return <AttemptAnalyticsScreen back={backFor[role]} data={data} profile={profile} />;
+  const essayNotice = searchParams ? first((await searchParams).essay) : undefined;
+  return <AttemptAnalyticsScreen back={backFor[role]} data={data} essayNotice={essayNotice} profile={profile} />;
 }
 
+type AttemptRouteProps = { params: Params; searchParams: SearchParams };
+
 export const StudentAttemptAnalyticsRoute = ({ params }: { params: Params }) => attemptRoute("student", params);
-export const AdminAttemptAnalyticsRoute = ({ params }: { params: Params }) => attemptRoute("admin", params);
-export const MentorAttemptAnalyticsRoute = ({ params }: { params: Params }) => attemptRoute("mentor", params);
+export const AdminAttemptAnalyticsRoute = ({ params, searchParams }: AttemptRouteProps) =>
+  attemptRoute("admin", params, searchParams);
+export const MentorAttemptAnalyticsRoute = ({ params, searchParams }: AttemptRouteProps) =>
+  attemptRoute("mentor", params, searchParams);
 
 export async function StudentAnalyticsRoute() {
   const profile = await requireRole("student");

@@ -199,9 +199,23 @@ describe("parseImportedQuestions", () => {
   });
 
   it("refuses an unknown type but still stages the entry for the record", () => {
-    const { items } = parseImportedQuestions(paste([{ ...base, answer: "x", question: "Write an essay", type: "essay" }]));
+    const { items } = parseImportedQuestions(paste([{ ...base, answer: "x", question: "Draw a graph", type: "sketch" }]));
     expect(items[0].parsed).toBeNull();
-    expect(items[0].problems.join(" ")).toMatch(/"essay" is not a question type/);
+    expect(items[0].problems.join(" ")).toMatch(/"sketch" is not a question type/);
+  });
+
+  it("reads an essay, and drops the options or key a model invents for one", () => {
+    const { items } = parseImportedQuestions(
+      paste([{ ...base, answer: "B", marks: 20, options: ["One", "Two"], question: "Write on failure.", type: "WAT" }]),
+    );
+    // The options stay on the staged record and the note says they were left
+    // out, exactly as a typed-answer question's are: approval drops them,
+    // because `validateQuestion` keeps options for choice questions only.
+    expect(items[0].parsed).toMatchObject({ body: "Write on failure.", correctOptions: [], marks: "20", type: "essay" });
+    expect(items[0].parsed?.accepted).toEqual([]);
+    expect(items[0].problems).toEqual([]);
+    expect(items[0].parsed?.notes.join(" ")).toMatch(/an essay has no options/);
+    expect(items[0].parsed?.notes.join(" ")).toMatch(/marked by a person/);
   });
 
   it("gives a set's sub-questions the set's section, topic and difficulty unless they state their own", () => {

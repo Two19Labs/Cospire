@@ -15,10 +15,14 @@ import { isAnswered } from "./answer";
 
 export interface ScoringQuestion {
   id: number;
-  // null for a DI passage, which carries no key and no marks.
+  // null for a DI passage, which carries no key and no marks, and for an essay,
+  // which is marked by a person.
   key: unknown;
   // What a correct answer earns in this mock: effectiveMarks, already applied.
   marks: number;
+  // Which section of the paper it sits in. Essays are a choice within a
+  // section: see `bestEssayPerSection`.
+  sectionId: number | null;
   type: QuestionType;
 }
 
@@ -77,18 +81,54 @@ export function isAnswerCorrect(question: ScoringQuestion, answer: unknown): boo
   return false;
 }
 
+// An answered essay with no marks is **pending**, which results and analytics
+// must show as such and never as wrong. The row looks exactly like an
+// unanswered one -- no verdict, no marks -- so the answer is what tells them
+// apart, which is why this takes the answer rather than the stored score.
+export function isEssayPending(question: { type: QuestionType }, answer: unknown, marksAwarded: number | null): boolean {
+  return question.type === "essay" && isAnswered(answer) && marksAwarded === null;
+}
+
 // Marks are kept to two decimal places, as the columns hold them, and summed
 // in hundredths so 0.1 + 0.2 never reaches the student as 0.30000000000000004.
 function hundredths(value: number): number {
   return Math.round(value * 100);
 }
 
+// **"Choose 1 of 2", in its simplest form** (owner to confirm; see the pull
+// request for `feat/essay-question`). A section's essays are a choice: the
+// student answers either, and if they answer both, the higher-marked one
+// counts. So the essay carrying the best awarded mark in a section scores and
+// the rest score nothing, with no choice-group column to model and no change to
+// the mock builder. A section with one essay is the same rule with one entrant.
+//
+// An essay still awaiting its mark is not in the running: when it is marked the
+// attempt goes back to awaiting a score and this runs again over both.
+function bestEssayPerSection(questions: ScoringQuestion[], essayMarks: Map<number, number>): Set<number> {
+  const best = new Map<string, { id: number; marks: number }>();
+  for (const question of questions) {
+    if (question.type !== "essay") continue;
+    const awarded = essayMarks.get(question.id);
+    if (awarded === undefined) continue;
+    const key = String(question.sectionId);
+    const standing = best.get(key);
+    // Ties go to the lower question id, so the same answers always score the
+    // same way however the rows come back.
+    if (!standing || awarded > standing.marks) best.set(key, { id: question.id, marks: awarded });
+  }
+  return new Set([...best.values()].map((entry) => entry.id));
+}
+
 export function scoreAttempt(
   questions: ScoringQuestion[],
   answers: Map<number, unknown>,
   rules: ScoringRules,
+  // What an admin or the assigned mentor has awarded for each essay, by
+  // question id. An essay missing from this map has not been marked yet.
+  essayMarks: Map<number, number> = new Map(),
 ): AttemptScore {
   const responses: ResponseScore[] = [];
+  const counting = bestEssayPerSection(questions, essayMarks);
   let total = 0;
 
   for (const question of questions) {
@@ -97,6 +137,22 @@ export function scoreAttempt(
 
     if (!isAnswered(answer)) {
       responses.push({ isCorrect: null, marksAwarded: null, questionId: question.id });
+      continue;
+    }
+
+    // An essay is never right or wrong and is never penalised. Until it is
+    // marked it is **pending**, which is written as the unscored shape -- no
+    // verdict, no marks -- and read back as pending rather than wrong because
+    // the answer is there (see `isEssayPending`).
+    if (question.type === "essay") {
+      const awarded = essayMarks.get(question.id);
+      if (awarded === undefined) {
+        responses.push({ isCorrect: null, marksAwarded: null, questionId: question.id });
+        continue;
+      }
+      const counted = counting.has(question.id) ? Math.min(awarded, question.marks) : 0;
+      total += hundredths(counted);
+      responses.push({ isCorrect: null, marksAwarded: hundredths(counted) / 100, questionId: question.id });
       continue;
     }
 

@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { readAnswer } from "./answer";
 import { attemptDeadline, isOver, secondsLeft, sectionDeadline } from "./clock";
-import { effectiveMarks, scoreAttempt, type ScoringQuestion } from "./scoring";
+import { effectiveMarks, isEssayPending, scoreAttempt, type ScoringQuestion } from "./scoring";
 
-const mcq: ScoringQuestion = { id: 1, key: { options: ["b"] }, marks: 3, type: "mcq" };
-const multi: ScoringQuestion = { id: 2, key: { options: ["a", "c"] }, marks: 3, type: "mcq_multi" };
-const tita: ScoringQuestion = { id: 3, key: { accepted: ["1/2"] }, marks: 3, type: "numerical" };
-const passage: ScoringQuestion = { id: 4, key: null, marks: 0, type: "di_stimulus" };
+const mcq: ScoringQuestion = { id: 1, key: { options: ["b"] }, marks: 3, sectionId: 10, type: "mcq" };
+const multi: ScoringQuestion = { id: 2, key: { options: ["a", "c"] }, marks: 3, sectionId: 10, type: "mcq_multi" };
+const tita: ScoringQuestion = { id: 3, key: { accepted: ["1/2"] }, marks: 3, sectionId: 10, type: "numerical" };
+const passage: ScoringQuestion = { id: 4, key: null, marks: 0, sectionId: 10, type: "di_stimulus" };
+// Two essays in one section are a choice; a third sits in a section of its own.
+const essayA: ScoringQuestion = { id: 5, key: null, marks: 20, sectionId: 20, type: "essay" };
+const essayB: ScoringQuestion = { id: 6, key: null, marks: 20, sectionId: 20, type: "essay" };
+const essayAlone: ScoringQuestion = { id: 7, key: null, marks: 10, sectionId: 30, type: "essay" };
+const wrote = { text: "An essay." };
+
+function scoreEssays(answers: [number, unknown][], awarded: [number, number][] = []) {
+  return scoreAttempt([essayA, essayB, essayAlone], new Map(answers), cat, new Map(awarded));
+}
 const cat = { negativeMarking: 1, negativeMarkingTypes: ["mcq", "mcq_multi"] };
 
 function score(answers: [number, unknown][], rules = cat) {
@@ -139,5 +148,73 @@ describe("marks belong to the mock (D19)", () => {
 
   it("gives a DI passage nothing, whatever its section says", () => {
     expect(effectiveMarks({ marks: 0, type: "di_stimulus" }, 4)).toBe(0);
+  });
+});
+
+describe("the essay question type", () => {
+  it("leaves an answered essay pending: no verdict, no marks, and never wrong", () => {
+    const result = scoreEssays([[5, wrote]]);
+    expect(result.score).toBe(0);
+    expect(result.responses).toContainEqual({ isCorrect: null, marksAwarded: null, questionId: 5 });
+    expect(isEssayPending(essayA, wrote, null)).toBe(true);
+  });
+
+  it("tells pending apart from unanswered by the answer, because the stored row is the same", () => {
+    expect(isEssayPending(essayA, null, null)).toBe(false);
+    expect(isEssayPending(essayA, { text: "   " }, null)).toBe(false);
+    expect(isEssayPending(essayA, wrote, 12)).toBe(false);
+    expect(isEssayPending(mcq, wrote, null)).toBe(false);
+  });
+
+  it("never penalises an essay, even where the mock penalises everything", () => {
+    const result = scoreAttempt([essayAlone], new Map([[7, wrote]]), {
+      negativeMarking: 2,
+      negativeMarkingTypes: ["mcq", "mcq_multi", "numerical", "essay"],
+    });
+    expect(result.score).toBe(0);
+    expect(result.responses).toEqual([{ isCorrect: null, marksAwarded: null, questionId: 7 }]);
+  });
+
+  it("includes an awarded mark in the attempt's score", () => {
+    const result = scoreAttempt([essayAlone], new Map([[7, wrote]]), cat, new Map([[7, 6.5]]));
+    expect(result.score).toBe(6.5);
+    expect(result.responses).toEqual([{ isCorrect: null, marksAwarded: 6.5, questionId: 7 }]);
+  });
+
+  it("counts the higher-marked essay when a section's choice is both answered", () => {
+    const result = scoreEssays([[5, wrote], [6, wrote]], [[5, 11], [6, 14]]);
+    expect(result.score).toBe(14);
+    expect(result.responses).toContainEqual({ isCorrect: null, marksAwarded: 0, questionId: 5 });
+    expect(result.responses).toContainEqual({ isCorrect: null, marksAwarded: 14, questionId: 6 });
+  });
+
+  it("counts an essay in another section on its own, not against the choice", () => {
+    const result = scoreEssays([[5, wrote], [6, wrote], [7, wrote]], [[5, 11], [6, 14], [7, 9]]);
+    expect(result.score).toBe(23);
+  });
+
+  it("does not let an unmarked half of a choice hide the marked half", () => {
+    const result = scoreEssays([[5, wrote], [6, wrote]], [[5, 11]]);
+    expect(result.score).toBe(11);
+  });
+
+  it("refuses to award more than the essay is worth on this mock", () => {
+    const result = scoreEssays([[7, wrote]], [[7, 99]]);
+    expect(result.score).toBe(10);
+  });
+
+  it("scores an unanswered essay 0 and awards nothing for it", () => {
+    const result = scoreAttempt([essayAlone], new Map([[7, null]]), cat, new Map([[7, 8]]));
+    expect(result.score).toBe(0);
+    expect(result.responses).toEqual([{ isCorrect: null, marksAwarded: null, questionId: 7 }]);
+  });
+
+  it("reads a typed essay answer, keeping the student's own line breaks", () => {
+    const question = { options: [], type: "essay" as const };
+    expect(readAnswer(question, ["  First line.\r\n\r\nSecond.  "])).toEqual({ text: "First line.\n\nSecond." });
+    expect(readAnswer(question, ["   "])).toBeNull();
+    expect(readAnswer(question, [])).toBeNull();
+    expect(readAnswer(question, ["a", "b"])).toBe("invalid");
+    expect(readAnswer(question, ["x".repeat(20001)])).toBe("invalid");
   });
 });

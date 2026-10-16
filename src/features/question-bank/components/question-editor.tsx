@@ -78,6 +78,10 @@ export function QuestionEditor({
   const topicListId = id("topics");
 
   const isSet = type === "di_stimulus";
+  // An essay has no options and no key: the choice and numerical blocks below
+  // are simply not drawn for it, and the marks it carries are the most a
+  // marker may award.
+  const isEssay = type === "essay";
   const isChoice = type === "mcq" || type === "mcq_multi";
 
   // Enough rows for what is written plus two spare, and never fewer than four.
@@ -103,7 +107,9 @@ export function QuestionEditor({
           <p className="muted">
             {isSet
               ? "The shared passage or chart. Save it, then add its sub-questions, which carry the marks."
-              : "Section, topic, difficulty and marks are required on every question."}
+              : isEssay
+                ? "No options and no answer key: an essay is marked by an admin or the student's mentor after the attempt, out of the marks set here."
+                : "Section, topic, difficulty and marks are required on every question."}
           </p>
         </div>
       </div>
@@ -202,14 +208,14 @@ export function QuestionEditor({
       ) : null}
 
       <label className="field" htmlFor={id("body")}>
-        <span className="field__label">{isSet ? "Passage or chart description" : "Question"}</span>
+        <span className="field__label">{isSet ? "Passage or chart description" : isEssay ? "Essay prompt" : "Question"}</span>
         <textarea
           className="input input--area"
           defaultValue={values.body}
           id={id("body")}
           name="body"
           required
-          rows={isSet ? 8 : 5}
+          rows={isSet || isEssay ? 8 : 5}
         />
         <span className="field__hint">
           Plain text. Line breaks are kept, and symbols such as ½ x² √ π ≤ can be
