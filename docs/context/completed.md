@@ -8,6 +8,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 |---|---|---|
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
 | 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
+| 2026-10-13, live pass 2026-10-16 | **Video, Phase 2** (`feat/video`) | VdoCipher playback, the video library, `video` as a curriculum item type, upload from the platform and `item_progress` for video. Migration `20261013120000_videos.sql` applied 2026-10-13; `db push --dry-run` on 2026-10-16 reports the remote up to date. 621 unit tests, typecheck, lint and `next build` pass; no `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`. **Live pass 17/17** against the hosted database on a local production build (port 3010, headless Chrome, throwaway accounts), plus the upload path 4/4 with the clip deleted from VdoCipher again. **Still owed: a real browser** -- nothing plays headless, so the watermark has never been seen on screen. See *Video, Phase 2* |
 | 2026-10-12 | **PDF upload for question import** (`feat/pdf-import`) | A PDF opens beside a Word file on the import screen: text in reading order with `[[figure:N]]` where each picture sat, embedded pictures re-encoded as PNG into `question-images`, logos and icons left out, scans refused. No migration, no dependency. 601/601 unit tests, typecheck, lint, `next build`. `pdf-import.mjs` **11/11** twice (with MU Mock 1 and MU Mock 2's 22 and 23 pictures through the bucket), `docx-import.mjs` **25/25**, and `pdf-import-browser.mjs` **6/6** in headless Chrome on three real papers. All 11 of the Client's PDFs read locally: 136 of 136 pictures out. See *PDF upload, 2026-10-12* |
 | 2026-10-10, revised 2026-10-12 | **UI refresh slice 1** (`feat/ui-refresh`) | The AfterBoards shape in Cospire's own colours, as the Client chose on 2026-10-12 (D25–D31): radii 20 outer / 16 inner / 10 buttons and inputs / pill for primary buttons and tags; no shadows; one motion curve, 0.3s `cubic-bezier(.22,1,.36,1)`; type steps `--fs-*`; the student home rebuilt as two big cards. Colours are the original ones: ink rail `#182b50` with the gold active item and ink dot, cream page `#faf5e6`, navy (ink) primary buttons, gold progress fill, rust for the current tab, emphasis and danger. **Inter** for body and headings, 400-700; Figtree removed. The interim white sidebar, the `--accent` rust primary and the dev-only switch panel (`design-toggles.tsx`) were removed on 2026-10-12. Sidebar line icons kept. 599 tests; production build verified 2026-10-12 (see the verification log) |
 | 2026-10-10 | **Typed names and titles normalised on save** (`feat/ui-refresh`, own commit) | `normaliseTitle` in `src/shared/utils/normalise-title.ts` (owner-authorised shared code): trim, collapse whitespace, upper-case a lower-case first letter only. Applied server-side in the validators and actions that save programme and ARS process titles, ARS round names (form and import), curriculum section and text-item titles, question-bank section names, mock titles and mock section titles (builder, picker and document import), document titles and folders, report-template names and component titles (form and import), and user display names. Not applied to ARS form-builder page and section titles (they live in the round's JSON config). 599 unit tests; an ARS process created as `"  ashoka   <stamp>  "` through the real form action saved as `"Ashoka <stamp>"` (deleted after). The existing lowercase rows were renamed on 2026-10-12 by DML (D29): documents 7 and 8 folder `Quant`, courses 57 `Test` and 77 `Testing`, profile `Manthan`. Documents 7 and 8 keep the title `number system` (N16) |
@@ -2011,3 +2012,73 @@ Verified the same way: 14/14 student routes at 1440x900 and 390x844, 0 console
 errors, 0 failed requests, 0 accessibility findings, 0 px phone overflow; both
 screens read as cards at desktop and stack on a phone. 611 tests, typecheck,
 lint and build pass.
+## Video, Phase 2
+
+VdoCipher video, built on `feat/video` (worktree `Cospire-video`, port 3010) and
+live-verified on 2026-10-16 against the hosted database with the Client's own
+trial account.
+
+**Migration** `20261013120000_videos.sql`, applied 2026-10-13 with the owner's
+go. Additive only:
+
+- `videos` (`org_id`, `vdocipher_id`, `title`, `duration_seconds`, `status`,
+  `created_by`), RLS enabled and forced, with select, insert, update and delete
+  policies. Admins manage; a student reads through
+  `private.student_has_video_grant` -- a direct `video` grant **or**
+  `student_has_programme_item('video', id)`, so a programme grant opens the
+  videos in it (N11).
+- A delete trigger on `videos` removes that video's grants and any curriculum
+  item still pointing at it.
+- `video` branches added to `private.validate_curriculum_item` and
+  `private.validate_content_access_resource`; `private.student_may_record_progress`
+  admits `video` items.
+
+**How a video plays.** `getVideoPlayback` reads the `videos` row **as the
+signed-in user**, so the policy decides; only a returned row whose status is
+`ready` leads to an OTP. The OTP request is server-side only
+(`POST https://dev.vdocipher.com/api/videos/{id}/otp`, `Authorization:
+Apisecret …`, ttl 300 s) and carries `annotate` as a JSON **string** holding one
+moving `rtext` watermark whose text is `composeWatermark` from the documents
+feature, so video and document watermarks read the same words: name · email ·
+IST time. The browser gets only `otp` and `playbackInfo`, in the VdoCipher v2
+iframe. Nothing in the client bundle names the secret or the API host.
+
+**Screens.** `/admin/videos` (paginated library, add by VdoCipher id with the
+title optional, "Refresh status", "Upload a video") and `/admin/videos/[id]`
+(preview through the same access check). `video` is a buildable curriculum item
+type with its own paginated picker; a student opens it at
+`/student/programmes/[id]/items/[itemId]`.
+
+**Upload from the platform** needs JavaScript, like the document upload:
+`startVideoUploadAction` gets a signed storage policy from VdoCipher, writes the
+row as `pre_upload` so an abandoned upload is visible rather than lost, and the
+browser posts the file straight to VdoCipher -- no video byte through this server
+(manual §8). The admin then presses "Refresh status" until VdoCipher reports
+ready. No webhook: a button is enough at this scale, and a 2-second clip took
+about 35 s and twelve refreshes to go from `processing` to `ready`.
+
+**Progress.** `TrackedVideoFrame` loads the v2 player API, seeks to the stored
+`last_position` on `loadedmetadata`, and reports the position every 15 s of play
+and on pause and end. The server computes percent from `videos.duration_seconds`,
+never from the browser, which may only report a position; percent never falls and
+completion at 90% is one way. The programme percentage counts **completed items**,
+so a video watched part way leaves it at 0% by design.
+
+**Decisions.** `status` is our spelling of VdoCipher's three states
+(`pre_upload`, `processing`, `ready`); `vdocipher_id` must be 32 lowercase hex
+characters; students are not filtered on status, so a granted video that is still
+processing says so rather than vanishing; direct `video` grants are accepted by
+the database but have no screen, because students reach videos through
+programmes (N11).
+
+**What the live pass proved, and what it did not.** The detail is in the
+verification log. Everything server-side is proved: the row's title and length
+come from VdoCipher, the watermark VdoCipher is asked to draw names the viewer,
+a student with no grant gets a 404 **and causes no OTP call at all**, the OTP
+dies after its ttl (the Widevine license server answers 403 where it did not
+before), progress and completion move. **Nothing has ever played.** Headless
+Chrome has no Widevine CDM, so no frame decodes, the watermark has never been
+seen on screen, and the player API's `timeupdate` and `loadedmetadata` paths are
+still only read from VdoCipher's docs -- the progress action behind them was
+driven directly instead. A sitting in a real browser is owed, on desktop and a
+phone.
