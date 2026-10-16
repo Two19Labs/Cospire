@@ -19,7 +19,7 @@ None of these block Phase 5a.
 | **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Blocks ARS being **used** with real video essays, not built: Free's 1GB and 50MiB file limit are enough to build and test the upload path. Needed before students upload for real, and before the restore test. Clause 8.3 budgets for it |
 | **Custom SMTP not configured** | The built-in sender is rate limited to 2 emails an hour and will stall bulk creation partway through a class | An SMTP account in Cospire's name plus DNS. Raise `[auth.rate_limit] email_sent` at the same time |
 | **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
-| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning before handover. CI now also warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 and are being forced onto Node 24; bumping to `@v5` clears both the warning and the pinning item in one change |
+| **Actions pinned by tag, not SHA** | A moved tag would run different code | Worth pinning to a commit SHA before handover. Both actions moved to `@v5` in #79 (2026-10-16), which cleared the Node 20 deprecation warning; they are still pinned by tag |
 | **`site_url` points at a `vercel.app` address** | It goes into password-reset emails | Replace if a custom domain is added, then `supabase config push` |
 
 ### Pulled forward from later phases

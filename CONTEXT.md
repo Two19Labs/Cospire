@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-13 (Asia/Calcutta)
+Last updated: 2026-10-16 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -72,9 +72,6 @@ credentials, student data or anyone's personal data here.
 - **Blocked on the Client:** VdoCipher, Supabase Pro (overdue: ARS uploads are
   live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
   content, and the written amendment for clause 12 work already built.
-
-Superseded status snapshots (2026-09-28 and 2026-10-02) are in
-`docs/context/phase-history.md`.
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -161,8 +158,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-No feature branch is open. Recent merges: #69-#76 (2026-10-08 to 2026-10-10);
-write-ups in `docs/context/completed.md`.
+In progress, each branch carrying its own row until it merges: `feat/video`
+(migration `20261013120000` applied; live pass waits for a test video) and
+`fix/save-completion` (C2). Merged: #69-#75, #77-#79; #76 closed unmerged
+(its content is in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
