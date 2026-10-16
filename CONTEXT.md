@@ -166,16 +166,16 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-In progress, each branch carrying its own row until it merges: `feat/video`
-(PR #86) and `fix/save-completion` (C2). Merged: #69-#75, #77-#79; #76 closed unmerged
-(its content is in #77). Write-ups: `docs/context/completed.md`.
+Merging on 2026-10-16: #80 (C2), #85 (slice 2), #86 (video), then #87, #81 and
+#84. Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
+Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: slice 1 done, slice 2 next
+### UI refresh: slices 1 and 2 merged
 
 All of slice 1's questions are settled (D25-D31 in the untracked
 `docs/decisions/2026-10-12-decision-statement.md`):
@@ -190,15 +190,8 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 - **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
   wording, orange or the licensed MADE Gentle font.
 
-Next:
-1. Slice 2: the remaining student screens (programmes, documents, mock list,
-   results and attempt review, analytics, ARS).
-2. **A mock opens in its own window on Start** (decided, not built). Without
-   JavaScript it falls back to the same tab; switching back is an expected
-   proctoring focus loss; on submit the window closes and the dashboard
-   refreshes.
-Build desktop first, then derive the phone layout (D52); no further
-AfterBoards references are owed.
+Slice 2 (the remaining student screens, desktop first, D52) merged as #85.
+A mock opening in its own window on Start is PR #87.
 
 ### Phase 6 step 6.1, the exam screen: merged, browser pass owed
 
