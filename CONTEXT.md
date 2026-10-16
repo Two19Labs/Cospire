@@ -165,7 +165,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| UI worker (`Cospire-ui`, port 3050) | `feat/mock-window` | A mock opening in its own window on Start | `src/features/test-engine/components/{own-window,close-on-submit,student-mock-screens,result-screen}.tsx`, `scripts/verify/{mock-window,ui-audit-cdp}.mjs` | PR #PRNUM, awaiting review. `mock-window.mjs` 9/9 in a browser. The earlier "blocked on an owner decision" is withdrawn: no route handler and no convention change were needed. Write-up in `docs/context/completed.md` | 2026-10-16 |
+| UI worker (`Cospire-ui`, port 3050) | `feat/mock-window` | A mock opening in its own window on Start | `src/features/test-engine/components/{own-window,close-on-submit,student-mock-screens,result-screen}.tsx`, `scripts/verify/{mock-window,ui-audit-cdp}.mjs` | PR #87, awaiting review. `mock-window.mjs` 9/9 in a browser. The earlier "blocked on an owner decision" is withdrawn: no route handler and no convention change were needed. Write-up in `docs/context/completed.md` | 2026-10-16 |
 
 In progress, each branch carrying its own row until it merges: `feat/video`
 (migration `20261013120000` applied; live pass waits for a test video),
