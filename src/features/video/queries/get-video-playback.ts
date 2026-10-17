@@ -42,6 +42,7 @@ export async function getVideoPlayback({
   // Composed from the session profile, never from anything the browser sends
   // (technical brief §7), in the same words as the document watermark.
   const watermark = composeWatermark({
+    dateOnly: true,
     subject: { email: viewer.email, name: viewer.name },
     viewedAt,
   });
