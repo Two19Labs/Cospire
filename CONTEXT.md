@@ -78,11 +78,9 @@ credentials, student data or anyone's personal data here.
   `20261017100000` is **written, not applied** -- the owner applies it and runs
   `npm run db:types` **before** the merge, because `listMocks` reads the new
   column. 28/28 spliced and rolled back against the hosted database; never
-  clicked through. See *A mock has a draft state, 2026-10-17* in
-  `docs/context/completed.md`.
-- **Not built:** bulk CSV creation (SMTP), delete for
-  programmes, documents, mocks and videos (D42, D54), content migration and
-  handover.
+  clicked through. *A mock has a draft state, 2026-10-17* in `completed.md`.
+- **Not built:** bulk CSV creation (SMTP), delete for programmes, documents,
+  mocks and videos (D42, D54), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home, and **video playback** -- no video
@@ -205,9 +203,8 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 
 Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
 Start (#87; popup refused or no JavaScript falls back to the same tab, full
-screen kept). **Owner:** the exam window closes as soon as the result renders, so
-the result shows on the refreshed dashboard; showing it in the exam window is one
-line if wanted.
+screen kept). **Owner:** the exam window closes as the result renders, so the
+result shows on the refreshed dashboard; showing it in the exam window is one line.
 
 ### Owed in a real browser (owner)
 
