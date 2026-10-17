@@ -12,6 +12,37 @@ function fail(mockId: number | null, code: string): never {
   redirect(mockId === null ? `/admin/mocks/new?error=${code}` : `/admin/mocks/${mockId}?error=${code}`);
 }
 
+// D41. Publishing, and returning a mock to a draft. Its own action because it
+// is one field: the builder's save is refused outright once a mock has been
+// attempted, and publishing must not be refused with it.
+//
+// The visibility itself is the database's (`private.mock_is_published`, AND-ed
+// into `private.student_has_mock_grant`). This only moves the column, and the
+// database also refuses the one move that would hide a student's own result.
+export async function setMockStatusAction(formData: FormData): Promise<void> {
+  await requireRole("admin");
+  const mockId = parsePositiveInteger(formData.get("mockId"), Number.MAX_SAFE_INTEGER);
+  const raw = formData.get("status");
+  const status = raw === "draft" || raw === "published" ? raw : null;
+  if (mockId === null || status === null) fail(mockId, "invalid");
+
+  const supabase = await createServerSupabaseClient();
+  // `select` so a row filtered away by RLS is a refusal rather than a silent
+  // success: PostgREST reports an update matching nothing as no error at all.
+  const { data, error } = await supabase
+    .from("mocks")
+    .update({ status })
+    .eq("id", mockId)
+    .select("id")
+    .maybeSingle();
+  // 42501 from `private.guard_mock_publish_change`: this mock has attempts.
+  if (error?.code === "42501") fail(mockId, "unpublish-attempted");
+  if (error || !data) fail(mockId, "status-failed");
+
+  revalidatePath("/admin/mocks");
+  redirect(`/admin/mocks/${mockId}?notice=${status === "published" ? "published" : "drafted"}`);
+}
+
 export async function saveMockAction(formData: FormData): Promise<void> {
   await requireRole("admin");
   const rawId = formData.get("mockId");
