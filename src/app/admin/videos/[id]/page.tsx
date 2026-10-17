@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
 import { parsePositiveId } from "@/features/curriculum/curriculum";
+import { DeleteLink } from "@/features/delete/components/delete-link";
 import { VideoPlayer } from "@/features/video/components/video-player";
 import { getVideoPlayback } from "@/features/video/queries/get-video-playback";
 
@@ -20,6 +21,9 @@ export default async function AdminVideoPage({ params }: { params: Promise<{ id:
 
   return (
     <RoleShell
+      // D42: a video takes its grants, its curriculum items, its progress rows
+      // and the video in VdoCipher itself.
+      actions={<DeleteLink id={videoId} type="video" />}
       back={{ href: "/admin/videos", label: "Videos" }}
       heading={view.title}
       profile={profile}

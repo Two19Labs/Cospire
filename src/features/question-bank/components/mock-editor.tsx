@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
+import { DeleteLink } from "@/features/delete/components/delete-link";
 import { SubmitButton } from "@/shared/ui";
 
 import { saveMockAction } from "../actions/mock-actions";
@@ -65,9 +66,14 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
   return (
     <RoleShell
       actions={
-        <Link className="button button--secondary" href="/admin/mocks">
-          Back to mocks
-        </Link>
+        <>
+          {/* D42: deleting a mock takes its attempts and their results with
+              it. Three deliberate steps start with this link. */}
+          {value ? <DeleteLink id={value.id} type="mock" /> : null}
+          <Link className="button button--secondary" href="/admin/mocks">
+            Back to mocks
+          </Link>
+        </>
       }
       back={{ href: "/admin/mocks", label: "All mock tests" }}
       description="Bring the right questions, timing and scoring into one assessment."
