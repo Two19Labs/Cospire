@@ -1,6 +1,7 @@
 import { PersonCell } from "@/features/auth/components/person-cell";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
+import { DeleteLink } from "@/features/delete/components/delete-link";
 import {
   Table,
   TableBody,
@@ -42,6 +43,9 @@ export function DocumentDetail({
 
   return (
     <RoleShell
+      // D42: a link, not a delete. The confirmation screen is where anything
+      // is removed, and only after the title is typed out.
+      actions={<DeleteLink id={document.id} type="document" />}
       back={{ href: "/admin/documents", label: "Back to library" }}
       description={`${document.folder ? document.folder : "Unfiled"} · Added ${document.createdAt.slice(0, 10)}`}
       profile={profile}
