@@ -60,7 +60,7 @@ function headers(apiSecret: string): Record<string, string> {
 
 // Pure, so the request is pinned by a test. `annotate` is a JSON string inside
 // the JSON body: VdoCipher's docs call this out as "extra serialisation".
-// `rtext` is the moving watermark, repositioned every `interval` ms.
+// `rtext` is the moving watermark, repositioned every `interval` ms: small, faint and every 15 s so it does not distract (owner, 2026-10-17).
 export function buildOtpRequest({
   apiSecret,
   vdocipherId,
@@ -75,7 +75,7 @@ export function buildOtpRequest({
     init: {
       body: JSON.stringify({
         annotate: JSON.stringify([
-          { alpha: "0.60", color: "0xFFFFFF", interval: "5000", size: "15", text: watermark, type: "rtext" },
+          { alpha: "0.35", color: "0xFFFFFF", interval: "15000", size: "13", text: watermark, type: "rtext" },
         ]),
         ttl: otpTtlSeconds,
       }),

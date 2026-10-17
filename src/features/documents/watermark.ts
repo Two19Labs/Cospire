@@ -31,25 +31,28 @@ export interface WatermarkSubject {
 // has to be correct without depending on the server's clock settings.
 const istOffsetMinutes = 5 * 60 + 30;
 
-function formatViewedAt(viewedAt: Date): string {
+function formatViewedAt(viewedAt: Date, dateOnly = false): string {
   const ist = new Date(viewedAt.getTime() + istOffsetMinutes * 60_000);
   // Read back through the UTC getters, which is what makes the shift above the
   // only time-zone arithmetic involved. The local getters would add the
   // machine's own offset on top.
   const iso = ist.toISOString();
-  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} IST`;
+  return dateOnly ? iso.slice(0, 10) : `${iso.slice(0, 10)} ${iso.slice(11, 16)} IST`;
 }
 
 export function composeWatermark({
+  dateOnly = false,
   subject,
   viewedAt,
 }: {
+  // The moving video watermark shows the date only, to stay short (owner, 2026-10-17).
+  dateOnly?: boolean;
   subject: WatermarkSubject;
   viewedAt: Date;
 }): string {
   const name = subject.name.trim();
   const email = subject.email.trim();
-  const stamp = formatViewedAt(viewedAt);
+  const stamp = formatViewedAt(viewedAt, dateOnly);
 
   // Name as well as address, because the address alone is the part a reader
   // skims past, and both together make a screenshot self-explanatory.

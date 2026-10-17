@@ -58,7 +58,7 @@ describe("getVideoPlayback", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`https://dev.vdocipher.com/api/videos/${id}/otp`);
     const annotate = JSON.parse(JSON.parse(init.body as string).annotate as string);
-    expect(annotate[0].text).toBe("Asha Rao · s@example.com · 2026-10-13 12:00 IST");
+    expect(annotate[0].text).toBe("Asha Rao · s@example.com · 2026-10-13");
   });
 });
 
@@ -73,7 +73,7 @@ describe("buildOtpRequest", () => {
     // annotate is a JSON string inside the JSON body, per VdoCipher.
     expect(typeof body.annotate).toBe("string");
     expect(JSON.parse(body.annotate)).toEqual([
-      { alpha: "0.60", color: "0xFFFFFF", interval: "5000", size: "15", text: "W", type: "rtext" },
+      { alpha: "0.35", color: "0xFFFFFF", interval: "15000", size: "13", text: "W", type: "rtext" },
     ]);
     expect(init.body).not.toContain("sec");
   });
