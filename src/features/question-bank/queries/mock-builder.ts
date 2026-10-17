@@ -7,9 +7,21 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { mockPageSize } from "../mock-form";
 
+// D41. A draft is invisible to students; admins see both, labelled.
+export type MockStatus = "draft" | "published";
+
+// `mocks.status` arrives with migration `20261017100000`, and the check
+// constraint admits only these two values. Narrowed here rather than asserted,
+// so a row read before the migration is applied reads as published -- which is
+// what every mock that exists today is -- instead of throwing.
+function toMockStatus(value: unknown): MockStatus {
+  return value === "draft" ? "draft" : "published";
+}
+
 export interface MockSummary {
   id: number;
   title: string;
+  status: MockStatus;
   durationMinutes: number;
   maxAttempts: number;
   allowMobile: boolean;
@@ -21,6 +33,7 @@ export interface MockSummary {
 export interface MockEditorValue {
   id: number;
   title: string;
+  status: MockStatus;
   instructions: string;
   durationMinutes: number;
   negativeMarking: string;
@@ -105,13 +118,14 @@ export async function listMocks(page: number): Promise<{ rows: MockSummary[]; pa
   const from = (page - 1) * 25;
   const { data, error, count } = await supabase
     .from("mocks")
-    .select("id,title,duration_minutes,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,mock_questions(question_id))", { count: "exact" })
+    .select("id,title,status,duration_minutes,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,mock_questions(question_id))", { count: "exact" })
     .order("id", { ascending: false })
     .range(from, from + 24);
   if (error) throw error;
   return { rows: (data ?? []).map((row) => ({
     id: row.id,
     title: row.title,
+    status: toMockStatus(row.status),
     durationMinutes: row.duration_minutes,
     maxAttempts: row.max_attempts,
     allowMobile: row.allow_mobile,
@@ -126,7 +140,7 @@ export async function getMock(mockId: number): Promise<MockEditorValue> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("mocks")
-    .select("id,title,instructions,duration_minutes,negative_marking,negative_marking_types,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,title,duration_minutes,sort_order,marks,mock_questions(question_id,sort_order,questions(parent_id)))")
+    .select("id,title,status,instructions,duration_minutes,negative_marking,negative_marking_types,max_attempts,allow_mobile,proctoring_enabled,mock_sections(id,title,duration_minutes,sort_order,marks,mock_questions(question_id,sort_order,questions(parent_id)))")
     .eq("id", mockId)
     .order("sort_order", { referencedTable: "mock_sections", ascending: true })
     .single();
@@ -134,6 +148,7 @@ export async function getMock(mockId: number): Promise<MockEditorValue> {
   return {
     id: data.id,
     title: data.title,
+    status: toMockStatus(data.status),
     instructions: data.instructions,
     durationMinutes: data.duration_minutes,
     negativeMarking: String(data.negative_marking),

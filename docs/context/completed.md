@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-17 | **A mock has a draft state** (`feat/mock-drafts`, D41) | `mocks.status` is `draft` or `published`; new mocks start as drafts and every mock that existed is backfilled to published, so students see exactly what they saw. Visibility is the database's: `private.mock_is_published` is AND-ed into `private.student_has_mock_grant`, the one helper the student mock list, the mock page, a direct URL and `attempts_insert_own` all read through, and the student arm of `curriculum_items_select_authorized` drops a `test` item whose mock is a draft. Returning a sat mock to a draft is refused by a trigger, because it would hide that student's own result. The locking half of D41 was **already built** (`private.guard_sat_mock_structure`), so nothing was rebuilt, and marks stay correctable through the existing rescore path. Migration `20261017100000`, **written only -- the owner applies it**. 636 tests, typecheck, lint, build; `scripts/verify/mock-drafts.sql` **28/28** against the hosted database with the migration spliced in and rolled back. **Not clicked through:** the column does not exist live yet. See *A mock has a draft state, 2026-10-17* |
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
 | 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
 | 2026-10-13, live pass 2026-10-16 | **Video, Phase 2** (`feat/video`) | VdoCipher playback, the video library, `video` as a curriculum item type, upload from the platform and `item_progress` for video. Migration `20261013120000_videos.sql` applied 2026-10-13; `db push --dry-run` on 2026-10-16 reports the remote up to date. 621 unit tests, typecheck, lint and `next build` pass; no `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`. **Live pass 17/17** against the hosted database on a local production build (port 3010, headless Chrome, throwaway accounts), plus the upload path 4/4 with the clip deleted from VdoCipher again. **Still owed: a real browser** -- nothing plays headless, so the watermark has never been seen on screen. See *Video, Phase 2* |
@@ -2305,3 +2306,69 @@ best-of-two choice, the per-section grouping, the ceiling, an unanswered essay,
 reading a typed answer, the tally's treatment of pending and marked essays, and
 the importer -- and by nothing else. Three existing tests had used `"essay"` as
 their stand-in for an *invalid* question type and now use `"sonnet"`.
+
+## A mock has a draft state, 2026-10-17
+
+D41, on `feat/mock-drafts`. Migration `20261017100000_mock_drafts.sql`, **written
+only**; the owner applies it.
+
+### Half of D41 was already built
+
+D41 asks for two things, and only the first was missing:
+
+- **Locked after the first attempt.** `private.guard_sat_mock_structure`
+  (`20260926103000_test_engine_attempts.sql`) fires on insert, update and delete
+  of `mock_sections` and `mock_questions` and refuses the write once any attempt
+  exists. Because `save_mock` always deletes and rewrites every section, that
+  refuses the whole builder save -- duration and sectional timers included -- and
+  `saveMockAction` already turns the `42501` into *"Students have already sat this
+  mock, so it can no longer be changed."* Nothing was rebuilt; the probe proves it
+  still holds.
+- **Marks stay correctable.** A key, option, type or marks change on the question
+  clears the affected attempts' scores and writes a `rescore_events` row
+  (`20260927090000`). Untouched, and proven on a question inside a sat mock.
+
+### The draft state
+
+- `mocks.status text not null default 'draft'`, check `draft|published`, every
+  existing row backfilled to `published` in the same migration. A plain column
+  rather than a `published_at`: nothing asks when it was published.
+- **One door.** `private.student_has_mock_grant` is where every student read of a
+  mock ends up -- `mocks_select_student`, `mock_sections_select_student` and
+  `mock_questions_select_student` reach it through `private.student_reaches_mock`,
+  and `attempts_insert_own` calls it directly -- so AND-ing
+  `private.mock_is_published(...)` into it closes the mock list, the mock page, a
+  direct URL and starting an attempt together. **No application query changed:**
+  `listStudentMocks` already states that RLS is the filter.
+- `student_reaches_mock`'s second arm ("or this student has an attempt on it") is
+  left alone on purpose, so a student who has sat a mock keeps their result.
+  Unpublishing a mock with attempts is refused, so that arm cannot return a draft.
+- A `test` curriculum item carries its own title, so the student arm of
+  `curriculum_items_select_authorized` had to drop it as well; filtering the mock
+  alone would have left the draft as a visible row in a programme's curriculum.
+- **Unpublishing a sat mock is refused in the database**
+  (`private.guard_mock_publish_change`), because it would hide students' own
+  results. `setMockStatusAction` maps the `42501` to a sentence on the editor.
+- `save_mock` is **not** redefined. It never mentions `status`, so a create takes
+  the column default and an edit leaves the status alone -- one less 100-line
+  function to drift from its live definition, which was the defect in PR #84's
+  migration.
+- No index on `status`: nothing queries by it, and the admin list shows both.
+  (It was there in the first draft, and `create index` after the backfill inside
+  one transaction fails with `55006 pending trigger events` -- worth knowing
+  before adding an index beside a DML statement in a migration here.)
+
+### The screens
+
+`/admin/mocks` tags a draft; the editor gains a status panel saying in words what
+a draft is invisible to, with one Publish / Return to draft button in a form of
+its own (the builder's own save is refused outright on a sat mock, and publishing
+must not be refused with it). No new route, so no new `loading.tsx`.
+
+### Apply before merging
+
+`listMocks` and `getMock` now read `status`, so the deploy needs the column:
+apply the migration (purely additive) and run `npm run db:types` before the merge,
+as `feat/video` did. Between applying and deploying, a mock created by the
+then-deployed screens is a draft with no publish button -- nothing a student can
+see changes, and it is publishable as soon as the deploy lands.

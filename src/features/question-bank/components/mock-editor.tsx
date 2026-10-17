@@ -4,7 +4,7 @@ import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
 
-import { saveMockAction } from "../actions/mock-actions";
+import { saveMockAction, setMockStatusAction } from "../actions/mock-actions";
 import { maxMockSections } from "../mock-form";
 import type { MockEditorValue, PickerQuestion } from "../queries/mock-builder";
 import { PendingOverlay } from "./pending-overlay";
@@ -18,6 +18,10 @@ const errors: Record<string, string> = {
   "section-missing": "Every selected question needs a section that still exists. Check the section dropdowns.",
   sections: "Every named section needs a valid duration.", structure: "The database refused that mock structure.",
   attempted: "Students have already sat this mock, so it can no longer be changed. Build a new mock instead.",
+  // D41. Returning a sat mock to a draft would hide those students' own
+  // results, so the database refuses it.
+  "unpublish-attempted": "Students have already sat this mock, so it cannot go back to a draft — that would hide their results. It stays published.",
+  "status-failed": "The mock's draft state could not be changed.",
 };
 
 function excerpt(body: string): string {
@@ -84,10 +88,40 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
         {value ? <a className="tabs__link" href="#attempts">Attempts</a> : null}
       </nav>
 
+      {/* D41. Its own form, outside the builder's: publishing is one field and
+          must not carry, or be blocked by, the whole paper. A draft is invisible
+          to students everywhere -- the database decides that, not this screen. */}
+      {value ? (
+        <section className="panel" id="status">
+          <div className="panel__header">
+            <div>
+              <h2>
+                {value.status === "published" ? "Published" : "Draft"}
+                {value.status === "published" ? <span className="tag tag--sage">Students can see this</span> : <span className="tag">Hidden from students</span>}
+              </h2>
+              <p className="muted">
+                {value.status === "published"
+                  ? "Granted students see this mock in their list, in any programme it is in, and may sit it."
+                  : "A draft is invisible to students: not in their mock list, not in a programme's curriculum, not on its own URL, and it cannot be started. Only admins see it."}
+              </p>
+            </div>
+            <form action={setMockStatusAction}>
+              <input name="mockId" type="hidden" value={value.id} />
+              <input name="status" type="hidden" value={value.status === "published" ? "draft" : "published"} />
+              <SubmitButton pendingLabel={value.status === "published" ? "Returning to draft…" : "Publishing…"} variant={value.status === "published" ? "secondary" : "primary"}>
+                {value.status === "published" ? "Return to draft" : "Publish"}
+              </SubmitButton>
+            </form>
+          </div>
+        </section>
+      ) : null}
+
       <div className="two-col">
         <form action={saveMockAction} className="two-col__main">
           {value ? <input name="mockId" type="hidden" value={value.id} /> : null}
           {notice === "saved" ? <p className="notice notice--success">Mock saved.</p> : null}
+          {notice === "published" ? <p className="notice notice--success">Published. Granted students can see this mock now.</p> : null}
+          {notice === "drafted" ? <p className="notice notice--success">Back to a draft. Students can no longer see this mock.</p> : null}
           {notice === "built" ? <p className="notice notice--success">Mock built from the paper. Check the settings, then it is ready.</p> : null}
           {notice === "built-linked" ? <p className="notice notice--success">Mock built from the paper and linked to its ARS round. Check the settings, then it is ready.</p> : null}
           {notice === "built-link-failed" ? <p className="notice notice--error">The mock was built, but linking it to the ARS round failed. Link it from the round&apos;s own page.</p> : null}

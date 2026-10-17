@@ -61,6 +61,9 @@ export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Prof
                 <TableRow key={mock.id}>
                   <TableCell>
                     <Link href={`/admin/mocks/${mock.id}`}>{mock.title}</Link>
+                    {/* D41. Only admins see this list, and a draft has to be
+                        obvious here: students see nothing of it at all. */}
+                    {mock.status === "draft" ? <span className="tag">Draft</span> : null}
                   </TableCell>
                   <TableCell>{mock.durationMinutes} min</TableCell>
                   <TableCell>
