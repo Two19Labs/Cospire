@@ -1,5 +1,6 @@
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
+import { DeleteLink } from "@/features/delete/components/delete-link";
 import {
   courseListErrors,
   courseNotices,
@@ -45,6 +46,9 @@ export function CourseDetail({
 
   return (
     <RoleShell
+      // D42: deleting a programme takes its sections, its curriculum items and
+      // its grants, and leaves the documents, videos and mocks alone.
+      actions={<DeleteLink id={course.id} type="programme" />}
       // `sortOrder` is deliberately not shown. Every programme is 0 until the
       // reorder control exists, and a number the reader cannot change and did
       // not choose only invites the question of what it means.

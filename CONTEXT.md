@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-16 (Asia/Calcutta)
+Last updated: 2026-10-17 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -24,14 +24,13 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-16
+## Status, 2026-10-17
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
-- **UI refresh slice 1** (`feat/ui-refresh`): Inter for body and headings and
-  the original navy and cream colours, both the Client's choice on 2026-10-12,
-  in the AfterBoards card shape; typed names and titles normalised on save.
-  See *UI refresh* under Pending and the 2026-10-10 rows of the Completed log in
-  `docs/context/completed.md`.
+- **UI refresh slice 1** (`feat/ui-refresh`): Inter, the original navy and cream
+  colours (the Client's choice, 2026-10-12) in the AfterBoards card shape; typed
+  names normalised on save. See *UI refresh* under Pending and the 2026-10-10
+  rows of the Completed log in `docs/context/completed.md`.
 - **Question import reads PDFs** beside Word files, pictures included (best effort, Annexure B): *PDF upload, 2026-10-12* in `docs/context/completed.md`.
 - **Built and verified (local production builds against the hosted
   database):**
@@ -67,22 +66,28 @@ credentials, student data or anyone's personal data here.
   the mock, marked by an admin or the assigned mentor in `essay_marks` (forced
   RLS, no student write), pending until marked. No essay has yet been authored,
   sat and marked end to end.
-- **Video is built and live-verified** (PR #86): library, server-side OTP with
-  a per-viewer watermark, `video` curriculum items, upload from the platform,
-  video `item_progress`. Migration `20261013120000` is applied.
-  17/17 and 4/4 on the two `video-*` verify scripts against the hosted database;
-  **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
-  in `docs/context/completed.md`.
-- **Not built:** bulk CSV creation (SMTP), a mock draft state (D41), delete for
-  programmes, documents and mocks (D42, D54), content migration and handover.
+- **Video is built and live-verified** (#86): library, server-side OTP with a
+  per-viewer watermark, `video` curriculum items, upload, video `item_progress`.
+  Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
+  against the hosted database; **nothing has ever played** (no Widevine CDM
+  headless). See *Video, Phase 2* in `docs/context/completed.md`.
+- **Delete for programmes, documents, mocks and videos** (D42, D54): three
+  deliberate steps ending in the name typed out, checked on the server and again
+  in the database; one `SECURITY DEFINER` transaction, with the storage object or
+  VdoCipher video removed after the commit against a `deletion_cleanups` row, so
+  a failure there is visible and retryable. Migration `20261017110000` is
+  **written, not applied**. 53/53 on `scripts/verify/delete.sql`, spliced and
+  rolled back; the screens have never run. *Delete, 2026-10-17* in
+  `completed.md`.
+- **Not built:** bulk CSV creation (SMTP), content migration and handover. A
+  mock draft state (D41) is on `feat/mock-drafts`, pull request #89.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home, and **video playback** -- no video
   frame has ever decoded here, so the watermark has not been seen on screen.
 - **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
-  (overdue: ARS uploads are
-  live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
-  content, and per-question metadata (a meeting, D39).
+  (overdue: ARS uploads are live on Free's 1 GB with no backups), Vercel Pro,
+  SMTP, Gemini billing, their content, per-question metadata (a meeting, D39).
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -168,8 +173,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| ShareLane worker (Claude) | `feat/mock-drafts` | D41, the mock draft state. Pull request #89 raised; needs its migration applied and a review | `supabase/migrations/20261017100000_mock_drafts.sql`, `src/features/question-bank/**` | Review | 2026-10-17 |
+| ShareLane worker (Claude) | `feat/delete` | D42 and D54, delete for programmes, documents, mocks and videos | `supabase/migrations/20261017110000_delete.sql`, `src/features/delete/**`, `src/app/admin/delete/**`, `scripts/verify/delete.sql` | Review | 2026-10-17 |
 
-No feature branch is open. Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
+Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
 #86 (video), #87 (mock in its own window), #81 (abandoned attempts), #84
 (essays). Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
@@ -196,9 +203,8 @@ All of slice 1's questions are settled (D25-D31 in the untracked
 
 Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
 Start (#87; popup refused or no JavaScript falls back to the same tab, full
-screen kept). **Owner:** the exam window closes as soon as the result renders, so
-the result shows on the refreshed dashboard; showing it in the exam window is one
-line if wanted.
+screen kept). **Owner:** the exam window closes as the result renders, so the
+result shows on the refreshed dashboard; showing it in the exam window is one line.
 
 ### Owed in a real browser (owner)
 
@@ -283,9 +289,8 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Video:** built and live-verified; PR #86 awaits review and merge. The one
-   thing the pass could not do is play a frame, so the owner watching one
-   granted video in a real browser is the remaining check.
+3. **Apply `20261017100000_mock_drafts.sql` and `20261017110000_delete.sql`**
+   (in that order) and run `npm run db:types` before those pull requests merge.
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 

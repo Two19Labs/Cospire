@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-17 | **Delete for programmes, documents, mocks and videos** (`feat/delete`, D42 and D54) | Three deliberate steps: a Delete link, a confirmation screen stating what will go with counts measured in the database, then the item's name typed out and checked on the server **and** again inside `public.delete_content`. One `SECURITY DEFINER` transaction, runnable only by an active admin of the organisation, takes everything that hangs off the thing deleted; the storage object and the VdoCipher video are removed after it commits, with a `deletion_cleanups` row written **in the same transaction** so a failure there is visible on `/admin/delete` and retryable instead of silent. Questions are never deleted with a mock, `rescore_events` are never deleted at all, and a programme never touches the libraries it points at. A mock an ARS round links to through `config.mockId` is refused, because no foreign key can protect that reference. Migration `20261017110000`, **written only -- the owner applies it**. 646 tests (10 new), typecheck, lint, build; `scripts/verify/delete.sql` **53/53** against the hosted database, spliced and rolled back, with zero orphans in every table; the VdoCipher delete proven on a throwaway video (created, deleted, then 404). **Nothing has run in a browser**, because the functions do not exist live yet. See *Delete, 2026-10-17* |
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
 | 2026-10-16 | **UI refresh slice 2, part A** (`feat/ui-refresh-2`) | The first of the remaining student screens onto slice 1's shape, using classes `globals.css` already carried rather than new ones. The last two literal `box-shadow`s on a student-visible page removed (`.auth-card`, `.state-card`); a panel that is only a header no longer draws the header rule plus an empty band of padding; `.card-grid--wide` added; student **Documents** moved from the admin-shaped table to a card grid with a real empty state and a matching `loading.tsx`; the student **ARS round** screen's back link moved into `RoleShell`'s `back` prop and its confirmation turned into a success notice. 611 tests, typecheck, lint, build; 14/14 student routes through headless Chrome at both widths. See *UI refresh slice 2, 2026-10-16* |
 | 2026-10-13, live pass 2026-10-16 | **Video, Phase 2** (`feat/video`) | VdoCipher playback, the video library, `video` as a curriculum item type, upload from the platform and `item_progress` for video. Migration `20261013120000_videos.sql` applied 2026-10-13; `db push --dry-run` on 2026-10-16 reports the remote up to date. 621 unit tests, typecheck, lint and `next build` pass; no `VDOCIPHER_API_SECRET` or `dev.vdocipher.com` string in `.next/static`. **Live pass 17/17** against the hosted database on a local production build (port 3010, headless Chrome, throwaway accounts), plus the upload path 4/4 with the clip deleted from VdoCipher again. **Still owed: a real browser** -- nothing plays headless, so the watermark has never been seen on screen. See *Video, Phase 2* |
@@ -2305,3 +2306,79 @@ best-of-two choice, the per-section grouping, the ceiling, an unanswered essay,
 reading a typed answer, the tally's treatment of pending and marked essays, and
 the importer -- and by nothing else. Three existing tests had used `"essay"` as
 their stand-in for an *invalid* question type and now use `"sonnet"`.
+
+## Delete, 2026-10-17
+
+D42 and D54, on `feat/delete`. Migration `20261017110000_delete.sql`, **written
+only**; the owner applies it.
+
+### The shape
+
+- **`public.delete_content(type, id, typed_name)`**, `SECURITY DEFINER`, the one
+  way in. It resolves the caller's organisation from an active admin profile and
+  refuses anything else with `42501`; a row in another organisation is `P0002`,
+  "not there", because saying which would disclose that it exists. The whole
+  delete is one statement block in one transaction, so there is no half-done
+  delete. `authenticated` may execute it and nothing else.
+- **`public.content_delete_preview(type, id)`** returns the counts the
+  confirmation screen states. Also `SECURITY DEFINER`: a count filtered down by
+  a missing read policy would understate what is about to go, and a confirmation
+  screen that understates is worse than none.
+- **The typed name is checked twice**, in `deleteContentAction` and in
+  `delete_content`, so a post that never rendered the confirmation screen is
+  still refused. Both normalise whitespace **and nothing else** --
+  `collapseName` in TypeScript and `regexp_replace(btrim(name), '\s+', ' ', 'g')`
+  in SQL -- because a name one accepts and the other refuses is an
+  unexplainable error. A unit test pins the pair together.
+- **`deletion_cleanups`** holds the half that cannot be done in SQL: the storage
+  path, or the VdoCipher id. The row is written inside the delete's transaction,
+  so the file cannot be lost if the HTTP call afterwards fails; `/admin/delete`
+  lists anything pending with its last error and a Try again button. RLS is
+  enabled and forced, with a policy for all four verbs and nothing granted to
+  `anon`.
+
+### What goes, and what deliberately stays
+
+| Deleted | Goes with it |
+|---|---|
+| Mock | attempts, and through them responses, attempt sections, proctor events and essay marks; `mock_sections` and `mock_questions`; grants; its curriculum items |
+| Document | grants, curriculum items, the `item_progress` rows on them, and the storage object |
+| Video | grants, curriculum items, their `item_progress` rows, and the video in VdoCipher |
+| Programme | its sections, their curriculum items, their `item_progress` rows, and its grants |
+
+Not deleted, on purpose: **questions** (the bank is shared, so a mock takes its
+paper rows and never a question); **`rescore_events`** (they name a question, not
+a mock, the question outlives the mock, and deleting them would erase the record
+Annexure A requires -- no orphan is possible, every column still points at a row
+that is there); and **the documents, videos and mocks a programme points at**.
+Programme completion stays right because the items themselves go and
+`item_progress` cascades from them, so nothing is counted against an item that
+no longer exists.
+
+### Three things found while building it
+
+- **The cascade was already half there, and had a hole.** `courses` and `videos`
+  removed their own `content_access` grants on delete; `documents` and `mocks`
+  removed their curriculum items but **not** their grants, leaving a grant row
+  naming a freed id. `private.cascade_curriculum_items_on_delete` is extended
+  here rather than the grant delete being written into `delete_content`, so it
+  holds however the row is deleted.
+- **Order is forced by the existing guards.** `attempts.mock_id` is ON DELETE
+  RESTRICT and `private.guard_sat_mock_structure` refuses to delete a
+  `mock_sections` row while any attempt exists, so attempts have to go first and
+  the mock then cascades cleanly.
+- **An ARS round links a mock inside its own `config` JSONB** (D8), which no
+  foreign key can protect. Deleting the mock would leave the round pointing at
+  nothing, so it is refused with `23503` and the preview names the round for the
+  screen to quote. Rewriting someone else's round was not ours to do.
+
+### What is not verified
+
+The screens have never run. `content_delete_preview` and `delete_content` do not
+exist in the hosted database until the migration is applied, so the Delete link,
+the counts on screen, the typed-name refusal through the form and the retry
+screen are all unexercised. **Supabase's `storage.protect_delete()` trigger
+refuses a direct `DELETE` from `storage.objects`** ("Use the Storage API
+instead"), so no SQL probe can prove a file goes -- only the running application
+can, through `.remove()`. The VdoCipher half *is* proven: a throwaway video was
+created, deleted with the exact call `deleteVideo` makes, and then answered 404.
