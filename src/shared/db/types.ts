@@ -1229,6 +1229,7 @@ export type Database = {
           negative_marking_types: string[]
           org_id: number
           proctoring_enabled: boolean
+          status: string
           title: string
           updated_at: string
           updated_by: string | null
@@ -1245,6 +1246,7 @@ export type Database = {
           negative_marking_types?: string[]
           org_id: number
           proctoring_enabled?: boolean
+          status?: string
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -1261,6 +1263,7 @@ export type Database = {
           negative_marking_types?: string[]
           org_id?: number
           proctoring_enabled?: boolean
+          status?: string
           title?: string
           updated_at?: string
           updated_by?: string | null

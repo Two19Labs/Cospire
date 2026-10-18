@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-17 (Asia/Calcutta)
+Last updated: 2026-10-18 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -74,11 +74,9 @@ credentials, student data or anyone's personal data here.
   **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
   in `docs/context/completed.md`.
 - **A mock has a draft state** (D41): invisible to students in the database,
-  published by an admin, and a sat mock cannot go back. Migration
-  `20261017100000` is **written, not applied** -- the owner applies it and runs
-  `npm run db:types` **before** the merge, because `listMocks` reads the new
-  column. 28/28 spliced and rolled back against the hosted database; never
-  clicked through. *A mock has a draft state, 2026-10-17* in `completed.md`.
+  published by an admin, and a sat mock cannot go back (#89). Migration
+  `20261017100000` applied 2026-10-18; existing mocks are published, new ones
+  start as drafts. 28/28 against the hosted database; never clicked through. *A mock has a draft state, 2026-10-17* in `completed.md`.
 - **Not built:** bulk CSV creation (SMTP), delete for programmes, documents,
   mocks and videos (D42, D54), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
@@ -174,11 +172,11 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| ShareLane worker (Claude) | `feat/mock-drafts` | D41, the mock draft state. Pull request raised; awaiting the owner's migration and review | `supabase/migrations/20261017100000_mock_drafts.sql`, `src/features/question-bank/**`, `scripts/verify/mock-drafts.sql` | Review | 2026-10-17 |
 
-Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
+No feature branch is open. Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
 #86 (video), #87 (mock in its own window), #81 (abandoned attempts), #84
-(essays). Earlier: #69-#75, #77-#79, #82, #83; #76 closed unmerged (in #77).
+(essays); on 2026-10-18 #92 (load test), #91 (subtler watermark), #89 (mock
+drafts). Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -289,8 +287,7 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Apply `20261017100000_mock_drafts.sql`** and run `npm run db:types` before
-   that pull request merges.
+3. **Delete** (D42, D54) is PR #90; its migration is applied when it merges.
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 
