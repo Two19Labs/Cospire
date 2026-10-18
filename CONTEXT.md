@@ -251,7 +251,7 @@ writing at the time rather than absorbed silently.
 | High | Vercel Cron can overlap or deliver more than once | Durable job records, locks, and idempotency are required |
 | High | Migration volume and cleanup responsibility are not capped | Obtain a content inventory and written acceptance boundary |
 | High | Week six is overloaded with ARS, migration, QA, deployment, docs, and training | Pull prototypes and integration work earlier; reserve week six for closure |
-| High | 100 concurrent users: measured 2026-10-17 (*Load test, 100 concurrent* in `completed.md`). Correct under load, but saves p95 ~2 s and pages ~4.5 s, and Auth refuses a burst of more than ~30 sign-ins from one address | Move Vercel functions to `bom1` (Mumbai, beside the database) and re-run with sign-ins spread over a minute; tell the Client students log in before a timed mock |
+| High | 100 concurrent users: measured 2026-10-18 with functions in Mumbai (*Load test, 100 concurrent* in `completed.md`). 100/100 sat with 0 errors and every answer and score correct; fast at 10, saves fine at 50, but at 100 saves p95 1.9 s and pages 9.8 s because the Free-plan database saturates | Supabase Pro, then re-run; if still slow, the next compute size and/or slimmer start, result and submit paths. Students should log in before a timed mock |
 | High | Google Docs image extraction guarantee is broader than the API's reliable cases | Test real Cospire documents early and preserve a correction workflow |
 | Medium | Agreement kickoff prerequisites and week-four content deadline are ambiguous | Record the exact written Kickoff Date and dependency deadlines |
 
@@ -285,8 +285,8 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Speed:** move the Vercel functions to `bom1` (Mumbai) and re-run the load
-   test with sign-ins spread over a minute (*Load test, 100 concurrent*).
+3. **Speed at 100 concurrent:** functions now run in `bom1`; the database is the
+   limit on Free. Re-run `load-100.mjs` after Supabase Pro.
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 
