@@ -333,7 +333,9 @@ try {
   if (me) throw me;
   made.mocks.push(mockId);
   // New mocks start as drafts (D41) and students cannot see a draft.
-  const { error: publishError } = await service.from("mocks").update({ status: "published" }).eq("id", mockId);
+  // Through the admin session, as setMockStatusAction does: the server key may not
+  // call the private check functions the mocks row is guarded by.
+  const { error: publishError } = await admin.client.from("mocks").update({ status: "published" }).eq("id", mockId);
   if (publishError) throw publishError;
 
   const { error: grantError } = await service
