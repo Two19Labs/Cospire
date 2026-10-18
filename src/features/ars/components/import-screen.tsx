@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import { CopyButton } from "@/shared/ui";
+
 import {
   createImportedProcessAction,
   previewImportAction,
@@ -21,10 +23,8 @@ import { roundSubmissionModeLabels, formatRoundDay } from "../round-input";
 // natively in that case and the returned state renders from the server's
 // response, which is the same progressive-enhancement path the login form uses.
 //
-// The prompt sits in a read-only textarea rather than behind a copy button, so
-// that it is selectable and copyable with or without scripting. A button that
-// silently does nothing for a no-JavaScript admin would be worse than no
-// button, and this is one paste a day, not a hot path.
+// The prompt sits in a read-only textarea, so it is selectable and copyable with
+// or without scripting; the copy button beside it is the convenience on top.
 
 interface ImportScreenProps {
   courseId: number;
@@ -127,8 +127,11 @@ export function ImportScreen({
           rows={10}
           value={prompt}
         />
+        <div className="toolbar">
+          <CopyButton label="Copy the prompt" text={prompt} />
+        </div>
         <p className="muted">
-          Select all of the box above and copy it. The model&apos;s answer will be a
+          Copy the prompt with the button (or select the box and copy it). The model&apos;s answer will be a
           block of JSON — copy the whole of it, including the curly braces.
         </p>
       </section>
