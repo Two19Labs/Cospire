@@ -86,6 +86,25 @@ function isClean(row: ImportRow, sections: QuestionSection[], orgId: number): bo
   );
 }
 
+// One line on why a pending row cannot be approved in bulk, for the summary at
+// the top. Null for a row that needs no decision.
+function attentionReason(row: ImportRow, sections: QuestionSection[], orgId: number): string | null {
+  if (row.status !== "pending_review" || isClean(row, sections, orgId)) return null;
+  if (!row.parsed) return "Not a question the bank can hold. Reject it.";
+  const verdict = row.parsed.duplicate;
+  if (verdict?.kind === "possible") {
+    const first = verdict.candidates[0];
+    if (!first) return "Possibly the same as a question you already have.";
+    const percent = `${Math.round(first.similarity * 100)}% similar`;
+    return first.source === "bank"
+      ? `Might be the same as ${formatQuestionId(first.questionId)} in the bank (${percent}).`
+      : `Might repeat question ${first.position + 1} of this paper (${percent}).`;
+  }
+  const problems = liveProblems(row, sections, orgId);
+  if (problems.length === 0) return null;
+  return problems.length === 1 ? problems[0] : `${problems[0]} (and ${problems.length - 1} more)`;
+}
+
 function LinkButton({ batchId, importId, label, questionId }: { batchId: string; importId: number; label: string; questionId: number }) {
   return (
     <form action={linkImportAction}>
@@ -189,6 +208,7 @@ export function ImportReviewScreen({
   bankTexts,
   batch,
   batchId,
+  expanded,
   imageUrls,
   notice,
   orgId,
@@ -201,6 +221,9 @@ export function ImportReviewScreen({
   bankTexts: Record<number, string>;
   batch: ImportBatch;
   batchId: string;
+  // Whether the one-by-one list starts open: it does once the admin is working
+  // through it (a page chosen, or back from approving or rejecting one).
+  expanded: boolean;
   // Signed URLs for the figures taken out of a Word upload, by object path.
   imageUrls: Record<string, string>;
   notice: string | null;
@@ -227,6 +250,15 @@ export function ImportReviewScreen({
   const questionIdAt = (position: number) =>
     batch.rows.find((row) => row.position === position && row.status === "approved")?.questionId ?? null;
 
+  // The summary's "needs your attention" list, each linking to its question on
+  // the right page of the one-by-one list.
+  const attention = batch.rows.flatMap((row, index) => {
+    const reason = attentionReason(row, sections, orgId);
+    if (reason === null) return [];
+    const onPage = Math.floor(index / importReviewPageSize) + 1;
+    return [{ href: `/admin/questions/import/${batchId}?page=${onPage}#import-${row.id}`, id: row.id, number: row.position + 1, reason }];
+  });
+
   const pageCount = Math.max(1, Math.ceil(batch.rows.length / importReviewPageSize));
   const current = Math.min(page, pageCount);
   const rows = batch.rows.slice((current - 1) * importReviewPageSize, current * importReviewPageSize);
@@ -242,8 +274,9 @@ export function ImportReviewScreen({
           <div>
             <h2>{batch.sourceRef ?? "Untitled import"}</h2>
             <p className="muted">
-              Imported {batch.createdAt.slice(0, 10)} · {counts.pending_review} to review · {counts.approved} approved ·{" "}
-              {counts.rejected} rejected
+              Imported {batch.createdAt.slice(0, 10)} · {batch.rows.length} {batch.rows.length === 1 ? "question" : "questions"} ·{" "}
+              {cleanCount} ready to approve · {attention.length} {attention.length === 1 ? "needs" : "need"} you ·{" "}
+              {counts.approved} approved · {counts.rejected} rejected
             </p>
           </div>
           {cleanCount > 0 ? (
@@ -262,6 +295,22 @@ export function ImportReviewScreen({
           ) : null}
         </div>
         {notice && notices[notice] ? <p className="notice notice--success">{notices[notice]}</p> : null}
+        {attention.length > 0 ? (
+          <div className="notice notice--warn">
+            <p>
+              <strong>Needs your attention</strong>
+            </p>
+            <ul>
+              {attention.map((item) => (
+                <li key={item.id}>
+                  <Link href={item.href}>Question {item.number}</Link>: {item.reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : counts.pending_review > 0 ? (
+          <p className="notice notice--success">Nothing needs a decision: approve the ready questions in one go.</p>
+        ) : null}
         <p className="muted">
           Check each question against the document, correct anything the model got
           wrong, add any figure it flagged, then approve. A figure taken out of a
@@ -286,6 +335,10 @@ export function ImportReviewScreen({
         </section>
       ) : null}
 
+      <details className="builder__disclosure" open={expanded}>
+        <summary>
+          Review all {batch.rows.length} {batch.rows.length === 1 ? "question" : "questions"} one by one
+        </summary>
       {rows.map((row) => {
         const parsed = row.parsed;
         const heading = `${row.position + 1}. ${parsed ? questionTypeLabels[parsed.type] : "Unreadable entry"}${
@@ -383,6 +436,7 @@ export function ImportReviewScreen({
           )}
         </nav>
       ) : null}
+      </details>
     </>
   );
 }

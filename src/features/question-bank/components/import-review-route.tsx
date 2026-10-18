@@ -129,6 +129,7 @@ export async function ImportReviewRoute({
       bankTexts={bankTexts}
       batch={batch}
       batchId={batchId}
+      expanded={notice !== null || page !== undefined}
       imageUrls={imageUrls}
       notice={notice}
       orgId={orgId}
