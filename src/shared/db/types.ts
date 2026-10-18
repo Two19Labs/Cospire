@@ -913,6 +913,60 @@ export type Database = {
           },
         ]
       }
+      deletion_cleanups: {
+        Row: {
+          created_at: string
+          id: number
+          last_error: string | null
+          org_id: number
+          requested_by: string | null
+          resource_label: string
+          resource_type: string
+          status: string
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          last_error?: string | null
+          org_id: number
+          requested_by?: string | null
+          resource_label: string
+          resource_type: string
+          status?: string
+          target: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          last_error?: string | null
+          org_id?: number
+          requested_by?: string | null
+          resource_label?: string
+          resource_type?: string
+          status?: string
+          target?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_cleanups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deletion_cleanups_requested_by_fk"
+            columns: ["requested_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string
@@ -1835,6 +1889,14 @@ export type Database = {
           question_type: string
           sort_order: number
         }[]
+      }
+      content_delete_preview: {
+        Args: { p_id: number; p_type: string }
+        Returns: Json
+      }
+      delete_content: {
+        Args: { p_confirm_name: string; p_id: number; p_type: string }
+        Returns: Json
       }
       find_question_matches: {
         Args: { p_bodies: string[]; p_threshold?: number }

@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-17 (Asia/Calcutta)
+Last updated: 2026-10-18 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -24,7 +24,7 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-17
+## Status, 2026-10-18
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
 - **UI refresh slice 1** (`feat/ui-refresh`): Inter, the original navy and cream
@@ -71,16 +71,20 @@ credentials, student data or anyone's personal data here.
   Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
   against the hosted database; **nothing has ever played** (no Widevine CDM
   headless). See *Video, Phase 2* in `docs/context/completed.md`.
-- **Delete for programmes, documents, mocks and videos** (D42, D54): three
+- **A mock has a draft state** (D41, #89): invisible to students in the
+  database, published by an admin, and a sat mock cannot go back. Migration
+  `20261017100000` applied 2026-10-18; existing mocks published, new ones start
+  as drafts. *A mock has a draft state, 2026-10-17* in `completed.md`.
+- **Delete for programmes, documents, mocks and videos** (D42, D54, #90): three
   deliberate steps ending in the name typed out, checked on the server and again
   in the database; one `SECURITY DEFINER` transaction, with the storage object or
   VdoCipher video removed after the commit against a `deletion_cleanups` row, so
-  a failure there is visible and retryable. Migration `20261017110000` is
-  **written, not applied**. 53/53 on `scripts/verify/delete.sql`, spliced and
-  rolled back; the screens have never run. *Delete, 2026-10-17* in
-  `completed.md`.
-- **Not built:** bulk CSV creation (SMTP), content migration and handover. A
-  mock draft state (D41) is on `feat/mock-drafts`, pull request #89.
+  a failure there is visible and retryable. Migration `20261017110000` applied
+  2026-10-18 (a call with no admin session is refused). 53/53 on
+  `scripts/verify/delete.sql`; the screens have never been clicked through.
+  *Delete, 2026-10-17* in `completed.md`.
+- **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
+  custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home, and **video playback** -- no video
@@ -173,13 +177,10 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| ShareLane worker (Claude) | `feat/mock-drafts` | D41, the mock draft state. Pull request #89 raised; needs its migration applied and a review | `supabase/migrations/20261017100000_mock_drafts.sql`, `src/features/question-bank/**` | Review | 2026-10-17 |
-| ShareLane worker (Claude) | `feat/delete` | D42 and D54, delete for programmes, documents, mocks and videos | `supabase/migrations/20261017110000_delete.sql`, `src/features/delete/**`, `src/app/admin/delete/**`, `scripts/verify/delete.sql` | Review | 2026-10-17 |
 
-Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
-#86 (video), #87 (mock in its own window), #81 (abandoned attempts), #84
-(essays); on 2026-10-18 #92 (load test), #91 (subtler watermark), #89 (mock
-drafts). Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
+No feature branch is open. Merged 2026-10-16: #80, #85, #86, #87, #81, #84;
+2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
+Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -215,12 +216,6 @@ Headless Chrome covered everything else; these need a person. **The exam**
 in its own window. **Video** (#86): nothing has played, because headless Chrome
 has no Widevine CDM; watch one granted video, desktop then a phone, and check the
 watermark carries your own name. **Essays** (#84): author, sit and mark one.
-
-### Phase 1, one step still unbuilt
-
-Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
-The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
-not a gate item.
 
 ## External blockers and client-owned steps
 
@@ -290,8 +285,8 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Apply `20261017100000_mock_drafts.sql` and `20261017110000_delete.sql`**
-   (in that order) and run `npm run db:types` before those pull requests merge.
+3. **Speed:** move the Vercel functions to `bom1` (Mumbai) and re-run the load
+   test with sign-ins spread over a minute (*Load test, 100 concurrent*).
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 
