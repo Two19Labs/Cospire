@@ -2305,3 +2305,102 @@ best-of-two choice, the per-section grouping, the ceiling, an unanswered essay,
 reading a typed answer, the tally's treatment of pending and marked essays, and
 the importer -- and by nothing else. Three existing tests had used `"essay"` as
 their stand-in for an *invalid* question type and now use `"sonnet"`.
+
+## Load test, 100 concurrent, 2026-10-17
+
+Clause 3.1 commits to 100 concurrent users and the risk table says that promise
+"lacks measurable performance criteria". This branch fixes the criteria and
+measures them once, against the deployed application on the plans in use today
+(**Vercel Hobby, Supabase Free**), then closes the item.
+
+No `src/` change. One new harness, `scripts/verify/load-100.mjs`, plus the
+results in `docs/context/verification-log.md`, the write-up in
+`docs/context/completed.md` and the risk row in `CONTEXT.md`.
+
+## The workload
+
+100 students sit the **same** mock at the same time, each one driven over HTTP
+the way a browser drives it: sign in, the mock list, the mock, Start, answers
+saved by `saveResponseAction` over the `Next-Action` protocol while moves
+between questions stay client-side, one reload mid-paper, then submit and the
+result page.
+
+- Ramp 10 → 50 → 100, each step a full sitting of a 3-minute paper, at least two
+  minutes quiet between steps. Stops after any step whose error rate is above
+  10% rather than pressing on.
+- Half submit themselves. The other half let the clock run out, split again
+  between the browser's own time-up submit and going quiet so `pg_cron`'s
+  `close-expired-attempts` closes them.
+- Five questions, three MCQ and two numerical, three marks each, one penalty
+  mark on the MCQ types only. Answers are deterministic per student, so the
+  expected score is arithmetic rather than a read-back.
+
+## Thresholds, and what they are measured against
+
+| Measure | Pass |
+|---|---|
+| Error rate (5xx, timeouts, refused actions) | under 1% |
+| Answer save, p95 | under 1 s |
+| Page load, p95 | under 2 s |
+| Lost answers | 0 — every save the client saw succeed is in `attempt_responses` |
+| Scoring | every attempt submitted and scored, each score equal to the answers sent |
+| Timer | a save after the clock plus its 30 s grace is refused, under load |
+
+## Traps this harness knows
+
+- **A submit must be posted from a freshly fetched page.** The no-JavaScript
+  question form carries the question's own answer field, so replaying a stale
+  copy of the page posts it empty and *clears* the answer already saved. The
+  first draft lost question 1 for every self-submitting student and read as a
+  lost-answer defect in the application; it was the harness.
+- **Scores are expected from the answers the client saw accepted**, not from
+  what the script meant to send, with a separate check that every intended
+  answer was accepted. Otherwise a dropped save shows up as a wrong score
+  instead of a lost answer.
+- **`saveResponseAction`'s id only appears in the chunks the exam screen
+  serves**, so one extra student starts one attempt to read the id the deployed
+  build is using; that attempt is deleted before the ramp begins.
+- **A sample row cannot be reclassified by indexing `samples`**: the database
+  probe appends to the same array from a parallel loop, so `record()` hands back
+  the row.
+- **`db-probe`** is a trivial query against Supabase every two seconds during
+  the step, which is the only way from outside Vercel to tell a slow function
+  from a busy database.
+
+### Results, run `load1792256950698`, 2026-10-17, against `https://cospire-roan.vercel.app`
+
+Vercel Hobby (functions served from `iad1`, Washington) and Supabase Free
+(Mumbai). Teardown printed "counts back to baseline".
+
+| Step | Sat at once | Error rate | Save p95 | Page p95 | Correctness |
+|---|---|---|---|---|---|
+| 10 | 10 | 0.00% | 1,817 ms | 2,862 ms | all pass |
+| 50 | 30 | 1.76% | 1,350 ms | 3,513 ms | all pass |
+| 100 | 30 | 6.10% | 1,955 ms | 4,535 ms | all pass |
+
+**Correctness passed at every step:** 0 lost answers (48, 144, 145 confirmed
+saves all present), every attempt submitted and scored, every score equal to
+the answers sent, a save after the clock plus grace refused under load, and the
+`pg_cron` sweep closing every abandoned attempt.
+
+**Speed failed at every step, and not because of load:** 10 students already
+saw a 1.8 s save p95. The functions run in `iad1` while the database is in
+Mumbai, so each Server Action crosses the world several times (`db-probe` from
+the client to Supabase: p50 95 ms). Next: set the Vercel function region to
+`bom1` and re-run.
+
+**Every error was a Supabase Auth sign-in refusal** ("Request rate limit
+reached", 20 at step 2, 70 at step 3), so steps 2 and 3 only seated 30 students.
+The hosted setting already matches `config.toml` (`sign_in_sign_ups = 150`,
+`supabase config push` reports auth up to date); the refusals look like a burst
+cap of about 30 simultaneous sign-ins from one address, then a slow refill
+(inferred from the numbers, not confirmed in Supabase's documentation). The
+harness fires all sign-ins in the same second from one machine; a real room
+signs in over minutes. Next run signs students in over about a minute first.
+Advice for the Client meanwhile: students log in a few minutes before a timed
+mock starts.
+
+An earlier run (`load1792243651396`) was killed mid-ramp when the worker's
+session ended and left 102 accounts behind; they were removed with a one-off
+script mirroring the harness's teardown, and the database returned to its
+baseline (profiles 7, questions 10, mocks 1).

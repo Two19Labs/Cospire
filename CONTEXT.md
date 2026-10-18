@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-16 (Asia/Calcutta)
+Last updated: 2026-10-18 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -249,7 +249,7 @@ writing at the time rather than absorbed silently.
 | High | Vercel Cron can overlap or deliver more than once | Durable job records, locks, and idempotency are required |
 | High | Migration volume and cleanup responsibility are not capped | Obtain a content inventory and written acceptance boundary |
 | High | Week six is overloaded with ARS, migration, QA, deployment, docs, and training | Pull prototypes and integration work earlier; reserve week six for closure |
-| High | "100 concurrent users" lacks measurable performance criteria | Define workload, latency, error-rate, and duration thresholds |
+| High | 100 concurrent users: measured 2026-10-17 (*Load test, 100 concurrent* in `completed.md`). Correct under load, but saves p95 ~2 s and pages ~4.5 s, and Auth refuses a burst of more than ~30 sign-ins from one address | Move Vercel functions to `bom1` (Mumbai, beside the database) and re-run with sign-ins spread over a minute; tell the Client students log in before a timed mock |
 | High | Google Docs image extraction guarantee is broader than the API's reliable cases | Test real Cospire documents early and preserve a correction workflow |
 | Medium | Agreement kickoff prerequisites and week-four content deadline are ambiguous | Record the exact written Kickoff Date and dependency deadlines |
 
