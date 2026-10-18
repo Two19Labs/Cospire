@@ -368,7 +368,7 @@ try {
   // questions happen client-side, one reload mid-paper, submit, the result.
   async function sit(student, role) {
     const signed = Date.now();
-    try {
+    if (!student.cookie) try {
       const session = await signIn(student.email);
       student.cookie = session.cookie;
       record("signin", signed, 200, true);
@@ -429,6 +429,27 @@ try {
       await post("submit", attemptPath, student, formWith(confirmPage.body, 'id="submit-form"'), []);
     }
     return { attemptId, confirmed, deadline, role, student };
+  }
+
+  // ------------------------------------------------------------- sign-ins first
+  // A room signs in over minutes, not in one second: Supabase Auth refuses a
+  // burst of more than about 30 sign-ins from one address (measured 2026-10-17),
+  // and this machine is one address. So every student signs in once, spaced,
+  // before the ramp, and each sitting reuses that session. SIGNIN_SPACING_MS=0
+  // restores the old same-second burst.
+  const spacing = Number(process.env.SIGNIN_SPACING_MS ?? 2200);
+  if (spacing > 0) {
+    console.log(`signing in ${POPULATION} students, ${spacing} ms apart...`);
+    let refused = 0;
+    for (const student of students.slice(0, POPULATION)) {
+      try {
+        student.cookie = (await signIn(student.email)).cookie;
+      } catch {
+        refused += 1;
+      }
+      await sleep(spacing);
+    }
+    console.log(`signed in ${POPULATION - refused} of ${POPULATION}${refused ? `; ${refused} refused, they sign in during their sitting` : ""}`);
   }
 
   // ------------------------------------------------------------------ the ramp
