@@ -112,14 +112,24 @@ export async function ImportReviewRoute({
   const [buildOptions, linkedRound] = await Promise.all([getBuildMockOptions(paperQuestionIds(batch.rows)), findImportRound(batchId)]);
   const pending = batch.rows.filter((row) => row.status === "pending_review").length;
   const defaultMarks = batch.rows.find((row) => row.parsed && row.parsed.type !== "di_stimulus" && row.parsed.marks)?.parsed?.marks ?? "";
+  // Every approve, reject and fix redirects back here without `?mock=1`, so the
+  // build step cannot rely on the URL alone: once the review is finished it
+  // opens by itself and the top of the page points down to it.
+  const reviewDone = pending === 0 && buildOptions.sections.some((section) => section.questionCount > 0);
 
   return (
     <>
+    {reviewDone ? (
+      <p className="notice notice--success" role="status">
+        Every question is decided. <a href="#build">Build the mock from this paper</a> at the bottom of the page.
+      </p>
+    ) : null}
     <MissingSections batchId={batchId} mock={mock} names={missingSections} />
     <ImportReviewScreen
       bankTexts={bankTexts}
       batch={batch}
       batchId={batchId}
+      expanded={notice !== null || page !== undefined}
       imageUrls={imageUrls}
       notice={notice}
       orgId={orgId}
@@ -133,7 +143,7 @@ export async function ImportReviewRoute({
       defaultMarks={defaultMarks}
       error={buildError}
       linkedRound={linkedRound}
-      open={mock || linkedRound !== null}
+      open={mock || linkedRound !== null || reviewDone}
       options={buildOptions}
       pending={pending}
       roundRefused={roundRefused}
