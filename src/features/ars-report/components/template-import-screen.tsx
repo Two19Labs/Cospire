@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import { CopyButton } from "@/shared/ui";
+
 import { createImportedTemplateAction, previewTemplateImportAction } from "../actions/template-import-actions";
 import { initialTemplateImportState } from "../template-import-state";
 
@@ -11,7 +13,7 @@ export function TemplateImportScreen({ courses, prompt }: { courses: { id: numbe
   const problems = createState.problems.length ? createState.problems : state.problems;
   const template = state.template;
   return <>
-    <section className="panel"><h2>Step 1 — copy this prompt</h2><p className="muted">Paste it into your AI model, attach the report document, then copy the complete JSON answer.</p><textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={12} value={prompt} /></section>
+    <section className="panel"><h2>Step 1 — copy this prompt</h2><p className="muted">Paste it into your AI model, attach the report document, then copy the complete JSON answer.</p><textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={12} value={prompt} /><div className="toolbar"><CopyButton label="Copy the prompt" text={prompt} /></div></section>
     <form action={preview} className="panel stack-form"><h2>Step 2 — paste the model’s answer</h2><textarea aria-label="The model’s JSON answer" className="input input--code" defaultValue={state.pasted || createState.pasted} name="pasted" required rows={12} /><button className="button button--primary" disabled={reading} type="submit">{reading ? "Reading…" : "Preview template"}</button></form>
     {problems.length ? <section className="panel" role="alert"><h2>That could not be used</h2><ul className="form-error">{problems.map((problem) => <li key={problem}>{problem}</li>)}</ul><p className="muted">Nothing has been saved.</p></section> : null}
     {template ? <>

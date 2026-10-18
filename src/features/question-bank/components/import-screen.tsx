@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
-import { SubmitButton } from "@/shared/ui";
+import { CopyButton, SubmitButton } from "@/shared/ui";
 
 import { askGeminiAction, previewQuestionImportAction, stageQuestionImportAction } from "../actions/import-actions";
 import type { ImportedItem } from "../import-spec";
@@ -199,14 +199,25 @@ export function QuestionImportScreen({
           : "Copy the prompt into any model, attach or paste the paper underneath it, then paste the whole answer below. Charts come back as a note; paste each picture in on the review screen."}
       </p>
       <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={8} value={prompt} />
+      <div className="toolbar">
+        <CopyButton label="Copy the prompt" text={prompt} />
+      </div>
       {paper ? (
-        <label className="field">
-          <span className="field__label">The document&apos;s text, with figure markers</span>
-          <textarea className="input input--area input--code" readOnly rows={8} value={paper.text} />
-          {attached > 0 ? (
-            <span className="field__hint">Keep the [[figure:N]] markers exactly as they are. Each is matched back to its picture.</span>
-          ) : null}
-        </label>
+        <>
+          <label className="field">
+            <span className="field__label">The document&apos;s text, with figure markers</span>
+            <textarea className="input input--area input--code" readOnly rows={8} value={paper.text} />
+            {attached > 0 ? (
+              <span className="field__hint">Keep the [[figure:N]] markers exactly as they are. Each is matched back to its picture.</span>
+            ) : null}
+          </label>
+          <div className="toolbar">
+            <CopyButton label="Copy the text" text={paper.text} />
+            <CopyButton label="Copy prompt + text together" text={`${prompt}
+
+${paper.text}`} variant="primary" />
+          </div>
+        </>
       ) : null}
       <form action={previewAction} className="stack-form" onSubmit={() => setSource("paste")}>
         <FigureInputs figurePaths={figurePaths} />

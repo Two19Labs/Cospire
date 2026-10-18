@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
-import { SubmitButton } from "@/shared/ui";
+import { CopyButton, SubmitButton } from "@/shared/ui";
 
 import { importMockDocumentAction, previewMockDocumentAction } from "../actions/mock-document-actions";
 import { mockDocumentTemplate } from "../mock-document";
@@ -97,6 +97,9 @@ export function MockImportScreen() {
           rows={14}
           value={mockDocumentTemplate}
         />
+        <div className="toolbar">
+          <CopyButton label="Copy the template" text={mockDocumentTemplate} />
+        </div>
         <p className="muted">
           One section with no minutes after it gives the mock an overall timer
           only. Otherwise every section needs its minutes and they must add up to
