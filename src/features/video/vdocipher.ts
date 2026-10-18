@@ -117,6 +117,18 @@ export async function fetchVideoInfo(vdocipherId: string): Promise<VideoInfo> {
   };
 }
 
+// Removes the video from VdoCipher itself (D42). Called only after the database
+// half of the delete has committed, and the `deletion_cleanups` row it leaves
+// behind is what makes a failure here visible instead of silent.
+// `DELETE /videos?videos=<id>`, the call `video-upload-live.mjs` already uses.
+export async function deleteVideo(vdocipherId: string): Promise<void> {
+  if (!isVdocipherId(vdocipherId)) throw new Error("Not a VdoCipher video id.");
+  await call(`${apiBase}/videos?videos=${vdocipherId}`, {
+    headers: headers(secret()),
+    method: "DELETE",
+  });
+}
+
 // Upload credentials: the browser then posts the file straight to VdoCipher's
 // storage with `clientPayload`, so no video byte passes through our server
 // (manual §8).

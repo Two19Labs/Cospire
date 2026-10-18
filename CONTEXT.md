@@ -24,14 +24,13 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-16
+## Status, 2026-10-18
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
-- **UI refresh slice 1** (`feat/ui-refresh`): Inter for body and headings and
-  the original navy and cream colours, both the Client's choice on 2026-10-12,
-  in the AfterBoards card shape; typed names and titles normalised on save.
-  See *UI refresh* under Pending and the 2026-10-10 rows of the Completed log in
-  `docs/context/completed.md`.
+- **UI refresh slice 1** (`feat/ui-refresh`): Inter, the original navy and cream
+  colours (the Client's choice, 2026-10-12) in the AfterBoards card shape; typed
+  names normalised on save. See *UI refresh* under Pending and the 2026-10-10
+  rows of the Completed log in `docs/context/completed.md`.
 - **Question import reads PDFs** beside Word files, pictures included (best effort, Annexure B): *PDF upload, 2026-10-12* in `docs/context/completed.md`.
 - **Built and verified (local production builds against the hosted
   database):**
@@ -67,26 +66,32 @@ credentials, student data or anyone's personal data here.
   the mock, marked by an admin or the assigned mentor in `essay_marks` (forced
   RLS, no student write), pending until marked. No essay has yet been authored,
   sat and marked end to end.
-- **Video is built and live-verified** (PR #86): library, server-side OTP with
-  a per-viewer watermark, `video` curriculum items, upload from the platform,
-  video `item_progress`. Migration `20261013120000` is applied.
-  17/17 and 4/4 on the two `video-*` verify scripts against the hosted database;
-  **nothing has ever played** (no Widevine CDM headless). See *Video, Phase 2*
-  in `docs/context/completed.md`.
-- **A mock has a draft state** (D41): invisible to students in the database,
-  published by an admin, and a sat mock cannot go back (#89). Migration
-  `20261017100000` applied 2026-10-18; existing mocks are published, new ones
-  start as drafts. 28/28 against the hosted database; never clicked through. *A mock has a draft state, 2026-10-17* in `completed.md`.
-- **Not built:** bulk CSV creation (SMTP), delete for programmes, documents,
-  mocks and videos (D42, D54), content migration and handover.
+- **Video is built and live-verified** (#86): library, server-side OTP with a
+  per-viewer watermark, `video` curriculum items, upload, video `item_progress`.
+  Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
+  against the hosted database; **nothing has ever played** (no Widevine CDM
+  headless). See *Video, Phase 2* in `docs/context/completed.md`.
+- **A mock has a draft state** (D41, #89): invisible to students in the
+  database, published by an admin, and a sat mock cannot go back. Migration
+  `20261017100000` applied 2026-10-18; existing mocks published, new ones start
+  as drafts. *A mock has a draft state, 2026-10-17* in `completed.md`.
+- **Delete for programmes, documents, mocks and videos** (D42, D54, #90): three
+  deliberate steps ending in the name typed out, checked on the server and again
+  in the database; one `SECURITY DEFINER` transaction, with the storage object or
+  VdoCipher video removed after the commit against a `deletion_cleanups` row, so
+  a failure there is visible and retryable. Migration `20261017110000` applied
+  2026-10-18 (a call with no admin session is refused). 53/53 on
+  `scripts/verify/delete.sql`; the screens have never been clicked through.
+  *Delete, 2026-10-17* in `completed.md`.
+- **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
+  custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home, and **video playback** -- no video
   frame has ever decoded here, so the watermark has not been seen on screen.
 - **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
-  (overdue: ARS uploads are
-  live on Free's 1 GB with no backups), Vercel Pro, SMTP, Gemini billing, their
-  content, and per-question metadata (a meeting, D39).
+  (overdue: ARS uploads are live on Free's 1 GB with no backups), Vercel Pro,
+  SMTP, Gemini billing, their content, per-question metadata (a meeting, D39).
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -173,10 +178,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-No feature branch is open. Merged on 2026-10-16: #80 (C2), #85 (UI slice 2),
-#86 (video), #87 (mock in its own window), #81 (abandoned attempts), #84
-(essays); on 2026-10-18 #92 (load test), #91 (subtler watermark), #89 (mock
-drafts). Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
+No feature branch is open. Merged 2026-10-16: #80, #85, #86, #87, #81, #84;
+2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
+Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -212,12 +216,6 @@ Headless Chrome covered everything else; these need a person. **The exam**
 in its own window. **Video** (#86): nothing has played, because headless Chrome
 has no Widevine CDM; watch one granted video, desktop then a phone, and check the
 watermark carries your own name. **Essays** (#84): author, sit and mark one.
-
-### Phase 1, one step still unbuilt
-
-Step 5, **bulk creation from a spreadsheet**, CSV only. Blocked on custom SMTP.
-The exit gate closed without it on 2026-09-08; this is the remainder of the phase,
-not a gate item.
 
 ## External blockers and client-owned steps
 
@@ -287,7 +285,8 @@ content call, October 2026* in `docs/context/meetings.md`):
    2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
    off the deleted thing, guards against orphans, and takes two to three
    confirming steps.
-3. **Delete** (D42, D54) is PR #90; its migration is applied when it merges.
+3. **Speed:** move the Vercel functions to `bom1` (Mumbai) and re-run the load
+   test with sign-ins spread over a minute (*Load test, 100 concurrent*).
 4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
    content.
 
