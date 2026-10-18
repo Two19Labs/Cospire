@@ -6,7 +6,8 @@ Records of calls with the Client and the decisions they produced, newest first. 
 
 The owner with the Client. **The exact date of the call was not given**; it
 took place shortly before 2026-10-12, when the owner's summary was recorded
-here. No transcript is in the repository yet; the Client is to send one. The
+here. The Client's transcript arrived on 2026-10-18 and is at
+`../Context/2026-10 design and content call - transcript.md`, outside git. The
 decisions are D25–D32 in `docs/decisions/2026-10-12-decision-statement.md`
 (untracked).
 

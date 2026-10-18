@@ -234,11 +234,10 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 | **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
 | **The second engineer's GitHub handle** | Making CODEOWNERS actually enforce anything | Two19 Labs |
-| **The written Kickoff Date** | Nothing directly, but the week-four content deadline hangs off it and it has never been confirmed | Cospire |
 
-The delivery plan also assumes **feedback within two working days**. Where that
-slips the delivery date moves by the same amount, and it must be flagged in
-writing at the time rather than absorbed silently.
+No written Kickoff Date is needed and feedback turnaround is not chased (owner,
+2026-10-18, D56): the build is up to date and delays have been on the Client's
+side.
 
 ## Findings and risks to preserve
 
@@ -253,7 +252,6 @@ writing at the time rather than absorbed silently.
 | High | Week six is overloaded with ARS, migration, QA, deployment, docs, and training | Pull prototypes and integration work earlier; reserve week six for closure |
 | High | 100 concurrent users: measured 2026-10-18 with functions in Mumbai (*Load test, 100 concurrent* in `completed.md`). 100/100 sat with 0 errors and every answer and score correct; fast at 10, saves fine at 50, but at 100 saves p95 1.9 s and pages 9.8 s because the Free-plan database saturates | Supabase Pro, then re-run; if still slow, the next compute size and/or slimmer start, result and submit paths. Students should log in before a timed mock |
 | High | Google Docs image extraction guarantee is broader than the API's reliable cases | Test real Cospire documents early and preserve a correction workflow |
-| Medium | Agreement kickoff prerequisites and week-four content deadline are ambiguous | Record the exact written Kickoff Date and dependency deadlines |
 
 ## Next recommended action
 
