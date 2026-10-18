@@ -99,12 +99,6 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
         </div>
       )}
 
-      <p className="notice">
-        Keep learning content — aptitude preparation, video curriculums — under{" "}
-        <Link href="/admin/courses">Programmes</Link>. ARS brings together
-        applications, written answers, uploads and off-platform assessments.
-      </p>
-
       <section className="panel panel--narrow" id="new-process">
         <div className="panel__header">
           <div>

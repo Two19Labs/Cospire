@@ -59,18 +59,6 @@ export function CoursesScreen({
       profile={profile}
       title="Programmes"
     >
-      {/*
-        What this section is FOR, said before what it currently holds.
-
-        Programmes and ARS processes were the same `courses` row until
-        2026-09-20, so this list showed admission processes and the ARS list
-        showed learning content. `kind` separates them, and this line says what
-        belongs here now that it can be answered.
-      */}
-      <p className="notice">
-        Teachable content a student works through. Admission readiness processes
-        are managed separately, under <Link href="/admin/ars">ARS</Link>.
-      </p>
 
       {error ? (
         <p className="notice notice--error" role="alert">

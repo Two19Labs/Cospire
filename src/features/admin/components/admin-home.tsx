@@ -164,22 +164,6 @@ export function AdminHome({ profile }: { profile: Profile }) {
             ))}
           </section>
 
-          <section className="guide">
-            <p className="eyebrow">A useful starting point</p>
-            <h2>Setting up a new batch</h2>
-            <p>Three steps, in this order.</p>
-            <ol className="guide__steps">
-              <li>
-                <Link href="/admin/courses">Create a programme</Link>
-              </li>
-              <li>
-                <Link href="/admin/users/new">Add your students</Link>
-              </li>
-              <li>
-                <Link href="/admin/courses">Open the programme and grant them access</Link>
-              </li>
-            </ol>
-          </section>
         </aside>
       </div>
     </RoleShell>
