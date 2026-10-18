@@ -2402,6 +2402,31 @@ signs in over minutes. Next run signs students in over about a minute first.
 Advice for the Client meanwhile: students log in a few minutes before a timed
 mock starts.
 
+### Re-run, 2026-10-18, functions in `bom1` (#93), sign-ins spaced (run `load1792318131987` series)
+
+All 100 students signed in (2.2 s apart, before the ramp) and every sitting
+reached an attempt.
+
+| Step | Error rate | Save p95 | Page p95 | Start p95 | Submit p95 | db-probe p95 | Correctness |
+|---|---|---|---|---|---|---|---|
+| 10 | 0.00% | **350 ms** | **1,218 ms** | 1,008 ms | 1,725 ms | 153 ms | all pass |
+| 50 | 0.00% | **688 ms** | 4,842 ms | 3,436 ms | 6,738 ms | 402 ms | all pass |
+| 100 | 0.00% | 1,930 ms | 9,845 ms | 8,444 ms | 14,529 ms | 1,215 ms | all pass |
+
+**Correctness passed completely at 100**: 0 errors, 480 confirmed saves all
+present, 100/100 scored and every score equal to the answers sent, late saves
+refused, the sweep closed all 25 abandoned attempts.
+
+**Speed:** moving the functions to Mumbai made 10 students 3-5x faster and
+inside every threshold. At 50 and 100 the **database** is the limit: the
+trivial `db-probe` query rose from 153 ms to 1,215 ms p95, which is the Free
+plan's shared compute saturating, not the application. Next: Supabase Pro (owed
+anyway for backups and storage), then re-run; if 100 is still slow, the next
+compute size and/or slimming the start, result and submit paths.
+
+Teardown removed every test row; `activity_log` read one above baseline because
+a real admin was active on the site during the run (10:20 UTC), not test data.
+
 An earlier run (`load1792243651396`) was killed mid-ramp when the worker's
 session ended and left 102 accounts behind; they were removed with a one-off
 script mirroring the harness's teardown, and the database returned to its
