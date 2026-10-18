@@ -332,6 +332,9 @@ try {
   });
   if (me) throw me;
   made.mocks.push(mockId);
+  // New mocks start as drafts (D41) and students cannot see a draft.
+  const { error: publishError } = await service.from("mocks").update({ status: "published" }).eq("id", mockId);
+  if (publishError) throw publishError;
 
   const { error: grantError } = await service
     .from("content_access")
