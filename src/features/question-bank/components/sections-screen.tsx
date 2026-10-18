@@ -98,11 +98,6 @@ export function SectionsScreen({
         )}
       </section>
 
-      <p className="notice">
-        Sections are shared by the whole organisation. A section containing
-        questions cannot be removed.
-      </p>
-
       <section className="panel panel--narrow">
         <div className="panel__header">
           <h2>Add a section</h2>

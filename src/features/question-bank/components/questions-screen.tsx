@@ -305,11 +305,6 @@ export function QuestionsScreen({
           />
         </section>
       ) : null}
-
-      <p className="notice">
-        Answer keys and solutions are part of the authoring view. DI sets keep
-        their shared passage and sub-questions together.
-      </p>
     </RoleShell>
   );
 }

@@ -3,7 +3,7 @@ import {
   SkeletonPanel,
 } from "@/features/auth/components/shell-skeleton";
 
-// The overview: section cards on the left, quick actions and a guide on the
+// The overview: section cards on the left, quick actions on the
 // right. The heading greets the admin by name, so it shimmers until the
 // profile arrives.
 export default function Loading() {
