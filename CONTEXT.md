@@ -83,6 +83,11 @@ credentials, student data or anyone's personal data here.
   2026-10-18 (a call with no admin session is refused). 53/53 on
   `scripts/verify/delete.sql`; the screens have never been clicked through.
   *Delete, 2026-10-17* in `completed.md`.
+- **Hosted database reset to no content** (owner, 2026-10-18): every test
+  programme, mock, attempt, question, section, import, video row, document, grant
+  and ARS process deleted, with their 20 stored files, so the owner can test the
+  admin flow from scratch. Kept: the 7 accounts, orgs, mentor assignments, the
+  activity log, and the video file in VdoCipher.
 - **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
   custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
