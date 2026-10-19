@@ -145,8 +145,8 @@ export function BuildMockPanel({
           </div>
         </div>
 
-        <fieldset className="form-section field">
-          <legend className="form-section__title">Sections and timing</legend>
+        <div className="form-section">
+          <h3 className="form-section__title">Sections and timing</h3>
           <p className="muted">
             The sections come from the paper.{" "}
             {paperTimed ? "It states each section's time, filled in below." : "It gives no time per section."}
@@ -190,7 +190,7 @@ export function BuildMockPanel({
             ))}
           </ol>
           <span className="field__hint">Minutes are used only with a timer per section, and must add up to the full duration.</span>
-        </fieldset>
+        </div>
 
         <div className="form-section">
           <h3 className="form-section__title">Scoring</h3>
@@ -232,8 +232,8 @@ export function BuildMockPanel({
           </div>
         </div>
 
-        <fieldset className="form-section field">
-          <legend className="form-section__title">Who takes it</legend>
+        <div className="form-section">
+          <h3 className="form-section__title">Who takes it</h3>
           <label className="field">
             <span className="field__label">Everyone on a programme or ARS process</span>
             <select className="input" defaultValue={linkedRound ? String(linkedRound.courseId) : ""} name="grantCourseId">
@@ -258,9 +258,9 @@ export function BuildMockPanel({
             </details>
           ) : null}
           <span className="field__hint">Leave both empty to build it now and grant it later from the mock&apos;s own page.</span>
-        </fieldset>
+        </div>
 
-        <div className="form-bar">
+        <div className="form-actions">
           <SubmitButton pendingLabel="Building the mock…">Build the mock</SubmitButton>
           <PendingOverlay label="Building the mock…" />
         </div>

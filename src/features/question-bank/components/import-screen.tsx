@@ -127,7 +127,7 @@ function StepTrail({ current }: { current: 1 | 2 | 3 }) {
     <ol aria-label="Steps" className="tabs">
       {steps.map((label, index) => (
         <li className={`tabs__link${index + 1 === current ? " tabs__link--current" : ""}`} key={label}>
-          {`${index + 1} · ${label}`}
+          {label}
         </li>
       ))}
     </ol>
@@ -233,10 +233,6 @@ ${paper.text}`} variant="primary" />
 
   return (
     <>
-      <p>
-        <Link href={buildMock ? "/admin/mocks" : "/admin/questions"}>{buildMock ? "← Back to mock tests" : "← Back to the question bank"}</Link>
-      </p>
-
       {notice ? <p className="notice notice--success">{notice}</p> : null}
       <StepTrail current={step} />
 

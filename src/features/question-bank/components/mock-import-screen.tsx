@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import { CopyButton, SubmitButton } from "@/shared/ui";
@@ -78,10 +77,6 @@ export function MockImportScreen() {
 
   return (
     <>
-      <p>
-        <Link href="/admin/mocks">← Back to mocks</Link>
-      </p>
-
       <section className="panel">
         <h2>Step 1 — write the mock as a document</h2>
         <p className="muted">

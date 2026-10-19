@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { getImportRound } from "@/features/ars/queries/round-import";
 import { RoleShell } from "@/features/auth/components/role-shell";
@@ -30,9 +31,16 @@ export default async function ImportPaperPage({
     /^[1-9][0-9]{0,15}$/.test(roundRaw) ? getImportRound(Number(roundRaw)) : Promise.resolve(null),
   ]);
 
+  const back = round ? { href: `/admin/ars/${round.courseId}/rounds/${round.id}`, label: `Back to ${round.name}` } : { href: "/admin/mocks", label: "Back to mock tests" };
+
   return (
     <RoleShell
-      back={round ? { href: `/admin/ars/${round.courseId}/rounds/${round.id}`, label: `Back to ${round.name}` } : { href: "/admin/mocks", label: "Back to mock tests" }}
+      actions={
+        <Link className="button button--secondary" href={back.href}>
+          {back.label}
+        </Link>
+      }
+      back={back}
       description={`Open the paper, get it read, review its questions, then build the mock. New questions go into the bank; ones it already holds are linked, not copied.${round ? ` The mock links itself to the ARS round “${round.name}”.` : ""}`}
       profile={profile}
       title="Import a paper"
