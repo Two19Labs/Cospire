@@ -337,9 +337,9 @@ export function parseMockDocument(text: string): MockDocumentParse {
     if (section.refs.length === 0) at(section.line, `section “${section.title}” has no question IDs under it.`);
   }
 
-  // Timing, decided exactly as the builder decides it: one section with no
-  // minutes is the implicit untimed section and the mock is overall-timed;
-  // otherwise every section is timed and the minutes add up to the duration.
+  // Timing, decided exactly as the builder decides it: sections with no minutes
+  // make an overall-timed mock that keeps its sections (2026-10-19); otherwise
+  // every section is timed and the minutes add up to the duration.
   let timingMode: "overall" | "sectional" = "overall";
   const usable = sections.filter((section) => !invalidSections.has(section));
   const timed = usable.filter((section) => section.durationMinutes !== null);
@@ -348,9 +348,7 @@ export function parseMockDocument(text: string): MockDocumentParse {
   // 30, not 60" would be an arithmetic complaint about a line already refused.
   if (usable.length > 0 && invalidSections.size === 0) {
     if (timed.length === 0) {
-      if (usable.length > 1) {
-        problems.push("With more than one section, every section needs its own minutes, written “Section: VARC | 40”.");
-      }
+      // Overall timing; the sections stay, untimed.
     } else if (timed.length < usable.length) {
       for (const section of usable) {
         if (section.durationMinutes === null) at(section.line, `section “${section.title}” has no minutes, and the other sections do. Either every section is timed or none is.`);

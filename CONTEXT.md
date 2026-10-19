@@ -182,6 +182,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude (owner's mock notes) | `feat/mock-notes` | Owner's mock notes 1-10 of 2026-10-19: import wizard UI, build keeps the paper's sections and reads their minutes, last-question submit, proctor popup, analytics on the student mock page | `src/features/question-bank/**`, `src/features/test-engine/components/**`, `src/app/student/mocks/**`, one migration | In progress | 2026-10-19 |
 
 No feature branch is open. Merged 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).

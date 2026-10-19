@@ -58,10 +58,11 @@ describe("timing", () => {
     ).toEqual(["The section minutes add up to 100, not the 120 on the Duration line."]);
   });
 
-  it("refuses more than one section when none of them is timed", () => {
-    expect(problemsOf("Mock: Untimed\nDuration: 60\n\nSection: QA\nQ00001\nSection: VARC\nQ00002")).toEqual([
-      "With more than one section, every section needs its own minutes, written “Section: VARC | 40”.",
-    ]);
+  it("keeps several untimed sections under one overall timer", () => {
+    const { problems, spec } = parseMockDocument("Mock: Untimed\nDuration: 60\n\nSection: QA\nQ00001\nSection: VARC\nQ00002");
+    expect(problems).toEqual([]);
+    expect(spec?.timingMode).toBe("overall");
+    expect(spec?.sections.map((section) => section.durationMinutes)).toEqual([null, null]);
   });
 
   it("refuses a mix of timed and untimed sections, naming the untimed one's line", () => {

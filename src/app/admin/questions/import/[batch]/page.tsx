@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
@@ -19,6 +20,11 @@ export default async function ReviewImportPage({
 
   return (
     <RoleShell
+      actions={
+        <Link className="button button--secondary" href="/admin/questions/import">
+          Back to imports
+        </Link>
+      }
       back={{ href: "/admin/questions/import", label: "All imports" }}
       description="Compare each extracted question with the document, correct anything missing, then approve or reject it."
       profile={profile}

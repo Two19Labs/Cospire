@@ -184,6 +184,7 @@ export function AttemptScreen({
       number: item.number,
       options: question?.options ?? [],
       passageId: item.stimulusId,
+      sectionId: item.sectionId,
       type: question?.type ?? "mcq",
     });
   }

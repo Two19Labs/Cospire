@@ -60,7 +60,20 @@ const startErrors: Record<string, string> = {
   phone: "This mock cannot be taken on a phone. Open it on a laptop or desktop.",
 };
 
-export function StudentMockScreen({ error, mock, phone, profile }: { error?: string; mock: StudentMock; phone: boolean; profile: Profile }) {
+export function StudentMockScreen({
+  analytics = null,
+  error,
+  mock,
+  phone,
+  profile,
+}: {
+  // The latest submitted attempt's analytics, drawn by the analytics feature.
+  analytics?: React.ReactNode;
+  error?: string;
+  mock: StudentMock;
+  phone: boolean;
+  profile: Profile;
+}) {
   const open = mock.attempts.find((attempt) => attempt.status === "in_progress");
   const used = mock.attempts.length;
   const sectional = mock.sections.some((section) => section.durationMinutes !== null);
@@ -69,6 +82,7 @@ export function StudentMockScreen({ error, mock, phone, profile }: { error?: str
   return (
     <RoleShell back={{ href: "/student/mocks", label: "Back to mock tests" }} profile={profile} title={mock.title}>
       {error && startErrors[error] ? <p className="notice notice--error">{startErrors[error]}</p> : null}
+      {analytics}
       <section className="panel">
         <div className="panel__header">
           <div>

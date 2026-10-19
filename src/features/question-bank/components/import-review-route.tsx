@@ -109,35 +109,25 @@ export async function ImportReviewRoute({
       ),
     ),
   ];
-  const [buildOptions, linkedRound] = await Promise.all([getBuildMockOptions(paperQuestionIds(batch.rows)), findImportRound(batchId)]);
+  // The minutes the paper states for each question's section, so the build
+  // step offers the paper's own timing (owner, 2026-10-19).
+  const minutesByQuestion = new Map<number, number>();
+  for (const row of batch.rows) {
+    const minutes = row.parsed?.sectionMinutes;
+    if (row.status === "approved" && row.questionId !== null && typeof minutes === "number") minutesByQuestion.set(row.questionId, minutes);
+  }
+  const [buildOptions, linkedRound] = await Promise.all([
+    getBuildMockOptions(paperQuestionIds(batch.rows), minutesByQuestion),
+    findImportRound(batchId),
+  ]);
   const pending = batch.rows.filter((row) => row.status === "pending_review").length;
   const defaultMarks = batch.rows.find((row) => row.parsed && row.parsed.type !== "di_stimulus" && row.parsed.marks)?.parsed?.marks ?? "";
   // Every approve, reject and fix redirects back here without `?mock=1`, so the
   // build step cannot rely on the URL alone: once the review is finished it
-  // opens by itself and the top of the page points down to it.
+  // opens by itself, at the top, and the finished review folds away beneath it.
   const reviewDone = pending === 0 && buildOptions.sections.some((section) => section.questionCount > 0);
 
-  return (
-    <>
-    {reviewDone ? (
-      <p className="notice notice--success" role="status">
-        Every question is decided. <a href="#build">Build the mock from this paper</a> at the bottom of the page.
-      </p>
-    ) : null}
-    <MissingSections batchId={batchId} mock={mock} names={missingSections} />
-    <ImportReviewScreen
-      bankTexts={bankTexts}
-      batch={batch}
-      batchId={batchId}
-      expanded={notice !== null || page !== undefined}
-      imageUrls={imageUrls}
-      notice={notice}
-      orgId={orgId}
-      page={parsePageNumber(page)}
-      parentSets={parentSets}
-      sections={sections}
-      topics={topics}
-    />
+  const build = (
     <BuildMockPanel
       batchId={batchId}
       defaultMarks={defaultMarks}
@@ -149,6 +139,26 @@ export async function ImportReviewRoute({
       roundRefused={roundRefused}
       title={batch.sourceRef ?? ""}
     />
+  );
+
+  return (
+    <>
+      {reviewDone ? build : null}
+      <MissingSections batchId={batchId} mock={mock} names={missingSections} />
+      <ImportReviewScreen
+        bankTexts={bankTexts}
+        batch={batch}
+        batchId={batchId}
+        expanded={page !== undefined || (notice !== null && !reviewDone)}
+        imageUrls={imageUrls}
+        notice={notice}
+        orgId={orgId}
+        page={parsePageNumber(page)}
+        parentSets={parentSets}
+        sections={sections}
+        topics={topics}
+      />
+      {reviewDone ? null : build}
     </>
   );
 }

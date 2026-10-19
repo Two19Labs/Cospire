@@ -11,6 +11,8 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 export interface PaperSection {
   id: number;
+  // The time limit the paper states for it, when it states one.
+  minutes: number | null;
   name: string;
   questionCount: number;
 }
@@ -23,7 +25,7 @@ export interface BuildMockOptions {
 
 const studentLimit = 500;
 
-export async function getBuildMockOptions(questionIds: number[]): Promise<BuildMockOptions> {
+export async function getBuildMockOptions(questionIds: number[], minutesByQuestion: Map<number, number> = new Map()): Promise<BuildMockOptions> {
   const supabase = await createServerSupabaseClient();
 
   const [questionResult, courseResult, studentResult] = await Promise.all([
@@ -45,8 +47,13 @@ export async function getBuildMockOptions(questionIds: number[]): Promise<BuildM
     const embedded = Array.isArray(row.question_sections) ? row.question_sections[0] : row.question_sections;
     const sectionId = Number(row.section_id);
     const existing = sections.find((section) => section.id === sectionId);
-    if (existing) existing.questionCount += 1;
-    else sections.push({ id: sectionId, name: (embedded as { name?: string } | null)?.name ?? "Unnamed section", questionCount: 1 });
+    const minutes = minutesByQuestion.get(id) ?? null;
+    if (existing) {
+      existing.questionCount += 1;
+      existing.minutes ??= minutes;
+    } else {
+      sections.push({ id: sectionId, minutes, name: (embedded as { name?: string } | null)?.name ?? "Unnamed section", questionCount: 1 });
+    }
   }
 
   return {

@@ -246,6 +246,9 @@ svg.icon {
  * ------------------------------------------------------------------------- */
 
 .field {
+  /* start, not the default stretch: a field beside a taller one (a hint under
+     it) kept its label and input spread apart, so a row stopped lining up. */
+  align-content: start;
   display: grid;
   gap: 0.45rem;
 }

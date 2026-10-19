@@ -4,6 +4,8 @@ import { buildMockFromImportAction, createPaperSectionAction } from "../actions/
 import type { ImportRound } from "@/features/ars/queries/round-import";
 
 import type { BuildMockOptions } from "../queries/build-mock-options";
+import styles from "./build-mock-panel.module.css";
+import { PendingOverlay } from "./pending-overlay";
 
 // The last step of mock-first import (D7, D13, D15): once every question is
 // decided, build the mock from the paper. Optional -- a practice sheet that only
@@ -71,40 +73,128 @@ export function BuildMockPanel({
 }) {
   const { courses, sections, students } = options;
   const questionCount = sections.reduce((sum, section) => sum + section.questionCount, 0);
-
-  return (
-    <details className="panel" id="build" open={open || error !== null}>
-      <summary>
-        <strong>Build a mock from this paper</strong>
-        <span className="muted"> · optional</span>
-      </summary>
+  const notices = (
+    <>
       {error && buildErrors[error] ? <p className="notice notice--error">{buildErrors[error]}</p> : null}
       {linkedRound ? <p className="notice">The mock built here is linked to the ARS round <strong>{linkedRound.name}</strong> automatically.</p> : null}
       {roundRefused && !linkedRound ? <p className="notice notice--error">This import could not be tied to its ARS round, so the mock will not link itself. Link it from the round&apos;s page after building.</p> : null}
-      {pending > 0 ? (
-        <p className="notice notice--warn">
-          {pending} {pending === 1 ? "question is" : "questions are"} still to decide. Build the mock once every question is
-          approved or rejected.
-        </p>
-      ) : questionCount === 0 ? (
-        <p className="muted">Nothing was approved, so there is nothing to build a mock from.</p>
-      ) : (
-        <form action={buildMockFromImportAction} className="stack-form">
-          <input name="batchId" type="hidden" value={batchId} />
-          <p className="muted">
-            {questionCount} {questionCount === 1 ? "question" : "questions"} (a DI set counts once), in the order the paper lists
-            them. New ones are already in the bank; ones it held are linked, not copied.
-          </p>
+    </>
+  );
 
-          <div className="form-grid">
+  // Not ready yet: a quiet disclosure under the review, saying what is left.
+  if (pending > 0 || questionCount === 0) {
+    return (
+      <details className="panel" id="build" open={open || error !== null}>
+        <summary>
+          <strong>Build a mock from this paper</strong>
+          <span className="muted"> · optional</span>
+        </summary>
+        {notices}
+        {pending > 0 ? (
+          <p className="notice notice--warn">
+            {pending} {pending === 1 ? "question is" : "questions are"} still to decide. Build the mock once every question is
+            approved or rejected.
+          </p>
+        ) : (
+          <p className="muted">Nothing was approved, so there is nothing to build a mock from.</p>
+        )}
+      </details>
+    );
+  }
+
+  // The paper's own timing, when it gave every section its minutes (2026-10-19).
+  const paperTimed = sections.length > 0 && sections.every((section) => section.minutes !== null);
+  const paperTotal = sections.reduce((sum, section) => sum + (section.minutes ?? 0), 0);
+
+  return (
+    <section className="panel" id="build">
+      <div className="panel__header">
+        <div>
+          <h2>Build the mock from this paper</h2>
+          <p className="muted">
+            {questionCount} {questionCount === 1 ? "question" : "questions"} (a DI set counts once) in {sections.length}{" "}
+            {sections.length === 1 ? "section" : "sections"}, in the paper&apos;s order. Every question is already in the bank.
+          </p>
+        </div>
+        <span className="tag tag--sage">Review finished</span>
+      </div>
+      {notices}
+
+      <form action={buildMockFromImportAction} className="stack-form">
+        <input name="batchId" type="hidden" value={batchId} />
+
+        <div className="form-section">
+          <h3 className="form-section__title">The mock</h3>
+          <div className="form-fields">
             <label className="field">
               <span className="field__label">Title</span>
               <input className="input" defaultValue={title} maxLength={160} name="title" required />
             </label>
             <label className="field">
               <span className="field__label">Full duration (minutes)</span>
-              <input className="input" defaultValue={120} max={1440} min={1} name="durationMinutes" required type="number" />
+              <input className="input" defaultValue={paperTimed ? paperTotal : 120} max={1440} min={1} name="durationMinutes" required type="number" />
             </label>
+            <label className="field">
+              <span className="field__label">Attempt limit</span>
+              <input className="input" defaultValue={1} max={100} min={1} name="maxAttempts" required type="number" />
+            </label>
+            <label className="field">
+              <span className="field__label">Instructions</span>
+              <textarea className="input input--area" maxLength={20000} name="instructions" rows={3} />
+            </label>
+          </div>
+        </div>
+
+        <fieldset className="form-section field">
+          <legend className="form-section__title">Sections and timing</legend>
+          <p className="muted">
+            The sections come from the paper.{" "}
+            {paperTimed ? "It states each section's time, filled in below." : "It gives no time per section."}
+          </p>
+          <div className="toggle-list">
+            <label className="choice">
+              <input defaultChecked={!paperTimed} name="timingMode" type="radio" value="overall" />{" "}
+              <span>One overall timer: students move freely between sections</span>
+            </label>
+            <label className="choice">
+              <input defaultChecked={paperTimed} name="timingMode" type="radio" value="sectional" />{" "}
+              <span>A timer per section: sat in order, locked once left</span>
+            </label>
+          </div>
+          <ol className={styles.sections}>
+            {sections.map((section, index) => (
+              <li className={styles.section} key={section.id}>
+                <span aria-hidden="true" className={styles.number}>
+                  {index + 1}
+                </span>
+                <span className={styles.name}>
+                  <strong>{section.name}</strong>
+                  <span className="muted">
+                    {section.questionCount} {section.questionCount === 1 ? "question" : "questions"}
+                  </span>
+                </span>
+                <label className={styles.minutes}>
+                  <input
+                    aria-label={`Minutes for ${section.name}`}
+                    className="input input--compact"
+                    defaultValue={section.minutes ?? ""}
+                    max={1440}
+                    min={1}
+                    name={`minutes_${section.id}`}
+                    placeholder="—"
+                    type="number"
+                  />
+                  <span className="muted">min</span>
+                </label>
+              </li>
+            ))}
+          </ol>
+          <span className="field__hint">Minutes are used only with a timer per section, and must add up to the full duration.</span>
+        </fieldset>
+
+        <div className="form-section">
+          <h3 className="form-section__title">Scoring</h3>
+          <div className="form-fields">
             <label className="field">
               <span className="field__label">Marks per correct answer</span>
               <input className="input" defaultValue={defaultMarks} max={100} min={0.01} name="marks" placeholder="Each question's own" step="0.01" type="number" />
@@ -113,16 +203,7 @@ export function BuildMockPanel({
               <span className="field__label">Penalty per wrong answer</span>
               <input className="input" defaultValue="0" max={100} min={0} name="negativeMarking" step="0.01" required type="number" />
             </label>
-            <label className="field">
-              <span className="field__label">Attempt limit</span>
-              <input className="input" defaultValue={1} max={100} min={1} name="maxAttempts" required type="number" />
-            </label>
-            <label className="field field--full">
-              <span className="field__label">Instructions</span>
-              <textarea className="input" maxLength={20000} name="instructions" rows={3} />
-            </label>
           </div>
-
           <fieldset className="field">
             <legend className="field__label">Negative marking applies to</legend>
             <div className="toggle-list">
@@ -137,6 +218,10 @@ export function BuildMockPanel({
               ))}
             </div>
           </fieldset>
+        </div>
+
+        <div className="form-section">
+          <h3 className="form-section__title">Delivery</h3>
           <div className="toggle-list">
             <label className="choice">
               <input defaultChecked name="allowMobile" type="checkbox" /> <span>Allow phone attempts (always unproctored)</span>
@@ -145,61 +230,41 @@ export function BuildMockPanel({
               <input name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span>
             </label>
           </div>
+        </div>
 
-          <fieldset className="field">
-            <legend className="field__label">Timing</legend>
-            <div className="toggle-list">
-              <label className="choice">
-                <input defaultChecked name="timingMode" type="radio" value="overall" /> <span>Overall timer only</span>
-              </label>
-              <label className="choice">
-                <input name="timingMode" type="radio" value="sectional" /> <span>A timer per section</span>
-              </label>
-            </div>
-            <div className="form-grid">
-              {sections.map((section) => (
-                <label className="field" key={section.id}>
-                  <span className="field__label">{`${section.name} · ${section.questionCount} ${section.questionCount === 1 ? "question" : "questions"}`}</span>
-                  <input className="input" max={1440} min={1} name={`minutes_${section.id}`} placeholder="Minutes, if sectional" type="number" />
-                </label>
+        <fieldset className="form-section field">
+          <legend className="form-section__title">Who takes it</legend>
+          <label className="field">
+            <span className="field__label">Everyone on a programme or ARS process</span>
+            <select className="input" defaultValue={linkedRound ? String(linkedRound.courseId) : ""} name="grantCourseId">
+              <option value="">Nobody this way</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {`${course.title} (${course.kind === "ars_process" ? "ARS process" : "programme"})`}
+                </option>
               ))}
-            </div>
-            <span className="field__hint">With a timer per section, the minutes must add up to the full duration.</span>
-          </fieldset>
-
-          <fieldset className="field">
-            <legend className="field__label">Who takes it</legend>
-            <label className="field">
-              <span className="field__label">Everyone on a programme or ARS process</span>
-              <select className="input" defaultValue={linkedRound ? String(linkedRound.courseId) : ""} name="grantCourseId">
-                <option value="">Nobody this way</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {`${course.title} (${course.kind === "ars_process" ? "ARS process" : "programme"})`}
-                  </option>
+            </select>
+          </label>
+          {students.length > 0 ? (
+            <details>
+              <summary>Or pick students</summary>
+              <div className="toggle-list">
+                {students.map((student) => (
+                  <label className="choice" key={student.id}>
+                    <input name="studentId" type="checkbox" value={student.id} /> <span>{`${student.name} · ${student.email}`}</span>
+                  </label>
                 ))}
-              </select>
-            </label>
-            {students.length > 0 ? (
-              <details>
-                <summary>Or pick students</summary>
-                <div className="toggle-list">
-                  {students.map((student) => (
-                    <label className="choice" key={student.id}>
-                      <input name="studentId" type="checkbox" value={student.id} /> <span>{`${student.name} · ${student.email}`}</span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-            <span className="field__hint">Leave both empty to build it now and grant it later from the mock&apos;s own page.</span>
-          </fieldset>
+              </div>
+            </details>
+          ) : null}
+          <span className="field__hint">Leave both empty to build it now and grant it later from the mock&apos;s own page.</span>
+        </fieldset>
 
-          <div className="form-actions">
-            <SubmitButton pendingLabel="Building the mock…">Build the mock</SubmitButton>
-          </div>
-        </form>
-      )}
-    </details>
+        <div className="form-bar">
+          <SubmitButton pendingLabel="Building the mock…">Build the mock</SubmitButton>
+          <PendingOverlay label="Building the mock…" />
+        </div>
+      </form>
+    </section>
   );
 }

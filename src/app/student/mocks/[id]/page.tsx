@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { AttemptAnalyticsBody } from "@/features/analytics/components/screens";
+import { getAttemptAnalytics } from "@/features/analytics/queries/views";
 import { requireRole } from "@/features/auth/guards";
 import { parseId } from "@/features/question-bank/list-params";
 import { StudentMockScreen } from "@/features/test-engine/components/student-mock-screens";
@@ -22,5 +24,17 @@ export default async function StudentMockPage({
   if (!mock) notFound();
   const error = (await searchParams).error;
   const phone = isPhone((await headers()).get("user-agent"));
-  return <StudentMockScreen error={typeof error === "string" ? error : undefined} mock={mock} phone={phone} profile={profile} />;
+  // Once sat, the mock's page carries the latest result's analytics (owner,
+  // 2026-10-19). Attempts are newest first; null while it awaits its score.
+  const latest = mock.attempts.find((attempt) => attempt.status === "submitted");
+  const analytics = latest ? await getAttemptAnalytics(latest.id, "student") : null;
+  return (
+    <StudentMockScreen
+      analytics={analytics ? <AttemptAnalyticsBody data={analytics} /> : null}
+      error={typeof error === "string" ? error : undefined}
+      mock={mock}
+      phone={phone}
+      profile={profile}
+    />
+  );
 }

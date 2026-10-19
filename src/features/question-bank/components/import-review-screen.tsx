@@ -6,11 +6,10 @@ import { approveAllCleanAction, approveImportAction, discardPendingAction, linkI
 import type { Verdict } from "../duplicates";
 import { matchSection, reviewProblems, stagedToFormValues } from "../import-review";
 import { buildQuestionHref } from "../list-params";
-import { formatQuestionId, formatQuestionIdList } from "../question-id";
+import { formatQuestionId } from "../question-id";
 import { questionTypeLabels } from "../question-input";
 import type { ImportBatch, ImportRow } from "../queries/list-imports";
 import type { QuestionSection } from "../queries/list-sections";
-import { CopyIds } from "./copy-ids";
 import { QuestionEditor } from "./question-editor";
 
 // Reviewing one import: each question beside what the document said, opened in
@@ -237,15 +236,6 @@ export function ImportReviewScreen({
   const counts = { approved: 0, pending_review: 0, rejected: 0 };
   for (const row of batch.rows) counts[row.status] += 1;
 
-  // The IDs this import created, in the order the paper listed them, ready to
-  // paste into a mock document. A DI set appears once, as its passage: that is
-  // the ID that brings the whole set into a mock, and a sub-question's own ID is
-  // refused there on purpose.
-  const createdIds = [...batch.rows]
-    .filter((row) => row.status === "approved" && row.questionId !== null && (row.parsed?.parentPosition ?? null) === null)
-    .sort((a, b) => a.position - b.position)
-    .map((row) => row.questionId as number);
-
   const cleanCount = batch.rows.filter((row) => isClean(row, sections, orgId)).length;
   const questionIdAt = (position: number) =>
     batch.rows.find((row) => row.position === position && row.status === "approved")?.questionId ?? null;
@@ -265,10 +255,6 @@ export function ImportReviewScreen({
 
   return (
     <>
-      <p>
-        <Link href="/admin/questions/import">← Back to imports</Link>
-      </p>
-
       <section className="panel">
         <div className="panel__header">
           <div>
@@ -320,20 +306,6 @@ export function ImportReviewScreen({
           questions.
         </p>
       </section>
-
-      {createdIds.length > 0 ? (
-        <section className="panel">
-          <h2>The question IDs this import created</h2>
-          <p className="muted">
-            In the order the document listed them. Quote these in a mock document
-            to build a mock from this paper without picking anything by hand.
-          </p>
-          <CopyIds
-            ids={formatQuestionIdList(createdIds)}
-            label={`${createdIds.length} ${createdIds.length === 1 ? "question" : "questions"} approved so far`}
-          />
-        </section>
-      ) : null}
 
       <details className="builder__disclosure" open={expanded}>
         <summary>

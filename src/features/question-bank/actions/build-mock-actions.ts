@@ -102,19 +102,21 @@ export async function buildMockFromImportAction(formData: FormData): Promise<voi
   if (!title || title.length > 160 || duration === null || maxAttempts === null || !Number.isFinite(negative) || negative > 100) fail("invalid");
   if (marks === undefined) fail("marks");
 
+  // The paper's sections, in its order, under either timing (owner, 2026-10-19).
+  // Overall timing leaves them untimed, so students move freely between them.
   const sectional = formData.get("timingMode") === "sectional";
-  let sections: Array<{ durationMinutes: number | null; marks: number | null; questions: number[]; title: string }>;
+  if (sectional && paperSections.length > maxMockSections) fail("too-many-sections");
+  let sections: Array<{ durationMinutes: number | null; marks: number | null; questions: number[]; title: string }> = paperSections.map((section) => ({
+    durationMinutes: sectional ? parsePositiveInteger(formData.get(`minutes_${section.id}`), 1440) : null,
+    marks: marks ?? null,
+    questions: section.questions,
+    title: section.name,
+  }));
   if (sectional) {
-    if (paperSections.length > maxMockSections) fail("too-many-sections");
-    sections = paperSections.map((section) => ({
-      durationMinutes: parsePositiveInteger(formData.get(`minutes_${section.id}`), 1440),
-      marks: marks ?? null,
-      questions: section.questions,
-      title: section.name,
-    }));
     if (sections.some((section) => section.durationMinutes === null)) fail("minutes");
     if (sections.reduce((sum, section) => sum + (section.durationMinutes ?? 0), 0) !== duration) fail("duration");
-  } else {
+  } else if (sections.length > maxMockSections) {
+    // More than the editor can show: one block, as before, so it stays editable.
     sections = [{ durationMinutes: null, marks: marks ?? null, questions: paperSections.flatMap((section) => section.questions), title: "All questions" }];
   }
 

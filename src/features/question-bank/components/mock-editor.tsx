@@ -44,7 +44,8 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
   children?: React.ReactNode;
 }) {
   const existingSections = value?.sections ?? [];
-  const sectional = existingSections.length > 1 || (existingSections[0]?.durationMinutes ?? null) !== null;
+  // Sections exist under either timing (2026-10-19); only minutes make it sectional.
+  const sectional = existingSections.some((section) => section.durationMinutes !== null);
   // One mock-wide value when every section agrees; a section that differs shows
   // its own number in its slot.
   const sectionMarks = existingSections.map((section) => section.marks);
@@ -157,7 +158,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
           </section>
 
           <section className="panel" id="timing">
-            <div className="panel__header"><div><h2>Timing structure</h2><p className="muted">For sectional timing, every duration is required and the total must equal the full duration. Overall-only timing stores one implicit section with no sectional limit.</p></div></div>
+            <div className="panel__header"><div><h2>Timing structure</h2><p className="muted">Sections are kept under either timing. With one overall timer, students move freely between them and minutes are ignored. With sectional timers, every section needs minutes adding up to the full duration, and each is sat in order. Leave every title blank for one unsectioned paper.</p></div></div>
             <div className="toggle-list">
               <label className="choice"><input defaultChecked={!sectional} name="timingMode" type="radio" value="overall" /> <span>Overall timer only</span></label>
               <label className="choice"><input defaultChecked={sectional} name="timingMode" type="radio" value="sectional" /> <span>Sectional timers</span></label>
@@ -194,7 +195,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
             <div className="panel__header"><h2>At a glance</h2></div>
             <div>
               <p className="summary-row"><span>Duration</span><strong>{value ? `${value.durationMinutes} minutes` : "Not saved yet"}</strong></p>
-              <p className="summary-row"><span>Timing</span><strong>{value ? (sectional ? `${existingSections.length} timed sections` : "Overall timer") : "—"}</strong></p>
+              <p className="summary-row"><span>Timing</span><strong>{value ? (sectional ? `${existingSections.length} timed sections` : existingSections.length > 1 ? `Overall timer, ${existingSections.length} sections` : "Overall timer") : "—"}</strong></p>
               <p className="summary-row"><span>Selected questions</span><strong>{selectedSection.size}</strong></p>
               <p className="summary-row"><span>Attempt limit</span><strong>{value ? value.maxAttempts : "—"}</strong></p>
               <p className="summary-row"><span>Proctoring</span><strong>{value ? (value.proctoringEnabled ? "Enabled" : "Off") : "—"}</strong></p>
