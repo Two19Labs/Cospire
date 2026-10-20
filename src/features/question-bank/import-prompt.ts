@@ -96,7 +96,9 @@ Rules:
    two separate "essay" questions, both included.
 7. For "di_set", give the shared text as "passage", plus "section", "topic" and
    "difficulty", and put its questions in "questions". Sub-questions need "type",
-   "question", "answer" and, if stated, "marks".
+   "question", "answer" and, if stated, "marks". Leave a numbering line such as
+   "Directions for questions 6 to 8:" out of "passage": start it at the shared text
+   itself. It stays in "source".
 8. Answer keys are often at the end of a document. Match each answer to its question by
    number and put it on that question. If a question has no answer anywhere in the
    document, leave "answer" out rather than working one out.

@@ -38,7 +38,7 @@ credentials, student data or anyone's personal data here.
     (watermark bottom left, full screen)
   - the question bank: authoring, Word upload with pictures, paste-a-prompt and
     Gemini import, the mock-first import wizard, duplicate detection with no
-    model, marks on the mock, readable IDs and ID-list mocks
+    model (a close DI set is the admin's call, 2026-10-20), marks on the mock, readable IDs and ID-list mocks
   - the test engine: server-authoritative timer, sections, negative marking per
     type, phone attempts unproctored, warn-and-log proctoring, scoring,
     rescoring; the rebuilt exam screen (PR #70)
