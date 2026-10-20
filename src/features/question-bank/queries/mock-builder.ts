@@ -169,17 +169,19 @@ export async function getMock(mockId: number): Promise<MockEditorValue> {
   };
 }
 
-export async function listPickerQuestions(page: number): Promise<{ rows: PickerQuestion[]; page: number; pageCount: number }> {
+// `exclude`: the mock's own questions, left out in the query rather than after
+// `.range()`, so a page is never short.
+export async function listPickerQuestions(page: number, exclude: number[] = []): Promise<{ rows: PickerQuestion[]; page: number; pageCount: number }> {
   await requireRole("admin");
   const supabase = await createServerSupabaseClient();
   const from = (page - 1) * mockPageSize;
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("questions")
     .select("id,body,type,topic,difficulty,marks,question_sections(name)", { count: "exact" })
     .is("parent_id", null)
-    .is("archived_at", null)
-    .order("id", { ascending: false })
-    .range(from, from + mockPageSize - 1);
+    .is("archived_at", null);
+  if (exclude.length > 0) query = query.not("id", "in", `(${exclude.join(",")})`);
+  const { data, error, count } = await query.order("id", { ascending: false }).range(from, from + mockPageSize - 1);
   if (error) throw error;
   const roots = data ?? [];
   const childCounts = await countChildren(supabase, roots.filter((row) => row.type === "di_stimulus").map((row) => row.id));

@@ -71,10 +71,10 @@ credentials, student data or anyone's personal data here.
   Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
   against the hosted database; **nothing has ever played** (no Widevine CDM
   headless). See *Video, Phase 2* in `docs/context/completed.md`.
-- **A mock has a draft state** (D41, #89): invisible to students in the
-  database, published by an admin, and a sat mock cannot go back. Migration
-  `20261017100000` applied 2026-10-18; existing mocks published, new ones start
-  as drafts. *A mock has a draft state, 2026-10-17* in `completed.md`.
+- **A mock has a draft state** (D41, #89): invisible to students in the database,
+  published by an admin; a sat mock cannot go back. Migration `20261017100000`
+  applied 2026-10-18; new mocks start as drafts. The editor lists only a mock's
+  own questions, the bank behind "Add questions" (#105). See `completed.md`.
 - **Delete for programmes, documents, mocks and videos** (D42, D54, #90): three
   deliberate steps ending in the name typed out, checked on the server and again
   in the database; one `SECURITY DEFINER` transaction, with the storage object or
