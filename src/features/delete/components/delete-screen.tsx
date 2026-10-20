@@ -56,7 +56,7 @@ export function DeleteScreen({ error, preview, profile }: { error?: string; prev
         ) : null}
         {error && errors[error] ? <p className="notice notice--error">{errors[error]}</p> : null}
 
-        <form action={deleteContentAction}>
+        <form action={deleteContentAction} className="stack-form">
           <input name="type" type="hidden" value={preview.type} />
           <input name="id" type="hidden" value={preview.id} />
           <label className="field">
