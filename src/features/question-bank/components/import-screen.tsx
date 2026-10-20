@@ -192,29 +192,19 @@ export function QuestionImportScreen({
   // read the paper itself this sits behind a disclosure, never removed, because
   // the model path can fail and the admin must not be stranded.
   const byHand = (
-    <>
+    <div className="stack-form">
+      {/* One button and one line (owner, 2026-10-20): nobody needs to read the
+          prompt, and the separate prompt/text copies were clutter. */}
       <p className="muted">
         {paper
-          ? "Copy the prompt, paste the document's text from step 1 underneath it, send it to any model, then paste the whole answer below."
-          : "Copy the prompt into any model, attach or paste the paper underneath it, then paste the whole answer below. Charts come back as a note; paste each picture in on the review screen."}
+          ? `Copy, paste into any model, then paste its whole answer below.${attached > 0 ? " Keep the [[figure:N]] markers as they are." : ""}`
+          : "Copy the prompt into any model with the paper attached, then paste its whole answer below."}
       </p>
-      {/* Buttons only (owner, 2026-10-19): nobody needs to read the prompt. */}
       <div className="toolbar">
-        {paper ? (
-          <>
-            <CopyButton label="Copy prompt + text together" text={`${prompt}
+        <CopyButton label={paper ? "Copy prompt and paper" : "Copy the prompt"} text={paper ? `${prompt}
 
-${paper.text}`} variant="primary" />
-            <CopyButton label="Copy the prompt" text={prompt} />
-            <CopyButton label="Copy the text" text={paper.text} />
-          </>
-        ) : (
-          <CopyButton label="Copy the prompt" text={prompt} variant="primary" />
-        )}
+${paper.text}` : prompt} variant="primary" />
       </div>
-      {paper && attached > 0 ? (
-        <p className="field__hint">The text carries [[figure:N]] markers. Keep them exactly as they are: each is matched back to its picture.</p>
-      ) : null}
       <form action={previewAction} className="stack-form" onSubmit={() => setSource("paste")}>
         <FigureInputs figurePaths={figurePaths} />
         <input name="documentName" type="hidden" value={paper?.documentName ?? ""} />
@@ -228,7 +218,14 @@ ${paper.text}`} variant="primary" />
           </SubmitButton>
         </div>
       </form>
-    </>
+    </div>
+  );
+
+  // Starting over is a way out, not a step: a quiet button beside the heading.
+  const startAgain = (
+    <Link className="button button--ghost button--compact" href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>
+      Start again
+    </Link>
   );
 
   return (
@@ -255,7 +252,10 @@ ${paper.text}`} variant="primary" />
 
       {step === 2 ? (
         <section className="panel stack-form">
-          <h2>Step 2 — get it read</h2>
+          <div className="panel__header">
+            <h2>Step 2 — get it read</h2>
+            {startAgain}
+          </div>
           {paper ? (
             <p className="muted">
               {paper.documentName ? <strong>{paper.documentName}. </strong> : null}
@@ -313,17 +313,15 @@ ${paper.text}`} variant="primary" />
               </ul>
             </div>
           ) : null}
-          <div className="toolbar">
-            <Link className="button button--secondary" href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>
-              Start again with another paper
-            </Link>
-          </div>
         </section>
       ) : null}
 
       {step === 3 && items ? (
         <section className="panel stack-form">
-          <h2>Step 3 — check, then send for review</h2>
+          <div className="panel__header">
+            <h2>Step 3 — check, then send for review</h2>
+            {startAgain}
+          </div>
           <p className="muted">
             {items.length} {items.length === 1 ? "question" : "questions"} read
             {withProblems > 0 ? `; ${withProblems} need fixing on the review screen before they can be approved` : ""}. Nothing is
@@ -355,11 +353,6 @@ ${paper.text}`} variant="primary" />
               <PendingOverlay label={`Staging ${items.length} questions for review…`} detail="Each is compared with the bank for duplicates. Keep this tab open." />
             </div>
           </form>
-          <div className="toolbar">
-            <Link className="button button--secondary" href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>
-              Start again
-            </Link>
-          </div>
         </section>
       ) : null}
 

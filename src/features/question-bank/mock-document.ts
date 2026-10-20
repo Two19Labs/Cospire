@@ -373,7 +373,8 @@ export function parseMockDocument(text: string): MockDocumentParse {
       maxAttempts: maxAttempts ?? 1,
       negativeMarking: negative?.penalty ?? 0,
       negativeMarkingTypes: negative?.types ?? [],
-      proctoringEnabled: proctoringEnabled ?? false,
+      // On unless the document says otherwise (owner, 2026-10-20).
+      proctoringEnabled: proctoringEnabled ?? true,
       proctoringStated: proctoringEnabled !== null,
       sections: sections.map((section) => ({ ...section, marks: section.marks ?? marks })),
       timingMode,

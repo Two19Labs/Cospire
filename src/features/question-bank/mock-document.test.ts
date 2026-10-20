@@ -143,7 +143,7 @@ describe("settings", () => {
       maxAttempts: 1,
       negativeMarking: 0,
       negativeMarkingTypes: [],
-      proctoringEnabled: false,
+      proctoringEnabled: true,
       proctoringStated: false,
     });
   });

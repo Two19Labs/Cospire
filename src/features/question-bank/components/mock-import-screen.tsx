@@ -34,7 +34,7 @@ function Summary({ preview }: { preview: MockPreview }) {
           : `−${preview.negativeMarking} on ${preview.negativeMarkingTypes.join(", ")}`}{" "}
         · {preview.allowMobile ? "phones allowed" : "desktop only"} ·{" "}
         {preview.proctoringEnabled ? "proctored" : "not proctored"}
-        {preview.proctoringStated ? "" : " (the document did not say, so it is off)"}
+        {preview.proctoringStated ? "" : " (the document did not say, so it is on)"}
       </p>
       {preview.sections.map((section) => (
         <div key={section.title}>
