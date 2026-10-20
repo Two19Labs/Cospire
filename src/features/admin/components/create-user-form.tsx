@@ -76,7 +76,7 @@ export function CreateUserForm() {
         </p>
       ) : null}
       <div className="form-end">
-        <Link className="button button--ghost" href="/admin/users">
+        <Link className="button button--ghost" href="/admin/users?view=list">
           Cancel
         </Link>
         <Button disabled={pending} type="submit">

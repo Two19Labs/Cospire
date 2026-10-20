@@ -24,7 +24,7 @@ export default async function AdminVideoPage({ params }: { params: Promise<{ id:
       // D42: a video takes its grants, its curriculum items, its progress rows
       // and the video in VdoCipher itself.
       actions={<DeleteLink id={videoId} type="video" />}
-      back={{ href: "/admin/videos", label: "Videos" }}
+      back={{ href: "/admin/videos?view=list", label: "Videos" }}
       heading={view.title}
       profile={profile}
       title={view.title}

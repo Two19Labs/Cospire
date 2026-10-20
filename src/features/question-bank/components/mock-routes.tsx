@@ -1,15 +1,16 @@
+import { pickView } from "@/features/admin/components/section-views";
 import { requireRole } from "@/features/auth/guards";
 
 import { parseMockPage } from "../mock-form";
 import { getMock, listMocks, listPickerQuestions, listSelectedQuestions } from "../queries/mock-builder";
 import { MockEditor } from "./mock-editor";
-import { MocksScreen } from "./mocks-screen";
+import { MocksScreen, mockViews } from "./mocks-screen";
 
 export async function MocksRoute({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireRole("admin");
-  const page = parseMockPage((await searchParams).page);
-  const mocks = await listMocks(page);
-  return <MocksScreen mocks={mocks.rows} page={mocks.page} pageCount={mocks.pageCount} profile={profile} />;
+  const params = await searchParams;
+  const mocks = await listMocks(parseMockPage(params.page));
+  return <MocksScreen mocks={mocks.rows} page={mocks.page} pageCount={mocks.pageCount} profile={profile} view={pickView(params, mockViews, "list")} />;
 }
 export async function NewMockRoute({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const profile = await requireRole("admin"); const params = await searchParams;

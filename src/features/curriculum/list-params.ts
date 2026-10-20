@@ -133,7 +133,8 @@ export function buildCoursesHref({
   if (error) params.set("error", error);
   if (notice) params.set("notice", notice);
   const query = params.toString();
-  return query ? `/admin/courses?${query}` : "/admin/courses";
+  // The bare path is the landing cards; with nothing to carry, the list itself.
+  return query ? `/admin/courses?${query}` : "/admin/courses?view=list";
 }
 
 export function buildCourseHref({

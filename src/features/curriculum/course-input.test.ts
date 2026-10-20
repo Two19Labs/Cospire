@@ -177,7 +177,7 @@ describe("the closed sets behind ?error= and ?notice=", () => {
 
 describe("href building", () => {
   it("omits everything that is at its default", () => {
-    expect(buildCoursesHref({ page: 1, search: "" })).toBe("/admin/courses");
+    expect(buildCoursesHref({ page: 1, search: "" })).toBe("/admin/courses?view=list");
     expect(buildCourseHref({ courseId: 7 })).toBe("/admin/courses/7");
   });
 

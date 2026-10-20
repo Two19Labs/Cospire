@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { CreateUserForm } from "@/features/admin/components/create-user-form";
+import { SectionTabs } from "@/features/admin/components/section-views";
+import { userViews } from "@/features/admin/components/users-screen";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
 
@@ -11,11 +13,12 @@ export default async function NewUserPage() {
 
   return (
     <RoleShell
-      back={{ href: "/admin/users", label: "Back to users" }}
+      back={{ href: "/admin/users?view=list", label: "Back to users" }}
       description="Create a place for someone on the Cospire platform."
       profile={profile}
       title="Add a user"
     >
+      <SectionTabs current="new" views={userViews} />
       <div className="two-col">
         <section className="panel">
           <div className="panel__header">

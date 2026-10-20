@@ -213,8 +213,8 @@ try {
 
   await shoot("student-round", `/student/ars/${application.id}`, "student");
   await shoot("student-process", "/student/ars", "student");
-  await shoot("admin-programmes", "/admin/courses", "admin", 1440, 1250);
-  await shoot("admin-ars", "/admin/ars", "admin", 1440, 1250);
+  await shoot("admin-programmes", "/admin/courses?view=list", "admin", 1440, 1250);
+  await shoot("admin-ars", "/admin/ars?view=list", "admin", 1440, 1250);
   await shoot("admin-process", `/admin/ars/${courseId}`, "admin", 1440, 1300);
   await shoot("admin-import", `/admin/ars/${courseId}/import`, "admin", 1440, 1300);
   await shoot("student-round-phone", `/student/ars/${application.id}`, "student", 520, 1000);

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -32,12 +33,19 @@ interface AdminProcessesProps {
   notice: CourseNotice | null;
   processes: AdminProcessRow[];
   profile: Profile;
+  // null: the landing cards; otherwise the one view shown.
+  view: string | null;
 }
+
+export const arsViews: SectionView[] = [
+  { description: "Every institution's admission process and its rounds.", href: "/admin/ars?view=list", key: "list", label: "View processes" },
+  { description: "Start a process for an institution, then add its rounds.", href: "/admin/ars?view=add", key: "add", label: "Add a process" },
+];
 
 // The page heading, shared with the loading skeleton.
 export const arsHeading = "ARS processes";
 
-export function AdminProcesses({ error, notice, processes, profile }: AdminProcessesProps) {
+export function AdminProcesses({ error, notice, processes, profile, view }: AdminProcessesProps) {
   return (
     <RoleShell
       actions={
@@ -45,11 +53,6 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
           <Link className="button button--secondary" href="/admin/report-templates">
             Report templates
           </Link>
-          {/* An anchor to the form further down: no JavaScript needed. */}
-          <a className="button button--primary" href="#new-process">
-            <Icon name="plus" />
-            New process
-          </a>
         </>
       }
       description="Create an admission journey for each institution: the rounds a candidate works through, from application to interview."
@@ -57,6 +60,7 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
       profile={profile}
       title="ARS"
     >
+      {view === null ? <SectionCards views={arsViews} /> : <SectionTabs current={view} views={arsViews} />}
       {error ? (
         <p className="notice notice--error" role="alert">
           {courseListErrors[error]}
@@ -64,16 +68,16 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
       ) : null}
       {notice ? <p className="notice notice--success">{courseNotices[notice]}</p> : null}
 
-      {processes.length === 0 ? (
+      {view !== "list" ? null : processes.length === 0 ? (
         <section className="empty-state">
           <span aria-hidden="true" className="empty-state__mark">
             <Icon name="grid" />
           </span>
           <h2>No processes yet.</h2>
           <p>A process holds the rounds a candidate works through for one institution.</p>
-          <a className="button button--primary" href="#new-process">
+          <Link className="button button--primary" href="/admin/ars?view=add">
             Create the first one
-          </a>
+          </Link>
         </section>
       ) : (
         <div className="card-grid">
@@ -99,7 +103,7 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
         </div>
       )}
 
-      <section className="panel panel--narrow" id="new-process">
+      {view === "add" ? <section className="panel panel--narrow" id="new-process">
         <div className="panel__header">
           <div>
             <h2>Add a process</h2>
@@ -133,7 +137,7 @@ export function AdminProcesses({ error, notice, processes, profile }: AdminProce
             Add process
           </SubmitButton>
         </form>
-      </section>
+      </section> : null}
     </RoleShell>
   );
 }

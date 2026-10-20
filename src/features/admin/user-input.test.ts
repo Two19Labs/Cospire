@@ -52,7 +52,7 @@ describe("parsePageNumber", () => {
 
 describe("buildUsersHref", () => {
   it("omits defaults so the plain list has a clean URL", () => {
-    expect(buildUsersHref({ page: 1, search: "" })).toBe("/admin/users");
+    expect(buildUsersHref({ page: 1, search: "" })).toBe("/admin/users?view=list");
   });
 
   it("carries the page, search and error when they are set", () => {

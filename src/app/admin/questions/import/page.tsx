@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
+import { SectionTabs } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
+import { questionViews } from "@/features/question-bank/components/questions-screen";
 import { requireRole } from "@/features/auth/guards";
 import { QuestionImportScreen } from "@/features/question-bank/components/import-screen";
 import { buildQuestionImportPrompt } from "@/features/question-bank/import-prompt";
@@ -21,16 +22,12 @@ export default async function ImportQuestionsPage({
 
   return (
     <RoleShell
-      actions={
-        <Link className="button button--secondary" href="/admin/questions">
-          Back to the question bank
-        </Link>
-      }
-      back={{ href: "/admin/questions", label: "Back to the question bank" }}
+      back={{ href: "/admin/questions?view=list", label: "Back to the question bank" }}
       description="A guided workflow: open the paper, get it read, then review every question before anything reaches the bank."
       profile={profile}
       title="Import questions"
     >
+      <SectionTabs current="import" views={questionViews} />
       <QuestionImportScreen
         batches={batches}
         notice={params.notice === "discarded" ? "The questions that were not approved were discarded." : null}

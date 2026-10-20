@@ -87,7 +87,7 @@ const quickActions: { href: string; icon: IconName; label: string }[] = [
   { href: "/admin/questions/new", icon: "plus", label: "Create a question" },
   { href: "/admin/questions/import", icon: "upload", label: "Import questions" },
   { href: "/admin/mocks/new", icon: "test", label: "Build a mock test" },
-  { href: "/admin/documents", icon: "file", label: "Upload a document" },
+  { href: "/admin/documents?view=add", icon: "file", label: "Upload a document" },
 ];
 
 function iconBoxClass(tone: Module["tone"]): string {

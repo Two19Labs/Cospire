@@ -81,7 +81,7 @@ export default async function AdminArsProcessPage({
           </a>
         </>
       }
-      back={{ href: "/admin/ars", label: "All ARS processes" }}
+      back={{ href: "/admin/ars?view=list", label: "All ARS processes" }}
       description="An admission readiness process. Build a thoughtful journey, one round at a time."
       profile={profile}
       title={course.title}

@@ -69,7 +69,7 @@ for (const [name, path, who, expect] of guards) {
   );
 }
 
-const adminLibrary = await get("/admin/documents", "admin");
+const adminLibrary = await get("/admin/documents?view=list", "admin");
 record("admin reaches the library", adminLibrary.status === 200, `${adminLibrary.status}`);
 
 // ------------------------------------------------------------ B. the upload

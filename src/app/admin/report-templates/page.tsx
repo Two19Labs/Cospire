@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { requireRole } from "@/features/auth/guards";
-import { TemplatesScreen } from "@/features/ars-report/components/templates-screen";
+import { pickView } from "@/features/admin/components/section-views";
+import { TemplatesScreen, templateViews } from "@/features/ars-report/components/templates-screen";
 import { parsePage, parseTemplateError, parseTemplateNotice } from "@/features/ars-report/list-params";
 import { listTemplates } from "@/features/ars-report/queries/list-templates";
 
@@ -22,6 +23,7 @@ export default async function ReportTemplatesPage({
       notice={parseTemplateNotice(params.templateNotice)}
       profile={profile}
       templates={templates}
+      view={pickView(params, templateViews, "list")}
     />
   );
 }

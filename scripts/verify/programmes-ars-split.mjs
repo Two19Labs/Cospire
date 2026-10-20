@@ -130,18 +130,13 @@ try {
   await createPerson("student", "student");
 
   // ------------------------------------------------ A. each section creates
-  const programmesPage = await get("/admin/courses", "admin");
+  const programmesPage = await get("/admin/courses?view=add", "admin");
   record("the Programmes screen loads", programmesPage.status === 200, `${programmesPage.status}`);
-  // The stale "Aptitude preparation: not built yet" card was removed in phase
-  // 6.5 (D10): the question bank and test engine it said it needed are both
-  // built now, and aptitude prep is not a placeholder card at all -- it lands
-  // under a programme's own curriculum later. Video curriculums is still a
-  // genuine placeholder, waiting on VdoCipher.
+  // Both placeholder cards are gone: aptitude prep in phase 6.5 (D10), and
+  // "Video curriculums: not built yet" on 2026-10-20, since video is built.
   record(
-    "and says what the section is for, with the one remaining placeholder marked unbuilt",
-    !programmesPage.body.includes("Aptitude preparation") &&
-      programmesPage.body.includes("Video curriculums") &&
-      programmesPage.body.includes("Not built yet"),
+    "and carries no stale placeholder",
+    !programmesPage.body.includes("Aptitude preparation") && !programmesPage.body.includes("Not built yet"),
   );
 
   const programmeForm = formWith(programmesPage.body, "kind", "programme");
@@ -160,7 +155,7 @@ try {
     `kind=${programme?.kind} -> ${madeProgramme.location}`,
   );
 
-  const arsPage = await get("/admin/ars", "admin");
+  const arsPage = await get("/admin/ars?view=add", "admin");
   record("the ARS screen loads", arsPage.status === 200, `${arsPage.status}`);
 
   const processForm = formWith(arsPage.body, "kind", "ars_process");
@@ -178,13 +173,13 @@ try {
   );
 
   // -------------------------------------------- B. neither list shows the other
-  const programmesAfter = await get("/admin/courses", "admin");
+  const programmesAfter = await get("/admin/courses?view=list", "admin");
   record(
     "the Programmes list shows the programme and NOT the process",
     programmesAfter.body.includes(PROGRAMME) && !programmesAfter.body.includes(PROCESS),
   );
 
-  const arsAfter = await get("/admin/ars", "admin");
+  const arsAfter = await get("/admin/ars?view=list", "admin");
   record(
     "the ARS list shows the process and NOT the programme",
     arsAfter.body.includes(PROCESS) && !arsAfter.body.includes(PROGRAMME),
@@ -244,7 +239,7 @@ try {
       `kind=${after?.kind} -> ${moved.location}`,
     );
 
-    const backInProgrammes = await get("/admin/courses", "admin");
+    const backInProgrammes = await get("/admin/courses?view=list", "admin");
     record("and it now appears under Programmes", backInProgrammes.body.includes(PROCESS));
 
     // Put it back, so the last checks run against a process again.

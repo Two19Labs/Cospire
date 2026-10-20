@@ -46,7 +46,7 @@ export function DocumentDetail({
       // D42: a link, not a delete. The confirmation screen is where anything
       // is removed, and only after the title is typed out.
       actions={<DeleteLink id={document.id} type="document" />}
-      back={{ href: "/admin/documents", label: "Back to library" }}
+      back={{ href: "/admin/documents?view=list", label: "Back to library" }}
       description={`${document.folder ? document.folder : "Unfiled"} · Added ${document.createdAt.slice(0, 10)}`}
       profile={profile}
       title={document.title}

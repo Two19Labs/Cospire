@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getImportRound } from "@/features/ars/queries/round-import";
+import { SectionTabs } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
 import { QuestionImportScreen } from "@/features/question-bank/components/import-screen";
+import { mockViews } from "@/features/question-bank/components/mocks-screen";
 import { buildQuestionImportPrompt } from "@/features/question-bank/import-prompt";
 import { listImportBatches } from "@/features/question-bank/queries/list-imports";
 import { listSections } from "@/features/question-bank/queries/list-sections";
@@ -31,20 +33,24 @@ export default async function ImportPaperPage({
     /^[1-9][0-9]{0,15}$/.test(roundRaw) ? getImportRound(Number(roundRaw)) : Promise.resolve(null),
   ]);
 
-  const back = round ? { href: `/admin/ars/${round.courseId}/rounds/${round.id}`, label: `Back to ${round.name}` } : { href: "/admin/mocks", label: "Back to mock tests" };
+  const back = round ? { href: `/admin/ars/${round.courseId}/rounds/${round.id}`, label: `Back to ${round.name}` } : { href: "/admin/mocks?view=list", label: "Back to mock tests" };
 
   return (
     <RoleShell
+      // From an ARS round, a way back there; from Mock tests, the section's tabs.
       actions={
-        <Link className="button button--secondary" href={back.href}>
-          {back.label}
-        </Link>
+        round ? (
+          <Link className="button button--secondary" href={back.href}>
+            {back.label}
+          </Link>
+        ) : undefined
       }
       back={back}
       description={`Open the paper, get it read, review its questions, then build the mock. New questions go into the bank; ones it already holds are linked, not copied.${round ? ` The mock links itself to the ARS round “${round.name}”.` : ""}`}
       profile={profile}
       title="Import a paper"
     >
+      {round ? null : <SectionTabs current="import-paper" views={mockViews} />}
       <QuestionImportScreen
         batches={batches}
         buildMock

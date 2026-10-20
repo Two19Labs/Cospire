@@ -52,7 +52,7 @@ export function CourseDetail({
       // `sortOrder` is deliberately not shown. Every programme is 0 until the
       // reorder control exists, and a number the reader cannot change and did
       // not choose only invites the question of what it means.
-      back={{ href: "/admin/courses", label: "Back to programmes" }}
+      back={{ href: "/admin/courses?view=list", label: "Back to programmes" }}
       description={`Programme · Created ${course.createdAt.slice(0, 10)}`}
       profile={profile}
       title={course.title}

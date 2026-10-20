@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Icon } from "@/features/auth/components/icon";
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 
@@ -18,42 +18,40 @@ import { SubmitButton } from "@/shared/ui";
 // The page heading, shared with the loading skeleton.
 export const templatesHeading = "Report templates";
 
+export const templateViews: SectionView[] = [
+  { description: "The templates mentors write ARS reports from.", href: "/admin/report-templates?view=list", key: "list", label: "View templates" },
+  { description: "Name a template, then add its components.", href: "/admin/report-templates?view=add", key: "add", label: "New template" },
+  { description: "Paste a template written as a document and build it in one go.", href: "/admin/report-templates/import", key: "import", label: "Import a template" },
+];
+
 export function TemplatesScreen({
   error,
   notice,
   profile,
   templates,
+  view,
 }: {
   error: TemplateError | null;
   notice: TemplateNotice | null;
   profile: Profile;
   templates: TemplateListPage;
+  // null: the landing cards; otherwise the one view shown.
+  view: string | null;
 }) {
   const { page, pageCount, rows, total } = templates;
 
   return (
     <RoleShell
-      actions={
-        <>
-          <Link className="button button--secondary" href="/admin/report-templates/import">
-            Build from a document
-          </Link>
-          {/* An anchor to the form further down: no JavaScript needed. */}
-          <a className="button button--primary" href="#new-template">
-            <Icon name="plus" />
-            New template
-          </a>
-        </>
-      }
       description="Give every mentor a consistent framework for meaningful feedback: the components of a report, their weightages, and the words a mentor may choose from."
       heading={templatesHeading}
       profile={profile}
       title="Report templates"
     >
+      {view === null ? <SectionCards views={templateViews} /> : <SectionTabs current={view} views={templateViews} />}
       {error ? <p className="notice notice--error" role="alert">{templateErrorMessages[error]}</p> : null}
       {notice ? <p className="notice notice--success">{templateNoticeMessages[notice]}</p> : null}
 
-      <section className="panel">
+      {view === "list" ? <section className="panel">
         <div className="panel__header">
           <div>
             <h2>ARS report templates</h2>
@@ -125,9 +123,9 @@ export function TemplatesScreen({
             )}
           </nav>
         ) : null}
-      </section>
+      </section> : null}
 
-      <section className="panel panel--narrow" id="new-template">
+      {view === "add" ? <section className="panel panel--narrow" id="new-template">
         <div className="panel__header">
           <div>
             <h2>New template</h2>
@@ -149,7 +147,7 @@ export function TemplatesScreen({
           </label>
           <SubmitButton variant="primary" pendingLabel="Creating…">Create template</SubmitButton>
         </form>
-      </section>
+      </section> : null}
     </RoleShell>
   );
 }

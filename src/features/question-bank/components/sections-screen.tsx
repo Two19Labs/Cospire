@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
@@ -5,6 +6,7 @@ import { SubmitButton } from "@/shared/ui";
 import { createSectionAction, deleteSectionAction, updateSectionAction } from "../actions/section-actions";
 import { sectionErrors, sectionNotices, type SectionError, type SectionNotice } from "../list-params";
 import type { QuestionSection } from "../queries/list-sections";
+import { questionViews } from "./questions-screen";
 
 // The page heading, shared with the loading skeleton.
 export const sectionsHeading = "Question sections";
@@ -24,12 +26,13 @@ export function SectionsScreen({
 }) {
   return (
     <RoleShell
-      back={{ href: "/admin/questions", label: "Back to the question bank" }}
+      back={{ href: "/admin/questions?view=list", label: "Back to the question bank" }}
       description="Keep question categories consistent across assessments. Every question belongs to one of these, and the score breakdown a student sees is by section."
       heading={sectionsHeading}
       profile={profile}
       title="Question sections"
     >
+      <SectionTabs current="sections" views={questionViews} />
       {notice ? <p className="notice notice--success">{sectionNotices[notice]}</p> : null}
       {error ? (
         <p className="notice notice--error" role="alert">

@@ -151,7 +151,7 @@ try {
     record(name, redirected && (res.location ?? "").includes(expect), `${res.status} -> ${res.location}`);
   }
 
-  const list = await get("/admin/courses", "admin");
+  const list = await get("/admin/courses?view=add", "admin");
   record("admin reaches the programme list", list.status === 200, `${list.status}`);
 
   // Found by `title`, the only field unique to the create form. The GET search
