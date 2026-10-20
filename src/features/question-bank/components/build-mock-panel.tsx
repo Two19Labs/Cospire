@@ -227,7 +227,7 @@ export function BuildMockPanel({
               <input defaultChecked name="allowMobile" type="checkbox" /> <span>Allow phone attempts (always unproctored)</span>
             </label>
             <label className="choice">
-              <input name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span>
+              <input defaultChecked name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span>
             </label>
           </div>
         </div>

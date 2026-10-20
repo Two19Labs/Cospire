@@ -165,7 +165,7 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
               <h3 className="form-section__title">Delivery</h3>
               <div className="toggle-list">
                 <label className="choice"><input defaultChecked={value?.allowMobile ?? true} name="allowMobile" type="checkbox" /> <span>Allow phone attempts (always unproctored)</span></label>
-                <label className="choice"><input defaultChecked={value?.proctoringEnabled ?? false} name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span></label>
+                <label className="choice"><input defaultChecked={value?.proctoringEnabled ?? true} name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span></label>
               </div>
               <span className="field__hint">Proctoring warns and logs leaving the test; it never submits an attempt on its own.</span>
             </div>
