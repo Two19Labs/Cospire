@@ -35,10 +35,12 @@ function excerpt(body: string): string {
 // other features own (the test engine's students and attempts) underneath.
 // Every field name is unchanged: the save action and the verify harnesses read
 // them by name.
-export function MockEditor({ profile, value, picker, offPage = [], error, notice, children }: {
+export function MockEditor({ profile, value, picker, inMock = [], error, notice, children }: {
   profile: Profile; value: MockEditorValue | null;
-  picker: { rows: PickerQuestion[]; page: number; pageCount: number };
-  offPage?: PickerQuestion[];
+  // The bank to add from; null while it is folded away (an existing mock without `?add=1`).
+  picker: { rows: PickerQuestion[]; page: number; pageCount: number } | null;
+  // Every question already in the mock, in paper order.
+  inMock?: PickerQuestion[];
   error?: string; notice?: string;
   // Panels owned by other features, shown under the form: the test engine's student access.
   children?: React.ReactNode;
@@ -52,7 +54,6 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
   const mockMarks = sectionMarks.length > 0 && sectionMarks.every((marks) => marks === sectionMarks[0]) ? sectionMarks[0] : null;
   const selectedSection = new Map<number, number>();
   existingSections.forEach((section, index) => section.questionIds.forEach((id) => selectedSection.set(id, index)));
-  const offPageIds = new Set(offPage.map((question) => question.id));
   const base = value ? `/admin/mocks/${value.id}` : "/admin/mocks/new";
 
   // One renderer for both lists. A row that cannot be selected -- archived, or a
@@ -187,14 +188,20 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
           </section>
 
           <section className="panel" id="questions">
-            <div className="panel__header"><div><h2>Questions</h2><p className="muted">Only active questions are offered. Selecting a DI set adds its passage and every sub-question.</p></div><span className="tag">{selectedSection.size} selected</span></div>
-            {offPage.length > 0 ? <><h3 className="field__label">Already in this mock, from other pages</h3>{offPage.map((question) => row(question, true))}</> : null}
-            {picker.rows.length === 0 ? <p className="panel-empty">No active questions on this page.</p> : picker.rows.filter((question) => !offPageIds.has(question.id)).map((question) => row(question, selectedSection.has(question.id)))}
-            {picker.pageCount > 1 ? <nav aria-label="Question picker pagination" className="pagination">
-              {picker.page > 1 ? <Link href={`${base}?page=${picker.page - 1}`}>Previous</Link> : <span>Previous</span>}
-              <span>Question page {picker.page} of {picker.pageCount}. Save before changing pages.</span>
-              {picker.page < picker.pageCount ? <Link href={`${base}?page=${picker.page + 1}`}>Next</Link> : <span>Next</span>}
-            </nav> : null}
+            <div className="panel__header"><div><h2>Questions</h2><p className="muted">{value ? "The questions in this mock. Untick one to take it out." : "Only active questions are offered. Selecting a DI set adds its passage and every sub-question."}</p></div><span className="tag">{selectedSection.size} selected</span></div>
+            {inMock.map((question) => row(question, true))}
+            {picker ? <>
+              {value ? <div className="form-section"><h3 className="form-section__title">Add from the question bank</h3><p className="muted">Active questions not already in this mock. Selecting a DI set adds its passage and every sub-question.</p></div> : null}
+              {picker.rows.length === 0 ? <p className="panel-empty">No more active questions on this page.</p> : picker.rows.map((question) => row(question, false))}
+              {picker.pageCount > 1 ? <nav aria-label="Question picker pagination" className="pagination">
+                {picker.page > 1 ? <Link href={`${base}?${value ? "add=1&" : ""}page=${picker.page - 1}#questions`}>Previous</Link> : <span>Previous</span>}
+                <span>Question page {picker.page} of {picker.pageCount}. Save before changing pages.</span>
+                {picker.page < picker.pageCount ? <Link href={`${base}?${value ? "add=1&" : ""}page=${picker.page + 1}#questions`}>Next</Link> : <span>Next</span>}
+              </nav> : null}
+            </> : <div className="toolbar">
+              <Link className="button button--secondary" href={`${base}?add=1#questions`}>Add questions from the question bank</Link>
+              <span className="field__hint">Save first: this opens the bank and leaves unsaved changes behind.</span>
+            </div>}
           </section>
 
           <div className="form-bar">
