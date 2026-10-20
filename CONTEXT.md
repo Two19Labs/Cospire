@@ -88,10 +88,7 @@ credentials, student data or anyone's personal data here.
   and ARS process deleted, with their 20 stored files, so the owner can test the
   admin flow from scratch. Kept: the 7 accounts, orgs, mentor assignments, the
   activity log, and the video file in VdoCipher.
-- **The owner's mock notes 1-10** (#100, 2026-10-19): sections follow the paper
-  under either timing (migration `20261019100000`), section minutes read from the
-  paper, the import and build step tidied, last-question submit, a proctor popup,
-  analytics on a student's sat mock. *The owner's mock notes* in `completed.md`.
+- **The owner's mock notes 1-10** (#100): sections follow the paper (migration `20261019100000`); see `completed.md`.
 - **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
   custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
