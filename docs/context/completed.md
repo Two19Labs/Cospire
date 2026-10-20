@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-10-19 | **The owner's mock notes 1-10** (`feat/mock-notes`) | Sections follow the paper: a mock keeps the document's sections under either timing, and the parser reads each section's stated minutes into the build step. Import: copy buttons only, button-style restart, aligned fields, header back buttons, no question-ID panel, the build step at the top once the review is finished. Exam: the last question finishes (section or test), free-mode section tabs, a popup on leaving a proctored test. A student's mock page shows their latest result's analytics. Migration `20261019100000` (expand only). 648 tests, typecheck, lint, build; 11/11 screen checks on a local production build against the hosted database, counts back to baseline. **Not verified:** sitting several untimed sections, a real Gemini call returning `sections`. See *The owner's mock notes, 2026-10-19* |
 | 2026-10-17 | **A mock has a draft state** (`feat/mock-drafts`, D41) | `mocks.status` is `draft` or `published`; new mocks start as drafts and every mock that existed is backfilled to published, so students see exactly what they saw. Visibility is the database's: `private.mock_is_published` is AND-ed into `private.student_has_mock_grant`, the one helper the student mock list, the mock page, a direct URL and `attempts_insert_own` all read through, and the student arm of `curriculum_items_select_authorized` drops a `test` item whose mock is a draft. Returning a sat mock to a draft is refused by a trigger, because it would hide that student's own result. The locking half of D41 was **already built** (`private.guard_sat_mock_structure`), so nothing was rebuilt, and marks stay correctable through the existing rescore path. Migration `20261017100000`, **written only -- the owner applies it**. 636 tests, typecheck, lint, build; `scripts/verify/mock-drafts.sql` **28/28** against the hosted database with the migration spliced in and rolled back. **Not clicked through:** the column does not exist live yet. See *A mock has a draft state, 2026-10-17* |
 | 2026-10-17 | **Delete for programmes, documents, mocks and videos** (`feat/delete`, D42 and D54) | Three deliberate steps: a Delete link, a confirmation screen stating what will go with counts measured in the database, then the item's name typed out and checked on the server **and** again inside `public.delete_content`. One `SECURITY DEFINER` transaction, runnable only by an active admin of the organisation, takes everything that hangs off the thing deleted; the storage object and the VdoCipher video are removed after it commits, with a `deletion_cleanups` row written **in the same transaction** so a failure there is visible on `/admin/delete` and retryable instead of silent. Questions are never deleted with a mock, `rescore_events` are never deleted at all, and a programme never touches the libraries it points at. A mock an ARS round links to through `config.mockId` is refused, because no foreign key can protect that reference. Migration `20261017110000`, **written only -- the owner applies it**. 646 tests (10 new), typecheck, lint, build; `scripts/verify/delete.sql` **53/53** against the hosted database, spliced and rolled back, with zero orphans in every table; the VdoCipher delete proven on a throwaway video (created, deleted, then 404). **Nothing has run in a browser**, because the functions do not exist live yet. See *Delete, 2026-10-17* |
 | 2026-10-16 | **Defect C2 fixed: a save always shows on screen** (`fix/save-completion`) | `ActionBoundary` follows a Server Action's redirect with `window.location` instead of the client router, so the reset that used to be lost no longer exists. Scripted reproduction (`scripts/verify/c2-repro.mjs`, new): **0/40 stuck against 25/40 = 63% at baseline**, 40/40 saves shown, 0 writes lost. All 13 `ui-audit-flows.mjs` tasks pass with the audit's click and screen counts. 611/611 tests, typecheck, lint, `next build`. Cost: every save is a full document load, median 1.2 s. `next` 15.5.24 → 15.5.27 is on the branch but did **not** fix C2; keeping it is the owner's call. See *Defect C2, 2026-10-16* |
@@ -2571,3 +2572,59 @@ refuses a direct `DELETE` from `storage.objects`** ("Use the Storage API
 instead"), so no SQL probe can prove a file goes -- only the running application
 can, through `.remove()`. The VdoCipher half *is* proven: a throwaway video was
 created, deleted with the exact call `deleteVideo` makes, and then answered 404.
+
+## The owner's mock notes, 2026-10-19
+
+The owner's mock notes of 2026-10-19, with the answers to the questions asked:
+
+1. Import: only the copy buttons; the prompt and document text boxes are hidden.
+2. "Start again" links become buttons.
+3. Paper settings fields align.
+4. One back link on the review screen, styled.
+5. Once every question is decided, the build panel sits at the top; panel restyled.
+6. The "question IDs this import created" panel is removed everywhere (IDs stay in the bank).
+7. **Sections follow the document** (owner): a mock always keeps the paper's
+   sections in the paper's order, whatever the timing. One overall timer = free
+   movement across sections; a timer per section = sat in order, locked once left.
+   The parser reads each section's minutes from the paper and prefills them.
+   Supersedes the 2026-09-21 rule "one implicit untimed section or fully sectional".
+8. The last question has a submit button (last of an earlier section: next section).
+9. Leaving a proctored test shows a popup, not a banner. Still warn and log only.
+10. A student's mock page shows their analytics once they have sat it (student only).
+
+### Also done
+
+- The manual mock editor and the ID-list mock document follow the same rule:
+  titled sections are kept under an overall timer; no titles = one "All
+  questions" section as before. Over 10 paper sections under an overall timer
+  still collapse to one block (the editor shows 10 slots).
+- The parser reads a top-level `"sections": [{ "name", "minutes" }]` (prompt
+  rule 14, Gemini schema) and stamps `sectionMinutes` on each staged question;
+  the build step prefills the minutes and preselects per-section timing when the
+  paper timed every section. Forcing one section at staging drops the minutes.
+- Free mode with several sections: the section tabs move between sections
+  (`type="button"`, so Enter still saves and moves on) and the palette shows the
+  current question's section.
+- The import pages' back links are header buttons; the in-page duplicates and
+  the step trail's double numbering are gone.
+- `ui-audit-fixture.mjs` publishes its mocks (stale since D41 drafts).
+
+### Migration
+
+`20261019100000_untimed_sections_follow_the_paper.sql`: expand only, **not
+applied** to the hosted database. Until it is, building an overall-timer mock
+with more than one section is refused ("structure"); everything else works.
+
+### Verification, 2026-10-19
+
+- typecheck, lint, 648/648 tests, production build: pass.
+- `coverage/mock-notes/shots.mjs` against the ui-audit fixture on a local
+  production build (hosted database), 11/11: analytics on a sat mock's page;
+  "Save and go to next section" on a section's last question; the proctor popup
+  opens and closes; copy button only, no prompt box; "Start again" is a button;
+  build step above the review with 40 min prefilled and per-section timing
+  chosen; no question-ID panel; one header back button. Screens judged by eye.
+  Teardown: counts back to baseline, seeded import rows 0.
+- **Not verified:** sitting a mock with several untimed sections (needs the
+  migration), the "Save and submit" label on a paper's very last question (same
+  code path as the section one), a real Gemini call returning `sections`.
