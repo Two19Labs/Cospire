@@ -137,24 +137,38 @@ export function MockEditor({ profile, value, picker, offPage = [], error, notice
 
           <section className="panel" id="settings">
             <div className="panel__header"><div><h2>Test settings</h2><p className="muted">The overall timer is always authoritative.</p></div></div>
-            <div className="form-grid">
-              <label className="field"><span className="field__label">Title</span><input className="input" defaultValue={value?.title} maxLength={160} name="title" required /></label>
-              <label className="field"><span className="field__label">Full duration (minutes)</span><input className="input" defaultValue={value?.durationMinutes ?? 120} min={1} max={1440} name="durationMinutes" required type="number" /></label>
-              <label className="field field--full"><span className="field__label">Instructions</span><textarea className="input" defaultValue={value?.instructions} maxLength={20000} name="instructions" rows={5} /></label>
-              <label className="field"><span className="field__label">Attempt limit</span><input className="input" defaultValue={value?.maxAttempts ?? 1} min={1} max={100} name="maxAttempts" required type="number" /></label>
-              <label className="field"><span className="field__label">Marks per correct answer</span><input className="input" defaultValue={mockMarks ?? ""} min={0.01} max={100} name="marks" placeholder="Each question's own" step="0.01" type="number" /><span className="field__hint">Applies to every section. Leave blank to use each question&apos;s own marks.</span></label>
-              <label className="field"><span className="field__label">Penalty per wrong answer</span><input className="input" defaultValue={value?.negativeMarking ?? "0"} min={0} max={100} name="negativeMarking" step="0.01" required type="number" /></label>
-            </div>
-            <fieldset className="field"><legend className="field__label">Negative marking applies to</legend>
-              <div className="toggle-list">
-                {[["mcq", "Single-correct MCQ"], ["mcq_multi", "Multiple-correct MCQ"], ["numerical", "Numerical"]].map(([type, label]) => <label className="choice" key={type}><input defaultChecked={value ? value.negativeMarkingTypes.includes(type) : type !== "numerical"} name={`negative_${type}`} type="checkbox" /> <span>{label}</span></label>)}
+            {/* Grouped as the import's build step is (owner, 2026-10-20). Field
+                names unchanged: the save action and verify scripts read them. */}
+            <div className="form-section">
+              <h3 className="form-section__title">The mock</h3>
+              <div className="form-fields">
+                <label className="field"><span className="field__label">Title</span><input className="input" defaultValue={value?.title} maxLength={160} name="title" required /></label>
+                <label className="field"><span className="field__label">Full duration (minutes)</span><input className="input" defaultValue={value?.durationMinutes ?? 120} min={1} max={1440} name="durationMinutes" required type="number" /></label>
+                <label className="field"><span className="field__label">Attempt limit</span><input className="input" defaultValue={value?.maxAttempts ?? 1} min={1} max={100} name="maxAttempts" required type="number" /></label>
+                <label className="field"><span className="field__label">Instructions</span><textarea className="input input--area" defaultValue={value?.instructions} maxLength={20000} name="instructions" rows={4} /></label>
               </div>
-            </fieldset>
-            <div className="toggle-list">
-              <label className="choice"><input defaultChecked={value?.allowMobile ?? true} name="allowMobile" type="checkbox" /> <span>Allow phone attempts</span></label>
-              <label className="choice"><input defaultChecked={value?.proctoringEnabled ?? false} name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span></label>
             </div>
-            <p className="notice">Phone attempts are always unproctored. Proctoring warns and logs events; it never submits an attempt on its own.</p>
+            <div className="form-section">
+              <h3 className="form-section__title">Scoring</h3>
+              <div className="form-fields">
+                <label className="field"><span className="field__label">Marks per correct answer</span><input className="input" defaultValue={mockMarks ?? ""} min={0.01} max={100} name="marks" placeholder="Each question's own" step="0.01" type="number" /><span className="field__hint">Applies to every section. Leave blank to use each question&apos;s own marks.</span></label>
+                <label className="field"><span className="field__label">Penalty per wrong answer</span><input className="input" defaultValue={value?.negativeMarking ?? "0"} min={0} max={100} name="negativeMarking" step="0.01" required type="number" /></label>
+              </div>
+              <div className="field">
+                <span className="field__label">Negative marking applies to</span>
+                <div className="toggle-list">
+                  {[["mcq", "Single-correct MCQ"], ["mcq_multi", "Multiple-correct MCQ"], ["numerical", "Numerical"]].map(([type, label]) => <label className="choice" key={type}><input defaultChecked={value ? value.negativeMarkingTypes.includes(type) : type !== "numerical"} name={`negative_${type}`} type="checkbox" /> <span>{label}</span></label>)}
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h3 className="form-section__title">Delivery</h3>
+              <div className="toggle-list">
+                <label className="choice"><input defaultChecked={value?.allowMobile ?? true} name="allowMobile" type="checkbox" /> <span>Allow phone attempts (always unproctored)</span></label>
+                <label className="choice"><input defaultChecked={value?.proctoringEnabled ?? false} name="proctoringEnabled" type="checkbox" /> <span>Enable proctoring</span></label>
+              </div>
+              <span className="field__hint">Proctoring warns and logs leaving the test; it never submits an attempt on its own.</span>
+            </div>
           </section>
 
           <section className="panel" id="timing">

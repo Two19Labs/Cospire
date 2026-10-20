@@ -384,6 +384,12 @@ fieldset.field {
   padding: 0;
 }
 
+/* A legend is not a grid item, so the field's gap never reached it and it sat
+   on top of its options (owner, 2026-10-20). */
+fieldset.field > legend {
+  margin-bottom: 0.45rem;
+}
+
 .choice-list {
   display: grid;
   gap: 0.5rem;
@@ -411,13 +417,13 @@ textarea.input {
    rather than a card. */
 .form-section {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .form-section + .form-section {
   border-top: 1px solid var(--line);
-  margin-top: 0.5rem;
-  padding-top: 1.25rem;
+  margin-top: 0.75rem;
+  padding-top: 1.75rem;
 }
 
 .form-section__title {
