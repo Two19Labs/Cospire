@@ -111,8 +111,12 @@ export async function findDuplicates(
 
   // Bank questions whose text equals one of ours: those are the only ones that
   // can be "the same", so only their options, keys, pictures and, for a set,
-  // sub-questions are read.
-  const exactIds = [...new Set(matches.filter((match) => match.kind === "bank" && match.sameText).map((match) => match.ref))];
+  // sub-questions are read. A set our passage only resembles is read too, so
+  // its sub-questions can be counted and compared (a "possible" set).
+  const isPassage = (index: number) => readable[index]?.parsed.type === "di_stimulus";
+  const exactIds = [
+    ...new Set(matches.filter((match) => match.kind === "bank" && (match.sameText || isPassage(match.inputIndex))).map((match) => match.ref)),
+  ];
   const bankRows: BankRow[] = [];
   if (exactIds.length > 0) {
     const { data, error: bankError } = await supabase.from("questions").select("id, type, options, images, parent_id").in("id", exactIds);

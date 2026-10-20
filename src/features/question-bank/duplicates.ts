@@ -16,8 +16,11 @@
 //
 // A DI set is all or nothing (28 Sept D4): it links only when its passage and
 // every sub-question, in order, are the same as an existing set's. Anything
-// less is a new set, because linking part of it would change what the set holds
-// in mocks already sat. A set that only resembles one is new, with a note.
+// less is never linked automatically, because linking part of it would change
+// what the set holds in mocks already sat. A set that resembles one with the
+// same number of sub-questions, each resembling its counterpart, is "possible":
+// a person links it whole or approves it as a different set. Its sub-questions
+// are "new" and decided with it. Any other resemblance is new, with a note.
 //
 // Pure, so every case in the decision table is unit tested without a database.
 
@@ -159,6 +162,26 @@ export function judgePaper(entries: PaperEntry[], context: MatchContext): Map<nu
         const set = context.bankSets.get(linked)!;
         verdicts.set(entry.position, { kind: "same", questionId: linked });
         children.forEach((childIndex, order) => verdicts.set(entries[childIndex].position, { kind: "same", questionId: set.children[order].id }));
+        return;
+      }
+
+      // A set that resembles one with as many sub-questions, each resembling its
+      // counterpart in order, is for a person to decide: same set, or different.
+      const candidates = matchesOf(index)
+        .filter((match) => {
+          const set = match.kind === "bank" ? context.bankSets.get(match.ref) : undefined;
+          return (
+            set !== undefined &&
+            set.children.length === children.length &&
+            children.every((childIndex, order) => matchesOf(childIndex).some((own) => own.kind === "bank" && own.ref === set.children[order].id))
+          );
+        })
+        .sort((a, b) => Number(b.sameText) - Number(a.sameText) || b.similarity - a.similarity || a.ref - b.ref)
+        .slice(0, maxCandidates)
+        .map((match) => ({ questionId: match.ref, sameText: match.sameText, similarity: match.similarity, source: "bank" as const }));
+      if (candidates.length > 0) {
+        verdicts.set(entry.position, { kind: "possible", candidates });
+        for (const childIndex of children) verdicts.set(entries[childIndex].position, { kind: "new" });
         return;
       }
 

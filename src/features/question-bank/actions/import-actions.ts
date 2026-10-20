@@ -19,7 +19,7 @@ import { readQuestionsWithGemini } from "../gemini";
 import { type ModelFigure } from "../model-call";
 import { readQuestionsWithOpenAiCompatible } from "../openai-compatible";
 import { findDuplicates } from "../queries/find-duplicates";
-import { readBatchRows, type SessionClient } from "../queries/import-rows";
+import { readBatchRows, type BatchRow, type SessionClient } from "../queries/import-rows";
 import { listSections } from "../queries/list-sections";
 import { isQuestionImagePath, questionImagesBucket } from "../storage";
 
@@ -375,7 +375,9 @@ export async function approveImportAction(
       staged.duplicate?.kind === "possible"
         ? staged.duplicate.candidates.flatMap((candidate) => (candidate.source === "bank" ? [candidate.questionId] : []))
         : [];
-    if (intoId === null || !offered.includes(intoId) || staged.parentPosition !== null) {
+    // Not for a set: correcting only its passage would leave its sub-questions
+    // to be approved as new ones inside the existing set.
+    if (intoId === null || !offered.includes(intoId) || staged.parentPosition !== null || staged.type === "di_stimulus") {
       return { problems: ["That question cannot be corrected from here."], values };
     }
     const { data: target } = await supabase.from("questions").select("id, type, parent_id, archived_at").eq("id", intoId).maybeSingle();
@@ -438,6 +440,24 @@ async function linkRow(supabase: SessionClient, importId: number, questionId: nu
   return !error && (data ?? []).length === 1;
 }
 
+// "Same set" for a set that only resembles one: each sub-question is linked to
+// the bank set's in order, before the passage, so a set never ends up half
+// linked with the rest free to be approved into the existing set. A retry
+// skips sub-questions already linked to the right one.
+// ponytail: one update per row, not one transaction; a failure part way stops
+// before the passage and leaves the rest pending, retryable from the screen.
+async function linkSubQuestions(supabase: SessionClient, rows: BatchRow[], setRow: BatchRow, setId: number): Promise<boolean> {
+  const children = rows.filter((entry) => entry.parsed?.parentPosition === setRow.position);
+  const { data: bankChildren, error } = await supabase.from("questions").select("id").eq("parent_id", setId).order("id");
+  if (error || !bankChildren || bankChildren.length !== children.length) return false;
+  for (const [order, child] of children.entries()) {
+    const target = Number(bankChildren[order].id);
+    if (child.status === "approved" && child.questionId === target) continue;
+    if (child.status !== "pending_review" || !(await linkRow(supabase, child.id, target))) return false;
+  }
+  return true;
+}
+
 // "Same question": approve a staged row as an existing question.
 export async function linkImportAction(formData: FormData): Promise<void> {
   await requireRole("admin");
@@ -450,7 +470,12 @@ export async function linkImportAction(formData: FormData): Promise<void> {
   const rows = await readBatchRows(supabase, batchId);
   const row = rows.find((entry) => entry.id === importId);
   const questionIdAt = (position: number) => rows.find((entry) => entry.position === position && entry.status === "approved")?.questionId ?? null;
-  const ok = row !== undefined && linkTargets(row.parsed, questionIdAt).includes(questionId) && (await linkRow(supabase, importId, questionId));
+  const isPossibleSet = row?.parsed?.type === "di_stimulus" && row.parsed.duplicate?.kind === "possible";
+  const ok =
+    row !== undefined &&
+    linkTargets(row.parsed, questionIdAt).includes(questionId) &&
+    (!isPossibleSet || (await linkSubQuestions(supabase, rows, row, questionId))) &&
+    (await linkRow(supabase, importId, questionId));
 
   revalidatePath("/admin/questions");
   redirect(`/admin/questions/import/${batchId}?notice=${ok ? "linked" : "failed"}#import-${importId}`);

@@ -75,26 +75,31 @@ function liveProblems(row: ImportRow, sections: QuestionSection[], orgId: number
 }
 
 // Whether a pending row needs a person. Mirrors approveAllCleanAction: a flagged
-// match, a problem to fix, or an unreadable entry always does.
-function isClean(row: ImportRow, sections: QuestionSection[], orgId: number): boolean {
+// match, a problem to fix, or an unreadable entry always does, as does a
+// sub-question of a flagged set (`heldSets`), which waits for its set's decision.
+function isClean(row: ImportRow, sections: QuestionSection[], orgId: number, heldSets: Set<number>): boolean {
   return (
     row.status === "pending_review" &&
     row.parsed !== null &&
     row.parsed.duplicate?.kind !== "possible" &&
+    !heldSets.has(row.parsed.parentPosition ?? -1) &&
     liveProblems(row, sections, orgId).length === 0
   );
 }
 
 // One line on why a pending row cannot be approved in bulk, for the summary at
 // the top. Null for a row that needs no decision.
-function attentionReason(row: ImportRow, sections: QuestionSection[], orgId: number): string | null {
-  if (row.status !== "pending_review" || isClean(row, sections, orgId)) return null;
+function attentionReason(row: ImportRow, sections: QuestionSection[], orgId: number, heldSets: Set<number>): string | null {
+  if (row.status !== "pending_review" || isClean(row, sections, orgId, heldSets)) return null;
   if (!row.parsed) return "Not a question the bank can hold. Reject it.";
   const verdict = row.parsed.duplicate;
   if (verdict?.kind === "possible") {
     const first = verdict.candidates[0];
     if (!first) return "Possibly the same as a question you already have.";
     const percent = `${Math.round(first.similarity * 100)}% similar`;
+    if (row.parsed.type === "di_stimulus" && first.source === "bank") {
+      return `Might be the same set as ${formatQuestionId(first.questionId)} in the bank (${percent}).`;
+    }
     return first.source === "bank"
       ? `Might be the same as ${formatQuestionId(first.questionId)} in the bank (${percent}).`
       : `Might repeat question ${first.position + 1} of this paper (${percent}).`;
@@ -163,6 +168,38 @@ function DuplicateNotice({
   }
 
   const isSubQuestion = row.parsed?.parentPosition !== null && row.parsed?.parentPosition !== undefined;
+  if (row.parsed?.type === "di_stimulus") {
+    // A set is linked whole or not at all. "Corrected version" is not offered:
+    // it would replace the passage only and leave its sub-questions to be added
+    // to the existing set.
+    return (
+      <div className="notice notice--warn">
+        <p>
+          <strong>Possibly the same as a set you already have.</strong> Decide: link it as the same set, which links
+          each of its sub-questions to that set&apos;s in order, or approve it as a different set.
+        </p>
+        <ul>
+          {verdict.candidates.flatMap((candidate) =>
+            candidate.source === "bank"
+              ? [
+                  <li key={`bank-${candidate.questionId}`}>
+                    {formatQuestionId(candidate.questionId)} ·{" "}
+                    {`${Math.round(candidate.similarity * 100)}% similar passage${candidate.sameText ? ", identical wording" : ""}`}
+                    {bankTexts[candidate.questionId] ? <p className="question-text">{excerpt(bankTexts[candidate.questionId])}</p> : null}
+                    <LinkButton
+                      batchId={batchId}
+                      importId={row.id}
+                      label={`Same set — link to ${formatQuestionId(candidate.questionId)}`}
+                      questionId={candidate.questionId}
+                    />
+                  </li>,
+                ]
+              : [],
+          )}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className="notice notice--warn">
       <p>
@@ -236,14 +273,20 @@ export function ImportReviewScreen({
   const counts = { approved: 0, pending_review: 0, rejected: 0 };
   for (const row of batch.rows) counts[row.status] += 1;
 
-  const cleanCount = batch.rows.filter((row) => isClean(row, sections, orgId)).length;
+  // Sets waiting on a "same set or different set" decision, by staged position.
+  const heldSets = new Set(
+    batch.rows.flatMap((row) =>
+      row.status === "pending_review" && row.parsed?.type === "di_stimulus" && row.parsed.duplicate?.kind === "possible" ? [row.position] : [],
+    ),
+  );
+  const cleanCount = batch.rows.filter((row) => isClean(row, sections, orgId, heldSets)).length;
   const questionIdAt = (position: number) =>
     batch.rows.find((row) => row.position === position && row.status === "approved")?.questionId ?? null;
 
   // The summary's "needs your attention" list, each linking to its question on
   // the right page of the one-by-one list.
   const attention = batch.rows.flatMap((row, index) => {
-    const reason = attentionReason(row, sections, orgId);
+    const reason = attentionReason(row, sections, orgId, heldSets);
     if (reason === null) return [];
     const onPage = Math.floor(index / importReviewPageSize) + 1;
     return [{ href: `/admin/questions/import/${batchId}?page=${onPage}#import-${row.id}`, id: row.id, number: row.position + 1, reason }];
@@ -324,7 +367,7 @@ export function ImportReviewScreen({
         // Already held: linking is the only sensible approval, so no editor.
         const linkOnly = verdict?.kind === "same" || verdict?.kind === "repeat";
         const correctable =
-          verdict?.kind === "possible" && parsed?.parentPosition === null
+          verdict?.kind === "possible" && parsed?.parentPosition === null && parsed.type !== "di_stimulus"
             ? verdict.candidates.flatMap((candidate) => (candidate.source === "bank" ? [candidate.questionId] : []))
             : [];
 
@@ -367,7 +410,13 @@ export function ImportReviewScreen({
                   parent={parentSet}
                   questionId={null}
                   sections={sections}
-                  submitLabel={verdict?.kind === "possible" ? "Approve as a different question" : "Approve into the bank"}
+                  submitLabel={
+                    verdict?.kind !== "possible"
+                      ? "Approve into the bank"
+                      : parsed.type === "di_stimulus"
+                        ? "Approve as a different set"
+                        : "Approve as a different question"
+                  }
                   topics={topics}
                   type={parsed.type}
                 />

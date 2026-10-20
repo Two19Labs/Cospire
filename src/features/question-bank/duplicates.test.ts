@@ -134,6 +134,21 @@ describe("DI sets are all or nothing (28 Sept D4)", () => {
     expect([1, 2, 3].map((position) => verdicts.get(position))).toEqual([{ kind: "new" }, { kind: "new" }, { kind: "new" }]);
   });
 
+  it("flags a set whose passage only resembles one, every sub-question matching, for a person", () => {
+    const entries = [entry(0, passage(["chart"])), entry(1, storeB, 0), entry(2, growth, 0), entry(3, ratio, 0)];
+    const matches = [bank(0, 383, false, 0.84), bank(1, 384, true), bank(2, 385, true), bank(3, 386, true)];
+    const verdicts = judgePaper(entries, context(matches, bankRows, bankSet));
+    expect(verdicts.get(0)).toEqual({ kind: "possible", candidates: [{ questionId: 383, sameText: false, similarity: 0.84, source: "bank" }] });
+    expect([1, 2, 3].map((position) => verdicts.get(position))).toEqual([{ kind: "new" }, { kind: "new" }, { kind: "new" }]);
+  });
+
+  it("does not flag a resembling set with a different number of sub-questions", () => {
+    const entries = [entry(0, passage(["chart"])), entry(1, storeB, 0), entry(2, growth, 0)];
+    const matches = [bank(0, 383, false, 0.84), bank(1, 384, true), bank(2, 385, true)];
+    const verdicts = judgePaper(entries, context(matches, bankRows, bankSet));
+    expect(verdicts.get(0)).toMatchObject({ kind: "new", note: expect.stringContaining("Q00383") });
+  });
+
   it("does not offer a sub-question of an earlier set as a match for a standalone question", () => {
     const entries = [entry(0, passage()), entry(1, storeB, 0), entry(2, storeB)];
     const verdict = judgePaper(entries, context([earlier(2, 1, true)])).get(2);
