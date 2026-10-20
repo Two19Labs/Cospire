@@ -258,3 +258,24 @@ describe("parseImportedQuestions", () => {
     expect(parseImportedQuestions(paste(many)).problems[0]).toMatch(/at most 200/);
   });
 });
+
+describe("section minutes", () => {
+  const question = (section: string) => ({ answer: "A", difficulty: "easy", options: ["1", "2"], question: "Pick one", section, topic: "Ratios", type: "mcq" });
+
+  it("stamps each question with its section's stated minutes, matching names loosely", () => {
+    const outcome = parseImportedQuestions(
+      JSON.stringify({
+        questions: [question("VARC"), question("QA"), question("DILR")],
+        sections: [{ minutes: 40, name: " varc " }, { minutes: 40, name: "QA" }, { name: "DILR" }],
+      }),
+    );
+    expect(outcome.items.map((item) => item.parsed?.sectionMinutes)).toEqual([40, 40, null]);
+  });
+
+  it("ignores minutes that are not whole and within a mock's limit", () => {
+    const outcome = parseImportedQuestions(
+      JSON.stringify({ questions: [question("QA"), question("VARC")], sections: [{ minutes: 0, name: "QA" }, { minutes: 12.5, name: "VARC" }] }),
+    );
+    expect(outcome.items.map((item) => item.parsed?.sectionMinutes)).toEqual([null, null]);
+  });
+});

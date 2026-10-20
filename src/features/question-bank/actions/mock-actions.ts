@@ -64,9 +64,11 @@ export async function saveMockAction(formData: FormData): Promise<void> {
   const mockMarks = parseMarks(formData.get("marks"));
   if (mockMarks === undefined) fail(mockId, "marks");
 
+  // Sections are kept whatever the timing (owner, 2026-10-19): the timing only
+  // decides whether they carry minutes. Overall timing with no section titled is
+  // the one implicit "All questions" section it always was.
   const timingMode = formData.get("timingMode") === "sectional" ? "sectional" : "overall";
   const sections: Array<{ title: string; durationMinutes: number | null; marks: number | null; questions: number[] }> = [];
-  const sectionCount = timingMode === "overall" ? 1 : maxMockSections;
 
   // A question's dropdown posts the SLOT it was drawn from -- "Section 3" is
   // slot 2 whether or not slots 0 and 1 were filled in. Blank slots are dropped
@@ -74,16 +76,18 @@ export async function saveMockAction(formData: FormData): Promise<void> {
   // mapping one to the other by position files questions into the wrong section
   // or fails the save with "One or more selected questions are unavailable."
   const slotOfSection: number[] = [];
-  for (let index = 0; index < sectionCount; index += 1) {
-    const sectionTitle = timingMode === "overall" ? "All questions" : normaliseMockText(formData.get(`sectionTitle_${index}`));
+  for (let index = 0; index < maxMockSections; index += 1) {
+    const sectionTitle = normaliseMockText(formData.get(`sectionTitle_${index}`));
     if (!sectionTitle) continue;
     const sectionDuration = timingMode === "overall" ? null : parsePositiveInteger(formData.get(`sectionDuration_${index}`), 1440);
     if (timingMode === "sectional" && sectionDuration === null) fail(mockId, "sections");
-    const sectionMarks = timingMode === "overall" ? null : parseMarks(formData.get(`sectionMarks_${index}`));
+    const sectionMarks = parseMarks(formData.get(`sectionMarks_${index}`));
     if (sectionMarks === undefined) fail(mockId, "marks");
     slotOfSection.push(index);
     sections.push({ title: sectionTitle, durationMinutes: sectionDuration, marks: sectionMarks ?? mockMarks, questions: [] });
   }
+  const implicit = timingMode === "overall" && sections.length === 0;
+  if (implicit) sections.push({ title: "All questions", durationMinutes: null, marks: mockMarks, questions: [] });
   const sectionBySlot = mapSectionSlots(slotOfSection);
   if (sections.length === 0) fail(mockId, "sections");
   if (timingMode === "sectional" && sections.reduce((sum, section) => sum + (section.durationMinutes ?? 0), 0) !== duration) {
@@ -124,8 +128,8 @@ export async function saveMockAction(formData: FormData): Promise<void> {
       // Absent or malformed reads as a refusal, never as section one: a missing
       // field means the post did not come from the form as rendered, and
       // silently filing the question somewhere is worse than saying no.
-      const slot = timingMode === "overall" ? 0 : parseSectionSlot(formData.get(`questionSection_${rootId}`));
-      const target = timingMode === "overall" ? 0 : (slot === null ? undefined : sectionBySlot.get(slot));
+      const slot = implicit ? 0 : parseSectionSlot(formData.get(`questionSection_${rootId}`));
+      const target = implicit ? 0 : (slot === null ? undefined : sectionBySlot.get(slot));
       if (target === undefined) fail(mockId, "section-missing");
       sections[target].questions.push(rootId, ...(childrenByParent.get(rootId) ?? []));
     }

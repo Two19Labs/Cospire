@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { recordProctorEvent } from "../actions/proctor-actions";
 import { proctorEventLabels as describe, type ProctorEventType } from "../proctor";
+import styles from "./exam.module.css";
 
 // Warn and log, never submit (operating manual §13.1). A Windows notification
 // stealing focus must not end a real student's exam, so nothing here does more
@@ -62,13 +63,31 @@ export function ProctorWatch({ attemptId }: { attemptId: number }) {
     };
   }, [record]);
 
+  // A popup rather than a banner (owner, 2026-10-19), so it is seen on coming
+  // back. Closing it is the only thing it asks; the test carries on regardless.
+  const dismiss = () => {
+    setBanner(null);
+    if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+  };
+
   return (
     <div role="status">
       {banner ? (
-        <p className="notice notice--error">
-          {banner} This test is proctored: activity away from it is logged for your mentor and admin. Your test has not been
-          ended.
-        </p>
+        <div aria-labelledby="proctor-title" aria-modal="true" className={styles.overlay} role="alertdialog">
+          <section className={styles.card}>
+            <span className={styles.eyebrow}>Proctored test</span>
+            <h2 id="proctor-title">{banner}</h2>
+            <p className="muted">
+              Activity away from this test is logged for your mentor and admin. Your test has not been ended, and your answers are
+              saved.
+            </p>
+            <div className="toolbar">
+              <button autoFocus className="button button--primary" onClick={dismiss} type="button">
+                Return to the test
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
       {fullscreen ? null : (
         <p className="notice">

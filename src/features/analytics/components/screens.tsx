@@ -62,9 +62,30 @@ export function AttemptAnalyticsScreen({
   essayNotice?: string;
   profile: Profile;
 }) {
-  const { attempt, breakdown, maxMarks } = data;
   return (
     <RoleShell profile={profile} title={data.title}>
+      <AttemptAnalyticsBody data={data} />
+      {/* Nothing is drawn when the paper carries no essay, which is every mock
+          today. A student never sees the marking form: the panel is drawn for
+          an admin or a mentor only, and the write is theirs alone by policy in
+          any case. */}
+      {profile.role === "student" ? null : <EssayMarkingPanel attemptId={data.attempt.id} notice={essayNotice} />}
+      <div className="toolbar">
+        <Link className="button button--secondary" href={back.href}>
+          {back.label}
+        </Link>
+      </div>
+    </RoleShell>
+  );
+}
+
+// One attempt's score and breakdown, without the page around it: the analytics
+// screen above, and a student's own mock page once they have sat it (owner,
+// 2026-10-19).
+export function AttemptAnalyticsBody({ data }: { data: AttemptAnalytics }) {
+  const { attempt, breakdown, maxMarks } = data;
+  return (
+    <>
       <section className="panel">
         <div className="panel__header">
           <div>
@@ -102,17 +123,7 @@ export function AttemptAnalyticsScreen({
         )}
       </section>
       {breakdown ? <BreakdownPanels breakdown={breakdown} /> : null}
-      {/* Nothing is drawn when the paper carries no essay, which is every mock
-          today. A student never sees the marking form: the panel is drawn for
-          an admin or a mentor only, and the write is theirs alone by policy in
-          any case. */}
-      {profile.role === "student" ? null : <EssayMarkingPanel attemptId={attempt.id} notice={essayNotice} />}
-      <div className="toolbar">
-        <Link className="button button--secondary" href={back.href}>
-          {back.label}
-        </Link>
-      </div>
-    </RoleShell>
+    </>
   );
 }
 

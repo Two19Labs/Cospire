@@ -11,6 +11,10 @@ import { maxOptions } from "./question-input";
 
 const example = `{
   "document": "QA practice set 4",
+  "sections": [
+    { "name": "QA", "minutes": 40 },
+    { "name": "DILR", "minutes": 40 }
+  ],
   "questions": [
     {
       "type": "mcq",
@@ -112,6 +116,10 @@ Rules:
 12. "source" is the question exactly as it appears in the document, copied word for word,
     so a reviewer can compare the two.
 13. Do NOT invent ids, keys or numbering fields.
+14. "sections" lists the document's sections in the order they appear, each with
+    "name" (exactly as used in "section" above) and "minutes" (its time limit) if the
+    document states one. Leave "minutes" out where no time limit is stated, and leave
+    "sections" out entirely if the document has no sections.
 
 Example of the exact shape:
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
@@ -20,6 +21,11 @@ export default async function ImportQuestionsPage({
 
   return (
     <RoleShell
+      actions={
+        <Link className="button button--secondary" href="/admin/questions">
+          Back to the question bank
+        </Link>
+      }
       back={{ href: "/admin/questions", label: "Back to the question bank" }}
       description="A guided workflow: open the paper, get it read, then review every question before anything reaches the bank."
       profile={profile}

@@ -138,6 +138,9 @@ if (mode === "setup") {
     if (error) throw error;
     state.made.mocks.push(data);
     save();
+    // A new mock starts as a draft (D41), invisible to the student who sits it here.
+    const { error: publishError } = await admin.from("mocks").update({ status: "published" }).eq("id", data);
+    if (publishError) throw publishError;
     return data;
   };
   const mockA = await mock("CAT Mock 1", [

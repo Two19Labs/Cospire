@@ -127,7 +127,7 @@ function StepTrail({ current }: { current: 1 | 2 | 3 }) {
     <ol aria-label="Steps" className="tabs">
       {steps.map((label, index) => (
         <li className={`tabs__link${index + 1 === current ? " tabs__link--current" : ""}`} key={label}>
-          {`${index + 1} · ${label}`}
+          {label}
         </li>
       ))}
     </ol>
@@ -198,26 +198,22 @@ export function QuestionImportScreen({
           ? "Copy the prompt, paste the document's text from step 1 underneath it, send it to any model, then paste the whole answer below."
           : "Copy the prompt into any model, attach or paste the paper underneath it, then paste the whole answer below. Charts come back as a note; paste each picture in on the review screen."}
       </p>
-      <textarea aria-label="The prompt to copy" className="input input--code" readOnly rows={8} value={prompt} />
+      {/* Buttons only (owner, 2026-10-19): nobody needs to read the prompt. */}
       <div className="toolbar">
-        <CopyButton label="Copy the prompt" text={prompt} />
-      </div>
-      {paper ? (
-        <>
-          <label className="field">
-            <span className="field__label">The document&apos;s text, with figure markers</span>
-            <textarea className="input input--area input--code" readOnly rows={8} value={paper.text} />
-            {attached > 0 ? (
-              <span className="field__hint">Keep the [[figure:N]] markers exactly as they are. Each is matched back to its picture.</span>
-            ) : null}
-          </label>
-          <div className="toolbar">
-            <CopyButton label="Copy the text" text={paper.text} />
+        {paper ? (
+          <>
             <CopyButton label="Copy prompt + text together" text={`${prompt}
 
 ${paper.text}`} variant="primary" />
-          </div>
-        </>
+            <CopyButton label="Copy the prompt" text={prompt} />
+            <CopyButton label="Copy the text" text={paper.text} />
+          </>
+        ) : (
+          <CopyButton label="Copy the prompt" text={prompt} variant="primary" />
+        )}
+      </div>
+      {paper && attached > 0 ? (
+        <p className="field__hint">The text carries [[figure:N]] markers. Keep them exactly as they are: each is matched back to its picture.</p>
       ) : null}
       <form action={previewAction} className="stack-form" onSubmit={() => setSource("paste")}>
         <FigureInputs figurePaths={figurePaths} />
@@ -237,10 +233,6 @@ ${paper.text}`} variant="primary" />
 
   return (
     <>
-      <p>
-        <Link href={buildMock ? "/admin/mocks" : "/admin/questions"}>{buildMock ? "← Back to mock tests" : "← Back to the question bank"}</Link>
-      </p>
-
       {notice ? <p className="notice notice--success">{notice}</p> : null}
       <StepTrail current={step} />
 
@@ -321,9 +313,11 @@ ${paper.text}`} variant="primary" />
               </ul>
             </div>
           ) : null}
-          <p>
-            <Link href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>Start again with another paper</Link>
-          </p>
+          <div className="toolbar">
+            <Link className="button button--secondary" href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>
+              Start again with another paper
+            </Link>
+          </div>
         </section>
       ) : null}
 
@@ -361,9 +355,11 @@ ${paper.text}`} variant="primary" />
               <PendingOverlay label={`Staging ${items.length} questions for review…`} detail="Each is compared with the bank for duplicates. Keep this tab open." />
             </div>
           </form>
-          <p>
-            <Link href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>Start again</Link>
-          </p>
+          <div className="toolbar">
+            <Link className="button button--secondary" href={buildMock ? "/admin/mocks/import-paper" : "/admin/questions/import"}>
+              Start again
+            </Link>
+          </div>
         </section>
       ) : null}
 

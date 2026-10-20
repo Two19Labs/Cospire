@@ -154,6 +154,16 @@
   white-space: nowrap;
 }
 
+/* A section tab is a button when sections are open to move between. */
+button.tab {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button.tab:not(.tabCurrent) {
+  background: transparent;
+}
+
 .tabCurrent {
   background: var(--ink, #182b50);
   border-color: var(--ink, #182b50);

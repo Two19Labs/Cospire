@@ -24,6 +24,7 @@ export interface SittingQuestion {
   number: number;
   options: { id: string; text: string }[];
   passageId: number | null;
+  sectionId: number;
   type: QuestionType;
 }
 
@@ -264,6 +265,12 @@ export function ExamSitting(props: SittingProps) {
   const count = (wanted: Status[]) => statuses.filter((status) => wanted.includes(status)).length;
   const penalised = props.negative.marks > 0 && props.negative.types.includes(question.type);
   const pending = inFlight > 0 || timers.current.size > 0;
+  // A paper with several untimed sections (2026-10-19): every section is open,
+  // the tabs move between them, and the palette shows the current one's.
+  const freeSections = props.sections.length > 1 && props.sections.every((section) => section.state === "open");
+  const shownSection = freeSections ? props.sections.find((section) => section.id === question.sectionId) ?? null : null;
+  const palette = questions.flatMap((entry, position) => (shownSection && entry.sectionId !== shownSection.id ? [] : [{ entry, position }]));
+  const paletteTitle = props.sectionTitle ?? shownSection?.title ?? null;
 
   const saveState = failed ? (
     <span className={`${styles.saveState} ${styles.saveError}`} role="status">
@@ -297,16 +304,24 @@ export function ExamSitting(props: SittingProps) {
         <main className={styles.main}>
           <div className={styles.sectionBar}>
             <span className={styles.eyebrow}>Sections</span>
-            {props.sections.map((section) => (
-              <span
-                aria-current={section.state === "current" ? "step" : undefined}
-                className={`${styles.tab} ${section.state === "current" ? styles.tabCurrent : section.state === "done" ? styles.tabDone : ""}`}
-                key={section.id}
-              >
-                {section.title}
-                <span className={styles.tabSub}>{section.sub}</span>
-              </span>
-            ))}
+            {props.sections.map((section) => {
+              const current = section.state === "current" || section.id === shownSection?.id;
+              const className = `${styles.tab} ${current ? styles.tabCurrent : section.state === "done" ? styles.tabDone : ""}`;
+              const first = freeSections ? questions.findIndex((entry) => entry.sectionId === section.id) : -1;
+              // type="button": a submit here would come before "Save and next"
+              // in the form and become what Enter presses in an answer box.
+              return first >= 0 ? (
+                <button aria-current={current ? "step" : undefined} className={className} key={section.id} onClick={() => go(first)} type="button">
+                  {section.title}
+                  <span className={styles.tabSub}>{section.sub}</span>
+                </button>
+              ) : (
+                <span aria-current={current ? "step" : undefined} className={className} key={section.id}>
+                  {section.title}
+                  <span className={styles.tabSub}>{section.sub}</span>
+                </span>
+              );
+            })}
             <span className={styles.spacer} />
             <div className={styles.timer}>
               <span className={styles.timerLabel}>Time left</span>
@@ -423,9 +438,18 @@ export function ExamSitting(props: SittingProps) {
 
           <div className={styles.actions}>
             {/* First in the form, so Enter in the answer box saves and moves on. */}
-            <button className={`button button--primary ${styles.next}`} name="goto" type="submit" value={next?.number ?? question.number}>
-              {next ? "Save and next" : "Save"}
-            </button>
+            {/* On the last question the main button finishes (owner, 2026-10-19):
+                the section in a sectional paper, else the test. Both save first
+                and open the same confirm as the sidebar's buttons. */}
+            {next ? (
+              <button className={`button button--primary ${styles.next}`} name="goto" type="submit" value={next.number}>
+                Save and next
+              </button>
+            ) : (
+              <button className={`button button--primary ${styles.next}`} name="intent" type="submit" value={props.following ? "leave" : "submit"}>
+                {props.following ? "Save and go to next section" : "Save and submit"}
+              </button>
+            )}
             <button className="button button--secondary" name="intent" type="submit" value="review-next">
               Mark for review and next
             </button>
@@ -448,7 +472,7 @@ export function ExamSitting(props: SittingProps) {
             </span>
             <div>
               <strong>{props.name}</strong>
-              <span className="muted">{props.sectionTitle ?? "All questions"}</span>
+              <span className="muted">{paletteTitle ?? "All questions"}</span>
             </div>
           </div>
           <div className={styles.legend}>
@@ -460,14 +484,14 @@ export function ExamSitting(props: SittingProps) {
             ))}
           </div>
           <div className={styles.paletteHead}>
-            <strong>{props.sectionTitle ?? "Questions"}</strong>
+            <strong>{paletteTitle ?? "Questions"}</strong>
             <span>
-              {count(["answered", "both"])} of {questions.length} answered
+              {palette.filter(({ position }) => ["answered", "both"].includes(statuses[position])).length} of {palette.length} answered
             </span>
           </div>
           <div className={styles.paletteScroll}>
             <div className={styles.palette}>
-              {questions.map((entry, position) => (
+              {palette.map(({ entry, position }) => (
                 <button
                   aria-current={position === index ? "step" : undefined}
                   aria-label={`Question ${entry.number}: ${legend.find(([status]) => status === statuses[position])?.[1]}`}

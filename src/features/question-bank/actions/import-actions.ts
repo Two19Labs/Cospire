@@ -240,6 +240,7 @@ export async function stageQuestionImportAction(
   const applyPaperChoices = (staged: StagedQuestion): StagedQuestion => ({
     ...staged,
     difficulty: staged.difficulty || defaultDifficulty,
+    sectionMinutes: paperSection ? null : staged.sectionMinutes ?? null,
     sectionName: paperSection || staged.sectionName,
   });
   const choicesMade = paperSection !== "" || defaultDifficulty !== "";

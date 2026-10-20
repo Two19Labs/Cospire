@@ -91,6 +91,11 @@ const questionProperties = {
 const responseSchema = {
   properties: {
     document: { type: "STRING" },
+    // The paper's sections and their stated time limits, in paper order.
+    sections: {
+      items: { properties: { minutes: { type: "NUMBER" }, name: { type: "STRING" } }, required: ["name"], type: "OBJECT" },
+      type: "ARRAY",
+    },
     questions: {
       items: {
         properties: {

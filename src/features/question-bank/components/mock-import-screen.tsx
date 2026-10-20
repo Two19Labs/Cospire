@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import { CopyButton, SubmitButton } from "@/shared/ui";
@@ -78,10 +77,6 @@ export function MockImportScreen() {
 
   return (
     <>
-      <p>
-        <Link href="/admin/mocks">← Back to mocks</Link>
-      </p>
-
       <section className="panel">
         <h2>Step 1 — write the mock as a document</h2>
         <p className="muted">
@@ -90,20 +85,13 @@ export function MockImportScreen() {
           to copy. Write the mock in this shape and paste it below. Nothing here
           calls a model, because an ID has to match exactly.
         </p>
-        <textarea
-          aria-label="The mock document template"
-          className="input input--area input--code"
-          readOnly
-          rows={14}
-          value={mockDocumentTemplate}
-        />
         <div className="toolbar">
           <CopyButton label="Copy the template" text={mockDocumentTemplate} />
         </div>
         <p className="muted">
-          One section with no minutes after it gives the mock an overall timer
-          only. Otherwise every section needs its minutes and they must add up to
-          the duration. A DI set&apos;s own ID brings its passage and every
+          Sections with no minutes after them share one overall timer, and
+          students move freely between them. Give every section its minutes, adding
+          up to the duration, for a timer per section. A DI set&apos;s own ID brings its passage and every
           sub-question. <code>Q42</code>, <code>q00042</code> and{" "}
           <code>Q-00042</code> all mean the same question.
         </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { RoleShell } from "@/features/auth/components/role-shell";
 import { requireRole } from "@/features/auth/guards";
@@ -10,6 +11,11 @@ export default async function ImportMockPage() {
   const profile = await requireRole("admin");
   return (
     <RoleShell
+      actions={
+        <Link className="button button--secondary" href="/admin/mocks">
+          Back to mock tests
+        </Link>
+      }
       back={{ href: "/admin/mocks", label: "Back to mock tests" }}
       description="Write the mock as a plain document that quotes question IDs, paste it in, check what it resolves to, then build it."
       profile={profile}

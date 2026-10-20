@@ -56,6 +56,9 @@ export interface StagedQuestion {
   options: string[];
   // For a DI sub-question: the position, within this import, of its passage.
   parentPosition: number | null;
+  // The time limit the paper states for this question's section, if any. Read
+  // from the answer's top-level "sections" list; absent on older staged rows.
+  sectionMinutes?: number | null;
   sectionName: string;
   solution: string;
   source: string;
@@ -468,6 +471,23 @@ function readSet(
 // The whole paste
 // ---------------------------------------------------------------------------
 
+function sectionKey(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// "sections": [{ "name": "VARC", "minutes": 40 }] -> VARC -> 40. Whole minutes
+// within a mock's limit only; anything else is ignored rather than guessed at.
+function sectionMinutesByName(entries: unknown[]): Map<string, number> {
+  const minutes = new Map<string, number>();
+  for (const entry of entries) {
+    if (!isRecord(entry)) continue;
+    const name = sectionKey(readText(entry, "name", "section", "title"));
+    const value = Number(readValue(entry, "minutes", "duration", "time"));
+    if (name && Number.isInteger(value) && value >= 1 && value <= 1440 && !minutes.has(name)) minutes.set(name, value);
+  }
+  return minutes;
+}
+
 export function parseImportedQuestions(pasted: string): QuestionImportOutcome {
   const refused = (problem: string): QuestionImportOutcome => ({ documentName: null, items: [], problems: [problem] });
 
@@ -536,6 +556,13 @@ export function parseImportedQuestions(pasted: string): QuestionImportOutcome {
       });
     });
   });
+
+  // Each section's stated minutes onto its questions, so the build step can
+  // offer the paper's own timing (owner, 2026-10-19).
+  const minutes = sectionMinutesByName(readList(root, "sections"));
+  for (const item of items) {
+    if (item.parsed) item.parsed.sectionMinutes = minutes.get(sectionKey(item.parsed.sectionName)) ?? null;
+  }
 
   if (items.length > maxQuestionsPerImport) {
     return refused(
