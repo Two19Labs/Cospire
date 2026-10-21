@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-20 (Asia/Calcutta)
+Last updated: 2026-10-21 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -24,7 +24,7 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-18
+## Status, 2026-10-21
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
 - **UI refresh slice 1** (`feat/ui-refresh`): Inter, the original navy and cream
@@ -73,8 +73,8 @@ credentials, student data or anyone's personal data here.
   headless). See *Video, Phase 2* in `docs/context/completed.md`.
 - **A mock has a draft state** (D41, #89): invisible to students in the database,
   published by an admin; a sat mock cannot go back. Migration `20261017100000`
-  applied 2026-10-18; new mocks start as drafts. Editor: the mock's own questions
-  (#105). Admin sections open on option cards, kept as tabs (#106). `completed.md`.
+  applied 2026-10-18; new mocks start as drafts. *A mock has a draft state* in
+  `completed.md`.
 - **Delete for programmes, documents, mocks and videos** (D42, D54, #90): three
   deliberate steps ending in the name typed out, checked on the server and again
   in the database; one `SECURITY DEFINER` transaction, with the storage object or
@@ -83,12 +83,20 @@ credentials, student data or anyone's personal data here.
   2026-10-18 (a call with no admin session is refused). 53/53 on
   `scripts/verify/delete.sql`; the screens have never been clicked through.
   *Delete, 2026-10-17* in `completed.md`.
-- **Hosted database reset to no content** (owner, 2026-10-18): every test
-  programme, mock, attempt, question, section, import, video row, document, grant
-  and ARS process deleted, with their 20 stored files, so the owner can test the
-  admin flow from scratch. Kept: the 7 accounts, orgs, mentor assignments, the
-  activity log, and the video file in VdoCipher.
-- **The owner's mock notes 1-10** (#100): sections follow the paper (migration `20261019100000`, applied 2026-10-20); proctoring on by default for new mocks (#102); the delete confirmation's buttons spaced from its input. See `completed.md`.
+- **Hosted database reset to no content** on 2026-10-18 so the owner could test
+  the admin flow from scratch; since then the owner has imported real papers
+  (e.g. "01 Question paper A", built into a mock) and essays.
+- **The owner's UI pass, 2026-10-19 to 21** (#100-#106, all merged and live):
+  a mock keeps the paper's sections under either timing, with section minutes
+  read from the paper (migration `20261019100000`, applied); last-question
+  submit and a proctor popup; analytics on a student's sat mock; proctoring on by
+  default; the mock editor lists only its own questions (bank on "Add
+  questions"); a close DI set is flagged, not silently imported; **admin
+  sections open on option cards, kept as tabs in each view** (#106, checked on
+  the live URL). Rows dated 2026-10-19 to 21 in `completed.md`.
+- **Duplicate set Q772 archived** (2026-10-20). The throwaway admin used for it
+  is disabled and banned, not deleted: it is the last editor of 772-775, and
+  accounts are withdrawn by disabling them.
 - **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
   custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
@@ -184,7 +192,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-No feature branch is open. Merged 2026-10-19: #100. 2026-10-16: #80, #85, #86, #87, #81, #84;
+No feature branch is open. Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
@@ -194,25 +202,11 @@ Write-ups: `docs/context/completed.md`.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: slices 1 and 2 merged, mock in its own window
+### UI refresh: settled
 
-All of slice 1's questions are settled (D25-D31 in the untracked
-`docs/decisions/2026-10-12-decision-statement.md`):
-
-- **Inter** for body and headings, platform-wide; the exam screen's own styling
-  stays CAT-like and untouched.
-- **The original colours**: ink rail `#182b50`, cream page `#faf5e6`, navy
-  primary buttons, gold for progress and the current nav item, rust for
-  emphasis and danger only.
-- **The AfterBoards card shape**: 20px cards, no shadows, pill primary buttons,
-  larger type, one motion curve. The sidebar keeps its line icons.
-- **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
-  wording, orange or the licensed MADE Gentle font.
-
-Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
-Start (#87; popup refused or no JavaScript falls back to the same tab, full
-screen kept). **Owner:** the exam window closes as the result renders, so the
-result shows on the refreshed dashboard; showing it in the exam window is one line.
+Slices 1 and 2 are merged (Inter, the original navy and cream, the AfterBoards
+card shape; D25-D31, D52); the rules and the exam-window note are in
+*UI refresh slices 1 and 2* in `docs/context/completed.md`.
 
 ### Owed in a real browser (owner)
 
@@ -222,6 +216,8 @@ Headless Chrome covered everything else; these need a person. **The exam**
 in its own window. **Video** (#86): nothing has played, because headless Chrome
 has no Widevine CDM; watch one granted video, desktop then a phone, and check the
 watermark carries your own name. **Essays** (#84): author, sit and mark one.
+**Since 2026-10-19:** sit a mock with several untimed sections, and one Gemini
+import of a paper that states section times (`sections` read back).
 
 ## External blockers and client-owned steps
 
