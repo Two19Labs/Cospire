@@ -185,6 +185,7 @@ try {
     await fill('input[name="password"]', `Flow${stamp}abc`);
     await click("Create", { exact: false, selector: "button" });
     await click("Programmes", { selector: ".app-nav a" });
+    await clickHref("/admin/courses?view=list"); // opens on cards since 2026-10-20
     await clickHref(`/admin/courses/${ids.course}`);
     await click("Grant access", { within: newEmail });
   });
@@ -193,6 +194,7 @@ try {
 
   await attempt("admin", "Admin: build a curriculum (a section and a reading)", "/admin", async () => {
     await click("Programmes", { selector: ".app-nav a" });
+    await clickHref("/admin/courses?view=list"); // opens on cards since 2026-10-20
     await clickHref(`/admin/courses/${ids.course}`);
     await fill('form:has(button) input[name="title"]', "Week 3: Revision");
     await click("Add section");
@@ -214,6 +216,7 @@ try {
 
   await attempt("admin", "Admin: grant a mock to a student", "/admin", async () => {
     await click("Mock tests", { selector: ".app-nav a" });
+    await clickHref("/admin/mocks?view=list"); // opens on cards since 2026-10-20
     await clickHref(`/admin/mocks/${ids.mockB}`);
     await click("Grant access", { within: "Kabir Shah" }).catch(() => click("Grant access", { within: "Meera Iyer" }));
   });

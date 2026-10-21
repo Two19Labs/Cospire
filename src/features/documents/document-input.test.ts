@@ -135,7 +135,7 @@ describe("parseDocumentId", () => {
 
 describe("buildDocumentsHref", () => {
   it("builds from parsed values only, never from a supplied URL", () => {
-    expect(buildDocumentsHref({ page: 1, search: "" })).toBe("/admin/documents");
+    expect(buildDocumentsHref({ page: 1, search: "" })).toBe("/admin/documents?view=list");
     expect(
       buildDocumentsHref({ folder: "Quant", page: 3, search: "ratio" }),
     ).toBe("/admin/documents?q=ratio&folder=Quant&page=3");

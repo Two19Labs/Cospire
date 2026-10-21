@@ -377,7 +377,7 @@ try {
     `${(studentRows.data ?? []).length} / ${(studentKeys.data ?? []).length}`,
   );
 
-  const rivalList = await get("/admin/questions", "rival");
+  const rivalList = await get("/admin/questions?view=list", "rival");
   const rivalOpen = await get(`/admin/questions/${mcq.id}`, "rival");
   const rivalKeys = await people.rival.client.from("question_keys").select("question_id").eq("question_id", mcq.id);
   record(

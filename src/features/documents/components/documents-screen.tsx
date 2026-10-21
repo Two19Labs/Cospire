@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -25,6 +26,11 @@ import { UploadForm } from "./upload-form";
 // The page heading, shared with the loading skeleton.
 export const documentsHeading = "Documents";
 
+export const documentViews: SectionView[] = [
+  { description: "Search and open the documents in the library.", href: "/admin/documents?view=list", key: "list", label: "View the library" },
+  { description: "Upload a PDF; choose who can read it afterwards.", href: "/admin/documents?view=add", key: "add", label: "Add to the library" },
+];
+
 interface DocumentsScreenProps {
   documents: DocumentListPage;
   error: DocumentListError | null;
@@ -32,6 +38,8 @@ interface DocumentsScreenProps {
   folders: string[];
   profile: Profile;
   search: string;
+  // null: the landing cards; otherwise the one view shown.
+  view: string | null;
 }
 
 export function DocumentsScreen({
@@ -41,6 +49,7 @@ export function DocumentsScreen({
   folders,
   profile,
   search,
+  view,
 }: DocumentsScreenProps) {
   const { page, pageCount, rows, total } = documents;
   const firstOnPage = total === 0 ? 0 : (page - 1) * documentsPageSize + 1;
@@ -48,25 +57,19 @@ export function DocumentsScreen({
 
   return (
     <RoleShell
-      actions={
-        // An anchor to the upload form further down: no JavaScript needed.
-        <a className="button button--primary" href="#upload">
-          <Icon name="upload" />
-          Upload a document
-        </a>
-      }
       description="Keep resources organised and give the right students access."
       heading={documentsHeading}
       profile={profile}
       title="Documents"
     >
+      {view === null ? <SectionCards views={documentViews} /> : <SectionTabs current={view} views={documentViews} />}
       {error ? (
         <p className="notice notice--error" role="alert">
           {documentListErrors[error]}
         </p>
       ) : null}
 
-      <section className="panel">
+      {view === "list" ? <section className="panel">
         {/*
           A plain GET form, so a filtered library can be linked, reloaded and
           bookmarked, and the whole screen stays a Server Component.
@@ -103,7 +106,7 @@ export function DocumentsScreen({
             Filter
           </SubmitButton>
           {search || folder ? (
-            <Link className="button button--ghost" href="/admin/documents">
+            <Link className="button button--ghost" href="/admin/documents?view=list">
               Clear
             </Link>
           ) : null}
@@ -189,9 +192,9 @@ export function DocumentsScreen({
             ) : null}
           </nav>
         )}
-      </section>
+      </section> : null}
 
-      <div className="two-col" id="upload">
+      {view === "add" ? <div className="two-col" id="upload">
         <section className="panel">
           <div className="panel__header">
             <div>
@@ -230,7 +233,7 @@ export function DocumentsScreen({
             </p>
           </section>
         </aside>
-      </div>
+      </div> : null}
     </RoleShell>
   );
 }

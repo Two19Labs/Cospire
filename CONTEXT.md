@@ -73,8 +73,8 @@ credentials, student data or anyone's personal data here.
   headless). See *Video, Phase 2* in `docs/context/completed.md`.
 - **A mock has a draft state** (D41, #89): invisible to students in the database,
   published by an admin; a sat mock cannot go back. Migration `20261017100000`
-  applied 2026-10-18; new mocks start as drafts. The editor lists only a mock's
-  own questions, the bank behind "Add questions" (#105). See `completed.md`.
+  applied 2026-10-18; new mocks start as drafts. Editor: the mock's own questions
+  (#105). Admin sections open on option cards, kept as tabs (#106). `completed.md`.
 - **Delete for programmes, documents, mocks and videos** (D42, D54, #90): three
   deliberate steps ending in the name typed out, checked on the server and again
   in the database; one `SECURITY DEFINER` transaction, with the storage object or

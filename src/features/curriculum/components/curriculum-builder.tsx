@@ -268,7 +268,7 @@ export function CurriculumBuilder({
             <SectionSelect sections={sections} />
             {videos.options.length === 0 ? (
               <p className="muted">
-                No videos in the library yet. <Link href="/admin/videos">Add one</Link>.
+                No videos in the library yet. <Link href="/admin/videos?view=upload">Add one</Link>.
               </p>
             ) : (
               <RefSelect label="Video" page={videos} />

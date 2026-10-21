@@ -29,6 +29,7 @@ export function QuestionPage({
   parent,
   profile,
   question,
+  sectionNav = null,
   sections,
   topics,
 }: {
@@ -39,6 +40,8 @@ export function QuestionPage({
   parent: QuestionForEditing["parent"];
   profile: Profile;
   question: QuestionForEditing | null;
+  // The admin bank's section tabs, on a new question only.
+  sectionNav?: React.ReactNode;
   sections: QuestionSection[];
   topics: string[];
 }) {
@@ -50,7 +53,7 @@ export function QuestionPage({
       back={
         parent
           ? { href: buildQuestionHref(base, parent.id), label: "Back to the DI set" }
-          : { href: base, label: "Back to the question bank" }
+          : { href: `${base}?view=list`, label: "Back to the question bank" }
       }
       description={
         question ? (
@@ -67,6 +70,7 @@ export function QuestionPage({
       profile={profile}
       title={title}
     >
+      {sectionNav}
       {/*
         The four kinds of new question, as tabs. Each is the same route with a
         different `type`, exactly what the bank's links have always opened, so

@@ -73,7 +73,8 @@ export function buildTemplatesHref({
   if (error) params.set(templateErrorKey, error);
   if (notice) params.set(templateNoticeKey, notice);
   const query = params.toString();
-  return query ? `/admin/report-templates?${query}` : "/admin/report-templates";
+  // The bare path is the landing cards; with nothing to carry, the list itself.
+  return query ? `/admin/report-templates?${query}` : "/admin/report-templates?view=list";
 }
 
 // Rebuilt from parsed values only. A hidden field holding the destination would

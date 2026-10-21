@@ -35,12 +35,12 @@ let uploaded = null;
 
 try {
   await page.setCookies(base, state.people.admin.cookie);
-  await page.navigate(`${base}/admin/videos`, base);
+  await page.navigate(`${base}/admin/videos?view=upload`, base);
 
   await page.send("DOM.enable");
   const { root } = await page.send("DOM.getDocument", { depth: -1 });
   const { nodeId } = await page.send("DOM.querySelector", { nodeId: root.nodeId, selector: 'input[type="file"]' });
-  if (!nodeId) throw new Error("no file input on /admin/videos");
+  if (!nodeId) throw new Error("no file input on /admin/videos?view=upload");
   await page.send("DOM.setFileInputFiles", { files: [resolve(clip)], nodeId });
   await page.evaluate(`(() => {
     const form = document.querySelector('input[type=file]').closest("form");

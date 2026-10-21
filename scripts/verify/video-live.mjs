@@ -75,7 +75,7 @@ const html = () => page.evaluate(`document.documentElement.outerHTML`);
 try {
   // ---------------------------------------------------------------- 1. add it
   await page.setCookies(base, state.people.admin.cookie);
-  await page.navigate(`${base}/admin/videos`, base);
+  await page.navigate(`${base}/admin/videos?view=add`, base);
   await submitForm("button:Add video", { vdocipherId });
 
   const { data: video } = await db

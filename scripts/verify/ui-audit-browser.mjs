@@ -126,8 +126,11 @@ try {
       };
       let here = plan.home;
       for (const href of navs) { if (href === here) continue; await clickTo(href, here); here = href; }
+      // These sections open on cards (2026-10-20); the records are one click on.
+      const opensOnCards = new Set(["/admin/courses", "/admin/mocks", "/admin/ars", "/admin/questions"]);
       for (const [list, detail] of plan.details) {
         if (here !== list) { await clickTo(list, here); here = list; }
+        if (opensOnCards.has(list)) { await clickTo(`${list}?view=list`, here); here = `${list}?view=list`; }
         await clickTo(detail, here);
         here = detail;
       }

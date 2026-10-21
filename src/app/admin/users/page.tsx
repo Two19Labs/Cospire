@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
-import { UsersScreen } from "@/features/admin/components/users-screen";
+import { pickView } from "@/features/admin/components/section-views";
+
+import { UsersScreen, userViews } from "@/features/admin/components/users-screen";
 import {
   parsePageNumber,
   parseUserListError,
@@ -50,6 +52,7 @@ export default async function AdminUsersPage({
       profile={profile}
       search={search}
       users={users}
+      view={pickView(params, userViews, "list")}
     />
   );
 }

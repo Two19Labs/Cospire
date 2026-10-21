@@ -119,5 +119,5 @@ export async function createUserAction(
   revalidatePath("/admin/users");
   // Outside the try, because redirect() signals success by throwing and
   // catching it would break the navigation.
-  redirect("/admin/users");
+  redirect("/admin/users?view=list");
 }

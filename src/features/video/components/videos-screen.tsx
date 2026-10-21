@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import {
@@ -26,14 +27,23 @@ import { VideoUploadForm } from "./video-upload-form";
 // The page heading, shared with the loading skeleton.
 export const videosHeading = "Videos";
 
+export const videoViews: SectionView[] = [
+  { description: "Every video in the library, with its status.", href: "/admin/videos?view=list", key: "list", label: "View videos" },
+  { description: "Send a file straight to VdoCipher from this computer.", href: "/admin/videos?view=upload", key: "upload", label: "Upload a video" },
+  { description: "Add a video already in VdoCipher by its id.", href: "/admin/videos?view=add", key: "add", label: "Add from VdoCipher" },
+];
+
 export function VideosScreen({
   message,
   profile,
   videos,
+  view,
 }: {
   message: VideoMessage | null;
   profile: Profile;
   videos: VideoPage;
+  // null: the landing cards; otherwise the one view shown.
+  view: string | null;
 }) {
   const { page, pageCount, rows, total } = videos;
   const notice = message ? videoMessages[message] : null;
@@ -47,6 +57,7 @@ export function VideosScreen({
       profile={profile}
       title="Videos"
     >
+      {view === null ? <SectionCards views={videoViews} /> : <SectionTabs current={view} views={videoViews} />}
       {notice ? (
         <p
           className={`notice ${notice.error ? "notice--error" : "notice--success"}`}
@@ -56,9 +67,9 @@ export function VideosScreen({
         </p>
       ) : null}
 
-      <section className="panel">
+      {view === "list" ? <section className="panel">
         {rows.length === 0 ? (
-          <p className="panel-empty">No videos yet. Add the first one below.</p>
+          <p className="panel-empty">No videos yet. Upload one, or add one from VdoCipher.</p>
         ) : (
           <Table>
             <TableHead>
@@ -113,7 +124,7 @@ export function VideosScreen({
             {pageCount > 1 ? (
               <>
                 {page > 1 ? (
-                  <Link href={`/admin/videos?page=${page - 1}`} rel="prev">
+                  <Link href={`/admin/videos?view=list&page=${page - 1}`} rel="prev">
                     Previous
                   </Link>
                 ) : (
@@ -123,7 +134,7 @@ export function VideosScreen({
                   Page {page} of {pageCount}
                 </span>
                 {page < pageCount ? (
-                  <Link href={`/admin/videos?page=${page + 1}`} rel="next">
+                  <Link href={`/admin/videos?view=list&page=${page + 1}`} rel="next">
                     Next
                   </Link>
                 ) : (
@@ -133,9 +144,9 @@ export function VideosScreen({
             ) : null}
           </nav>
         )}
-      </section>
+      </section> : null}
 
-      <section className="panel" id="upload">
+      {view === "upload" ? <section className="panel" id="upload">
         <div className="panel__header">
           <div>
             <h2>Upload a video</h2>
@@ -146,9 +157,9 @@ export function VideosScreen({
           </div>
         </div>
         <VideoUploadForm />
-      </section>
+      </section> : null}
 
-      <section className="panel" id="add">
+      {view === "add" ? <section className="panel" id="add">
         <div className="panel__header">
           <div>
             <h2>Add a video from VdoCipher</h2>
@@ -177,7 +188,7 @@ export function VideosScreen({
           </label>
           <SubmitButton pendingLabel="Adding…">Add video</SubmitButton>
         </form>
-      </section>
+      </section> : null}
     </RoleShell>
   );
 }

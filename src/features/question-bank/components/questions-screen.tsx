@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -32,6 +33,15 @@ import { CopyIds } from "./copy-ids";
 // The admin page heading, shared with the loading skeleton.
 export const questionBankHeading = "Question bank";
 
+// An admin's question bank opens on these (owner, 2026-10-20). A mentor's has
+// no import or sections to choose between, so it opens on the list as before.
+export const questionViews: SectionView[] = [
+  { description: "Search, filter and edit every question in the bank.", href: "/admin/questions?view=list", key: "list", label: "View questions" },
+  { description: "Write a question by hand.", href: "/admin/questions/new?type=mcq", key: "new", label: "New question" },
+  { description: "Read a paper into the bank, reviewing each question.", href: "/admin/questions/import", key: "import", label: "Import questions" },
+  { description: "The sections every question belongs to, such as QA or DILR.", href: "/admin/questions/sections", key: "sections", label: "Sections" },
+];
+
 // Sage for easy, gold for medium, rust for hard, as the prototype tags them.
 const difficultyTone: Record<string, string> = {
   easy: "tag--sage",
@@ -53,6 +63,7 @@ export function QuestionsScreen({
   questions,
   sections,
   topics,
+  view,
 }: {
   base: QuestionBankBase;
   filters: QuestionFilters;
@@ -63,6 +74,8 @@ export function QuestionsScreen({
   questions: QuestionListPage;
   sections: QuestionSection[];
   topics: string[];
+  // null: an admin's landing cards; otherwise the list.
+  view: string | null;
 }) {
   const { page, pageCount, rows, total } = questions;
   const firstOnPage = total === 0 ? 0 : (page - 1) * questionsPageSize + 1;
@@ -76,17 +89,7 @@ export function QuestionsScreen({
     <RoleShell
       actions={
         <>
-          {profile.role === "admin" ? (
-            <>
-              <Link className="button button--secondary" href="/admin/questions/sections">
-                Manage sections
-              </Link>
-              <Link className="button button--secondary" href="/admin/questions/import">
-                Import questions
-              </Link>
-            </>
-          ) : null}
-          {sections.length > 0 ? (
+          {sections.length > 0 && profile.role !== "admin" ? (
             <Link className="button button--primary" href={buildNewQuestionHref(base, "mcq")}>
               <Icon name="plus" />
               New question
@@ -99,6 +102,8 @@ export function QuestionsScreen({
       profile={profile}
       title="Question bank"
     >
+      {view === null ? <SectionCards views={questionViews} /> : <>
+      {profile.role === "admin" ? <SectionTabs current="list" views={questionViews} /> : null}
       {sections.length === 0 ? (
         <section className="empty-state">
           <span aria-hidden="true" className="empty-state__mark">
@@ -305,6 +310,7 @@ export function QuestionsScreen({
           />
         </section>
       ) : null}
+      </>}
     </RoleShell>
   );
 }

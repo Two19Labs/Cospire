@@ -54,7 +54,8 @@ export function buildUsersHref({
   if (page > 1) params.set("page", String(page));
   if (error) params.set("error", error);
   const query = params.toString();
-  return query ? `/admin/users?${query}` : "/admin/users";
+  // The bare path is the landing cards; with nothing to carry, the list itself.
+  return query ? `/admin/users?${query}` : "/admin/users?view=list";
 }
 
 // A closed set, so a crafted `?error=` value renders nothing at all rather than

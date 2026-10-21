@@ -32,7 +32,7 @@ export function TemplateDetailScreen({
 
   return (
     <RoleShell
-      back={{ href: "/admin/report-templates", label: "All templates" }}
+      back={{ href: "/admin/report-templates?view=list", label: "All templates" }}
       description={`Report template · ${template.components.length} component${template.components.length === 1 ? "" : "s"} · ${template.isActive ? "Active" : "Inactive"}`}
       profile={profile}
       title={template.name}

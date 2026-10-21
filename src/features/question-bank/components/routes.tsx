@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { pickView, SectionTabs } from "@/features/admin/components/section-views";
 import type { Profile } from "@/features/auth/types";
 
 import {
@@ -13,7 +14,7 @@ import { getParentSet, getQuestion } from "../queries/get-question";
 import { listQuestionIds, listQuestions } from "../queries/list-questions";
 import { listSections, listTopics } from "../queries/list-sections";
 import { QuestionPage } from "./question-page";
-import { QuestionsScreen } from "./questions-screen";
+import { QuestionsScreen, questionViews } from "./questions-screen";
 
 // The data loading behind the bank's three routes, shared by the admin and
 // mentor copies so the two cannot drift. Each `app/` route checks its own role
@@ -48,6 +49,7 @@ export async function QuestionsRoute({ profile, searchParams }: { profile: Profi
       questions={questions}
       sections={sections}
       topics={topics}
+      view={profile.role === "admin" ? pickView(params, questionViews, "list") : "list"}
     />
   );
 }
@@ -73,6 +75,7 @@ export async function NewQuestionRoute({ profile, searchParams }: { profile: Pro
       notice={null}
       parent={parent}
       profile={profile}
+      sectionNav={profile.role === "admin" && !parent ? <SectionTabs current="new" views={questionViews} /> : null}
       question={null}
       sections={sections}
       topics={topics}

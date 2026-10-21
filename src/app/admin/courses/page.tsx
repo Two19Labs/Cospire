@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import { pickView } from "@/features/admin/components/section-views";
+
 import { requireRole } from "@/features/auth/guards";
-import { CoursesScreen } from "@/features/curriculum/components/courses-screen";
+import { CoursesScreen, programmeViews } from "@/features/curriculum/components/courses-screen";
 import {
   parseCourseListError,
   parseCourseNotice,
@@ -37,6 +39,7 @@ export default async function AdminCoursesPage({
       notice={notice}
       profile={profile}
       search={search}
+      view={pickView(params, programmeViews, "list")}
     />
   );
 }

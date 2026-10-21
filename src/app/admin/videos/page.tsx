@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
+import { pickView } from "@/features/admin/components/section-views";
 import { requireRole } from "@/features/auth/guards";
 import { parsePageNumber } from "@/features/documents/list-params";
-import { VideosScreen } from "@/features/video/components/videos-screen";
+import { VideosScreen, videoViews } from "@/features/video/components/videos-screen";
 import { listVideos } from "@/features/video/queries/list-videos";
 import { parseVideoMessage } from "@/features/video/video";
 
@@ -22,6 +23,7 @@ export default async function AdminVideosPage({
       message={parseVideoMessage(params.notice)}
       profile={profile}
       videos={await listVideos(page)}
+      view={pickView(params, videoViews, "list")}
     />
   );
 }

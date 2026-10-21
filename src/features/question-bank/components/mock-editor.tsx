@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionTabs } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { DeleteLink } from "@/features/delete/components/delete-link";
@@ -8,6 +9,7 @@ import { SubmitButton } from "@/shared/ui";
 import { saveMockAction, setMockStatusAction } from "../actions/mock-actions";
 import { maxMockSections } from "../mock-form";
 import type { MockEditorValue, PickerQuestion } from "../queries/mock-builder";
+import { mockViews } from "./mocks-screen";
 import { PendingOverlay } from "./pending-overlay";
 
 const errors: Record<string, string> = {
@@ -76,17 +78,18 @@ export function MockEditor({ profile, value, picker, inMock = [], error, notice,
           {/* D42: deleting a mock takes its attempts and their results with
               it. Three deliberate steps start with this link. */}
           {value ? <DeleteLink id={value.id} type="mock" /> : null}
-          <Link className="button button--secondary" href="/admin/mocks">
+          <Link className="button button--secondary" href="/admin/mocks?view=list">
             Back to mocks
           </Link>
         </>
       }
-      back={{ href: "/admin/mocks", label: "All mock tests" }}
+      back={{ href: "/admin/mocks?view=list", label: "All mock tests" }}
       description="Bring the right questions, timing and scoring into one assessment."
       heading={value ? value.title : "Build a mock test"}
       profile={profile}
       title={value ? "Edit mock" : "New mock"}
     >
+      {value ? null : <SectionTabs current="new" views={mockViews} />}
       {/* In-page sections rather than tabs that need JavaScript. */}
       <nav aria-label="Page sections" className="tabs">
         <a className="tabs__link tabs__link--current" href="#settings">01 · Settings</a>
@@ -205,7 +208,7 @@ export function MockEditor({ profile, value, picker, inMock = [], error, notice,
           </section>
 
           <div className="form-bar">
-            <Link className="button button--ghost" href="/admin/mocks">Cancel</Link>
+            <Link className="button button--ghost" href="/admin/mocks?view=list">Cancel</Link>
             <SubmitButton pendingLabel="Saving…">Save mock</SubmitButton>
             <PendingOverlay label="Saving the mock…" detail="Every section and question is written in one go. Keep this tab open." />
           </div>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Icon } from "@/features/auth/components/icon";
 import { PersonCell } from "@/features/auth/components/person-cell";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -24,6 +23,7 @@ import {
 } from "../list-params";
 import type { MentorOption } from "../queries/list-mentors";
 import type { UserListPage } from "../queries/list-users";
+import { SectionCards, SectionTabs, type SectionView } from "./section-views";
 
 const roleLabels: Record<Profile["role"], string> = {
   admin: "Admin",
@@ -34,6 +34,11 @@ const roleLabels: Record<Profile["role"], string> = {
 // The page heading, shared with the loading skeleton so the two cannot drift.
 export const usersHeading = "Users";
 
+export const userViews: SectionView[] = [
+  { description: "Every account, its role, status and mentor.", href: "/admin/users?view=list", key: "list", label: "View users" },
+  { description: "Create a student, mentor or admin account.", href: "/admin/users/new", key: "new", label: "Add a user" },
+];
+
 interface UsersScreenProps {
   error: UserListError | null;
   mentorByStudent: Map<string, MentorOption>;
@@ -41,6 +46,8 @@ interface UsersScreenProps {
   profile: Profile;
   search: string;
   users: UserListPage;
+  // null: the landing cards; otherwise the list.
+  view: string | null;
 }
 
 export function UsersScreen({
@@ -50,6 +57,7 @@ export function UsersScreen({
   profile,
   search,
   users,
+  view,
 }: UsersScreenProps) {
   const { page, pageCount, rows, total } = users;
   const firstOnPage = total === 0 ? 0 : (page - 1) * usersPageSize + 1;
@@ -57,17 +65,13 @@ export function UsersScreen({
 
   return (
     <RoleShell
-      actions={
-        <Link className="button button--primary" href="/admin/users/new">
-          <Icon name="plus" />
-          Add a user
-        </Link>
-      }
       description="Manage accounts, roles and mentor assignments."
       heading={usersHeading}
       profile={profile}
       title="Users"
     >
+      {view === null ? <SectionCards views={userViews} /> : <>
+      <SectionTabs current="list" views={userViews} />
       <section className="panel">
         {/*
           A plain GET form. Search belongs in the URL so a result page can be
@@ -90,7 +94,7 @@ export function UsersScreen({
             Search
           </SubmitButton>
           {search ? (
-            <Link className="button button--ghost" href="/admin/users">
+            <Link className="button button--ghost" href="/admin/users?view=list">
               Clear
             </Link>
           ) : null}
@@ -264,6 +268,7 @@ export function UsersScreen({
         </nav>
         )}
       </section>
+      </>}
     </RoleShell>
   );
 }

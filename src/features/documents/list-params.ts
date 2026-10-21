@@ -74,7 +74,8 @@ export function buildDocumentsHref({
   if (page > 1) params.set("page", String(page));
   if (error) params.set("error", error);
   const query = params.toString();
-  return query ? `/admin/documents?${query}` : "/admin/documents";
+  // The bare path is the landing cards; with nothing to carry, the list itself.
+  return query ? `/admin/documents?${query}` : "/admin/documents?view=list";
 }
 
 export function buildDocumentHref({

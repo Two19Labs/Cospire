@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { AdminProcesses } from "@/features/ars/components/admin-processes";
+import { pickView } from "@/features/admin/components/section-views";
+import { AdminProcesses, arsViews } from "@/features/ars/components/admin-processes";
 import { listAdminProcesses } from "@/features/ars/queries/list-processes";
 import { requireRole } from "@/features/auth/guards";
 import { parseCourseListError, parseCourseNotice } from "@/features/curriculum/list-params";
@@ -25,6 +26,7 @@ export default async function AdminArsPage({
       notice={parseCourseNotice(firstValue(query.notice))}
       processes={await listAdminProcesses()}
       profile={profile}
+      view={pickView(query, arsViews, "list")}
     />
   );
 }

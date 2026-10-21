@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { Icon } from "@/features/auth/components/icon";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
@@ -21,12 +22,19 @@ import type { CourseListPage } from "../queries/list-courses";
 // The page heading, shared with the loading skeleton.
 export const programmesHeading = "Programmes";
 
+export const programmeViews: SectionView[] = [
+  { description: "Every programme, its curriculum and who can reach it.", href: "/admin/courses?view=list", key: "list", label: "View programmes" },
+  { description: "Name a new programme, then build its curriculum.", href: "/admin/courses?view=add", key: "add", label: "Add a programme" },
+];
+
 interface CoursesScreenProps {
   courses: CourseListPage;
   error: CourseListError | null;
   notice: CourseNotice | null;
   profile: Profile;
   search: string;
+  // null: the landing cards; otherwise the one view shown.
+  view: string | null;
 }
 
 export function CoursesScreen({
@@ -35,6 +43,7 @@ export function CoursesScreen({
   notice,
   profile,
   search,
+  view,
 }: CoursesScreenProps) {
   const { page, pageCount, rows, total } = courses;
   const firstOnPage = total === 0 ? 0 : (page - 1) * coursesPageSize + 1;
@@ -47,11 +56,6 @@ export function CoursesScreen({
           <Link className="button button--secondary" href="/admin/ars">
             Go to ARS
           </Link>
-          {/* An anchor to the form further down: no JavaScript needed. */}
-          <a className="button button--primary" href="#new-programme">
-            <Icon name="plus" />
-            New programme
-          </a>
         </>
       }
       description="Organise learning programmes and the students who can access them."
@@ -59,6 +63,7 @@ export function CoursesScreen({
       profile={profile}
       title="Programmes"
     >
+      {view === null ? <SectionCards views={programmeViews} /> : <SectionTabs current={view} views={programmeViews} />}
 
       {error ? (
         <p className="notice notice--error" role="alert">
@@ -68,6 +73,7 @@ export function CoursesScreen({
 
       {notice ? <p className="notice notice--success">{courseNotices[notice]}</p> : null}
 
+      {view === "list" ? <>
       <div className="list-bar">
         <p className="list-bar__count">
           {total === 0
@@ -94,7 +100,7 @@ export function CoursesScreen({
             Search
           </SubmitButton>
           {search ? (
-            <Link className="button button--ghost" href="/admin/courses">
+            <Link className="button button--ghost" href="/admin/courses?view=list">
               Clear
             </Link>
           ) : null}
@@ -165,35 +171,9 @@ export function CoursesScreen({
         </nav>
       ) : null}
 
-      {/*
-        Honest placeholder: video curriculums is a whole phase away. Shown
-        rather than hidden so the shape of the section is visible, and marked
-        so nobody demonstrates it by accident.
+      </> : null}
 
-        The aptitude-preparation card that used to sit beside this one is
-        gone (phase 6.5) -- it was stale, since the question bank and test
-        engine it said it needed are both built now. Aptitude prep is not a
-        card here at all; it lands under a programme's own curriculum later,
-        the same way any other content kind would.
-      */}
-      <section className="panel">
-        <div className="panel__header">
-          <h2>Curriculum capabilities</h2>
-        </div>
-        <div className="card-grid card-grid--two">
-          <div>
-            <h3>
-              Video curriculums <span className="tag">Not built yet</span>
-            </h3>
-            <p className="field__hint">
-              Video lessons, documents and tests in an ordered sequence, with
-              progress tracking. Waiting on VdoCipher access.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel panel--narrow" id="new-programme">
+      {view === "add" ? <section className="panel panel--narrow" id="new-programme">
         <div className="panel__header">
           <div>
             <h2>Add a programme</h2>
@@ -240,7 +220,7 @@ export function CoursesScreen({
             Create programme
           </SubmitButton>
         </form>
-      </section>
+      </section> : null}
     </RoleShell>
   );
 }

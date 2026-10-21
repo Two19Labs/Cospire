@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Icon } from "@/features/auth/components/icon";
+import { SectionCards, SectionTabs, type SectionView } from "@/features/admin/components/section-views";
 import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
@@ -10,29 +10,24 @@ import type { MockSummary } from "../queries/mock-builder";
 // The page heading, shared with the loading skeleton.
 export const mocksHeading = "Mock tests";
 
-export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Profile; mocks: MockSummary[]; page: number; pageCount: number }) {
+export const mockViews: SectionView[] = [
+  { description: "Every mock, its status and its attempts.", href: "/admin/mocks?view=list", key: "list", label: "View mocks" },
+  { description: "Pick questions from the bank and set the timing.", href: "/admin/mocks/new", key: "new", label: "New mock" },
+  { description: "Read a paper; its questions become the mock.", href: "/admin/mocks/import-paper", key: "import-paper", label: "Import a paper" },
+  { description: "Paste a document that lists question IDs.", href: "/admin/mocks/import", key: "import", label: "Build from question IDs" },
+];
+
+// view: null for the landing cards; otherwise the list.
+export function MocksScreen({ profile, mocks, page, pageCount, view }: { profile: Profile; mocks: MockSummary[]; page: number; pageCount: number; view: string | null }) {
   return (
     <RoleShell
-      actions={
-        <>
-          <Link className="button button--secondary" href="/admin/mocks/import">
-            Build from question IDs
-          </Link>
-          <Link className="button button--secondary" href="/admin/mocks/new">
-            <Icon name="plus" />
-            Pick questions
-          </Link>
-          <Link className="button button--primary" href="/admin/mocks/import-paper">
-            <Icon name="upload" />
-            Import a paper
-          </Link>
-        </>
-      }
       description="Import a paper and its questions become a mock, with any the bank already holds linked rather than copied. Or pick questions from the bank, or quote their IDs."
       heading={mocksHeading}
       profile={profile}
       title="Mock tests"
     >
+      {view === null ? <SectionCards views={mockViews} /> : <>
+      <SectionTabs current="list" views={mockViews} />
       <section className="panel">
         <div className="panel__header">
           <div>
@@ -88,14 +83,15 @@ export function MocksScreen({ profile, mocks, page, pageCount }: { profile: Prof
         )}
         {pageCount > 1 ? (
           <nav aria-label="Mock pagination" className="pagination">
-            {page > 1 ? <Link href={`/admin/mocks?page=${page - 1}`}>Previous</Link> : <span>Previous</span>}
+            {page > 1 ? <Link href={`/admin/mocks?view=list&page=${page - 1}`}>Previous</Link> : <span>Previous</span>}
             <span>
               Page {page} of {pageCount}
             </span>
-            {page < pageCount ? <Link href={`/admin/mocks?page=${page + 1}`}>Next</Link> : <span>Next</span>}
+            {page < pageCount ? <Link href={`/admin/mocks?view=list&page=${page + 1}`}>Next</Link> : <span>Next</span>}
           </nav>
         ) : null}
       </section>
+      </>}
     </RoleShell>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
-import { DocumentsScreen } from "@/features/documents/components/documents-screen";
+import { pickView } from "@/features/admin/components/section-views";
+
+import { DocumentsScreen, documentViews } from "@/features/documents/components/documents-screen";
 import {
   parseDocumentListError,
   parsePageNumber,
@@ -43,6 +45,7 @@ export default async function AdminDocumentsPage({
       folders={folders}
       profile={profile}
       search={search}
+      view={pickView(params, documentViews, "list")}
     />
   );
 }
