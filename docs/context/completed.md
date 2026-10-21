@@ -2632,3 +2632,25 @@ with more than one section is refused ("structure"); everything else works.
 - **Not verified:** sitting a mock with several untimed sections (needs the
   migration), the "Save and submit" label on a paper's very last question (same
   code path as the section one), a real Gemini call returning `sections`.
+
+## UI refresh slices 1 and 2
+
+Moved from `CONTEXT.md` on 2026-10-21, unchanged.
+
+All of slice 1's questions are settled (D25-D31 in the untracked
+`docs/decisions/2026-10-12-decision-statement.md`):
+
+- **Inter** for body and headings, platform-wide; the exam screen's own styling
+  stays CAT-like and untouched.
+- **The original colours**: ink rail `#182b50`, cream page `#faf5e6`, navy
+  primary buttons, gold for progress and the current nav item, rust for
+  emphasis and danger only.
+- **The AfterBoards card shape**: 20px cards, no shadows, pill primary buttons,
+  larger type, one motion curve. The sidebar keeps its line icons.
+- **No gamification, no illustrations, no emoji.** Never copy AfterBoards' logo,
+  wording, orange or the licensed MADE Gentle font.
+
+Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
+Start (#87; popup refused or no JavaScript falls back to the same tab, full
+screen kept). **Owner:** the exam window closes as the result renders, so the
+result shows on the refreshed dashboard; showing it in the exam window is one line.
