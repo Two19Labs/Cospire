@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-21 (Asia/Calcutta)
+Last updated: 2026-10-23 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -14,7 +14,7 @@ read only when the task touches that area:
 | `docs/context/backlog.md` | Open items off the immediate path (Phase 0 carry-overs, owner and Client lists, smaller things) and the earlier plan |
 | `docs/context/completed.md` | The Completed log and every detailed write-up |
 | `docs/context/verification-log.md` | Every check run, with its result |
-| `docs/context/meetings.md` | Client calls and what they settled, newest first: the October 2026 design and content call, then 2026-10-01 and earlier |
+| `docs/context/meetings.md` | Client calls and what they settled, newest first: the 2026-10-22 metadata and flow call, the October design and content call, then 2026-10-01 and earlier |
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
@@ -257,22 +257,22 @@ side.
 
 ## Next recommended action
 
-**From the design and content call** (recorded 2026-10-12; *The design and
-content call, October 2026* in `docs/context/meetings.md`):
+**From the metadata and flow call, 2026-10-22** (*The metadata and flow call*
+in `docs/context/meetings.md`; earlier calls below it):
 
-- **The Client's timeline:** student access by the **end of October**, a stable
-  product by the **end of November** after testing.
-- **Content migration starts now, with ARS and mock documents**, before video.
-  The Client sends them through a shared drive, organised and rechecked; the
-  owner imports them. Each mock type still needs its settings (duration, marks,
-  negative marking, section timing and locking) and the answer-key errors fixed.
-- **The Client sends a curriculum flow** (for example Ashoka Aptitude prep). The
-  builder exists (PR #72): this is content plus a check against their flow.
-- **Supabase Pro:** the Client's decision is pending.
-- **Owner:** tell the Client the answer-key errors and ask Ashoka's order
-  (D48); hold the per-question metadata meeting (D39); payments still owed are
-  Gemini billing, Supabase Pro and Vercel Pro (D49); import the content, then
-  train the Client's team.
+- **Two19 sends:** the per-question metadata list (difficulty easy, medium or
+  hard, plus topic; marks are constant per question); the questions with
+  suspect answer keys (fixed in the documents); the registrar steps to verify
+  the email domain (N19).
+- **The Client sends:** documents with metadata written beside each question
+  (the importer already reads it, no code); every programme's flow (N15); which
+  analytics students and admins need and how to show them (N5, N7); feedback
+  from 24 to 28 October.
+- **Sections (N4):** QA, LR, DI, VA, CR. VdoCipher stays on trial for 30 days.
+- **Two19 is away 29 October to 2 November.** The Client's "student access by
+  the end of October" (from the October design call) was not discussed and
+  looks unlikely; confirm the date in writing. Not discussed either: Supabase
+  Pro, Vercel Pro, Gemini billing (still owed, D49).
 
 **As of 2026-10-10, in order:**
 

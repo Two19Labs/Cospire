@@ -2,6 +2,63 @@
 
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
+## The metadata and flow call, 2026-10-22
+
+Two19 Labs (the owner and Aditya) with the Client. Transcript pasted by the
+owner on 2026-10-23, at `../Context/2026-10-22 metadata and flow call -
+transcript.md`, outside git. In that recording **"You" is the Client and "Them"
+is Two19 Labs**. Machine transcription, partly Hindi, with gaps.
+
+### Told to the Client
+
+- The platform is built end to end; what remains is the user flow and importing
+  their documents and videos.
+- Analytics today is bare: mostly a list of questions.
+
+### Settled
+
+- **Per-question metadata (N18, D39).** The Client's documents carry the section
+  but not difficulty or topic. **Difficulty is easy, medium or hard**, which
+  analytics depends on. **Marks are constant per question**, so they are not
+  written per question. The Client will write each question's metadata next to
+  it in the document, using AI to do it, in any format. The importer already
+  reads a stated difficulty and topic and only judges one when it is missing
+  (`import-prompt.ts` rule 3), so **no code change is needed**.
+- **Sections (N4):** QA, LR, DI, VA (verbal ability) and CR (critical
+  reasoning). VA is not used in current papers but will be needed for some
+  tests.
+- **VdoCipher stays on the trial** and is bought after the 30 days, once the
+  build is in place (consistent with D49).
+- **Answer-key errors (D48):** raised. Two19 sends the questions with wrong
+  keys, the Client confirms, and the fix is made in the document itself.
+
+### Next steps
+
+- **Two19 Labs:**
+  - send the list of metadata each question needs
+  - send the questions whose answer keys look wrong
+  - give the Client the domain-registrar steps to verify `cospire.in` (assumed in the call) for email
+    (N19; "can be done today")
+  - attach the custom domain to the app later, "two-minute work"
+- **Client:**
+  - write metadata into every question document and send them consolidated
+  - share the flow of every existing programme, for example Ashoka Aptitude:
+    video (time and work), then practice, then mock (N15). The owner said the
+    admin side of programme import is unclear without it
+  - decide which analytics students and admins need, and how each should be
+    shown (pie chart, bar graph and so on) (N5, N7)
+  - send changes and feedback from 24 to 28 October, once back in Gurgaon
+  - send the transcript (done: the owner pasted it)
+- **Availability:** the owner and Aditya are in Indore from 29 October to
+  2 November.
+
+### Not discussed
+
+Supabase Pro (N14), Vercel Pro (N3), Gemini billing, and the Client's earlier
+target of **student access by the end of October**. With the Client's feedback
+due 24-28 October and Two19 away 29 October to 2 November, that date looks
+unlikely and should be confirmed in writing.
+
 ## The design and content call, October 2026 (recorded 2026-10-12)
 
 The owner with the Client. **The exact date of the call was not given**; it
