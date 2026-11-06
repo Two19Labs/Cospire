@@ -8,7 +8,9 @@ import { getPublicSupabaseConfig } from "./config";
 // later that forgets `requireRole` is still not readable by an anonymous
 // visitor. With several agents adding routes over the build, one forgotten guard
 // is a question of when rather than whether.
-const publicPaths = ["/login", "/auth/no-access"];
+// `/auth/confirm` is where an invitation or reset email lands, before any session
+// exists; it only shows a button (`features/auth/actions/account-link.ts`).
+const publicPaths = ["/login", "/auth/no-access", "/auth/confirm"];
 
 function isPublicPath(pathname: string): boolean {
   return publicPaths.some(

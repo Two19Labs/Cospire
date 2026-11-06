@@ -2654,3 +2654,41 @@ Slice 2 (desktop first, D52) merged as #85; a mock opens in its own window on
 Start (#87; popup refused or no JavaScript falls back to the same tab, full
 screen kept). **Owner:** the exam window closes as the result renders, so the
 result shows on the refreshed dashboard; showing it in the exam window is one line.
+
+
+## Bulk student creation and emailed links, 2026-11-06
+
+Clause 2.1 and Annexure A; Technical Brief 5.3. Branch `feat/bulk-students`.
+
+- **Upload** (`/admin/users/bulk`, third card on Users): a CSV whose first row
+  names the `name` and `email` columns (matched loosely, any order; Excel's
+  byte-order mark handled), up to 100 students. `readStudentSheet`
+  (`src/features/admin/bulk-students.ts`, tested) applies the single-user name
+  and email rules (`validateIdentity`, split out of `validateNewUser`), and
+  flags repeats within the sheet; the action then refuses any address that
+  already has an Auth account, in any organisation. **Any problem creates
+  nobody** and lists the rows to fix.
+- **Creation:** `inviteUserByEmail` two at a time (each about 2.6 s, Resend
+  allows 2 a second; `maxDuration = 300` on the page), then every profile in one
+  insert through the admin's own session client. Any failure deletes every
+  identity the upload made (profiles cascade) and says how many invitation
+  emails had already gone out.
+- **Emailed links:** both templates (`supabase/templates/invite.html`,
+  `recovery.html`) link to `/auth/confirm?token_hash=...&type=...`, a page with a
+  Continue button, so a mail scanner opening the link spends nothing. The button
+  runs `verifyOtp` server-side, then `/auth/set-password` (the single-user
+  password rule) and the dashboard. A used or expired link lands on
+  `/login?error=link_expired`, which points at **Forgot your password?**
+  (`/login/reset`, the same answer whether or not the address exists).
+  `otp_expiry` goes from one hour to a day so an invitation survives overnight.
+- **Shared code:** `/auth/confirm` added to the middleware's public paths
+  (`src/shared/db/supabase/middleware.ts`), the only way a signed-out visitor
+  can reach it.
+- **Single creation is unchanged**: it still sets a password and sends nothing.
+
+### What is not verified
+
+- The compensating delete after a failure part-way through an upload: no way
+  was found to force one against the hosted project.
+- The new templates, until `config push` after the deploy; a real invitation
+  clicked from an inbox; a full class of 100 against Vercel's time limit.

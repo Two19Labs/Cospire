@@ -254,8 +254,10 @@ secure_password_change = false
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Number of seconds before an emailed link expires. Raised from one hour to the
+# maximum, a day, with bulk invitations (2026-11-06): a student who opens the
+# invitation the next morning must not find it dead. Reset links share it.
+otp_expiry = 86400
 
 # Custom SMTP: Resend, sending from cospire.in (domain verified 2026-11-06).
 # The password is a sending-only Resend key, read from the environment at push.
@@ -268,10 +270,16 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "noreply@cospire.in"
 sender_name = "Cospire LMS"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Both links go to the app's /auth/confirm with a token hash, not to Supabase's
+# own verify URL, so the session is set server-side and a mail scanner opening
+# the link spends nothing (`src/features/auth/actions/account-link.ts`).
+[auth.email.template.invite]
+subject = "Your Cospire LMS account"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Cospire LMS password"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
