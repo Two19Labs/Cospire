@@ -36,9 +36,9 @@ export function LoginScreen({ notice }: { notice?: string }) {
         {configured ? (
           <>
             <LoginForm />
-            <p className="field__hint">
-              <Link href="/login/reset">Forgot your password?</Link>
-            </p>
+            <Link className="auth-link" href="/login/reset">
+              Forgot your password?
+            </Link>
           </>
         ) : (
           <div className="setup-notice" role="status">
