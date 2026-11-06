@@ -8,8 +8,9 @@ import { stepProgress, type FormField, type FormSpec } from "../form-schema";
 // student. The shapes, the order and the wording are the student's.
 
 function PreviewField({ field }: { field: FormField }) {
+  const id = `preview-${field.key}`;
   const label = (
-    <label>
+    <label htmlFor={id}>
       {field.label}
       {field.required ? "" : " (optional)"}
     </label>
@@ -19,7 +20,7 @@ function PreviewField({ field }: { field: FormField }) {
     return (
       <div className="preview-field">
         {label}
-        <textarea disabled placeholder={field.placeholder} rows={3} />
+        <textarea disabled id={id} placeholder={field.placeholder} rows={3} />
         {field.wordLimit ? <p className="builder__hint">Maximum {field.wordLimit} words.</p> : null}
       </div>
     );
@@ -29,7 +30,7 @@ function PreviewField({ field }: { field: FormField }) {
     return (
       <div className="preview-field">
         {label}
-        <select disabled>
+        <select disabled id={id}>
           <option>Select…</option>
           {(field.options ?? []).map((option) => (
             <option key={option}>{option}</option>
@@ -70,8 +71,8 @@ function PreviewField({ field }: { field: FormField }) {
         <legend>{field.label}</legend>
         {(field.options ?? []).map((option) => (
           <div className="field-row" key={option}>
-            <label>{option}</label>
-            <input disabled placeholder="Enter score" type="text" />
+            <label htmlFor={`${id}-${option}`}>{option}</label>
+            <input disabled id={`${id}-${option}`} placeholder="Enter score" type="text" />
           </div>
         ))}
       </fieldset>
@@ -92,6 +93,7 @@ function PreviewField({ field }: { field: FormField }) {
       {label}
       <input
         disabled
+        id={id}
         placeholder={field.placeholder}
         type={field.type === "date" ? "date" : field.type === "number" ? "number" : "text"}
       />

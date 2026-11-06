@@ -203,8 +203,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-Open: `feat/bulk-students`, awaiting the owner's merge (it touches
-`src/shared/db/supabase/middleware.ts`). Merged 2026-11-06: #108 (call record), #109 (SMTP).
+Open, awaiting the owner's merge: `feat/bulk-students` (it touches `src/shared/db/supabase/middleware.ts`) and
+`feat/ui-cleanup` (*UI cleanup pass, 2026-11-06* in `completed.md`). Merged 2026-11-06: #108 (call record), #109 (SMTP).
 Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).

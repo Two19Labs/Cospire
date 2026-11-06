@@ -170,7 +170,7 @@ textarea {
 button,
 a,
 input {
-  outline-color: var(--focus);
+  outline-color: var(--rust);
   outline-offset: 3px;
 }
 
@@ -182,6 +182,19 @@ button:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--rust);
   outline-offset: 3px;
+}
+
+/* Rust on the ink rail is 2.2:1, under the 3:1 a focus ring needs. Gold on
+   ink is 8.7:1. */
+.app-sidebar a:focus-visible,
+.app-sidebar button:focus-visible {
+  outline-color: var(--gold);
+}
+
+/* The title bar is sticky, so a control focused by tabbing backwards would
+   scroll in underneath it (WCAG 2.4.11). Only screens with the bar. */
+html:has(.app-topbar) {
+  scroll-padding-top: 5.5rem;
 }
 
 h1,
@@ -509,10 +522,11 @@ textarea.input {
 }
 
 .input::placeholder {
-  color: #8e96a5;
+  color: var(--muted);
 }
 
 .input:focus {
+  border-color: var(--ink);
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
@@ -1139,6 +1153,14 @@ a.button {
     grid-row: 2;
     min-width: 0;
     overflow-x: auto;
+    /* A strip that scrolls must show that it does (audit L6): a light shade
+       at whichever edge has more behind it. The two ink covers scroll with
+       the content and hide a shade once its end is reached. */
+    background:
+      linear-gradient(to right, var(--ink) 30%, rgb(24 43 80 / 0%)) left / 2.5rem 100% no-repeat local,
+      linear-gradient(to left, var(--ink) 30%, rgb(24 43 80 / 0%)) right / 2.5rem 100% no-repeat local,
+      linear-gradient(to right, rgb(250 245 230 / 28%), rgb(250 245 230 / 0%)) left / 1.25rem 100% no-repeat scroll,
+      linear-gradient(to left, rgb(250 245 230 / 28%), rgb(250 245 230 / 0%)) right / 1.25rem 100% no-repeat scroll;
   }
 
   .app-nav__group,
@@ -1598,8 +1620,11 @@ form.panel > h2:first-child {
 }
 
 .pagination a {
+  align-items: center;
   color: var(--ink);
+  display: inline-flex;
   font-weight: 600;
+  min-height: 1.5rem;
   text-decoration: none;
 }
 
@@ -1828,7 +1853,7 @@ form.panel > h2:first-child {
 
 
 .round-number {
-  color: #8290a4;
+  color: var(--muted);
   flex: none;
   font-family: var(--font-serif);
   font-size: 1.25rem;
@@ -2110,6 +2135,7 @@ form.panel > h2:first-child {
 .stack-form > textarea:not([class]):focus,
 .field-row > input:not([class]):focus,
 .table select:not([class]):focus {
+  border-color: var(--ink);
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
@@ -2370,12 +2396,14 @@ form.panel > h2:first-child {
 @media (prefers-reduced-motion: reduce) {
   .button,
   .module,
+  .home-row,
   .app-nav__link {
     transition: none;
   }
 
   .button:hover:not(:disabled),
-  .module:hover {
+  .module:hover,
+  .home-row:hover {
     transform: none;
   }
 }
@@ -2511,7 +2539,7 @@ form.panel > h2:first-child {
   justify-content: space-between;
 }
 
-.builder__section-head h4 {
+.builder__section-head h3 {
   font-size: 0.8125rem;
   letter-spacing: 0.04em;
   margin: 0;
@@ -2543,7 +2571,7 @@ form.panel > h2:first-child {
 }
 
 .builder__field p {
-  color: var(--ink-55);
+  color: var(--ink-70);
   font-size: 0.6875rem;
   margin: 0;
 }
@@ -2676,7 +2704,7 @@ details.panel > summary:hover {
 }
 
 .builder__hint {
-  color: var(--ink-45);
+  color: var(--ink-70);
   font-size: 0.6875rem;
   margin: 0;
 }
@@ -2738,7 +2766,7 @@ details.panel > summary:hover {
 }
 
 .preview-empty {
-  color: var(--ink-45);
+  color: var(--ink-70);
   font-size: 0.75rem;
   font-style: italic;
 }
@@ -2985,9 +3013,35 @@ details.panel > summary:hover {
 /* A button mid-submit. Dimmed rather than greyed out, so it still reads as the
    button you pressed, and the cursor says "wait" rather than "forbidden" --
    this is a button that is working, not one you may not use. */
-.button--pending {
+/* In flight is not unavailable: the button keeps full strength (it is
+   disabled only to stop a second submit) and shows a spinner beside its
+   pending label. */
+.button.button--pending {
   cursor: progress;
-  opacity: 0.72;
+  opacity: 1;
+}
+
+.button--pending::before {
+  animation: button-spin 0.8s linear infinite;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-right-color: transparent;
+  content: "";
+  flex: none;
+  height: 0.75em;
+  width: 0.75em;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button--pending::before {
+    animation: none;
+  }
 }
 
 /* The question bank. A question is plain text with its line breaks kept, so a
@@ -3150,7 +3204,7 @@ details.panel > summary:hover {
 }
 
 .course-card--link:focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid var(--rust);
   outline-offset: 2px;
 }
 
@@ -3198,7 +3252,7 @@ details.panel > summary:hover {
 
 /* The small uppercase label over a group: grey, tracked. */
 .section-label {
-  color: var(--ink-55);
+  color: var(--ink-70);
   font-family: var(--font-sans, inherit);
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -3245,7 +3299,7 @@ details.panel > summary:hover {
 }
 
 .home-row:focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid var(--rust);
   outline-offset: 2px;
 }
 

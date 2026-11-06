@@ -2692,3 +2692,47 @@ Clause 2.1 and Annexure A; Technical Brief 5.3. Branch `feat/bulk-students`.
   was found to force one against the hosted project.
 - The new templates, until `config push` after the deploy; a real invitation
   clicked from an inbox; a full class of 100 against Vercel's time limit.
+## UI cleanup pass, 2026-11-06
+
+Branch `feat/ui-cleanup`. Guided by the public `plugin87/ux-ui-agent-skills`
+repository (its rule files on accessibility, components and spacing), read as
+reference only: nothing from it was installed, run or copied. The Client's look
+(Inter, navy and cream, the AfterBoards card shape; D25-D31, D52) is unchanged.
+No behaviour, query, action, migration or policy change.
+
+- **Focus visible at 3:1.** Gold on white or cream is 1.6:1, so: text inputs
+  take an ink border on focus under the gold halo (as the ARS builder already
+  did); the card links (`.course-card--link`, `.home-row`) and bare checkboxes
+  use the rust ring every other link uses; rust on the ink rail is 2.2:1, so
+  rail links and buttons ring in gold (8.7:1). Screens with the sticky title
+  bar get `scroll-padding-top` so a focused control is not hidden under it.
+- **Text contrast at 4.5:1.** Placeholders `#8e96a5` (3.0:1) to `--muted`
+  (5.0:1); `.section-label`, the builder's hints and field details and the
+  preview's empty line from ink at 45-55% to `--ink-70` (5.2:1); the ARS round
+  number from `#8290a4` to `--muted`.
+- **Loading is not disabled.** A pending `SubmitButton` kept the disabled
+  dimming (0.45: `.button:disabled` outranked `.button--pending`). It now keeps
+  full strength with a small CSS spinner beside its pending label (still
+  disabled against a second submit; the spinner stops under reduced motion).
+  The exam's confirm button uses `SubmitButton`, so it shows this too.
+- **Names, labels and hierarchy** (audit M6, the last one left): the round
+  builder's sections are `h3`, not `h4` under an `h2`; its two "✕" buttons say
+  "Remove question" / "Remove this section" to a screen reader; the preview's
+  disabled controls are tied to their labels.
+- **One action, one variant.** The in-row "Remove" buttons (round builder,
+  ARS rounds list, curriculum items, report template components) use the rust
+  danger variant, as the other removals already did. Grant/remove-access
+  toggles are unchanged (reversible, and a column of rust would shout).
+- **A hidden overflow shows itself** (audit L6): the phone nav strip has a
+  light shade at the edge that has more behind it, CSS only.
+- **Targets and motion:** pagination links are at least 24px tall; the home
+  rows' hover lift stops under reduced motion like the other lifts.
+- **Empty states:** the curriculum builder's empty document and mock pickers
+  say where to make the first one.
+
+**Deliberately not applied** from that repository: a native-`<select>` ban
+(needs a custom listbox component, a behaviour change), no one-sided borders
+(the builder's gold rule is the Client's look), its type scale and 2.5x display
+ratio, mobile-first CSS (D52 is desktop first), dark mode, design-token JSON and
+its gate scripts, its no-em-dash copy rule, and danger styling on reversible
+access toggles.

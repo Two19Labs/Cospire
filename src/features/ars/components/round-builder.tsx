@@ -164,8 +164,9 @@ function FieldRow({
         <form action={removeFieldAction}>
           <Ids courseId={courseId} roundId={roundId} />
           <input name="fieldKey" type="hidden" value={field.key} />
-          <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
-            ✕
+          <SubmitButton compact variant="danger" pendingLabel="Removing…">
+            <span aria-hidden="true">✕</span>
+            <span className="visually-hidden">Remove question</span>
           </SubmitButton>
         </form>
       </div>
@@ -329,14 +330,15 @@ export function RoundBuilder({
               {step.sections.map((section, sectionIndex) => (
                 <div className="builder__section" key={`${step.key}-${sectionIndex}`}>
                   <div className="builder__section-head">
-                    <h4>{section.title ?? "Questions"}</h4>
+                    <h3>{section.title ?? "Questions"}</h3>
                     {step.sections.length > 1 ? (
                       <form action={removeSectionAction}>
                         <Ids courseId={courseId} roundId={roundId} />
                         <input name="stepKey" type="hidden" value={step.key} />
                         <input name="sectionIndex" type="hidden" value={sectionIndex} />
-                        <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Working…">
-                          ✕
+                        <SubmitButton compact variant="danger" pendingLabel="Removing…">
+                          <span aria-hidden="true">✕</span>
+                          <span className="visually-hidden">Remove this section</span>
                         </SubmitButton>
                       </form>
                     ) : null}
