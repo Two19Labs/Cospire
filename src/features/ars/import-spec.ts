@@ -36,6 +36,7 @@ import {
   type FormSection,
   type FormSpec,
   type FormStep,
+  type ShowWhen,
 } from "./form-schema";
 import {
   parseRoundDay,
@@ -320,6 +321,7 @@ function readField(
   raw: unknown,
   where: string,
   taken: Set<string>,
+  labels: Map<string, string>,
   problems: string[],
 ): FormField | null {
   if (!isRecord(raw)) {
@@ -350,6 +352,9 @@ function readField(
   // as one question silently overwriting another's answer.
   const key = toKey(label, taken);
   taken.add(key);
+  // A condition or a result names its question by label. Three questions are
+  // all "Marking Scheme", so a label means the most recent one before it.
+  labels.set(label.trim().toLowerCase(), key);
 
   const field: FormField = { key, label: label.slice(0, 200), type };
 
@@ -395,15 +400,55 @@ function readField(
       .map((entry) => (typeof entry === "string" ? entry.trim().replace(/^\./, "").toLowerCase() : ""))
       .filter((entry) => /^[a-z0-9]{1,8}$/.test(entry));
     if (accept.length > 0) field.accept = [...new Set(accept)];
+    const maxSizeMb = readNumber(raw, "maxSizeMb", "max_size_mb");
+    if (maxSizeMb) field.maxSizeMb = maxSizeMb;
   }
 
+  if (type === "short_text") {
+    const format = normaliseWord(readString(raw, "format"));
+    if (format === "email" || format === "phone") field.format = format;
+    const scoredBy = readString(raw, "scoredBy", "scored_by");
+    if (scoredBy) {
+      const target = labels.get(scoredBy.trim().toLowerCase());
+      if (target) field.scoredBy = target;
+      else problems.push(`${where}: scoredBy names "${scoredBy}", which is not an earlier question.`);
+    }
+  }
+  if (type === "number" || type === "month_year") {
+    const min = readNumber(raw, "min", "minimum");
+    const max = readNumber(raw, "max", "maximum");
+    if (min !== undefined) field.min = min;
+    if (max !== undefined) field.max = max;
+  }
+  if (type === "date" && readBoolean(raw, false, "pastOnly", "past_only")) field.pastOnly = true;
+
   return field;
+}
+
+function readShowWhen(
+  raw: Record<string, unknown>,
+  where: string,
+  labels: Map<string, string>,
+  problems: string[],
+): ShowWhen | null {
+  const rule = raw.showWhen ?? raw.show_when;
+  if (rule === undefined) return null;
+  const label = isRecord(rule) ? readString(rule, "field", "question") : "";
+  const key = labels.get(label.trim().toLowerCase());
+  const equals = isRecord(rule) ? readString(rule, "equals", "is") : "";
+  const notEquals = isRecord(rule) ? readString(rule, "notEquals", "not_equals", "isNot") : "";
+  if (!key || (equals === "") === (notEquals === "")) {
+    problems.push(`${where}: showWhen needs an earlier question's label and one of equals or notEquals.`);
+    return null;
+  }
+  return equals ? { equals, field: key } : { field: key, notEquals };
 }
 
 function readSection(
   raw: unknown,
   where: string,
   taken: Set<string>,
+  labels: Map<string, string>,
   problems: string[],
 ): FormSection | null {
   if (!isRecord(raw)) {
@@ -411,17 +456,23 @@ function readSection(
     return null;
   }
 
+  // Resolved before this section's own questions, so it can only name an
+  // earlier one, which is what the form validation demands.
+  const showWhen = readShowWhen(raw, where, labels, problems);
+
   const fields = readArray(raw, "fields", "questions", "items")
-    .map((entry, index) => readField(entry, `${where}, question ${index + 1}`, taken, problems))
+    .map((entry, index) => readField(entry, `${where}, question ${index + 1}`, taken, labels, problems))
     .filter((entry): entry is FormField => entry !== null);
 
-  if (fields.length === 0) return null;
+  const description = readString(raw, "description", "subtitle", "help");
+  // A section with only a description is a note, and is kept.
+  if (fields.length === 0 && !description) return null;
 
   const section: FormSection = { fields };
   const title = readString(raw, "title", "name", "heading");
   if (title) section.title = title.slice(0, 200);
-  const description = readString(raw, "description", "subtitle", "help");
   if (description) section.description = description.slice(0, 500);
+  if (showWhen) section.showWhen = showWhen;
   return section;
 }
 
@@ -432,6 +483,8 @@ function readStep(
   taken: Set<string>,
   problems: string[],
 ): FormStep | null {
+  // Per page: a condition must name a question on its own page.
+  const labels = new Map<string, string>();
   if (!isRecord(raw)) {
     problems.push(`${where}: a page must be an object.`);
     return null;
@@ -446,10 +499,10 @@ function readStep(
     rawSections.length > 0
       ? rawSections
           .map((entry, sectionIndex) =>
-            readSection(entry, `${where}, section ${sectionIndex + 1}`, taken, problems),
+            readSection(entry, `${where}, section ${sectionIndex + 1}`, taken, labels, problems),
           )
           .filter((entry): entry is FormSection => entry !== null)
-      : [readSection(raw, where, taken, problems)].filter(
+      : [readSection(raw, where, taken, labels, problems)].filter(
           (entry): entry is FormSection => entry !== null,
         );
 

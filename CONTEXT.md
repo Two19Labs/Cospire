@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-06 (Asia/Calcutta)
+Last updated: 2026-11-07 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -202,9 +202,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
+| Claude, MU ARS chat | `feat/ars-mu-r1` | Form engine: show-when, phone/email, ranges, result by marking scheme; MU R1 import | `src/features/ars/**` | PR open, awaiting owner merge | 2026-11-07 |
 
-Open, awaiting the owner's merge: `feat/bulk-students` (it touches `src/shared/db/supabase/middleware.ts`) and
-`feat/ui-cleanup` (*UI cleanup pass, 2026-11-06* in `completed.md`). Merged 2026-11-06: #108 (call record), #109 (SMTP).
+Merged 2026-11-06: #108 (call record), #109 (SMTP), #110-#114 (Node 24, bulk students, sign-in link, UI cleanup).
 Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
@@ -215,11 +215,10 @@ Write-ups: `docs/context/completed.md`.
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-### UI refresh: settled
+**UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
-Slices 1 and 2 are merged (Inter, the original navy and cream, the AfterBoards
-card shape; D25-D31, D52); the rules and the exam-window note are in
-*UI refresh slices 1 and 2* in `docs/context/completed.md`.
+**Masters' Union ARS** (owner, 2026-11-07): R1 is a private import in `Context/`, needing `feat/ars-mu-r1` (*Form conditions*
+in `completed.md`); after merge the owner creates the process and pastes it. R2, R3 await material.
 
 ### Owed in a real browser (owner)
 

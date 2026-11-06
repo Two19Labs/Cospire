@@ -6,13 +6,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
-import {
-  countWords,
-  fieldsForStep,
-  toFormSpec,
-  type FormField,
-  type RoundMode,
-} from "../form-schema";
+import { readAnswer } from "../answer-checks";
+import { fieldsForStep, sectionShown, toFormSpec, type RoundMode } from "../form-schema";
 import { parseRoundId } from "../list-params";
 
 // A student answering a round.
@@ -35,64 +30,6 @@ function hrefFor(roundId: number, params?: { error?: string; notice?: string; st
   if (params?.notice) search.set("notice", params.notice);
   const query = search.toString();
   return query ? `/student/ars/${roundId}?${query}` : `/student/ars/${roundId}`;
-}
-
-// Reads one field's value out of the posted body, refusing anything the field
-// cannot legitimately hold. Returns `undefined` for "not answered", which is
-// different from an empty string and is stored as absent rather than as "".
-function readField(formData: FormData, field: FormField): { error?: string; value?: unknown } {
-  if (field.type === "score_list") {
-    // The Masters' Union pattern: a tick and a score per exam.
-    const out: Record<string, string> = {};
-    for (const option of field.options ?? []) {
-      const raw = formData.get(`${field.key}::${option}`);
-      if (typeof raw === "string" && raw.trim().length > 0) {
-        if (raw.trim().length > 40) return { error: "too-long" };
-        out[option] = raw.trim();
-      }
-    }
-    return { value: Object.keys(out).length ? out : undefined };
-  }
-
-  if (field.type === "checkbox") {
-    // An unticked box is absent from the body entirely, so presence is the test.
-    return { value: formData.get(field.key) !== null };
-  }
-
-  const raw = formData.get(field.key);
-  if (typeof raw !== "string") return { value: undefined };
-  const text = raw.trim();
-  if (text.length === 0) return { value: undefined };
-
-  if (field.type === "long_text") {
-    if (field.wordLimit && countWords(text) > field.wordLimit) return { error: "too-many-words" };
-    if (text.length > 20000) return { error: "too-long" };
-    return { value: text };
-  }
-
-  if (text.length > 2000) return { error: "too-long" };
-
-  if (field.type === "number") {
-    if (!/^-?\d{1,9}(\.\d{1,4})?$/.test(text)) return { error: "not-a-number" };
-    return { value: Number.parseFloat(text) };
-  }
-
-  if (field.type === "date") {
-    // Refused here rather than sent to Postgres to fail as a type error.
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(Date.parse(text))) {
-      return { error: "bad-date" };
-    }
-    return { value: text };
-  }
-
-  if (field.type === "select" || field.type === "radio" || field.type === "single_choice") {
-    // The posted value must be one the round actually offers. Without this a
-    // hand-posted body could store a course preference that does not exist.
-    if (!(field.options ?? []).includes(text)) return { error: "not-an-option" };
-    return { value: text };
-  }
-
-  return { value: text };
 }
 
 async function loadRound(roundId: number) {
@@ -157,10 +94,18 @@ async function saveAnswers(
     // upload-actions.ts. A plain form post carries no bytes and must preserve
     // the already-recorded metadata rather than deleting it.
     if (field.type === "file") continue;
-    const { error, value } = readField(formData, field);
+    const { error, value } = readAnswer((name) => formData.get(name), field);
     if (error) redirect(hrefFor(roundId, { error, step: stepIndex + 1 }));
     if (value === undefined) delete merged[field.key];
     else merged[field.key] = value;
+  }
+
+  // A hidden section's inputs are still in the page and still posted. Its answers
+  // are dropped, so switching 12th results from Yes to No does not hand in a
+  // results row the student can no longer see. Uploads stay: their files exist.
+  for (const section of step.sections) {
+    if (sectionShown(section, merged)) continue;
+    for (const field of section.fields) if (field.type !== "file") delete merged[field.key];
   }
 
   // On submit, every required field across the WHOLE form must be answered --
@@ -168,9 +113,12 @@ async function saveAnswers(
   if (status === "submitted") {
     for (const stepToCheck of spec.steps) {
       if (stepToCheck.optional) continue;
-      for (const field of fieldsForStep(stepToCheck)) {
-        if (field.required && !field.prefill && merged[field.key] === undefined) {
-          redirect(hrefFor(roundId, { error: "missing-required", step: spec.steps.indexOf(stepToCheck) + 1 }));
+      for (const section of stepToCheck.sections) {
+        if (!sectionShown(section, merged)) continue;
+        for (const field of section.fields) {
+          if (field.required && !field.prefill && merged[field.key] === undefined) {
+            redirect(hrefFor(roundId, { error: "missing-required", step: spec.steps.indexOf(stepToCheck) + 1 }));
+          }
         }
       }
     }

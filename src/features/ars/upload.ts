@@ -1,6 +1,11 @@
 export const arsUploadsBucket = "ars-uploads";
 export const arsUploadMaxBytes = 50 * 1024 * 1024;
 
+// A question may set a lower limit than the bucket's, like 5 MB for a marksheet.
+export function uploadLimitBytes(field: { maxSizeMb?: number }): number {
+  return Math.min(arsUploadMaxBytes, (field.maxSizeMb ?? 50) * 1024 * 1024);
+}
+
 export const arsUploadMimeExtensions: Record<string, string> = {
   "application/pdf": "pdf",
   "image/jpeg": "jpg",
@@ -35,11 +40,11 @@ export function isStoredArsUpload(value: unknown): value is StoredArsUpload {
 export function describeArsUploadRejection(file: {
   size: number;
   type: string;
-}, accepted: string[]): string | null {
+}, accepted: string[], limitBytes: number = arsUploadMaxBytes): string | null {
   const extension = arsUploadMimeExtensions[file.type];
   if (!extension || !accepted.includes(extension)) return "Choose one of the allowed file types.";
   if (!Number.isSafeInteger(file.size) || file.size <= 0) return "That file is empty.";
-  if (file.size > arsUploadMaxBytes) return "Choose a file smaller than 50 MB.";
+  if (file.size > limitBytes) return `Choose a file smaller than ${Math.round(limitBytes / 1024 / 1024)} MB.`;
   return null;
 }
 

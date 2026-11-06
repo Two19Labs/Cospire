@@ -54,12 +54,32 @@ export interface FormField {
   prefill?: PrefillSource;
   // `file` only, as a list of extensions without the dot.
   accept?: string[];
+  // `file` only. Below the 50 MB bucket ceiling, never above it.
+  maxSizeMb?: number;
+  // `short_text` only. The answer must look like an email address, or an Indian
+  // mobile number (stored as its ten digits).
+  format?: "email" | "phone";
+  // `number`: the value's range. `month_year`: the year's range.
+  min?: number;
+  max?: number;
+  // `date` only: a date of birth cannot be in the future.
+  pastOnly?: boolean;
+  // `short_text` only: the key of the marking-scheme question this result
+  // belongs to. See `checkResult`.
+  scoredBy?: string;
 }
+
+// A section shown only while another question has (or has not) a given answer,
+// such as the 12th results row appearing only when the results are out.
+export type ShowWhen = { field: string; equals: string } | { field: string; notEquals: string };
 
 export interface FormSection {
   title?: string;
+  // A section with a description and no fields is a note, like the eligibility
+  // rule on the Masters' Union academic page.
   description?: string;
   fields: FormField[];
+  showWhen?: ShowWhen;
 }
 
 export interface FormStep {
@@ -185,6 +205,46 @@ function checkField(raw: unknown, where: string, problems: SpecProblem[], seen: 
   ) {
     problems.push({ message: "Accepted file types must be PDF, MP4, MOV, WEBM, JPG or PNG.", where });
   }
+
+  const onlyFor = (name: string, types: FieldType[], valid: boolean, message: string) => {
+    if (raw[name] === undefined) return;
+    if (!types.includes(type as FieldType)) problems.push({ message: `"${name}" does not apply to a ${type} field.`, where });
+    else if (!valid) problems.push({ message, where });
+  };
+  const isNumber = (value: unknown) => typeof value === "number" && Number.isFinite(value);
+  onlyFor("maxSizeMb", ["file"], isNumber(raw.maxSizeMb) && (raw.maxSizeMb as number) > 0 && (raw.maxSizeMb as number) <= 50, "A file size limit must be between 1 and 50 MB.");
+  onlyFor("format", ["short_text"], raw.format === "email" || raw.format === "phone", "A format must be email or phone.");
+  onlyFor("min", ["number", "month_year"], isNumber(raw.min), "A minimum must be a number.");
+  onlyFor("max", ["number", "month_year"], isNumber(raw.max), "A maximum must be a number.");
+  onlyFor("pastOnly", ["date"], typeof raw.pastOnly === "boolean", "pastOnly must be true or false.");
+  onlyFor("scoredBy", ["short_text"], typeof raw.scoredBy === "string", "scoredBy must name a question.");
+  if (isNumber(raw.min) && isNumber(raw.max) && (raw.min as number) > (raw.max as number)) {
+    problems.push({ message: "The minimum is above the maximum.", where });
+  }
+}
+
+function checkShowWhen(raw: unknown, earlier: Set<string>, where: string, problems: SpecProblem[]): void {
+  if (raw === undefined) return;
+  const ok =
+    isRecord(raw) &&
+    typeof raw.field === "string" &&
+    (typeof raw.equals === "string") !== (typeof raw.notEquals === "string");
+  if (!ok) {
+    problems.push({ message: "showWhen needs a field and exactly one of equals or notEquals.", where });
+  } else if (!earlier.has(raw.field as string)) {
+    // Earlier in the same step, so the student can see what controls it and the
+    // page can hide it without script.
+    problems.push({ message: `showWhen refers to "${String(raw.field)}", which is not earlier on this page.`, where });
+  }
+}
+
+// Whether a section is on screen for these answers. A section with no
+// condition always is.
+export function sectionShown(section: FormSection, answers: Record<string, unknown>): boolean {
+  const rule = section.showWhen;
+  if (!rule) return true;
+  const value = answers[rule.field];
+  return "equals" in rule ? value === rule.equals : value !== rule.notEquals;
 }
 
 export interface ValidateOptions {
@@ -247,19 +307,22 @@ export function validateFormSpec(raw: unknown, options: ValidateOptions = {}): S
     }
 
     let fieldCount = 0;
+    const earlierOnStep = new Set<string>();
     sections.forEach((section, sectionIndex) => {
       const sectionWhere = `${where}, section ${sectionIndex + 1}`;
       if (!isRecord(section)) {
         problems.push({ message: "A section must be an object.", where: sectionWhere });
         return;
       }
+      checkShowWhen(section.showWhen, earlierOnStep, sectionWhere, problems);
       const fields = section.fields;
       if (!Array.isArray(fields)) {
         problems.push({ message: "A section needs at least one field.", where: sectionWhere });
         return;
       }
       if (fields.length === 0) {
-        if (!options.allowEmptySections) {
+        const isNote = typeof section.description === "string" && section.description.trim() !== "";
+        if (!options.allowEmptySections && !isNote) {
           problems.push({ message: "A section needs at least one field.", where: sectionWhere });
         }
         return;
@@ -269,6 +332,7 @@ export function validateFormSpec(raw: unknown, options: ValidateOptions = {}): S
         // Field keys are unique across the WHOLE form, not per step, because the
         // answers are stored in one flat object per submission.
         checkField(field, `${sectionWhere}, field ${fieldIndex + 1}`, problems, fieldKeys);
+        if (isRecord(field) && typeof field.key === "string") earlierOnStep.add(field.key);
       });
     });
 
