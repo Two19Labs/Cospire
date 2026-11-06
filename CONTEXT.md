@@ -73,8 +73,8 @@ credentials, student data or anyone's personal data here.
 - **Video is built and live-verified** (#86): library, server-side OTP with a
   per-viewer watermark, `video` curriculum items, upload, video `item_progress`.
   Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
-  against the hosted database; **nothing has ever played** (no Widevine CDM
-  headless). See *Video, Phase 2* in `docs/context/completed.md`.
+  against the hosted database; **playback passed in the owner's real-browser
+  check** (reported 2026-11-06). See *Video, Phase 2* in `docs/context/completed.md`.
 - **A mock has a draft state** (D41, #89): invisible to students in the database,
   published by an admin; a sat mock cannot go back. Migration `20261017100000`
   applied 2026-10-18; new mocks start as drafts. *A mock has a draft state* in
@@ -105,8 +105,8 @@ credentials, student data or anyone's personal data here.
   custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
-  activity screens, the new student home, and **video playback** -- no video
-  frame has ever decoded here, so the watermark has not been seen on screen.
+  activity screens, the new student home. (Video playback: passed, owner,
+  reported 2026-11-06.)
 - **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
   (overdue: ARS uploads are live on Free's 1 GB with no backups), Vercel Pro,
   SMTP, Gemini billing, their content, per-question metadata (a meeting, D39).
@@ -219,9 +219,8 @@ card shape; D25-D31, D52); the rules and the exam-window note are in
 Headless Chrome covered everything else; these need a person. **The exam**
 (#70, #80, #87): a sitting on desktop then a phone, moving between questions,
 "All answers saved", full screen, the countdown reaching zero, the mock opening
-in its own window. **Video** (#86): nothing has played, because headless Chrome
-has no Widevine CDM; watch one granted video, desktop then a phone, and check the
-watermark carries your own name. **Essays** (#84): author, sit and mark one.
+in its own window. **Essays** (#84): author, sit and mark one. (Video, #86:
+passed in the owner's check, reported 2026-11-06.)
 **Since 2026-10-19:** sit a mock with several untimed sections, and one Gemini
 import of a paper that states section times (`sections` read back).
 
