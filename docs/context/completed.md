@@ -2736,3 +2736,29 @@ No behaviour, query, action, migration or policy change.
 ratio, mobile-first CSS (D52 is desktop first), dark mode, design-token JSON and
 its gate scripts, its no-em-dash copy rule, and danger styling on reversible
 access toggles.
+
+## Form conditions and answer checks, 2026-11-07
+
+Branch `feat/ars-mu-r1`. For the Masters' Union application (owner's decisions,
+2026-11-07: only what the student-facing portal shows; the code's "Required"
+marks enforced; phone, email, result and year checked; no review, no dates).
+
+- **Conditional sections** (`showWhen` on a section: an earlier question on the
+  same page `equals` or `notEquals` a value). Hidden by CSS `:has()` in
+  `round-form.tsx`, so it reacts as the student picks and still works without
+  JavaScript; a browser without `:has()` shows everything. The server drops a
+  hidden section's answers on save (uploads kept) and skips its required
+  fields on submit. This reverses the 2026-09-18 "no conditional fields" call.
+- **A note section:** a section with a description and no fields is valid.
+- **Field checks** (`answer-checks.ts`, tested; moved out of
+  `submission-actions.ts`): `format` email or phone (Indian mobile, stored as
+  ten digits), `min`/`max` on numbers and on a `month_year`'s year, `pastOnly`
+  dates (India's date), `scoredBy` (a result read against its marking scheme:
+  Percentage 0-100, CGPA 0-10, Grades like A1; other schemes free text),
+  `maxSizeMb` on a file (below the 50 MB bucket limit).
+- `month_year` now renders as `<input type="month">` (it was a plain text box).
+- **The import** reads all of these; a condition or a result names its question
+  by label, the most recent one on the page. The round builder cannot set
+  them but keeps them, since it never rewrites an existing field.
+- **MU R1** is a private import file, `Context/ARS - Masters' Union - R1
+  import.json`: 4 steps, 36 questions, read from the portal's own code.

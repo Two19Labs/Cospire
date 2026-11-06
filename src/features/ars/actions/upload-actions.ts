@@ -9,7 +9,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import { allFields, toFormSpec, type FormField, type RoundMode } from "../form-schema";
 import { parseRoundId } from "../list-params";
 import {
-  arsUploadMaxBytes,
+  uploadLimitBytes,
   arsUploadMimeExtensions,
   arsUploadsBucket,
   buildArsUploadPath,
@@ -84,8 +84,8 @@ export async function prepareArsUploadAction(input: {
   if (!loaded || !extension || !accepted.includes(extension)) {
     return { error: "That file type is not allowed for this question.", ok: false };
   }
-  if (!Number.isSafeInteger(input.size) || input.size <= 0 || input.size > arsUploadMaxBytes) {
-    return { error: "Choose a non-empty file smaller than 50 MB.", ok: false };
+  if (!Number.isSafeInteger(input.size) || input.size <= 0 || input.size > uploadLimitBytes(loaded.field)) {
+    return { error: `Choose a non-empty file smaller than ${loaded.field.maxSizeMb ?? 50} MB.`, ok: false };
   }
   if (!originalName) return { error: "That file name is invalid.", ok: false };
   if (!(await getOrCreateDraft(roundId, loaded.orgId, student.id))) {
@@ -121,7 +121,7 @@ export async function recordArsUploadAction(input: {
   if (!loaded || !extension || !originalName || !accepted.includes(extension)) {
     return { error: "That uploaded file does not match this question.", ok: false };
   }
-  if (!Number.isSafeInteger(input.size) || input.size <= 0 || input.size > arsUploadMaxBytes) {
+  if (!Number.isSafeInteger(input.size) || input.size <= 0 || input.size > uploadLimitBytes(loaded.field)) {
     return { error: "That uploaded file has an invalid size.", ok: false };
   }
   const expectedPrefix = `org/${loaded.orgId}/ars/${student.id}/`;

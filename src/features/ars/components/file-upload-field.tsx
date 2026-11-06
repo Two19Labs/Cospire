@@ -15,6 +15,7 @@ import {
   arsUploadsBucket,
   describeArsUploadRejection,
   isStoredArsUpload,
+  uploadLimitBytes,
 } from "../upload";
 
 const acceptByExtension: Record<string, string> = {
@@ -45,7 +46,7 @@ export function FileUploadField({
   const accept = accepted.map((extension) => acceptByExtension[extension]).filter(Boolean).join(",");
 
   async function upload(file: File) {
-    const rejection = describeArsUploadRejection(file, accepted);
+    const rejection = describeArsUploadRejection(file, accepted, uploadLimitBytes(field));
     if (rejection) {
       setError(rejection);
       return;
@@ -151,7 +152,7 @@ export function FileUploadField({
         ref={inputRef}
         type="file"
       />
-      <p className="field__hint">Allowed: {accepted.join(", ").toUpperCase()}. Maximum 50 MB.</p>
+      <p className="field__hint">Allowed: {accepted.join(", ").toUpperCase()}. Maximum {field.maxSizeMb ?? 50} MB.</p>
       {progress ? <p aria-live="polite" className="muted">{progress}</p> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
     </div>
