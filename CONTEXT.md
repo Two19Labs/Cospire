@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-10-21 (Asia/Calcutta)
+Last updated: 2026-11-06 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -14,23 +14,27 @@ read only when the task touches that area:
 | `docs/context/backlog.md` | Open items off the immediate path (Phase 0 carry-overs, owner and Client lists, smaller things) and the earlier plan |
 | `docs/context/completed.md` | The Completed log and every detailed write-up |
 | `docs/context/verification-log.md` | Every check run, with its result |
-| `docs/context/meetings.md` | Client calls and what they settled, newest first: the October 2026 design and content call, then 2026-10-01 and earlier |
+| `docs/context/meetings.md` | Client calls and what they settled, newest first: the 2026-10-22 metadata and flow call, the October design and content call, then 2026-10-01 and earlier |
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
-| `docs/decisions/` | Decision statements D1-D54 and open questions to N18 (newest: `2026-10-16-decision-statement.md`). **Untracked and private**, in the main checkout only (D43) |
+| `docs/decisions/` | Decision statements D1-D56 and open questions to N19 (newest file: `2026-10-16-decision-statement.md`; D55, D56 and N19 are recorded in this file only). **Untracked and private**, in the main checkout only (D43) |
 
 The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-10-21
+## Status, 2026-11-06
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
-- **UI refresh slice 1** (`feat/ui-refresh`): Inter, the original navy and cream
-  colours (the Client's choice, 2026-10-12) in the AfterBoards card shape; typed
-  names normalised on save. See *UI refresh* under Pending and the 2026-10-10
-  rows of the Completed log in `docs/context/completed.md`.
+- **Nothing has been built since 2026-10-21.** `main` has had no commit since
+  then; the only open pull request is the 2026-10-22 call record, raised
+  2026-10-23. Two19 was away 29 October to 2 November. The Client's feedback
+  window of 24 to 28 October passed with nothing recorded, and their "student
+  access by the end of October" passed without student access.
+- **UI refresh slices 1 and 2** (#77, #85): Inter, the original navy and cream
+  colours in the AfterBoards card shape; a mock opens in its own window on Start
+  (#87). *UI refresh slices 1 and 2* in `docs/context/completed.md`.
 - **Question import reads PDFs** beside Word files, pictures included (best effort, Annexure B): *PDF upload, 2026-10-12* in `docs/context/completed.md`.
 - **Built and verified (local production builds against the hosted
   database):**
@@ -69,8 +73,8 @@ credentials, student data or anyone's personal data here.
 - **Video is built and live-verified** (#86): library, server-side OTP with a
   per-viewer watermark, `video` curriculum items, upload, video `item_progress`.
   Migration `20261013120000` applied; 17/17 and 4/4 on the two `video-*` scripts
-  against the hosted database; **nothing has ever played** (no Widevine CDM
-  headless). See *Video, Phase 2* in `docs/context/completed.md`.
+  against the hosted database; **playback passed in the owner's real-browser
+  check** (reported 2026-11-06). See *Video, Phase 2* in `docs/context/completed.md`.
 - **A mock has a draft state** (D41, #89): invisible to students in the database,
   published by an admin; a sat mock cannot go back. Migration `20261017100000`
   applied 2026-10-18; new mocks start as drafts. *A mock has a draft state* in
@@ -101,8 +105,8 @@ credentials, student data or anyone's personal data here.
   custom SMTP), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
-  activity screens, the new student home, and **video playback** -- no video
-  frame has ever decoded here, so the watermark has not been seen on screen.
+  activity screens, the new student home. (Video playback: passed, owner,
+  reported 2026-11-06.)
 - **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
   (overdue: ARS uploads are live on Free's 1 GB with no backups), Vercel Pro,
   SMTP, Gemini billing, their content, per-question metadata (a meeting, D39).
@@ -192,7 +196,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-No feature branch is open. Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
+One pull request awaits the owner's merge: the 2026-10-22 call record (PR #108,
+docs only, `verify` green; its Vercel preview check fails on team membership, not
+on the build). No feature branch is open. Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
@@ -213,9 +219,8 @@ card shape; D25-D31, D52); the rules and the exam-window note are in
 Headless Chrome covered everything else; these need a person. **The exam**
 (#70, #80, #87): a sitting on desktop then a phone, moving between questions,
 "All answers saved", full screen, the countdown reaching zero, the mock opening
-in its own window. **Video** (#86): nothing has played, because headless Chrome
-has no Widevine CDM; watch one granted video, desktop then a phone, and check the
-watermark carries your own name. **Essays** (#84): author, sit and mark one.
+in its own window. **Essays** (#84): author, sit and mark one. (Video, #86:
+passed in the owner's check, reported 2026-11-06.)
 **Since 2026-10-19:** sit a mock with several untimed sections, and one Gemini
 import of a paper that states section times (`sections` read back).
 
@@ -257,38 +262,35 @@ side.
 
 ## Next recommended action
 
-**From the design and content call** (recorded 2026-10-12; *The design and
-content call, October 2026* in `docs/context/meetings.md`):
+**From the metadata and flow call, 2026-10-22** (*The metadata and flow call*
+in `docs/context/meetings.md`; earlier calls below it):
 
-- **The Client's timeline:** student access by the **end of October**, a stable
-  product by the **end of November** after testing.
-- **Content migration starts now, with ARS and mock documents**, before video.
-  The Client sends them through a shared drive, organised and rechecked; the
-  owner imports them. Each mock type still needs its settings (duration, marks,
-  negative marking, section timing and locking) and the answer-key errors fixed.
-- **The Client sends a curriculum flow** (for example Ashoka Aptitude prep). The
-  builder exists (PR #72): this is content plus a check against their flow.
-- **Supabase Pro:** the Client's decision is pending.
-- **Owner:** tell the Client the answer-key errors and ask Ashoka's order
-  (D48); hold the per-question metadata meeting (D39); payments still owed are
-  Gemini billing, Supabase Pro and Vercel Pro (D49); import the content, then
-  train the Client's team.
+- **Two19 sends:** the per-question metadata list (difficulty easy, medium or
+  hard, plus topic; marks are constant per question); the questions with
+  suspect answer keys (fixed in the documents); the registrar steps to verify
+  the email domain (N19).
+- **The Client sends:** documents with metadata written beside each question
+  (the importer already reads it, no code); every programme's flow (N15); which
+  analytics students and admins need and how to show them (N5, N7); feedback
+  from 24 to 28 October.
+- **Sections (N4):** QA, LR, DI, VA, CR. VdoCipher stays on trial for 30 days.
+- **Two19 is away 29 October to 2 November.** The Client's "student access by
+  the end of October" (from the October design call) was not discussed and
+  looks unlikely; confirm the date in writing. Not discussed either: Supabase
+  Pro, Vercel Pro, Gemini billing (still owed, D49).
 
-**As of 2026-10-10, in order:**
+**Then, in order:**
 
-1. **Owner, in a real browser on the deployed URL:** sit a mock on the new exam
-   screen (desktop, then a phone); build a curriculum and work through it as a
-   student; save on an admin screen a few times ("Grant access", "Remove
-   access": it should dim, then show the save at once -- C2 is fixed); the new
-   student home at phone width; the admin submissions and activity screens.
-2. **Owner decisions still open:** N3 hosting (deferred). Settled on
-   2026-10-16: D33-D54. Delete (D42, D54, not built) removes everything hanging
-   off the deleted thing, guards against orphans, and takes two to three
-   confirming steps.
-3. **Speed at 100 concurrent:** functions now run in `bom1`; the database is the
+1. **Merge PR #108** so the 2026-10-22 call is on `main`.
+2. **The browser pass owed in *Owed in a real browser* above.** It is the
+   largest piece of unverified work and needs a person, not a script.
+3. **Chase the Client**, now two weeks overdue: the promised 24 to 28 October
+   feedback, documents with metadata, programme flows, analytics needs, and a
+   written date for student access. Payments still owed: Supabase Pro, Vercel
+   Pro, Gemini billing (D49).
+4. **Owner decisions still open:** N3 hosting (deferred); D33-D56 are settled.
+5. **Speed at 100 concurrent:** functions now run in `bom1`; the database is the
    limit on Free. Re-run `load-100.mjs` after Supabase Pro.
-4. **Chase the Client:** Supabase Pro, Vercel Pro, SMTP, Gemini billing, their
-   content.
 
 Open items that are not next (Phase 0 carry-overs, the Ashoka question, owner
 and Client lists) are in
