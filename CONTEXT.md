@@ -232,7 +232,7 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 
 | Needed | Blocks | Owner |
 |---|---|---|
-| **Custom SMTP** account and DNS records | Bulk student creation only, in Phase 1. Invitations and password resets generally | Cospire, clause 3.8 |
+| **Custom SMTP: set in `config.toml`, not yet pushed.** Resend, sending as `noreply@cospire.in`; domain verified and a test email delivered 2026-11-06 (`feat/smtp`) | Bulk student creation, in Phase 1, until it is pushed. Invitations and password resets generally | Two19 Labs: `supabase config push` from `main` once merged, then the two probes in `docs/context/supabase.md` |
 | **VdoCipher beyond the 30-day trial** | Nothing today: the trial account is in the Client's name and video is built and verified against it. A paid plan is needed before handover, and the trial's expiry date is not recorded | Cospire |
 | **Billing on the Gemini project** (**agreed by the Client on 2026-10-01**, about ₹1,000 prepaid; owner to set up, in Cospire's name) | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |

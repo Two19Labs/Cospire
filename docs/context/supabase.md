@@ -139,8 +139,8 @@ same two probes: signup refused, and login reaching `invalid_credentials`.
 
 ### Notes for later, not blocking now
 
-- `[auth.rate_limit] email_sent = 2` (per hour). Fine while no email is sent, but
-  it must be raised before bulk student creation or the import will stall.
+- `[auth.rate_limit] email_sent` raised from 2 to 100 an hour with custom SMTP
+  (2026-11-06). Resend's free plan caps 100 a day.
 - `[storage] file_size_limit = "50MiB"`. ARS video essays may exceed this; revisit
   when the ARS upload bucket is built.
 - `[api] max_rows = 1000` caps any single Data API response, which matches the
@@ -150,13 +150,15 @@ same two probes: signup refused, and login reaching `invalid_credentials`.
 
 Only one item is left, and it is not blocking the exit gate:
 
-- **Custom SMTP is not configured.** The `[auth.email.smtp]` block in
-  `config.toml` is still commented out. This does not block the three test
-  sign-ins, because dashboard-created users can be auto-confirmed with a password
-  set directly and need no email. It **does** block bulk student creation
-  (clause 2.1), and needs an SMTP provider account opened in Cospire's name per
-  clause 3.8 plus DNS records. Configure the credentials as `env(...)` references
-  so the setting stays in git and the secret does not.
+- **Custom SMTP is set in `config.toml` and not yet pushed** (2026-11-06).
+  Resend, `smtp.resend.com:465`, user `resend`, password `env(RESEND_API_KEY)`
+  (a sending-only key, in `.env.local` only), sender `Cospire LMS
+  <noreply@cospire.in>`. The domain is verified in Resend and a test email sent
+  through its API was delivered. To apply: from `main`, with `RESEND_API_KEY`
+  exported, `supabase config push`, then the two probes above (signup refused,
+  login reaching `invalid_credentials`) and one password-reset email to an
+  owner address. `config push` has no dry run and pushes every `[auth]`
+  setting, so it overwrites anything changed in the dashboard since 2026-08-28.
 
 ### Users and profiles
 

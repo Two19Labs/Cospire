@@ -198,11 +198,10 @@ password_requirements = "lower_upper_letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-# Left at the default deliberately: Supabase's built-in sender caps this
-# regardless of the value here. Raise it at the same time custom SMTP is
-# configured, or bulk student creation under clause 2.1 stalls partway through a
-# class and leaves half the accounts uninvited.
-email_sent = 2
+# Raised from 2 with custom SMTP (Resend, 2026-11-06): one invitation per student,
+# so a full cohort of 100 goes out in one hour rather than stalling partway.
+# Resend's free plan caps 100 a day; a bigger class needs a paid Resend plan.
+email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -258,15 +257,16 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Custom SMTP: Resend, sending from cospire.in (domain verified 2026-11-06).
+# The password is a sending-only Resend key, read from the environment at push.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "noreply@cospire.in"
+sender_name = "Cospire LMS"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
