@@ -26,10 +26,15 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-06
 
-- **Deployed** at `https://cospire-roan.vercel.app`, from `main`.
-- **Nothing has been built since 2026-10-21.** `main` has had no commit since
-  then; the only open pull request is the 2026-10-22 call record, raised
-  2026-10-23. Two19 was away 29 October to 2 November. The Client's feedback
+- **Deployed** at `https://cospire-roan.vercel.app`, from `main`. **The
+  repository must stay public while Vercel is on Hobby:** it was briefly private
+  (after 2026-10-21, until 2026-11-06), and Vercel then blocked six deployments
+  (Hobby deploys a private repository only for its owner's commits; authoring as
+  `tech@cospire.in` failed too, as no GitHub account holds that address), while
+  GitHub stopped enforcing branch protection. Public again 2026-11-06.
+- **Custom SMTP is live** (#109, 2026-11-06): Resend, `noreply@cospire.in`, 100
+  emails an hour (Resend free caps 100 a day); probes passed, reset delivered.
+- **No feature work since 2026-10-21.** Two19 was away 29 October to 2 November. The Client's feedback
   window of 24 to 28 October passed with nothing recorded, and their "student
   access by the end of October" passed without student access.
 - **UI refresh slices 1 and 2** (#77, #85): Inter, the original navy and cream
@@ -101,15 +106,15 @@ credentials, student data or anyone's personal data here.
 - **Duplicate set Q772 archived** (2026-10-20). The throwaway admin used for it
   is disabled and banned, not deleted: it is the last editor of 772-775, and
   accounts are withdrawn by disabling them.
-- **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, blocked on
-  custom SMTP), content migration and handover.
+- **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, unblocked
+  now that custom SMTP is live), content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home. (Video playback: passed, owner,
   reported 2026-11-06.)
 - **Blocked on the Client:** VdoCipher beyond its 30-day trial, Supabase Pro
   (overdue: ARS uploads are live on Free's 1 GB with no backups), Vercel Pro,
-  SMTP, Gemini billing, their content, per-question metadata (a meeting, D39).
+  Gemini billing, their content, per-question metadata (a meeting, D39).
 
 **What a green `verify` does and does not mean.** The CI job named `verify` runs
 `typecheck`, `lint`, `test` and `build` -- nothing more. **CI never executes
@@ -143,7 +148,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Decision | Confirmed state |
 |---|---|
-| Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan. **This conflicts with clause 3.9 of the agreement**, which says the build is held in "a private repository controlled by the Developer", and clause 13.1 lists source code as confidential. The agreement wins; open for the owner's decision. See *Repository visibility* |
+| Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan; Vercel Hobby also needs it (briefly private until 2026-11-06, which blocked every deployment). **This conflicts with clause 3.9 of the agreement**, which says the build is held in "a private repository controlled by the Developer", and clause 13.1 lists source code as confidential. The agreement wins; open for the owner's decision. Going private needs GitHub Pro and Vercel Pro first. See *Repository visibility* |
 | Application URL during build | `https://cospire-roan.vercel.app`, deployed from `main` since 2026-08-29. `site_url` and the redirect allow-list point at it |
 | Prerequisite gating | None in V1; every curriculum item is open |
 | Proctoring violation | Warn and log; never auto-submit |
@@ -196,9 +201,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-One pull request awaits the owner's merge: the 2026-10-22 call record (PR #108,
-docs only, `verify` green; its Vercel preview check fails on team membership, not
-on the build). No feature branch is open. Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
+No feature branch is open. Merged 2026-11-06: #108 (call record), #109 (SMTP).
+Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
 Write-ups: `docs/context/completed.md`.
@@ -232,13 +236,12 @@ CLI link, the three Auth users, and a deployed URL all exist. What follows block
 
 | Needed | Blocks | Owner |
 |---|---|---|
-| **Custom SMTP: set in `config.toml`, not yet pushed.** Resend, sending as `noreply@cospire.in`; domain verified and a test email delivered 2026-11-06 (`feat/smtp`) | Bulk student creation, in Phase 1, until it is pushed. Invitations and password resets generally | Two19 Labs: `supabase config push` from `main` once merged, then the two probes in `docs/context/supabase.md` |
 | **VdoCipher beyond the 30-day trial** | Nothing today: the trial account is in the Client's name and video is built and verified against it. A paid plan is needed before handover, and the trial's expiry date is not recorded | Cospire |
 | **Billing on the Gemini project** (**agreed by the Client on 2026-10-01**, about ₹1,000 prepaid; owner to set up, in Cospire's name) | The question-import model path. Without it the project is capped at five requests a minute and answers 503 most of the time, which makes real imports impossible and exposes papers to free-tier training terms. **Not a new key** -- the existing one is valid | Cospire, on the project `aistudio.google.com/apikey` names |
 | **Existing content**: videos, question banks, documents | Migration in Phase 5, and the pulled-forward import accuracy test | Cospire, **by start of week 4** |
 | **A written decision on what is still in use** | Migration scope, so nothing is migrated that nobody opens | Cospire |
 | **Supabase Pro** | Real ARS video uploads (capacity, not building), plus daily backups, the tested restore and leaked-password protection | Cospire, clause 8.3 |
-| **Vercel Pro** | Commercial use. Hobby does not permit it | Cospire, clause 3.8 |
+| **Vercel Pro** | Commercial use. Hobby does not permit it. On Hobby a private repository deploys only its owner's commits, so the repository stays public until Pro | Cospire, clause 3.8 |
 | **Docker on a build machine** | Both pgTAP suites, neither of which has ever run | Two19 Labs |
 | **The second engineer's GitHub handle** | Making CODEOWNERS actually enforce anything | Two19 Labs |
 
@@ -265,23 +268,17 @@ side.
 **From the metadata and flow call, 2026-10-22** (*The metadata and flow call*
 in `docs/context/meetings.md`; earlier calls below it):
 
-- **Two19 sends:** the per-question metadata list (difficulty easy, medium or
-  hard, plus topic; marks are constant per question); the questions with
-  suspect answer keys (fixed in the documents); the registrar steps to verify
-  the email domain (N19).
-- **The Client sends:** documents with metadata written beside each question
-  (the importer already reads it, no code); every programme's flow (N15); which
-  analytics students and admins need and how to show them (N5, N7); feedback
-  from 24 to 28 October.
-- **Sections (N4):** QA, LR, DI, VA, CR. VdoCipher stays on trial for 30 days.
-- **Two19 is away 29 October to 2 November.** The Client's "student access by
-  the end of October" (from the October design call) was not discussed and
-  looks unlikely; confirm the date in writing. Not discussed either: Supabase
-  Pro, Vercel Pro, Gemini billing (still owed, D49).
+- **Two19 sends:** the per-question metadata list (difficulty, topic; marks
+  constant); the questions with suspect answer keys. (The `cospire.in` email
+  domain, N19, is verified: 2026-11-06.)
+- **The Client sends:** documents with metadata beside each question (the
+  importer reads it, no code); programme flows (N15); analytics needs (N5, N7).
+- **Sections (N4):** QA, LR, DI, VA, CR.
 
 **Then, in order:**
 
-1. **Merge PR #108** so the 2026-10-22 call is on `main`.
+1. **Bulk CSV student creation** (Phase 1 step 5): the last V1 feature, now
+   unblocked by custom SMTP.
 2. **The browser pass owed in *Owed in a real browser* above.** It is the
    largest piece of unverified work and needs a person, not a script.
 3. **Chase the Client**, now two weeks overdue: the promised 24 to 28 October

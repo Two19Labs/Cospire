@@ -23,7 +23,6 @@ None of these block Phase 5a.
 | **CODEOWNERS is inert** | It names two accounts that cannot access the repository, so GitHub ignores it and the review requirement on `/supabase/migrations/**` does not actually exist | The second engineer's real GitHub handle. The owner's account is `Two19Labs` |
 | **Vercel on Hobby** | Hobby forbids commercial use | Upgrade before the Client is told the platform is theirs. Clause 3.8 puts the account in Cospire's name |
 | **Supabase on Free** | No daily backups, 1GB Storage, pauses after seven days idle. Also gates leaked-password protection | Blocks ARS being **used** with real video essays, not built: Free's 1GB and 50MiB file limit are enough to build and test the upload path. Needed before students upload for real, and before the restore test. Clause 8.3 budgets for it |
-| **Custom SMTP set in `config.toml`, not yet pushed** | Until pushed, the built-in sender's 2 emails an hour still applies and stalls bulk creation | Resend on `cospire.in` (verified 2026-11-06), `email_sent = 100`. Push from `main`, then probe |
 | **Neither pgTAP suite has ever run** | 32 assertions across two files, verified by hand against the live schema instead | A Docker-enabled machine, then `npm run db:test` |
 | **Actions pinned to commit SHAs** | Done 2026-10-17: `actions/checkout` and `actions/setup-node` are pinned to the commits their `v5` tags pointed to, with the tag in a comment | Bump deliberately: look up the new tag's commit and change both the SHA and the comment |
 | **`site_url` points at a `vercel.app` address** | It goes into password-reset emails | Replace if a custom domain is added, then `supabase config push` |
@@ -259,8 +258,7 @@ Owed by the Client, to chase rather than work around:
    its own is arguable.
 2. **Supabase Pro**, before ARS is used with real video essays and before the
    restore test.
-3. **Custom SMTP**: configured on `feat/smtp` 2026-11-06 (Resend, `cospire.in`);
-   push it, then bulk CSV creation (Phase 1 step 5) is unblocked.
+3. ~~**Custom SMTP**~~ Live 2026-11-06 (Resend, `cospire.in`, #109).
 4. ~~**Recoleta Bold `.woff2` and its web licence.**~~ No longer owed: the Client chose Inter on 2026-10-12.
 5. **The written list of programmes**, and **what "ARS" stands for**.
 6. **The written Kickoff Date.** The copy of the agreement in `../Context/` has

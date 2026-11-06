@@ -163,6 +163,15 @@ disabling protection on previews.
 
 ## Repository visibility
 
+**Briefly private, public again 2026-11-06.** While private, Vercel blocked six
+deployments from 2026-10-23 ("the commit author did not have contributing
+access"): Hobby deploys a private repository only for commits by the Vercel
+account's own Git identity. A commit authored `tech@cospire.in` failed too
+("GitHub couldn't verify an account for the commit"), as no GitHub account holds
+that address. GitHub's free plan also stops enforcing branch protection on a
+private repository (its API answers 403). So going private needs Vercel Pro and
+GitHub Pro first.
+
 `Two19Labs/Cospire` is **public** during the build. This was a deliberate choice by
 the repository owner on 2026-08-28: branch protection and rulesets are free on
 public repositories but require a paid plan on private ones, and the owner judged

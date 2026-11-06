@@ -150,15 +150,14 @@ same two probes: signup refused, and login reaching `invalid_credentials`.
 
 Only one item is left, and it is not blocking the exit gate:
 
-- **Custom SMTP is set in `config.toml` and not yet pushed** (2026-11-06).
+- **Custom SMTP is live** (pushed from `main` 2026-11-06, after #109).
   Resend, `smtp.resend.com:465`, user `resend`, password `env(RESEND_API_KEY)`
   (a sending-only key, in `.env.local` only), sender `Cospire LMS
   <noreply@cospire.in>`. The domain is verified in Resend and a test email sent
-  through its API was delivered. To apply: from `main`, with `RESEND_API_KEY`
-  exported, `supabase config push`, then the two probes above (signup refused,
-  login reaching `invalid_credentials`) and one password-reset email to an
-  owner address. `config push` has no dry run and pushes every `[auth]`
-  setting, so it overwrites anything changed in the dashboard since 2026-08-28.
+  through its API was delivered. Pushed with `RESEND_API_KEY` exported; the
+  push's own diff showed only the SMTP block and `email_sent` 2 to 100, so no
+  dashboard change was overwritten. To preview a future push without applying
+  it, pipe `n` to its prompt: `printf 'n\n' | npx supabase config push`.
 
 ### Users and profiles
 
