@@ -106,8 +106,10 @@ credentials, student data or anyone's personal data here.
 - **Duplicate set Q772 archived** (2026-10-20). The throwaway admin used for it
   is disabled and banned, not deleted: it is the last editor of 772-775, and
   accounts are withdrawn by disabling them.
-- **Not built:** bulk CSV creation from a spreadsheet (Phase 1 step 5, unblocked
-  now that custom SMTP is live), content migration and handover.
+- **Bulk student creation and emailed links built** (`feat/bulk-students`, PR
+  open; 19/19 end to end): CSV invites, set-password, "Forgot your password?".
+  **After merge:** `config push` (templates, 24-hour links). *Bulk student creation* in `completed.md`.
+- **Not built:** content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
   activity screens, the new student home. (Video playback: passed, owner,
@@ -201,7 +203,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
 
-No feature branch is open. Merged 2026-11-06: #108 (call record), #109 (SMTP).
+Open: `feat/bulk-students`, awaiting the owner's merge (it touches
+`src/shared/db/supabase/middleware.ts`). Merged 2026-11-06: #108 (call record), #109 (SMTP).
 Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
 2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
 Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
@@ -277,8 +280,10 @@ in `docs/context/meetings.md`; earlier calls below it):
 
 **Then, in order:**
 
-1. **Bulk CSV student creation** (Phase 1 step 5): the last V1 feature, now
-   unblocked by custom SMTP.
+1. **Bulk student creation:** merge `feat/bulk-students`, wait for the deploy,
+   then `supabase config push` from `main` (the preview diff should hold only
+   `otp_expiry` and the invite and recovery templates), the two probes, and one
+   invitation to an owner address clicked through from the inbox.
 2. **The browser pass owed in *Owed in a real browser* above.** It is the
    largest piece of unverified work and needs a person, not a script.
 3. **Chase the Client**, now two weeks overdue: the promised 24 to 28 October

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { getPublicSupabaseConfig } from "@/shared/db/supabase/config";
 
 import { LoginForm } from "./login-form";
@@ -7,6 +9,9 @@ const notices: Record<string, string> = {
     "Your sign-in worked, but this account has no active Cospire workspace yet. " +
     "An administrator needs to finish setting it up, or it has been disabled. " +
     "Contact your administrator rather than trying again.",
+  link_expired:
+    "That link has expired or was already used. Use “Forgot your password?” " +
+    "below to get a new one.",
 };
 
 export function LoginScreen({ notice }: { notice?: string }) {
@@ -29,7 +34,12 @@ export function LoginScreen({ notice }: { notice?: string }) {
           </div>
         ) : null}
         {configured ? (
-          <LoginForm />
+          <>
+            <LoginForm />
+            <p className="field__hint">
+              <Link href="/login/reset">Forgot your password?</Link>
+            </p>
+          </>
         ) : (
           <div className="setup-notice" role="status">
             Supabase is not configured yet. Add the public project URL and

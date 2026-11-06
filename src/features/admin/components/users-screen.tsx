@@ -37,6 +37,7 @@ export const usersHeading = "Users";
 export const userViews: SectionView[] = [
   { description: "Every account, its role, status and mentor.", href: "/admin/users?view=list", key: "list", label: "View users" },
   { description: "Create a student, mentor or admin account.", href: "/admin/users/new", key: "new", label: "Add a user" },
+  { description: "Create a class of students from a CSV and email each an invitation.", href: "/admin/users/bulk", key: "bulk", label: "Add students from a spreadsheet" },
 ];
 
 interface UsersScreenProps {

@@ -53,12 +53,12 @@ export function describePasswordProblem(password: string): string | null {
 // bulk-import defect is a truncated domain rather than an exotic valid address.
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function validateNewUser(raw: {
-  email: unknown;
-  name: unknown;
-  password: unknown;
-  role: unknown;
-}): NewUserValidation {
+// Name and email only: the part single creation and the bulk spreadsheet share.
+export function validateIdentity(raw: { email: unknown; name: unknown }): {
+  email: string;
+  errors: NewUserFieldErrors;
+  name: string;
+} {
   const errors: NewUserFieldErrors = {};
 
   const name = typeof raw.name === "string" ? normaliseTitle(raw.name) : "";
@@ -72,6 +72,17 @@ export function validateNewUser(raw: {
   } else if (email.length > 254) {
     errors.email = "That email address is too long.";
   }
+
+  return { email, errors, name };
+}
+
+export function validateNewUser(raw: {
+  email: unknown;
+  name: unknown;
+  password: unknown;
+  role: unknown;
+}): NewUserValidation {
+  const { errors, name, email } = validateIdentity(raw);
 
   const password = typeof raw.password === "string" ? raw.password : "";
   if (!password) errors.password = "Set an initial password.";
