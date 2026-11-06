@@ -185,7 +185,7 @@ export function TemplateDetailScreen({
                       <form action={removeComponentAction}>
                         <input name="componentId" type="hidden" value={component.id} />
                         <input name="templateId" type="hidden" value={template.id} />
-                        <SubmitButton className="button--ghost" compact variant="secondary" pendingLabel="Removing…">Remove</SubmitButton>
+                        <SubmitButton compact variant="danger" pendingLabel="Removing…">Remove</SubmitButton>
                       </form>
                     </td>
                   </tr>

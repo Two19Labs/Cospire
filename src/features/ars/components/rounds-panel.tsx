@@ -115,10 +115,9 @@ export function RoundsPanel({
                     <input name="courseId" type="hidden" value={courseId} />
                     <input name="roundId" type="hidden" value={round.id} />
                     <SubmitButton
-                      className="button--ghost"
                       compact
                       pendingLabel="Removing…"
-                      variant="secondary"
+                      variant="danger"
                     >
                       Remove
                     </SubmitButton>

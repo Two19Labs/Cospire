@@ -223,10 +223,9 @@ export function CurriculumBuilder({
                     <form action={removeItemAction}>
                       <Hidden fields={{ courseId, itemId: item.id }} />
                       <SubmitButton
-                        className="button--ghost"
                         compact
                         pendingLabel="Removing…"
-                        variant="secondary"
+                        variant="danger"
                       >
                         Remove
                       </SubmitButton>
@@ -284,7 +283,7 @@ export function CurriculumBuilder({
             <Hidden fields={{ courseId, type: "document" }} />
             <SectionSelect sections={sections} />
             {documents.options.length === 0 ? (
-              <p className="muted">No documents in the library yet.</p>
+              <p className="muted">No documents in the library yet. Upload one under Documents first.</p>
             ) : (
               <RefSelect label="Document" page={documents} />
             )}
@@ -304,7 +303,7 @@ export function CurriculumBuilder({
             <Hidden fields={{ courseId, type: "test" }} />
             <SectionSelect sections={sections} />
             {mocks.options.length === 0 ? (
-              <p className="muted">No mocks built yet.</p>
+              <p className="muted">No mocks built yet. Build one under Mock tests first.</p>
             ) : (
               <RefSelect label="Mock" page={mocks} />
             )}
