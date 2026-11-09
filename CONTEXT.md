@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-07 (Asia/Calcutta)
+Last updated: 2026-11-10 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -24,7 +24,7 @@ The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
 credentials, student data or anyone's personal data here.
 
-## Status, 2026-11-06
+## Status, 2026-11-10
 
 - **Deployed** at `https://cospire-roan.vercel.app`, from `main`. **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
@@ -34,9 +34,11 @@ credentials, student data or anyone's personal data here.
   GitHub stopped enforcing branch protection. Public again 2026-11-06.
 - **Custom SMTP is live** (#109, 2026-11-06): Resend, `noreply@cospire.in`, 100
   emails an hour (Resend free caps 100 a day); probes passed, reset delivered.
-- **No feature work since 2026-10-21.** Two19 was away 29 October to 2 November. The Client's feedback
-  window of 24 to 28 October passed with nothing recorded, and their "student
-  access by the end of October" passed without student access.
+- **Work resumed 2026-11-06** (#109-#114: SMTP, Node 24, bulk students, sign-in
+  link, UI cleanup) after a pause from 21 October; the Client's 24 to 28 October
+  feedback window and "student access by the end of October" both passed unmet.
+- **Masters' Union ARS started 2026-11-07:** R1 built (#115 open, 16/16 in a
+  browser); R2 and R3 await the owner's material. See *Pending*.
 - **UI refresh slices 1 and 2** (#77, #85): Inter, the original navy and cream
   colours in the AfterBoards card shape; a mock opens in its own window on Start
   (#87). *UI refresh slices 1 and 2* in `docs/context/completed.md`.
@@ -106,9 +108,9 @@ credentials, student data or anyone's personal data here.
 - **Duplicate set Q772 archived** (2026-10-20). The throwaway admin used for it
   is disabled and banned, not deleted: it is the last editor of 772-775, and
   accounts are withdrawn by disabling them.
-- **Bulk student creation and emailed links built** (`feat/bulk-students`, PR
-  open; 19/19 end to end): CSV invites, set-password, "Forgot your password?".
-  **After merge:** `config push` (templates, 24-hour links). *Bulk student creation* in `completed.md`.
+- **Bulk student creation and emailed links are live** (#112, 19/19; config
+  pushed 2026-11-06, both probes passed): CSV invites, set-password, "Forgot your
+  password?". The owner's inbox click-through is still owed. *Bulk student creation* in `completed.md`.
 - **Not built:** content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
@@ -204,11 +206,8 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 |---|---|---|---|---|---|
 | Claude, MU ARS chat | `feat/ars-mu-r1` | Form engine: show-when, phone/email, ranges, result by marking scheme; MU R1 import | `src/features/ars/**` | PR open, awaiting owner merge | 2026-11-07 |
 
-Merged 2026-11-06: #108 (call record), #109 (SMTP), #110-#114 (Node 24, bulk students, sign-in link, UI cleanup).
-Merged 2026-10-19 to 21: #100-#106. 2026-10-16: #80, #85, #86, #87, #81, #84;
-2026-10-18: #92 (load test), #91 (watermark), #89 (drafts), #90 (delete).
-Earlier: #69-#75, #77-#79, #82, #83, #88; #76 closed unmerged (in #77).
-Write-ups: `docs/context/completed.md`.
+Merged: #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+#69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
@@ -279,19 +278,21 @@ in `docs/context/meetings.md`; earlier calls below it):
 
 **Then, in order:**
 
-1. **Bulk student creation:** merge `feat/bulk-students`, wait for the deploy,
-   then `supabase config push` from `main` (the preview diff should hold only
-   `otp_expiry` and the invite and recovery templates), the two probes, and one
-   invitation to an owner address clicked through from the inbox.
-2. **The browser pass owed in *Owed in a real browser* above.** It is the
-   largest piece of unverified work and needs a person, not a script.
-3. **Chase the Client**, now two weeks overdue: the promised 24 to 28 October
-   feedback, documents with metadata, programme flows, analytics needs, and a
-   written date for student access. Payments still owed: Supabase Pro, Vercel
-   Pro, Gemini billing (D49).
-4. **Owner decisions still open:** N3 hosting (deferred); D33-D56 are settled.
-5. **Speed at 100 concurrent:** functions now run in `bom1`; the database is the
-   limit on Free. Re-run `load-100.mjs` after Supabase Pro.
+1. **Masters' Union ARS R1:** the owner merges #115; then Admin, ARS, create
+   "Masters' Union ARS", import the private `Context/ARS - Masters' Union - R1
+   import.json`, check the preview; one sitting as a test student.
+2. **R2 (aptitude) and R3 (interview and GD):** the owner sends the material.
+   R2 links to a mock (which papers? `C:\Cospire\Mocks` is never read unless the
+   owner says so); R3 is likely an `offline` round. Re-import all three together
+   while no student has answered R1 (an import will not replace answered rounds).
+3. **Owner checks:** one bulk invitation clicked through from the inbox (then
+   remove the test student); `lms.cospire.in` in Vercel and a GoDaddy CNAME
+   (not the apex, which is the live website), then `site_url` and
+   `additional_redirect_urls` in `supabase/config.toml` and `config push`.
+4. **The browser pass owed in *Owed in a real browser* above.**
+5. **Chase the Client:** feedback, documents with metadata, programme flows,
+   analytics needs, a date for student access; Supabase Pro, Vercel Pro, Gemini
+   billing (D49). Then re-run `load-100.mjs` after Pro. N3 hosting stays deferred.
 
 Open items that are not next (Phase 0 carry-overs, the Ashoka question, owner
 and Client lists) are in
