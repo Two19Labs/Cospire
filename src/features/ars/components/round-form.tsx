@@ -5,7 +5,7 @@ import { RoleShell } from "@/features/auth/components/role-shell";
 import type { Profile } from "@/features/auth/types";
 
 import { saveDraftAction, submitRoundAction } from "../actions/submission-actions";
-import { fieldsForStep, stepProgress, type FormField } from "../form-schema";
+import { fieldsForStep, stepProgress, type FormField, type FormSection } from "../form-schema";
 import type { RoundForStudent } from "../queries/student-process";
 import { FileUploadField } from "./file-upload-field";
 import { SubmitButton } from "@/shared/ui";
@@ -21,6 +21,12 @@ import { SubmitButton } from "@/shared/ui";
 const errorMessages: Record<string, string> = {
   "already-submitted": "You have already handed this in, so it can no longer be changed.",
   "bad-date": "Check the date you entered.",
+  "bad-email": "Check the email address you entered.",
+  "bad-month": "Enter the month and year as YYYY-MM, for example 2025-03.",
+  "bad-phone": "Enter a 10-digit Indian mobile number.",
+  "bad-result":
+    "A result must match its marking scheme: 0 to 100 for Percentage, 0 to 10 for CGPA, a grade such as A1 for Grades.",
+  "future-date": "That date is in the future.",
   "invalid-request": "That request could not be read.",
   "missing-required": "Some required answers are still empty.",
   "no-form": "This round has nothing to fill in.",
@@ -28,6 +34,7 @@ const errorMessages: Record<string, string> = {
   "not-a-number": "That needs to be a number.",
   "not-your-turn": "Finish the earlier step first.",
   "not-found": "That round no longer exists.",
+  "out-of-range": "One of the numbers or years is outside the range allowed.",
   "save-failed": "That could not be saved.",
   "too-long": "That answer is too long.",
   "too-many-words": "That answer is over the word limit.",
@@ -42,9 +49,47 @@ const noticeMessages: Record<string, string> = {
 // beside it. Before this they were emitted as bare <label> and <input>
 // siblings with no wrapper and no classes, so the grid laid them out inline and
 // a four-page application read as one run-on line of boxes.
-function Field({ field, roundId, value }: { field: FormField; roundId: number; value: unknown }) {
+// A section shown only for some answers is hidden by CSS rather than script:
+// `:has()` sees which option is chosen, so the page reacts as the student picks
+// and still works with JavaScript off. A browser without `:has()` shows every
+// section, and the server drops whatever a hidden section posted.
+function cssString(value: string): string {
+  return `"${value.replace(/[\\"<>\n\r]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}"`;
+}
+
+function showWhenCss(sections: FormSection[]): string {
+  return sections
+    .map((section, index) => {
+      const rule = section.showWhen;
+      if (!rule) return "";
+      const value = cssString("equals" in rule ? rule.equals : rule.notEquals);
+      const chosen = `[name="${rule.field}"][value=${value}]:checked, [name="${rule.field}"] option[value=${value}]:checked`;
+      const when = "equals" in rule ? `:not(:has(${chosen}))` : `:has(${chosen})`;
+      return `.round-form${when} [data-section="${index}"] { display: none; }`;
+    })
+    .join(" ");
+}
+
+// India's date, matching the server's check on a date that may not be future.
+function todayInIndia(): string {
+  return new Date(Date.now() + (5 * 60 + 30) * 60_000).toISOString().slice(0, 10);
+}
+
+function Field({
+  conditional,
+  field,
+  roundId,
+  value,
+}: {
+  conditional: boolean;
+  field: FormField;
+  roundId: number;
+  value: unknown;
+}) {
   const id = `f-${field.key}`;
-  const common = { id, name: field.key, required: field.required };
+  // A hidden required input would stop the browser submitting at all, so a
+  // conditional section leaves "required" to the server.
+  const common = { id, name: field.key, required: field.required && !conditional };
   const optional = field.required ? null : <span className="field__optional">Optional</span>;
   const hint = field.helpText ? <p className="field__hint">{field.helpText}</p> : null;
 
@@ -165,7 +210,28 @@ function Field({ field, roundId, value }: { field: FormField; roundId: number; v
   }
 
   const inputType =
-    field.type === "date" ? "date" : field.type === "number" ? "number" : "text";
+    field.type === "date"
+      ? "date"
+      : field.type === "number"
+        ? "number"
+        : field.type === "month_year"
+          ? "month"
+          : field.format === "email"
+            ? "email"
+            : field.format === "phone"
+              ? "tel"
+              : "text";
+  const bounds =
+    field.type === "number"
+      ? { max: field.max, min: field.min, step: "any" }
+      : field.type === "month_year"
+        ? {
+            max: field.max === undefined ? undefined : `${field.max}-12`,
+            min: field.min === undefined ? undefined : `${field.min}-01`,
+          }
+        : field.type === "date" && field.pastOnly
+          ? { max: todayInIndia() }
+          : {};
 
   return (
     <div className="field">
@@ -177,8 +243,9 @@ function Field({ field, roundId, value }: { field: FormField; roundId: number; v
           typeof value === "string" || typeof value === "number" ? String(value) : ""
         }
         disabled={Boolean(field.prefill)}
-        placeholder={field.placeholder}
+        placeholder={field.placeholder ?? (field.type === "month_year" ? "YYYY-MM" : undefined)}
         type={inputType}
+        {...bounds}
       />
       {/* A prefilled field is filled from the account and disabled, so say why
           rather than leaving the student wondering why they cannot type. */}
@@ -278,23 +345,40 @@ export function RoundForm({
                 </div>
               </div>
 
-              <form action={isLast ? submitRoundAction : saveDraftAction} className="stack-form stack-form--wide">
+              <form action={isLast ? submitRoundAction : saveDraftAction} className="round-form stack-form stack-form--wide">
+                {step.sections.some((section) => section.showWhen) ? (
+                  // Raw, because React would entity-escape the quotes the
+                  // selectors need. `cssString` hex-escapes < > " and newlines.
+                  <style dangerouslySetInnerHTML={{ __html: showWhenCss(step.sections) }} />
+                ) : null}
                 <input name="roundId" type="hidden" value={round.roundId} />
                 <input name="stepIndex" type="hidden" value={index} />
 
                 {step.sections.map((section, sectionIndex) => (
-                  <section className="form-section" key={section.title ?? sectionIndex}>
+                  <section
+                    className="form-section"
+                    data-section={section.showWhen ? sectionIndex : undefined}
+                    key={section.title ?? sectionIndex}
+                  >
                     {section.title ? (
                       <h3 className="form-section__title">{section.title}</h3>
                     ) : null}
                     {section.description ? (
                       <p className="muted">{section.description}</p>
                     ) : null}
-                    <div className="form-fields">
-                      {section.fields.map((field) => (
-                        <Field field={field} key={field.key} roundId={round.roundId} value={round.answer[field.key]} />
-                      ))}
-                    </div>
+                    {section.fields.length > 0 ? (
+                      <div className="form-fields">
+                        {section.fields.map((field) => (
+                          <Field
+                            conditional={Boolean(section.showWhen)}
+                            field={field}
+                            key={field.key}
+                            roundId={round.roundId}
+                            value={round.answer[field.key]}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                   </section>
                 ))}
 
