@@ -217,8 +217,7 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 **UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
-**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions
-deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
+**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
 
 ### Owed in a real browser (owner)
 
