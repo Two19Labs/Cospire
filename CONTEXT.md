@@ -18,7 +18,7 @@ read only when the task touches that area:
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
-| `docs/decisions/` | Decision statements D1-D56 and open questions to N19 (newest file: `2026-10-16-decision-statement.md`; D55, D56 and N19 are recorded in this file only). **Untracked and private**, in the main checkout only (D43) |
+| `docs/decisions/` | Decision statements D1-D59 and open questions to N19 (newest file: `2026-10-16-decision-statement.md`; D55 to D59 and N19 are recorded in this file only). **Untracked and private**, in the main checkout only (D43) |
 
 The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
@@ -37,8 +37,12 @@ credentials, student data or anyone's personal data here.
 - **Work resumed 2026-11-06** (#109-#114: SMTP, Node 24, bulk students, sign-in
   link, UI cleanup) after a pause from 21 October; the Client's 24 to 28 October
   feedback window and "student access by the end of October" both passed unmet.
-- **Masters' Union ARS started 2026-11-07:** R1 built (#115 open, 16/16 in a
-  browser); R2 and R3 await the owner's material. See *Pending*.
+- **Masters' Union ARS is on hold** (D57, 2026-11-10): the R1 engine work is
+  merged (#115, 16/16 in a browser), its import is not loaded. See *Pending*.
+- **Upload from the curriculum builder** (#116): a video or PDF uploaded from a
+  programme section lands in its library and at the end of that section. 15/15
+  headless; a video's placement was not seen. *Upload from the curriculum
+  builder* in `docs/context/completed.md`.
 - **UI refresh slices 1 and 2** (#77, #85): Inter, the original navy and cream
   colours in the AfterBoards card shape; a mock opens in its own window on Start
   (#87). *UI refresh slices 1 and 2* in `docs/context/completed.md`.
@@ -95,8 +99,8 @@ credentials, student data or anyone's personal data here.
   `scripts/verify/delete.sql`; the screens have never been clicked through.
   *Delete, 2026-10-17* in `completed.md`.
 - **Hosted database reset to no content** on 2026-10-18 so the owner could test
-  the admin flow from scratch; since then the owner has imported real papers
-  (e.g. "01 Question paper A", built into a mock) and essays.
+  the admin flow from scratch; the question bank was replaced again on
+  2026-11-10 (D59, see *Pending*).
 - **The owner's UI pass, 2026-10-19 to 21** (#100-#106, all merged and live):
   a mock keeps the paper's sections under either timing, with section minutes
   read from the paper (migration `20261019100000`, applied); last-question
@@ -105,9 +109,8 @@ credentials, student data or anyone's personal data here.
   questions"); a close DI set is flagged, not silently imported; **admin
   sections open on option cards, kept as tabs in each view** (#106, checked on
   the live URL). Rows dated 2026-10-19 to 21 in `completed.md`.
-- **Duplicate set Q772 archived** (2026-10-20). The throwaway admin used for it
-  is disabled and banned, not deleted: it is the last editor of 772-775, and
-  accounts are withdrawn by disabling them.
+- **The throwaway admin from the 2026-10-20 duplicate-set archive** is disabled
+  and banned, not deleted: accounts are withdrawn by disabling them.
 - **Bulk student creation and emailed links are live** (#112, 19/19; config
   pushed 2026-11-06, both probes passed): CSV invites, set-password, "Forgot your
   password?". The owner's inbox click-through is still owed. *Bulk student creation* in `completed.md`.
@@ -203,10 +206,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Active work
 
-| Owner / chat | Branch | Scope | Owned files | Status | Last update |
-|---|---|---|---|---|---|
-
-Merged: #115 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -217,7 +217,8 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 **UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
-**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
+**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.
+VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits deletion (*Upload from the curriculum builder* in `completed.md`).
 
 ### Owed in a real browser (owner)
 
@@ -278,13 +279,10 @@ in `docs/context/meetings.md`; earlier calls below it):
 
 **Then, in order:**
 
-1. **Masters' Union ARS R1:** the owner merges #115; then Admin, ARS, create
-   "Masters' Union ARS", import the private `Context/ARS - Masters' Union - R1
-   import.json`, check the preview; one sitting as a test student.
-2. **R2 (aptitude) and R3 (interview and GD):** the owner sends the material.
-   R2 links to a mock (which papers? `C:\Cospire\Mocks` is never read unless the
-   owner says so); R3 is likely an `offline` round. Re-import all three together
-   while no student has answered R1 (an import will not replace answered rounds).
+1. **Owner reviews the seven MU mock drafts** in Mock tests, then publishes and
+   grants them. **MU ARS stays on hold**: on resuming, check the R1 preview only.
+2. **Add a test from the curriculum builder** (fresh branch);
+   the programme importer after it, once the Client sends a programme flow (N15).
 3. **Owner checks:** one bulk invitation clicked through from the inbox (then
    remove the test student); `lms.cospire.in` in Vercel and a GoDaddy CNAME
    (not the apex, which is the live website), then `site_url` and

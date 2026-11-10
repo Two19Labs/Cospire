@@ -2763,6 +2763,66 @@ marks enforced; phone, email, result and year checked; no review, no dates).
 - **MU R1** is a private import file, `Context/ARS - Masters' Union - R1
   import.json`: 4 steps, 36 questions, read from the portal's own code.
 
+## Upload from the curriculum builder, 2026-11-10
+
+Branch `feat/programme-uploads`, PR #116. Owner's request: uploading a video or
+document should happen from the programme's curriculum builder, landing in the
+library and in the chosen section in one step, instead of uploading in Videos or
+Documents first and then picking it in the builder.
+
+- No migration. The existing upload flows stay as they are (video: VdoCipher
+  policy, row first as `pre_upload`, browser posts to VdoCipher; document:
+  signed Storage URL, object first, row second). Each takes an optional
+  placement `{courseId, sectionId}`.
+- The section is checked against the programme **before** anything is uploaded,
+  so a bad placement never leaves a stray library entry.
+- One helper, `appendCurriculumItem` (`src/features/curriculum/append-item.ts`,
+  not a `"use server"` file, so it is not a public endpoint), puts an item at the
+  end of a section. The builder's own Add uses it too. RLS and
+  `private.validate_curriculum_item` still decide what may be inserted.
+- If the library row is written but the item is refused, the upload still
+  completes and the builder says the file is in the library but not the section.
+- Picking an existing video or document from the library stays.
+- A document uploaded from a programme returns to the programme from the form
+  (`window.location.assign`), not by a Server Action redirect: called from the
+  submit handler, the redirect back to the page it was on was swallowed (row and
+  item written, page never moved, no message). Found by the headless check.
+- The new unit test caught a real defect first: the forms send the programme id
+  as a number and `parsePositiveId` reads strings, so every upload from the
+  builder would have been refused.
+
+**Not verified:** a real browser; a real video placed end to end (see the
+verification log, 2026-11-10).
+
+**Left on the Client's VdoCipher account:** "Probe video 1794294142909", id
+`ee90134230a74d149dba4610cfe79114` (no library row). VdoCipher refused every
+delete with 423 "Write actions are temporarily paused". Delete it with
+`DELETE /api/videos?videos=<id>` once VdoCipher allows writes again.
+
+**Not in this branch:** creating a test from the builder, and a programme
+importer.
+
+## MU mocks, 2026-11-10
+
+Data only, no code. The owner's settings: the document's own mock titles,
+sections and question order; one 2-hour clock with free movement between
+sections (no sectional timer); one attempt; proctored; phones allowed; no
+negative marking; drafts until the owner publishes.
+
+- **MU Mock 1 to 7**, mock ids 1-7, from bank questions 1034-1348: 45 questions
+  each, in three untimed sections of 15 in document order (Quantitative
+  Aptitude, Logical Reasoning, Data Interpretation). A set's passage sits just
+  before its first question (every DI section has four sets; Mock 4's Logical
+  Reasoning has two).
+- Saved through `save_mock` as the organisation's admin by a one-off local
+  script (`coverage/question-import/mocks.mjs`, gitignored). Instructions:
+  "Switch between sections anytime. No negative marking."
+- **Verified** by a read of the hosted database: seven drafts, 120 minutes,
+  penalty 0, one attempt, phones allowed, proctoring on, 3 sections with no
+  section time, 45 questions each, no grants. Every question's bank section
+  matched the document's heading.
+- **Not verified:** none has been opened or sat in a browser.
+
 ## Instructions before a mock starts, 2026-11-10
 
 Branch `feat/mock-instructions`, PR #118.

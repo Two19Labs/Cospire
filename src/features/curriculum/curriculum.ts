@@ -119,6 +119,15 @@ export const curriculumMessages = {
   "item-added": { error: false, text: "Item added." },
   "item-failed": { error: true, text: "That item could not be added. Check the choice and try again." },
   "item-removed": { error: false, text: "Item removed." },
+  "document-uploaded": { error: false, text: "Document uploaded. It is in the Documents library and at the end of the section." },
+  "video-uploaded": {
+    error: false,
+    text: "Video uploaded. It is in the Videos library and at the end of the section; it plays once VdoCipher finishes processing it.",
+  },
+  "upload-not-placed": {
+    error: true,
+    text: "The file was uploaded to its library, but could not be added to the section. Add it from the library below.",
+  },
   "moved": { error: false, text: "Order updated." },
   "not-programme": { error: true, text: "Only a programme has a curriculum." },
   "section-added": { error: false, text: "Section added." },
@@ -133,4 +142,21 @@ export function parseCurriculumMessage(raw: unknown): CurriculumMessage | null {
   return typeof raw === "string" && Object.hasOwn(curriculumMessages, raw)
     ? (raw as CurriculumMessage)
     : null;
+}
+
+// Where an upload started from the curriculum builder should land. Untrusted:
+// it arrives through a Server Action, so anything malformed is null.
+export interface Placement {
+  courseId: number;
+  sectionId: number;
+}
+
+export function parsePlacement(raw: unknown): Placement | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  // The forms send the programme as a number and the section as a form string.
+  const id = (field: unknown) => parsePositiveId(typeof field === "number" ? String(field) : field);
+  const courseId = id(value.courseId);
+  const sectionId = id(value.sectionId);
+  return courseId === null || sectionId === null ? null : { courseId, sectionId };
 }

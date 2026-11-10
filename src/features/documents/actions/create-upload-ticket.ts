@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 
 import { requireRole } from "@/features/auth/guards";
+import { parsePlacement, sectionInCourse } from "@/features/curriculum/append-item";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 
 import { validateNewDocument } from "../document-input";
@@ -22,6 +23,7 @@ import type { UploadTicketResult } from "./upload-state";
 // routing the bytes through the server this action exists to avoid.
 export async function createDocumentUploadTicketAction(input: {
   folder: string;
+  placement?: unknown;
   title: string;
 }): Promise<UploadTicketResult> {
   // Re-checked here rather than inherited from the page. A Server Action is a
@@ -33,6 +35,19 @@ export async function createDocumentUploadTicketAction(input: {
   const { errors, value } = validateNewDocument(input);
   if (!value) {
     return { error: null, fieldErrors: errors, ok: false };
+  }
+
+  // From the curriculum builder: the section is checked before any transfer,
+  // so a bad choice never leaves a stray file in the library.
+  if (input.placement !== undefined) {
+    const placement = parsePlacement(input.placement);
+    if (placement === null || !(await sectionInCourse(placement))) {
+      return {
+        error: "That section could not be found in this programme. Reload and try again.",
+        fieldErrors: {},
+        ok: false,
+      };
+    }
   }
 
   const path = buildDocumentStoragePath({

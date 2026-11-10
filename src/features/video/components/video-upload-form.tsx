@@ -4,12 +4,17 @@ import { useRef, useState } from "react";
 
 import { Button, Input } from "@/shared/ui";
 
+import { SectionField, type ProgrammeTarget } from "@/features/curriculum/components/section-field";
+
 import { startVideoUploadAction } from "../actions/videos";
 
 // Like the document upload form, this needs JavaScript: the file goes from the
 // browser straight to VdoCipher's storage and never through this application
 // (manual §8), which a plain form post to a Server Action cannot do.
-export function VideoUploadForm() {
+//
+// Given `programme`, it is the curriculum builder's upload: the admin picks a
+// section, and the video lands in the library and at the end of that section.
+export function VideoUploadForm({ programme }: { programme?: ProgrammeTarget } = {}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -20,7 +25,8 @@ export function VideoUploadForm() {
     if (busy) return;
     setError(null);
 
-    const title = String(new FormData(event.currentTarget).get("title") ?? "");
+    const form = new FormData(event.currentTarget);
+    const title = String(form.get("title") ?? "");
     const file = fileRef.current?.files?.[0];
     if (!file) {
       setError("Choose a video file to upload.");
@@ -30,7 +36,12 @@ export function VideoUploadForm() {
     setBusy(true);
     try {
       setProgress("Preparing the upload…");
-      const ticket = await startVideoUploadAction(title);
+      const ticket = programme
+        ? await startVideoUploadAction(title, {
+            courseId: programme.courseId,
+            sectionId: String(form.get("sectionId") ?? ""),
+          })
+        : await startVideoUploadAction(title);
       if ("error" in ticket) {
         setError(ticket.error);
         return;
@@ -51,7 +62,11 @@ export function VideoUploadForm() {
         setError("The transfer to VdoCipher failed. The video is listed as waiting for upload.");
         return;
       }
-      window.location.assign("/admin/videos?notice=upload-ready");
+      window.location.assign(
+        programme
+          ? `/admin/courses/${programme.courseId}?curriculum=${ticket.placed ? "video-uploaded" : "upload-not-placed"}#curriculum`
+          : "/admin/videos?notice=upload-ready",
+      );
     } catch {
       setError("The upload did not complete. The video is listed as waiting for upload.");
     } finally {
@@ -62,6 +77,7 @@ export function VideoUploadForm() {
 
   return (
     <form className="stack-form" noValidate onSubmit={onSubmit}>
+      {programme ? <SectionField sections={programme.sections} /> : null}
       <Input label="Title" maxLength={200} name="title" required />
       <label className="field">
         <span className="field__label">Video file</span>

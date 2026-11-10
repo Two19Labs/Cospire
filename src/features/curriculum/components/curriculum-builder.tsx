@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { UploadForm } from "@/features/documents/components/upload-form";
+import { VideoUploadForm } from "@/features/video/components/video-upload-form";
 import { SubmitButton } from "@/shared/ui";
 
 import {
@@ -13,10 +15,12 @@ import {
 import { curriculumMessages, itemTypeLabels, type CurriculumMessage } from "../curriculum";
 import type { CurriculumSection } from "../queries/get-curriculum";
 import type { PickerPage } from "../queries/list-picker";
+import { SectionField } from "./section-field";
 
 // The curriculum builder: ordered sections, each an ordered list of mixed
 // items. Every control is a plain form posting a Server Action, so it works
-// with JavaScript disabled, like every other admin screen.
+// with JavaScript disabled, except the two uploads: a file goes from the browser
+// straight to VdoCipher or Storage, never through this server (manual §8).
 
 interface CurriculumBuilderProps {
   courseId: number;
@@ -108,21 +112,6 @@ function PickerPager({
   );
 }
 
-function SectionSelect({ sections }: { sections: CurriculumSection[] }) {
-  return (
-    <label className="field">
-      <span className="field__label">Section</span>
-      <select className="input" name="sectionId" required>
-        {sections.map((section) => (
-          <option key={section.id} value={section.id}>
-            {section.title}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 function RefSelect({ label, page }: { label: string; page: PickerPage }) {
   return (
     <label className="field">
@@ -148,6 +137,10 @@ export function CurriculumBuilder({
 }: CurriculumBuilderProps) {
   const notice = message ? curriculumMessages[message] : null;
   const pages = { documentsPage: documents.page, mocksPage: mocks.page, videosPage: videos.page };
+  const programme = {
+    courseId,
+    sections: sections.map((section) => ({ id: section.id, title: section.title })),
+  };
 
   return (
     <>
@@ -261,14 +254,18 @@ export function CurriculumBuilder({
             </div>
           </div>
 
-          <form action={addItemAction} className="stack-form">
+          <div className="stack-form">
             <h3>Video</h3>
+            <p className="muted">Upload a new video: it goes to the Videos library and into the chosen section.</p>
+            <VideoUploadForm programme={programme} />
+          </div>
+
+          <form action={addItemAction} className="stack-form">
+            <h3>Video from the library</h3>
             <Hidden fields={{ courseId, type: "video" }} />
-            <SectionSelect sections={sections} />
+            <SectionField sections={sections} />
             {videos.options.length === 0 ? (
-              <p className="muted">
-                No videos in the library yet. <Link href="/admin/videos?view=upload">Add one</Link>.
-              </p>
+              <p className="muted">No videos in the library yet. Upload one above.</p>
             ) : (
               <RefSelect label="Video" page={videos} />
             )}
@@ -278,12 +275,18 @@ export function CurriculumBuilder({
             )}
           </form>
 
-          <form action={addItemAction} className="stack-form">
+          <div className="stack-form">
             <h3>Document</h3>
+            <p className="muted">Upload a new PDF: it goes to the Documents library and into the chosen section.</p>
+            <UploadForm folders={[]} programme={programme} />
+          </div>
+
+          <form action={addItemAction} className="stack-form">
+            <h3>Document from the library</h3>
             <Hidden fields={{ courseId, type: "document" }} />
-            <SectionSelect sections={sections} />
+            <SectionField sections={sections} />
             {documents.options.length === 0 ? (
-              <p className="muted">No documents in the library yet. Upload one under Documents first.</p>
+              <p className="muted">No documents in the library yet. Upload one above.</p>
             ) : (
               <RefSelect label="Document" page={documents} />
             )}
@@ -301,7 +304,7 @@ export function CurriculumBuilder({
           <form action={addItemAction} className="stack-form">
             <h3>Test</h3>
             <Hidden fields={{ courseId, type: "test" }} />
-            <SectionSelect sections={sections} />
+            <SectionField sections={sections} />
             {mocks.options.length === 0 ? (
               <p className="muted">No mocks built yet. Build one under Mock tests first.</p>
             ) : (
@@ -321,7 +324,7 @@ export function CurriculumBuilder({
           <form action={addItemAction} className="stack-form">
             <h3>Reading</h3>
             <Hidden fields={{ courseId, type: "text" }} />
-            <SectionSelect sections={sections} />
+            <SectionField sections={sections} />
             <label className="field">
               <span className="field__label">Title</span>
               <input className="input" maxLength={200} name="title" required type="text" />
