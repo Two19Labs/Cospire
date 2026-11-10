@@ -111,6 +111,7 @@ credentials, student data or anyone's personal data here.
 - **Bulk student creation and emailed links are live** (#112, 19/19; config
   pushed 2026-11-06, both probes passed): CSV invites, set-password, "Forgot your
   password?". The owner's inbox click-through is still owed. *Bulk student creation* in `completed.md`.
+- **A mock opens on an instructions page** (#118, 2026-11-10): "Attempt mock" opens it in the exam window and the attempt starts from Start test there; 55/55 `test-engine-sit`, not seen in a browser. *Instructions before a mock starts* in `completed.md`.
 - **Not built:** content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
@@ -204,7 +205,6 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, mock instructions chat | `feat/mock-instructions` | "Attempt mock" opens an instructions page in the exam window; the attempt starts from Start test there. Wordmark in the exam bar | `src/features/test-engine/**`, `src/app/student/mocks/[id]/**`, `src/app/student/attempts/[id]/loading.tsx`, four `scripts/verify/*` start steps | Built; 55/55 `test-engine-sit`; not seen in a browser (branch notes) | 2026-11-10 |
 
 Merged: #115 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
