@@ -69,7 +69,7 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
       : message.startsWith("this mock allows")
         ? "limit"
         : "failed";
-    redirect(`/student/mocks/${mockId}?error=${reason}`);
+    redirect(`/student/mocks/${mockId}/start?error=${reason}`);
   }
 
   // A sectioned paper opens on its first section straight away, so the first

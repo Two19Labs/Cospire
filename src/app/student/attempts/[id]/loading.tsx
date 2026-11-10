@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Skeleton, SkeletonLines } from "@/features/auth/components/shell-skeleton";
 import styles from "@/features/test-engine/components/exam.module.css";
 
@@ -9,9 +10,7 @@ export default function Loading() {
   return (
     <div aria-busy="true" className={styles.exam}>
       <header className={styles.top}>
-        <span aria-hidden="true" className={styles.brand}>
-          C
-        </span>
+        <Image alt="" className={styles.logo} height={57} priority src="/cospire-wordmark.png" width={158} />
         <span aria-hidden="true" className={styles.divider} />
         <span className={styles.title}>Opening the test…</span>
       </header>
