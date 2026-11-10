@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireRole } from "@/features/auth/guards";
+import { appendCurriculumItem, parsePlacement, sectionInCourse } from "@/features/curriculum/append-item";
 import { normaliseTitle, parsePositiveId } from "@/features/curriculum/curriculum";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
@@ -83,12 +84,22 @@ export async function refreshVideoAction(formData: FormData): Promise<void> {
 // browser then posts the file straight to VdoCipher's storage: no video byte
 // passes through this server (manual §8). The policy is VdoCipher's own
 // browser-upload design; it carries no API secret.
+//
+// Started from a programme's curriculum builder, it also carries a placement:
+// the section is checked before VdoCipher is asked for anything, and once the
+// library row exists the video goes to the end of that section.
 export async function startVideoUploadAction(
   rawTitle: string,
-): Promise<{ clientPayload: Record<string, string> } | { error: string }> {
+  rawPlacement?: unknown,
+): Promise<{ clientPayload: Record<string, string>; placed: boolean | null } | { error: string }> {
   const admin = await requireRole("admin");
   const title = normaliseTitle(rawTitle);
   if (title === null) return { error: "A title of up to 200 characters is required." };
+
+  const placement = rawPlacement === undefined ? null : parsePlacement(rawPlacement);
+  if (rawPlacement !== undefined && (placement === null || !(await sectionInCourse(placement)))) {
+    return { error: "That section could not be found in this programme. Reload and try again." };
+  }
 
   let credentials;
   try {
@@ -98,15 +109,25 @@ export async function startVideoUploadAction(
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("videos").insert({
-    created_by: admin.id,
-    org_id: admin.orgId,
-    status: "pre_upload",
-    title,
-    vdocipher_id: credentials.videoId,
-  });
-  if (error) return { error: "The video could not be added to the library." };
+  const { data, error } = await supabase
+    .from("videos")
+    .insert({
+      created_by: admin.id,
+      org_id: admin.orgId,
+      status: "pre_upload",
+      title,
+      vdocipher_id: credentials.videoId,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: "The video could not be added to the library." };
 
   revalidatePath("/admin/videos");
-  return { clientPayload: credentials.clientPayload };
+  if (placement === null) return { clientPayload: credentials.clientPayload, placed: null };
+
+  // The library row is written either way; a refused item leaves the video in
+  // the library, and the builder says so.
+  const placed = await appendCurriculumItem(admin, placement, { refId: data.id as number, type: "video" });
+  revalidatePath(`/admin/courses/${placement.courseId}`);
+  return { clientPayload: credentials.clientPayload, placed };
 }

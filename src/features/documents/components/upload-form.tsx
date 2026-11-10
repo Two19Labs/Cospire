@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 
+import { SectionField, type ProgrammeTarget } from "@/features/curriculum/components/section-field";
 import { createBrowserSupabaseClient } from "@/shared/db/supabase/browser";
 import { Button, Input } from "@/shared/ui";
 
@@ -25,7 +26,10 @@ import { documentsBucket } from "../storage";
 //
 // Everything else -- search, granting, revoking, assignment, user creation --
 // still works with scripting disabled.
-export function UploadForm({ folders }: { folders: string[] }) {
+//
+// Given `programme`, it is the curriculum builder's upload: the admin picks a
+// section, and the document lands in the library and at the end of that section.
+export function UploadForm({ folders, programme }: { folders: string[]; programme?: ProgrammeTarget }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<NewDocumentFieldErrors>({});
@@ -45,6 +49,9 @@ export function UploadForm({ folders }: { folders: string[] }) {
     const formData = new FormData(form);
     const title = String(formData.get("title") ?? "");
     const folder = String(formData.get("folder") ?? "");
+    const placement = programme
+      ? { courseId: programme.courseId, sectionId: String(formData.get("sectionId") ?? "") }
+      : undefined;
     const file = fileRef.current?.files?.[0] ?? null;
 
     if (!file) {
@@ -67,7 +74,7 @@ export function UploadForm({ folders }: { folders: string[] }) {
 
     try {
       setProgress("Preparing the upload...");
-      const ticket = await createDocumentUploadTicketAction({ folder, title });
+      const ticket = await createDocumentUploadTicketAction({ folder, placement, title });
 
       if (!ticket.ok) {
         setError(ticket.error);
@@ -95,11 +102,16 @@ export function UploadForm({ folders }: { folders: string[] }) {
       const failure = await recordDocumentAction({
         folder,
         path: ticket.path,
+        placement,
         title,
       });
 
-      // Reached only on failure: the action redirects on success, and a redirect
-      // from a Server Action never returns.
+      // From a programme the action hands back where to go; from the library it
+      // redirects on success, and a redirect from a Server Action never returns.
+      if (failure.ok) {
+        window.location.assign(failure.href);
+        return;
+      }
       setError(failure.error);
       setFieldErrors(failure.fieldErrors);
     } catch (cause) {
@@ -129,6 +141,7 @@ export function UploadForm({ folders }: { folders: string[] }) {
 
   return (
     <form className="stack-form stack-form--wide" noValidate onSubmit={onSubmit}>
+      {programme ? <SectionField sections={programme.sections} /> : null}
       <Input
         error={fieldErrors.title}
         label="Title"

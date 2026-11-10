@@ -204,9 +204,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude | `feat/logo` | Cospire wordmark in the sidebar, square logo as the site icon | `public/cospire-wordmark.png`, `src/app/icon.png`, brand in `role-shell`/`shell-skeleton`, `.app-brand__logo` | PR #117; checks green; not seen in a real browser | 2026-11-10 |
+| Claude, programme uploads chat | `feat/programme-uploads` | Upload a video or document straight from a programme section; it lands in its library and in the section | `src/features/curriculum/**`, `src/features/video/actions/videos.ts`, `src/features/video/components/video-upload-form.tsx`, `src/features/documents/actions/{record-document,create-upload-ticket}.ts`, `src/features/documents/components/upload-form.tsx` | PR #116 open, awaiting owner merge; 15/15 headless, video placement not re-run (branch notes) | 2026-11-10 |
 
-Merged: #115 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+Merged: #115, #117 logo (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -218,6 +218,7 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
 **Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
+VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits deletion (`docs/context/branches/feat-programme-uploads.md`).
 
 ### Owed in a real browser (owner)
 
@@ -278,13 +279,11 @@ in `docs/context/meetings.md`; earlier calls below it):
 
 **Then, in order:**
 
-1. **Masters' Union ARS R1:** the owner merges #115; then Admin, ARS, create
-   "Masters' Union ARS", import the private `Context/ARS - Masters' Union - R1
-   import.json`, check the preview; one sitting as a test student.
-2. **R2 (aptitude) and R3 (interview and GD):** the owner sends the material.
-   R2 links to a mock (which papers? `C:\Cospire\Mocks` is never read unless the
-   owner says so); R3 is likely an `offline` round. Re-import all three together
-   while no student has answered R1 (an import will not replace answered rounds).
+1. **PR #116 (`feat/programme-uploads`):** owner merges; then the programme
+   importer and adding a test from the builder.
+2. **MU mocks from the new bank** (questions 1034-1348 carry the MU Mock
+   questions; the owner decides sections, timings and order first; no negative
+   marking). **MU ARS stays on hold**: on resuming, check the R1 preview only.
 3. **Owner checks:** one bulk invitation clicked through from the inbox (then
    remove the test student); `lms.cospire.in` in Vercel and a GoDaddy CNAME
    (not the apex, which is the live website), then `site_url` and

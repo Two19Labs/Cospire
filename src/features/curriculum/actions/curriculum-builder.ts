@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { appendCurriculumItem } from "../append-item";
 import {
   nextSortOrder,
   normaliseBody,
@@ -115,49 +116,23 @@ export async function moveSectionAction(formData: FormData): Promise<void> {
 }
 
 export async function addItemAction(formData: FormData): Promise<void> {
-  const { admin, courseId, supabase } = await start(formData);
+  const { admin, courseId } = await start(formData);
   const sectionId = parsePositiveId(formData.get("sectionId"));
   const type = parseItemType(formData.get("type"));
   if (sectionId === null || type === null) back(courseId, "item-failed");
 
-  // The section must belong to this programme. Read through RLS, so a section
-  // in another organisation is simply not found.
-  const { data: section } = await supabase
-    .from("sections")
-    .select("id")
-    .eq("id", sectionId)
-    .eq("course_id", courseId)
-    .maybeSingle();
-  if (!section) back(courseId, "item-failed");
-
-  let fields: { body?: string; ref_id?: number; title?: string };
+  let ok: boolean;
   if (type === "text") {
     const title = normaliseTitle(formData.get("title"));
     const body = normaliseBody(formData.get("body"));
     if (title === null || body === null) back(courseId, "item-failed");
-    fields = { body, title };
+    ok = await appendCurriculumItem(admin, { courseId, sectionId }, { body, title, type });
   } else {
     const refId = parsePositiveId(formData.get("refId"));
     if (refId === null) back(courseId, "item-failed");
-    fields = { ref_id: refId };
+    ok = await appendCurriculumItem(admin, { courseId, sectionId }, { refId, type });
   }
-
-  const { data: existing } = await supabase
-    .from("curriculum_items")
-    .select("id, sort_order")
-    .eq("section_id", sectionId)
-    .limit(2000);
-
-  const { error } = await supabase.from("curriculum_items").insert({
-    ...fields,
-    org_id: admin.orgId,
-    section_id: sectionId,
-    sort_order: nextSortOrder(
-      (existing ?? []).map((row) => ({ id: row.id as number, sortOrder: row.sort_order as number })),
-    ),
-    type,
-  });
-  back(courseId, error ? "item-failed" : "item-added");
+  back(courseId, ok ? "item-added" : "item-failed");
 }
 
 export async function removeItemAction(formData: FormData): Promise<void> {

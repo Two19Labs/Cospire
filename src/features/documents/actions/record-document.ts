@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireRole } from "@/features/auth/guards";
+import { appendCurriculumItem, parsePlacement } from "@/features/curriculum/append-item";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
@@ -24,16 +25,26 @@ import type { UploadRejection } from "./upload-state";
 //
 // The insert is therefore the commit point, and it does not happen until the
 // object has been confirmed present.
+//
+// Started from a programme's curriculum builder, it also carries a placement:
+// once the row exists, the document goes to the end of that section and the
+// admin returns to the programme.
 export async function recordDocumentAction(input: {
   folder: string;
   path: string;
+  placement?: unknown;
   title: string;
-}): Promise<UploadRejection> {
+}): Promise<UploadRejection | { href: string; ok: true }> {
   const admin = await requireRole("admin");
 
   const { errors, value } = validateNewDocument(input);
   if (!value) {
     return { error: null, fieldErrors: errors, ok: false };
+  }
+
+  const placement = input.placement === undefined ? null : parsePlacement(input.placement);
+  if (input.placement !== undefined && placement === null) {
+    return { error: "That section could not be found in this programme.", fieldErrors: {}, ok: false };
   }
 
   // The browser supplies the path it was given in step one. Checked against the
@@ -147,5 +158,17 @@ export async function recordDocumentAction(input: {
   revalidatePath("/admin/documents");
   // Outside the try, because redirect() signals success by throwing and
   // catching it would break the navigation.
-  redirect(buildDocumentHref({ documentId, notice: "uploaded" }));
+  if (placement === null) redirect(buildDocumentHref({ documentId, notice: "uploaded" }));
+
+  // The document is in the library either way; a refused item is reported, not hidden.
+  const placed =
+    documentId !== null && (await appendCurriculumItem(admin, placement, { refId: documentId, type: "document" }));
+  revalidatePath(`/admin/courses/${placement.courseId}`);
+  // Returned, not redirected: the form calls this from a submit handler, and a
+  // redirect back to the page it is on was swallowed there (headless check,
+  // 2026-11-10: row and item written, page never moved). The form navigates.
+  return {
+    href: `/admin/courses/${placement.courseId}?curriculum=${placed ? "document-uploaded" : "upload-not-placed"}#curriculum`,
+    ok: true,
+  };
 }

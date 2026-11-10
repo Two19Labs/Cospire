@@ -7,10 +7,24 @@ import {
   normaliseBody,
   normaliseTitle,
   parseItemType,
+  parsePlacement,
   parsePositiveId,
   planMove,
   studentItemHref,
 } from "./curriculum";
+
+describe("parsePlacement", () => {
+  it("reads a programme and section, from numbers or form strings", () => {
+    expect(parsePlacement({ courseId: 3, sectionId: "12" })).toEqual({ courseId: 3, sectionId: 12 });
+  });
+
+  it("refuses anything a hand-crafted request could send", () => {
+    for (const raw of [null, undefined, "3", 7, {}, { courseId: 3 }, { courseId: 3, sectionId: "" },
+      { courseId: -1, sectionId: 2 }, { courseId: 3, sectionId: "2; drop" }, { courseId: 1.5, sectionId: 2 }]) {
+      expect(parsePlacement(raw)).toBeNull();
+    }
+  });
+});
 
 describe("planMove", () => {
   const rows = [
