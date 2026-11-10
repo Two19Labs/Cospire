@@ -168,6 +168,10 @@ try {
   const quick = await saveMock("Sit quick", 1, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { proctoring: true });
   const noPhones = await saveMock("Sit no phones", 30, [{ durationMinutes: null, questions: [q1], title: "All questions" }], { allowMobile: false });
 
+  // New mocks are drafts (D41), which no student sees: publish the fixtures.
+  const { error: publishError } = await people.admin.client.from("mocks").update({ status: "published" }).in("id", [free, sectioned, quick, noPhones]);
+  if (publishError) throw publishError;
+
   // ---- Granting, through the admin's Students panel.
   for (const mock of [free, sectioned, quick, noPhones]) {
     const page = await get(`/admin/mocks/${mock}`, "admin");
@@ -190,14 +194,14 @@ try {
   check("an admin is kept out of the student route", (await get("/student/mocks", "admin")).status === 307);
 
   // ---- Start the free paper from a desktop.
-  const intro = await get(`/student/mocks/${free}`, "student");
+  const intro = await get(`/student/mocks/${free}/start`, "student");
   check("the mock page shows its instructions and a start button", intro.body.includes("Read each question carefully.") && intro.body.includes("Start test"));
-  const started = await post(`/student/mocks/${free}`, "student", formWith(intro.body, 'name="mockId"'), []);
+  const started = await post(`/student/mocks/${free}/start`, "student", formWith(intro.body, 'name="mockId"'), []);
   const attemptId = Number(pathOf(started.location).match(/\/student\/attempts\/(\d+)/)?.[1]);
   check("starting redirects into the attempt", started.status === 303 && Number.isInteger(attemptId), started.location ?? "");
   const { data: a1 } = await service.from("attempts").select("started_at, proctored, status").eq("id", attemptId).single();
   check("the server stamped the start, proctored, in progress", a1.status === "in_progress" && a1.proctored === true && Math.abs(Date.now() - Date.parse(a1.started_at)) < 60_000);
-  const again = await post(`/student/mocks/${free}`, "student", formWith(intro.body, 'name="mockId"'), []);
+  const again = await post(`/student/mocks/${free}/start`, "student", formWith(intro.body, 'name="mockId"'), []);
   check("starting again resumes the open attempt instead of a second one", pathOf(again.location) === `/student/attempts/${attemptId}`);
 
   // ---- Answer, navigate, mark for review.
@@ -328,9 +332,9 @@ try {
   check("the builder refuses to rebuild an attempted mock, and says why", (rebuilt.location ?? "").includes("error=attempted"), `${rebuilt.status} ${rebuilt.location}`);
 
   // ---- The sectioned paper.
-  const sIntro = await get(`/student/mocks/${sectioned}`, "student");
+  const sIntro = await get(`/student/mocks/${sectioned}/start`, "student");
   check("a sectioned mock explains the order", sIntro.body.includes("sat in order"));
-  const sStart = await post(`/student/mocks/${sectioned}`, "student", formWith(sIntro.body, 'name="mockId"'), []);
+  const sStart = await post(`/student/mocks/${sectioned}/start`, "student", formWith(sIntro.body, 'name="mockId"'), []);
   const sAttempt = Number(pathOf(sStart.location).match(/\/student\/attempts\/(\d+)/)?.[1]);
   let { data: entered } = await service.from("attempt_sections").select("mock_section_id").eq("attempt_id", sAttempt);
   check("the first section opens on start", entered.length === 1);
@@ -352,15 +356,15 @@ try {
   check("a background save into the closed section is refused too", !lateBg.body.includes('"ok":true') && q1AfterBg.answer.options[0] === "a");
 
   // ---- Phones.
-  const phoneIntro = await get(`/student/mocks/${noPhones}`, "student", PHONE);
+  const phoneIntro = await get(`/student/mocks/${noPhones}/start`, "student", PHONE);
   check("a phone is told this mock is desktop-only", phoneIntro.body.includes("cannot be taken on a phone"));
-  const phoneTry = await post(`/student/mocks/${noPhones}`, "student", formWith((await get(`/student/mocks/${noPhones}`, "student")).body, 'name="mockId"'), [], PHONE);
+  const phoneTry = await post(`/student/mocks/${noPhones}/start`, "student", formWith((await get(`/student/mocks/${noPhones}/start`, "student")).body, 'name="mockId"'), [], PHONE);
   const { count: phoneAttempts } = await service.from("attempts").select("*", { count: "exact", head: true }).eq("mock_id", noPhones);
   check("a phone attempt on a desktop-only mock is refused, and none is created", (phoneTry.location ?? "").includes("error=phone") && phoneAttempts === 0);
 
   // ---- The clock: a one-minute paper started from a phone.
-  const qIntro = await get(`/student/mocks/${quick}`, "student", PHONE);
-  const qStart = await post(`/student/mocks/${quick}`, "student", formWith(qIntro.body, 'name="mockId"'), [], PHONE);
+  const qIntro = await get(`/student/mocks/${quick}/start`, "student", PHONE);
+  const qStart = await post(`/student/mocks/${quick}/start`, "student", formWith(qIntro.body, 'name="mockId"'), [], PHONE);
   const qAttempt = Number(pathOf(qStart.location).match(/\/student\/attempts\/(\d+)/)?.[1]);
   const { data: qRow } = await service.from("attempts").select("proctored, started_at").eq("id", qAttempt).single();
   check("a phone attempt is stored unproctored", qRow.proctored === false);

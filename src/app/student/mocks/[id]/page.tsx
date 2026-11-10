@@ -9,20 +9,13 @@ import { StudentMockScreen } from "@/features/test-engine/components/student-moc
 import { isPhone } from "@/features/test-engine/device";
 import { getStudentMock } from "@/features/test-engine/queries/student-mocks";
 
-export default async function StudentMockPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function StudentMockPage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await requireRole("student");
   const mockId = parseId((await params).id);
   if (mockId === null) notFound();
   // Null when the student holds no grant: RLS hides the mock entirely.
   const mock = await getStudentMock(mockId);
   if (!mock) notFound();
-  const error = (await searchParams).error;
   const phone = isPhone((await headers()).get("user-agent"));
   // Once sat, the mock's page carries the latest result's analytics (owner,
   // 2026-10-19). Attempts are newest first; null while it awaits its score.
@@ -31,7 +24,6 @@ export default async function StudentMockPage({
   return (
     <StudentMockScreen
       analytics={analytics ? <AttemptAnalyticsBody data={analytics} /> : null}
-      error={typeof error === "string" ? error : undefined}
       mock={mock}
       phone={phone}
       profile={profile}

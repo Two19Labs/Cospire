@@ -23,12 +23,13 @@ export interface StudentMock {
   maxAttempts: number;
   negativeMarking: number;
   negativeMarkingTypes: string[];
+  proctoringEnabled: boolean;
   sections: PaperSection[];
   title: string;
 }
 
 const mockColumns =
-  "id, title, instructions, duration_minutes, negative_marking, negative_marking_types, max_attempts, allow_mobile";
+  "id, title, instructions, duration_minutes, negative_marking, negative_marking_types, max_attempts, allow_mobile, proctoring_enabled";
 
 function toAttempt(row: {
   id: number; proctored: boolean; score: number | null; started_at: string; status: string;
@@ -73,6 +74,7 @@ export async function listStudentMocks(): Promise<StudentMock[]> {
     maxAttempts: mock.max_attempts,
     negativeMarking: mock.negative_marking,
     negativeMarkingTypes: mock.negative_marking_types,
+    proctoringEnabled: mock.proctoring_enabled,
     sections: [],
     title: mock.title,
   }));
@@ -106,6 +108,7 @@ export async function getStudentMock(mockId: number): Promise<StudentMock | null
     maxAttempts: mock.max_attempts,
     negativeMarking: mock.negative_marking,
     negativeMarkingTypes: mock.negative_marking_types,
+    proctoringEnabled: mock.proctoring_enabled,
     sections: (sectionResult.data ?? []).map((section) => ({
       durationMinutes: section.duration_minutes,
       id: section.id,

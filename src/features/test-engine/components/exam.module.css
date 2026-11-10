@@ -25,17 +25,10 @@
   padding: 0 22px;
 }
 
-.brand {
-  align-items: center;
-  background: var(--gold, #ffc24b);
-  border-radius: var(--r-md, 8px);
-  color: var(--ink, #182b50);
-  display: grid;
+.logo {
   flex: none;
-  font: 700 16px var(--font-serif, Georgia, serif);
-  height: 30px;
-  place-items: center;
-  width: 30px;
+  height: auto;
+  width: 84px;
 }
 
 .divider {
