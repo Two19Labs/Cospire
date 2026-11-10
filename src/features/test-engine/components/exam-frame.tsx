@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { ActionBoundary } from "@/shared/ui";
@@ -12,9 +13,7 @@ export function ExamFrame({ children, right, sub, title }: { children: ReactNode
   return (
     <div className={styles.exam}>
       <header className={styles.top}>
-        <span aria-hidden="true" className={styles.brand}>
-          C
-        </span>
+        <Image alt="" className={styles.logo} height={57} priority src="/cospire-wordmark.png" width={158} />
         <span aria-hidden="true" className={styles.divider} />
         <span className={styles.title}>{title}</span>
         {sub ? <span className={styles.sub}>{sub}</span> : null}

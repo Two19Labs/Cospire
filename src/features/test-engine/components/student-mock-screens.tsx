@@ -8,8 +8,9 @@ import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, 
 import { startAttemptAction } from "../actions/attempt-actions";
 import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
+import { ExamCard, ExamFrame } from "./exam-frame";
 import { FullscreenOnSubmit } from "./fullscreen";
-import { OpenInOwnWindow } from "./own-window";
+import { AttemptLink } from "./own-window";
 import { TouchFlag } from "./touch-flag";
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
@@ -60,101 +61,54 @@ const startErrors: Record<string, string> = {
   phone: "This mock cannot be taken on a phone. Open it on a laptop or desktop.",
 };
 
+// The paper at a glance, as the approved prototype sets it out.
+function MockFacts({ mock }: { mock: StudentMock }) {
+  return (
+    <ul aria-label="About this test" className="fact-chips">
+      <li className="fact-chips__lead">{mock.durationMinutes} min</li>
+      {mock.sections.length > 1 ? <li>{mock.sections.length} sections</li> : null}
+      <li>{mock.negativeMarking > 0 ? `−${formatMarks(mock.negativeMarking)} per wrong answer` : "No negative marking"}</li>
+      <li>
+        {mock.attempts.length} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
+      </li>
+    </ul>
+  );
+}
+
 export function StudentMockScreen({
   analytics = null,
-  error,
   mock,
   phone,
   profile,
 }: {
   // The latest submitted attempt's analytics, drawn by the analytics feature.
   analytics?: React.ReactNode;
-  error?: string;
   mock: StudentMock;
   phone: boolean;
   profile: Profile;
 }) {
   const open = mock.attempts.find((attempt) => attempt.status === "in_progress");
   const used = mock.attempts.length;
-  const sectional = mock.sections.some((section) => section.durationMinutes !== null);
-  const blockedPhone = phone && !mock.allowMobile;
 
   return (
     <RoleShell back={{ href: "/student/mocks", label: "Back to mock tests" }} profile={profile} title={mock.title}>
-      {error && startErrors[error] ? <p className="notice notice--error">{startErrors[error]}</p> : null}
       {analytics}
+      {/* A short summary only: the instructions are on the page the button
+          opens, and the clock starts from the Start button there. */}
       <section className="panel">
-        <div className="panel__header">
-          <div>
-            <h2>Before you start</h2>
-            <p className="muted">Read this once: the clock starts when you press Start.</p>
-          </div>
-        </div>
-        {/* The paper at a glance, as the approved prototype sets it out. */}
-        <ul aria-label="About this test" className="fact-chips">
-          <li className="fact-chips__lead">{mock.durationMinutes} min</li>
-          {mock.sections.length > 1 ? <li>{mock.sections.length} sections</li> : null}
-          <li>{mock.negativeMarking > 0 ? `−${formatMarks(mock.negativeMarking)} per wrong answer` : "No negative marking"}</li>
-          <li>
-            {used} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
-          </li>
-        </ul>
-        {sectional ? (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Section</TableHeaderCell>
-                <TableHeaderCell>Time</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {mock.sections.map((section) => (
-                <TableRow key={section.id}>
-                  <TableCell>{section.title}</TableCell>
-                  <TableCell>{section.durationMinutes ? `${section.durationMinutes} min` : "Untimed"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : null}
-        {mock.instructions ? <p className="mock-intro__text">{mock.instructions}</p> : null}
-        <ul className="mock-intro__rules">
-          {sectional ? (
-            <li>The sections above are timed and sat in order. You cannot return to a section once you leave it.</li>
-          ) : (
-            <li>One timer for the whole paper. You can move between questions freely.</li>
-          )}
-          <li>
-            {mock.negativeMarking > 0
-              ? `A wrong answer loses ${formatMarks(mock.negativeMarking)} mark${mock.negativeMarking === 1 ? "" : "s"} on ${mock.negativeMarkingTypes.map((type) => (type === "numerical" ? "typed-answer" : type === "mcq_multi" ? "multiple-answer" : "multiple-choice")).join(" and ")} questions. An unanswered question loses nothing.`
-              : "There is no negative marking."}
-          </li>
-          <li>The timer is kept by the server. Closing the page does not stop it.</li>
-          {phone ? <li>You are on a phone, so this attempt will be recorded as unproctored.</li> : null}
-        </ul>
+        <MockFacts mock={mock} />
         <div className="toolbar">
           {open ? (
             <Link className="button button--primary" href={`/student/attempts/${open.id}`}>
               Resume test
             </Link>
-          ) : blockedPhone ? (
+          ) : phone && !mock.allowMobile ? (
             <p className="notice notice--error">{startErrors.phone}</p>
           ) : used >= mock.maxAttempts ? (
-            <p className="muted">You have used every attempt this mock allows.</p>
+            <p className="muted">{startErrors.limit}</p>
           ) : (
-            <form action={startAttemptAction}>
-              <input name="mockId" type="hidden" value={mock.id} />
-              <TouchFlag />
-              {/* Opens the exam in a window of its own, and cancels this click
-                  when it succeeds -- so exactly one of the two below acts. */}
-              <OpenInOwnWindow mockId={mock.id} />
-              <FullscreenOnSubmit />
-              <SubmitButton pendingLabel="Starting…">{used === 0 ? "Start test" : "Start another attempt"}</SubmitButton>
-            </form>
+            <AttemptLink href={`/student/mocks/${mock.id}/start`}>{used === 0 ? "Attempt mock" : "Attempt again"}</AttemptLink>
           )}
-          <Link className="button button--secondary" href="/student/mocks">
-            Back to mock tests
-          </Link>
         </div>
       </section>
 
@@ -188,5 +142,89 @@ export function StudentMockScreen({
         </section>
       ) : null}
     </RoleShell>
+  );
+}
+
+// The mock's instructions, in the exam's own frame: what "Attempt mock" opens.
+// Nothing is written until Start is pressed, so reading this costs no time.
+export function MockInstructionsScreen({
+  error,
+  mock,
+  phone,
+  profile,
+}: {
+  error?: string;
+  mock: StudentMock;
+  phone: boolean;
+  profile: Profile;
+}) {
+  const used = mock.attempts.length;
+  const sectional = mock.sections.some((section) => section.durationMinutes !== null);
+
+  return (
+    <ExamFrame sub={profile.name} title={mock.title}>
+      <ExamCard eyebrow="Instructions">
+        <h2>{mock.title}</h2>
+        {error && startErrors[error] ? <p className="notice notice--error">{startErrors[error]}</p> : null}
+        <MockFacts mock={mock} />
+        {sectional ? (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>Section</TableHeaderCell>
+                <TableHeaderCell>Time</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {mock.sections.map((section) => (
+                <TableRow key={section.id}>
+                  <TableCell>{section.title}</TableCell>
+                  <TableCell>{section.durationMinutes ? `${section.durationMinutes} min` : "Untimed"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : mock.sections.length > 1 ? (
+          <p className="muted">Sections: {mock.sections.map((section) => section.title).join(", ")}</p>
+        ) : null}
+        {mock.instructions ? <p className="mock-intro__text">{mock.instructions}</p> : null}
+        <ul className="mock-intro__rules">
+          {sectional ? (
+            <li>The sections above are timed and sat in order. You cannot return to a section once you leave it.</li>
+          ) : (
+            <li>One timer for the whole paper. You can move between questions freely.</li>
+          )}
+          <li>
+            {mock.negativeMarking > 0
+              ? `A wrong answer loses ${formatMarks(mock.negativeMarking)} mark${mock.negativeMarking === 1 ? "" : "s"} on ${mock.negativeMarkingTypes.map((type) => (type === "numerical" ? "typed-answer" : type === "mcq_multi" ? "multiple-answer" : "multiple-choice")).join(" and ")} questions. An unanswered question loses nothing.`
+              : "There is no negative marking."}
+          </li>
+          <li>The clock starts when you press Start test. It is kept by the server: closing the page does not stop it.</li>
+          <li>{mock.maxAttempts === 1 ? "You have one attempt." : `You have ${mock.maxAttempts} attempts.`}</li>
+          {phone ? (
+            <li>You are on a phone, so this attempt will be recorded as unproctored.</li>
+          ) : mock.proctoringEnabled ? (
+            <li>This test is proctored. Stay in full screen: leaving it, or switching tabs or windows, is recorded.</li>
+          ) : null}
+        </ul>
+        <div className="toolbar">
+          {phone && !mock.allowMobile ? (
+            <p className="notice notice--error">{startErrors.phone}</p>
+          ) : used >= mock.maxAttempts ? (
+            <p className="muted">{startErrors.limit}</p>
+          ) : (
+            <form action={startAttemptAction}>
+              <input name="mockId" type="hidden" value={mock.id} />
+              <TouchFlag />
+              <FullscreenOnSubmit />
+              <SubmitButton pendingLabel="Starting…">Start test</SubmitButton>
+            </form>
+          )}
+          <Link className="button button--secondary" href={`/student/mocks/${mock.id}`}>
+            Not now
+          </Link>
+        </div>
+      </ExamCard>
+    </ExamFrame>
   );
 }

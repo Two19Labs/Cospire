@@ -118,6 +118,9 @@ try {
   await attempt("student", "Student: sit a sectioned mock end to end", "/student", async () => {
     await click("Mock tests", { selector: ".app-nav a" });
     await clickHref(`/student/mocks/${ids.mockA}`);
+    // "Attempt mock" opens the instructions in a window of its own; go there in this one.
+    await b.evaluate(`location.assign("/student/mocks/${ids.mockA}/start")`);
+    await settle();
     await click("Start test", { selector: "button" });
     await click("60", { exact: false, selector: "label" });
     await click("Save and next");

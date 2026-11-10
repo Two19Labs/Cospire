@@ -94,7 +94,7 @@ try {
 
   await b.viewport(1440, 900);
   await b.setCookies(BASE, student.cookie);
-  await b.navigate(`${BASE}/student/mocks/${mockA}`, BASE);
+  await b.navigate(`${BASE}/student/mocks/${mockA}/start`, BASE);
 
   // ---- Start. A document load by design: its action redirects, and the mock
   // will shortly open in a window of its own, so full screen cannot be asked

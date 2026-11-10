@@ -173,9 +173,9 @@ try {
     otherPage.body.includes("Your admin has not opened this test for you yet") && !otherPage.body.includes(`/student/mocks/${mock}`) && !otherPage.body.includes(mockTitle));
 
   // ---- The granted student follows the link and starts the test.
-  const intro = await get(`/student/mocks/${mock}`, "student");
+  const intro = await get(`/student/mocks/${mock}/start`, "student");
   check("the link leads to the mock's start page", intro.status === 200 && intro.body.includes("Start test"));
-  const started = await post(`/student/mocks/${mock}`, "student", formWith(intro.body, 'name="mockId"'), []);
+  const started = await post(`/student/mocks/${mock}/start`, "student", formWith(intro.body, 'name="mockId"'), []);
   const attemptId = Number(started.location.match(/\/student\/attempts\/(\d+)/)?.[1]);
   const { data: attempt } = await service.from("attempts").select("id, status").eq("mock_id", mock).eq("student_id", people.student.id).maybeSingle();
   check("starting creates the student's attempt", Number.isInteger(attemptId) && attempt?.id === attemptId && attempt?.status === "in_progress", started.location);
