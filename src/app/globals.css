@@ -786,15 +786,9 @@ a.button {
   text-decoration: none;
 }
 
-.app-brand__mark {
-  background: var(--gold);
-  border-radius: 9px 9px 9px 2px;
-  color: var(--ink);
-  display: grid;
-  font-size: 1.5625rem;
-  height: 2.25rem;
-  place-items: center;
-  width: 2.125rem;
+.app-brand__logo {
+  height: auto;
+  width: 8.5rem;
 }
 
 .app-nav {
@@ -1122,10 +1116,8 @@ a.button {
     padding: 0;
   }
 
-  .app-brand__mark {
-    font-size: 1.125rem;
-    height: 1.875rem;
-    width: 1.75rem;
+  .app-brand__logo {
+    width: 6.5rem;
   }
 
   .app-account {

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -197,10 +198,7 @@ export function ShellSkeleton({
     <div className="app-shell">
       <aside className="app-sidebar">
         <Link aria-label="Cospire home" className="app-brand" href={roleHomes[role]}>
-          <span aria-hidden="true" className="app-brand__mark">
-            C
-          </span>
-          <span className="app-brand__name">Cospire</span>
+          <Image alt="" className="app-brand__logo" height={57} priority src="/cospire-wordmark.png" width={158} />
         </Link>
 
         <AppNav role={role} />

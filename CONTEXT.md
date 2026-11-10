@@ -204,9 +204,9 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 | Owner / chat | Branch | Scope | Owned files | Status | Last update |
 |---|---|---|---|---|---|
-| Claude, MU ARS chat | `feat/ars-mu-r1` | Form engine: show-when, phone/email, ranges, result by marking scheme; MU R1 import | `src/features/ars/**` | PR open, awaiting owner merge | 2026-11-07 |
+| Claude | `feat/logo` | Cospire wordmark in the sidebar, square logo as the site icon | `public/cospire-wordmark.png`, `src/app/icon.png`, brand in `role-shell`/`shell-skeleton`, `.app-brand__logo` | PR #117; checks green; not seen in a real browser | 2026-11-10 |
 
-Merged: #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+Merged: #115 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -216,8 +216,8 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 
 **UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
-**Masters' Union ARS** (owner, 2026-11-07): R1 is a private import in `Context/`, needing `feat/ars-mu-r1` (*Form conditions*
-in `completed.md`); after merge the owner creates the process and pastes it. R2, R3 await material.
+**Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
+**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
 
 ### Owed in a real browser (owner)
 
