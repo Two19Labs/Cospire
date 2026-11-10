@@ -2801,3 +2801,24 @@ delete with 423 "Write actions are temporarily paused". Delete it with
 
 **Not in this branch:** creating a test from the builder, and a programme
 importer.
+
+## MU mocks, 2026-11-10
+
+Data only, no code. The owner's settings: the document's own mock titles,
+sections and question order; one 2-hour clock with free movement between
+sections (no sectional timer); one attempt; proctored; phones allowed; no
+negative marking; drafts until the owner publishes.
+
+- **MU Mock 1 to 7**, mock ids 1-7, from bank questions 1034-1348: 45 questions
+  each, in three untimed sections of 15 in document order (Quantitative
+  Aptitude, Logical Reasoning, Data Interpretation). A set's passage sits just
+  before its first question (every DI section has four sets; Mock 4's Logical
+  Reasoning has two).
+- Saved through `save_mock` as the organisation's admin by a one-off local
+  script (`coverage/question-import/mocks.mjs`, gitignored). Instructions:
+  "Switch between sections anytime. No negative marking."
+- **Verified** by a read of the hosted database: seven drafts, 120 minutes,
+  penalty 0, one attempt, phones allowed, proctoring on, 3 sections with no
+  section time, 45 questions each, no grants. Every question's bank section
+  matched the document's heading.
+- **Not verified:** none has been opened or sat in a browser.

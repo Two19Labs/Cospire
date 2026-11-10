@@ -216,7 +216,7 @@ not order** — the order changed on 2026-09-08. Only what is open is listed her
 **UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
-**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. No mocks exist.
+**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.
 VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits deletion (*Upload from the curriculum builder* in `completed.md`).
 
 ### Owed in a real browser (owner)
@@ -278,11 +278,8 @@ in `docs/context/meetings.md`; earlier calls below it):
 
 **Then, in order:**
 
-1. **MU mocks from the new bank** (questions 1034-1348; owner, 2026-11-10): the
-   document's own mock titles, sections and question order; one 2-hour clock
-   with free movement between sections; one attempt, proctored, phones allowed,
-   no negative marking; created as drafts, the owner publishes.
-   **MU ARS stays on hold**: on resuming, check the R1 preview only.
+1. **Owner reviews the seven MU mock drafts** in Mock tests, then publishes and
+   grants them. **MU ARS stays on hold**: on resuming, check the R1 preview only.
 2. **Add a test from the curriculum builder** (fresh branch, after #116 is in);
    the programme importer after it, once the Client sends a programme flow (N15).
 3. **Owner checks:** one bulk invitation clicked through from the inbox (then
