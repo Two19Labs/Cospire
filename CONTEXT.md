@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-10 (Asia/Calcutta)
+Last updated: 2026-11-11 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -206,15 +206,17 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Active work
 
-No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+| Owner / chat | Branch | Scope | Owned files | Status | Last update |
+|---|---|---|---|---|---|
+| Claude, feedback chat | `feat/feedback` | The Client's feedback board at `/feedback/<code>`: no login, two secret links | `src/features/feedback/**`, `src/app/feedback/**`, migration `20261111100000`, one line in `src/shared/db/supabase/middleware.ts`, `.env.example` | Built; migration **not applied**, so nothing has run against the database (branch notes) | 2026-11-11 |
+
+Merged: #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
-
-**UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
 **Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.
