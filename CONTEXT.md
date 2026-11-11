@@ -26,7 +26,7 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-10
 
-- **Deployed** at `https://cospire-roan.vercel.app`, from `main`. **The
+- **Deployed** at `https://app.cospire.in`, from `main` (the Client's domain, since 2026-11-11; `https://cospire-roan.vercel.app` still serves the same deployment). **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
   (after 2026-10-21, until 2026-11-06), and Vercel then blocked six deployments
   (Hobby deploys a private repository only for its owner's commits; authoring as
@@ -158,7 +158,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 | Decision | Confirmed state |
 |---|---|
 | Repository visibility | **Public** during the build, by the owner's decision on 2026-08-28, taken to obtain branch protection on the free plan; Vercel Hobby also needs it (briefly private until 2026-11-06, which blocked every deployment). **This conflicts with clause 3.9 of the agreement**, which says the build is held in "a private repository controlled by the Developer", and clause 13.1 lists source code as confidential. The agreement wins; open for the owner's decision. Going private needs GitHub Pro and Vercel Pro first. See *Repository visibility* |
-| Application URL during build | `https://cospire-roan.vercel.app`, deployed from `main` since 2026-08-29. `site_url` and the redirect allow-list point at it |
+| Application URL | `https://app.cospire.in` (owner, 2026-11-11), deployed from `main`; `https://cospire-roan.vercel.app` stays active. Auth `site_url` is the new domain, so invitation and reset emails link to it; both are in the redirect allow-list |
 | Prerequisite gating | None in V1; every curriculum item is open |
 | Proctoring violation | Warn and log; never auto-submit |
 | Negative marking | Per mock and question type; defaults to MCQ types, not TITA |
@@ -187,7 +187,7 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 - `C:\Cospire\Cospire` on `main`, which is protected: pull request required,
   `verify` required, branches must be up to date, no force pushes. **Public**
   repository; see *Repository visibility* in `docs/context/operations.md`.
-- Deployed from `main` to `https://cospire-roan.vercel.app` (Vercel **Hobby**).
+- Deployed from `main` to `https://app.cospire.in` and `https://cospire-roan.vercel.app` (Vercel **Hobby**).
   Preview deployments cannot be driven by scripts (environment variables and
   deployment protection; see `operations.md`).
 - Hosted Supabase `eeeftjwvbppznsmcljnw` (Mumbai, **Free**). Every migration on
@@ -283,9 +283,7 @@ in `docs/context/meetings.md`; earlier calls below it):
 2. **Add a test from the curriculum builder** (fresh branch);
    the programme importer after it, once the Client sends a programme flow (N15).
 3. **Owner checks:** one bulk invitation clicked through from the inbox (then
-   remove the test student); `lms.cospire.in` in Vercel and a GoDaddy CNAME
-   (not the apex, which is the live website), then `site_url` and
-   `additional_redirect_urls` in `supabase/config.toml` and `config push`.
+   remove the test student); set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in` in Vercel and redeploy (it builds the link in the feedback email).
 4. **The browser pass owed in *Owed in a real browser* above.**
 5. **Chase the Client:** feedback, documents with metadata, programme flows,
    analytics needs, a date for student access; Supabase Pro, Vercel Pro, Gemini
