@@ -1,0 +1,77 @@
+.page {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0 auto;
+  max-width: 46rem;
+  padding: 2rem 1rem 4rem;
+}
+
+.head {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.head h1 {
+  margin: 0;
+}
+
+/* The wordmark is drawn for the ink sidebar, so it sits on an ink tile here. */
+.logo {
+  background: var(--ink, #182b50);
+  border-radius: var(--r-md, 8px);
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  width: 8.5rem;
+}
+
+.thought {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.thought h2 {
+  margin: 0;
+}
+
+.text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shots img {
+  border: 1px solid var(--line, rgb(24 43 80 / 12%));
+  border-radius: var(--r-md, 8px);
+  display: block;
+  height: 7rem;
+  object-fit: cover;
+  width: 10rem;
+}
+
+.reply {
+  background: var(--cream-deep, #f3ecd8);
+  border-radius: var(--r-md, 8px);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.chosen {
+  display: grid;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.urgent {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}

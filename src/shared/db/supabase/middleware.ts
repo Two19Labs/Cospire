@@ -10,7 +10,10 @@ import { getPublicSupabaseConfig } from "./config";
 // is a question of when rather than whether.
 // `/auth/confirm` is where an invitation or reset email lands, before any session
 // exists; it only shows a button (`features/auth/actions/account-link.ts`).
-const publicPaths = ["/login", "/auth/no-access", "/auth/confirm"];
+// `/feedback/<code>` is the Client's feedback board (owner, 2026-11-11): no
+// login by design, the long random code in the URL is checked by the page and
+// by each of its actions (`features/feedback`).
+const publicPaths = ["/login", "/auth/no-access", "/auth/confirm", "/feedback"];
 
 function isPublicPath(pathname: string): boolean {
   return publicPaths.some(

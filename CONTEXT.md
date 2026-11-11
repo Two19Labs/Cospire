@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-10 (Asia/Calcutta)
+Last updated: 2026-11-11 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -115,6 +115,7 @@ credentials, student data or anyone's personal data here.
   pushed 2026-11-06, both probes passed): CSV invites, set-password, "Forgot your
   password?". The owner's inbox click-through is still owed. *Bulk student creation* in `completed.md`.
 - **A mock opens on an instructions page** (#118, 2026-11-10): "Attempt mock" opens it in the exam window and the attempt starts from Start test there; 55/55 `test-engine-sit`, not seen in a browser. *Instructions before a mock starts* in `completed.md`.
+- **The Client's feedback board** (#119, 2026-11-11): `/feedback/<code>`, no login, one secret link for the Client and one for the owner (codes in Vercel); migration `20261111100000` applied; 18/18 `scripts/verify/feedback.mjs`. *The feedback board* in `completed.md`.
 - **Not built:** content migration and handover.
 - **Never clicked through in a real browser:** the new exam screen, the
   curriculum builder and student programme pages, the admin submissions and
@@ -206,15 +207,13 @@ VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
 
 ## Active work
 
-No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
 
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
-
-**UI refresh settled:** *UI refresh slices 1 and 2* in `completed.md` (D25-D31, D52).
 
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
 **Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.

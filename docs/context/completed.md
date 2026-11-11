@@ -2870,3 +2870,49 @@ button there that starts the test. Also: the exam screen still showed the old
 - **Not verified:** anything in a browser. The window opening on the
   instructions, full screen from Start test, the logo's size in the exam bar,
   the phone tab.
+
+## The feedback board, 2026-11-11
+
+Branch `feat/feedback`, PR #119.
+Owner's request, 2026-11-11, after the Client call: a place on the portal where
+anyone on the Client's side logs a thought (a title, the thought, urgent or
+not, screenshots) with **no login**, and a second link where the owner sees
+every thought, answers it and sets a status. An email to the owner on each new
+thought. One thought, one answer; no threads.
+
+### How it works
+
+- One route, `/feedback/[code]`. The code is compared (constant time) with
+  `FEEDBACK_CLIENT_CODE` and `FEEDBACK_OWNER_CODE`; anything else is a 404. A
+  code under 24 characters counts as unset, so the page is off until both are
+  set. Changing a code kills the old link.
+- **The Client's link** shows the form and every thought with its status and
+  the owner's answer. **The owner's link** shows every thought with a status
+  select and an answer box.
+- `feedback_thoughts` and the private `feedback` bucket (images, 5 MB) have
+  **no policies**: RLS on and forced, no grants to `anon` or `authenticated`.
+  Nobody is signed in, so no policy could say who may read; the server
+  (`src/features/feedback/store.ts`, secret-key client) is the only way in, and
+  every action checks the code itself.
+- Screenshots go browser to storage on a signed upload ticket (no media through
+  the app server); they are shown through ten-minute signed URLs.
+- At most 20 new thoughts an hour, board-wide. That also bounds the emails,
+  which share Resend's daily allowance with student invitations.
+- The email goes through Resend's HTTP API with `RESEND_API_KEY` to
+  `FEEDBACK_NOTIFY_EMAIL`. Best effort: a thought is saved either way.
+- The page sends no referrer and is marked noindex, since the URL is the key.
+
+### Shared code touched (owner asked for a page with no login)
+
+- `src/shared/db/supabase/middleware.ts`: `/feedback` added to `publicPaths`.
+- `.env.example`: the three new names.
+
+### State
+
+Migration `20261111100000_feedback_thoughts.sql` **applied 2026-11-11** by the
+agent on the owner's word (`supabase db push`, the one pending migration): RLS
+on and forced, 0 policies, no `anon`/`authenticated` grants, bucket private.
+The owner set `FEEDBACK_CLIENT_CODE`, `FEEDBACK_OWNER_CODE` and
+`FEEDBACK_NOTIFY_EMAIL` in Vercel. `scripts/verify/feedback.mjs` 18/18 on a
+local build. **Not verified:** the notification email, and anything in a
+browser (pasting a screenshot, the form itself).
