@@ -287,7 +287,7 @@ side.
 3. **Owner:** publish and grant the seven MU mock drafts (the owner reported
    sitting one through on the call). **MU ARS stays on hold** (D57).
 4. **The owner's cleanup list** (private, `docs/cleanup-list.md` in the main
-   checkout): leftover placeholder copy in Documents, the admin and ARS-import
+   checkout): leftover draft copy removed on eight admin screens (fix/ui-copy, 2026-11-12); still open: the admin and ARS-import
    flow, a question-health dashboard (later), the VdoCipher probe clip.
 5. **Chase the Client:** documents with metadata, analytics needs, a date for
    student access; Supabase Pro, Vercel Pro, Gemini billing (D49). Then re-run

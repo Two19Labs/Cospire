@@ -199,10 +199,6 @@ export function DocumentsScreen({
           <div className="panel__header">
             <div>
               <h2>Add to the library</h2>
-              <p className="muted">
-                The file goes straight to storage; it never passes through this
-                application.
-              </p>
             </div>
           </div>
           <UploadForm folders={folders} />

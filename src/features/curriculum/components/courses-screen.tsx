@@ -178,8 +178,7 @@ export function CoursesScreen({
           <div>
             <h2>Add a programme</h2>
             <p className="muted">
-              Nothing here is a fixed list. Name the programme however your team
-              refers to it; students reach its content by being granted it.
+              Students see a programme once they are granted it.
             </p>
           </div>
         </div>

@@ -24,10 +24,6 @@ export default async function NewUserPage() {
           <div className="panel__header">
             <div>
               <h2>Account details</h2>
-              <p className="muted">
-                The sign-in identity and the profile are created together. If
-                either fails, neither is left behind.
-              </p>
             </div>
             <span className="tag tag--gold">New account</span>
           </div>
