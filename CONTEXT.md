@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-11 (Asia/Calcutta)
+Last updated: 2026-11-12 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -18,7 +18,7 @@ read only when the task touches that area:
 | `docs/context/supabase.md` | Hosted Supabase state: migrations, Auth configuration, traps |
 | `docs/context/phase-history.md` | Phase records, exit gates, security audits, superseded status snapshots |
 | `docs/context/branches/` | One notes file per open branch; see its README |
-| `docs/decisions/` | Decision statements D1-D59 and open questions to N19 (newest file: `2026-10-16-decision-statement.md`; D55 to D59 and N19 are recorded in this file only). **Untracked and private**, in the main checkout only (D43) |
+| `docs/decisions/` | Decision statements D1-D61 and open questions to N19 (newest file: `2026-10-16-decision-statement.md`; D55 to D61 and N19 are recorded in this file only). **Untracked and private**, in the main checkout only (D43) |
 
 The rule for keeping this file true is in `AGENTS.md` and `CLAUDE.md`;
 `node scripts/check-context.mjs` enforces it in CI. Never put secrets,
@@ -150,9 +150,6 @@ roles and four modules:
 - Protected document library
 - Configurable asynchronous ARS submission and mentor review workflow
 
-Planned stack: Next.js 15, TypeScript, Supabase managed Postgres/Auth/Storage,
-VdoCipher, PDF.js, Recharts, Google Docs API plus an LLM, and Vercel Pro.
-
 ## Confirmed decisions
 
 | Decision | Confirmed state |
@@ -215,6 +212,7 @@ No branch is claimed (add a row: owner, branch, scope, owned files, status, date
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
+**The feedback board is live** at `/feedback/<code>` on `https://app.cospire.in` (#119): the owner logged a thought with a screenshot in a browser on 2026-11-11 (deleted after); the notification email is unconfirmed. The two codes are in Vercel only.
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
 **Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.
 VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits deletion (*Upload from the curriculum builder* in `completed.md`).
@@ -266,28 +264,34 @@ side.
 
 ## Next recommended action
 
-**From the metadata and flow call, 2026-10-22** (*The metadata and flow call*
-in `docs/context/meetings.md`; earlier calls below it):
+**From the Client call on programmes, 2026-11-11** (*The programmes call* in
+`docs/context/meetings.md`; the 2026-10-22 metadata call is below it):
 
-- **Two19 sends:** the per-question metadata list (difficulty, topic; marks
-  constant); the questions with suspect answer keys. (The `cospire.in` email
-  domain, N19, is verified: 2026-11-06.)
-- **The Client sends:** documents with metadata beside each question (the
-  importer reads it, no code); programme flows (N15); analytics needs (N5, N7).
-- **Sections (N4):** QA, LR, DI, VA, CR.
-
+- **Programmes are to be rebuilt from shared modules** (owner, D61 in the
+  private decisions file): a module (Time and Work) built once and attached to
+  many programmes; programme > subject > module > items; a variation is its own
+  module; tests at module, subject and programme level; **progress per
+  programme**; a topic's practice set is separate from the question bank.
+  **Not designed, not built.** It replaces "add a test from the builder".
+- **The Client sends:** the topic list and the written topic flow; programme
+  setup is mostly from documents (the importer, after the design).
 **Then, in order:**
 
-1. **Owner reviews the seven MU mock drafts** in Mock tests, then publishes and
-   grants them. **MU ARS stays on hold**: on resuming, check the R1 preview only.
-2. **Add a test from the curriculum builder** (fresh branch);
-   the programme importer after it, once the Client sends a programme flow (N15).
-3. **Owner checks:** one bulk invitation clicked through from the inbox (then
-   remove the test student); set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in` in Vercel and redeploy (it builds the link in the feedback email).
-4. **The browser pass owed in *Owed in a real browser* above.**
-5. **Chase the Client:** feedback, documents with metadata, programme flows,
-   analytics needs, a date for student access; Supabase Pro, Vercel Pro, Gemini
-   billing (D49). Then re-run `load-100.mjs` after Pro. N3 hosting stays deferred.
+1. **Write the shared-modules design for the owner to agree** before any code:
+   tables, the access rule, per-programme progress, admin and student screens.
+   Open with the owner: is the practice set in scope (raise with the Client?).
+2. **Owner:** merge #120; set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in`
+   in Vercel and redeploy (it builds the link in the feedback email); say
+   whether the feedback email arrived; one invitation or reset opened from an
+   inbox on the new domain.
+3. **Owner:** publish and grant the seven MU mock drafts (the owner reported
+   sitting one through on the call). **MU ARS stays on hold** (D57).
+4. **The owner's cleanup list** (private, `docs/cleanup-list.md` in the main
+   checkout): leftover placeholder copy in Documents, the admin and ARS-import
+   flow, a question-health dashboard (later), the VdoCipher probe clip.
+5. **Chase the Client:** documents with metadata, analytics needs, a date for
+   student access; Supabase Pro, Vercel Pro, Gemini billing (D49). Then re-run
+   `load-100.mjs` after Pro. N3 hosting stays deferred.
 
 Open items that are not next (Phase 0 carry-overs, the Ashoka question, owner
 and Client lists) are in
