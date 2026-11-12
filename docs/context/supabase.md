@@ -156,8 +156,20 @@ Only one item is left, and it is not blocking the exit gate:
   <noreply@cospire.in>`. The domain is verified in Resend and a test email sent
   through its API was delivered. Pushed with `RESEND_API_KEY` exported; the
   push's own diff showed only the SMTP block and `email_sent` 2 to 100, so no
-  dashboard change was overwritten. To preview a future push without applying
-  it, pipe `n` to its prompt: `printf 'n\n' | npx supabase config push`.
+  dashboard change was overwritten. **There is no safe preview:** on 2026-11-11
+  `printf 'n\n' | npx supabase config push` printed the diff and applied it
+  without waiting (CLI 2.116.0). Treat every `config push` as live.
+
+### The application domain, 2026-11-11
+
+`site_url` is `https://app.cospire.in` and `additional_redirect_urls` holds the
+new domain and `https://cospire-roan.vercel.app` (owner's instruction). Pushed
+2026-11-11; the push's diff showed only those two lines. Afterwards: signup
+`422 signup_disabled`, login `400 invalid_credentials`, and a generated link
+asking to return to `https://app.cospire.in/auth/confirm` kept it, while an
+unknown host fell back to the site URL. The email templates build their links
+from `{{ .SiteURL }}`, so invitations and resets now point at the new domain.
+**Not verified:** a real invitation or reset email opened from an inbox.
 
 ### Users and profiles
 

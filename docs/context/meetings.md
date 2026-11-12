@@ -2,6 +2,34 @@
 
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
+
+## The programmes call, 2026-11-11
+
+The owner and the Client (transcript kept privately; parts were unclear).
+
+- **Modules as building blocks: agreed.** Build a topic once (Time and Work,
+  Percentages, Reading Comprehension) and package topics into a programme.
+- **A variation is its own module** (easy, medium, tough Profit and Loss, or one
+  specific to an institute).
+- **A topic's flow** is broadly a video, a formula document, a short topic
+  test, then a second recording; it may differ per topic and a step may be
+  skipped. "A video, a question bank and a quiz": the owner confirms the
+  question bank here is a separate practice set.
+- **Topic tests are unproctored quizzes.**
+- **Videos** are recordings of live classes: one or two long ones per topic
+  now, with the option of about ten short ones later.
+- **Programmes are set up mostly from documents.**
+- **The Client sends** the topic list and the written topic flow.
+- **Feedback:** one entry per thought; the feedback board (#119) came of this.
+  The Client asked to be told when something is outside scope or costs extra.
+- **Leftover placeholder copy** was seen in the Documents section.
+- **"Not smooth"** means the admin flow, the ARS process import above all
+  (owner); to be discussed.
+- **Ideas, not to act on now:** flag a question that five or more students
+  attempt and none get right; set difficulty from results after about fifteen
+  attempts. The owner wants these as a dashboard, later.
+- The owner reported all seven MU mocks loaded and one sat through.
+
 ## The metadata and flow call, 2026-10-22
 
 Two19 Labs (the owner and Aditya) with the Client. Transcript pasted by the
