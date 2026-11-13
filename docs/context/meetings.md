@@ -20,10 +20,9 @@ topic and a good-score target:
   geometry, functions, sequence and series, basic maths, number patterns) and
   Critical Reasoning (passage based, misc. reasoning, problem based, explain
   the reasoning).
-- **Page 3, not named**: LR (adds coding-decoding, data sufficiency),
+- **Page 3, "DSAI"** (owner, 2026-11-13; what DSAI stands for is not yet known, ask the Client): LR (adds coding-decoding, data sufficiency),
   Mathematics (adds quadratic equations, matrices and determinants, limits,
-  differential equations, probability), DI. Which programme it is for is for
-  the owner to confirm.
+  differential equations, probability), DI.
 
 Many topics recur across the three papers, which is the case for shared
 modules (D61).

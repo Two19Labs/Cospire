@@ -273,7 +273,7 @@ side.
 - **The Client sent the written topic flow** (2026-11-12, *The Client's written
   topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
   view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
-  Ashoka, one unnamed) in the same PDF. Setup is mostly from documents.
+  Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
 1. **Write the shared-modules design for the owner to agree** before any code:
