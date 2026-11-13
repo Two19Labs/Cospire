@@ -5,10 +5,28 @@ Records of calls with the Client and the decisions they produced, newest first. 
 
 ## The Client's written topic flow, 2026-11-12
 
-Not a call. The Client sent the LMS workflow (one page, kept privately in
-`Context/`) and put the Aptitude syllabus for MU and Ashoka in Tab 2 of the
-shared Two19 x Cospire sheet. No agent has read the syllabus yet (the Google
-Drive connector is not authorised).
+Not a call. The Client sent the LMS workflow and the Aptitude syllabus (a PDF
+kept privately in `Context/`; also Tab 2 of the shared Two19 x Cospire sheet).
+The syllabus is three topic tables, each with a question count or range per
+topic and a good-score target:
+
+- **Page 1, apparently MU** (three sections of 15, as the MU mocks): LR (blood
+  relations, directions, linear and ranking arrangement, comparisons,
+  syllogisms, matrix puzzles, misc. reasoning), QA (percentages, profit and
+  loss, discount, averages, ratio and proportion, mixtures and alligations,
+  time and work, time speed distance, permutation and combination), DI (tables,
+  pie chart, line graph, bar graph).
+- **Page 2, Ashoka** (links to Ashoka resources): LR, QA (adds mensuration,
+  geometry, functions, sequence and series, basic maths, number patterns) and
+  Critical Reasoning (passage based, misc. reasoning, problem based, explain
+  the reasoning).
+- **Page 3, not named**: LR (adds coding-decoding, data sufficiency),
+  Mathematics (adds quadratic equations, matrices and determinants, limits,
+  differential equations, probability), DI. Which programme it is for is for
+  the owner to confirm.
+
+Many topics recur across the three papers, which is the case for shared
+modules (D61).
 
 - **One workflow for both MU and Ashoka.**
 - **Per topic** (e.g. Percentages): the student opens the topic, watches its

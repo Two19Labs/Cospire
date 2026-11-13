@@ -272,8 +272,8 @@ side.
   **Not designed, not built.** It replaces "add a test from the builder".
 - **The Client sent the written topic flow** (2026-11-12, *The Client's written
   topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
-  view-only PDF; mocks a separate section. The syllabus is in Tab 2 of the
-  shared sheet, not yet read. Programme setup is mostly from documents.
+  view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
+  Ashoka, one unnamed) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
 1. **Write the shared-modules design for the owner to agree** before any code:
