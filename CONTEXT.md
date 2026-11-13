@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-12 (Asia/Calcutta)
+Last updated: 2026-11-13 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -98,9 +98,6 @@ credentials, student data or anyone's personal data here.
   2026-10-18 (a call with no admin session is refused). 53/53 on
   `scripts/verify/delete.sql`; the screens have never been clicked through.
   *Delete, 2026-10-17* in `completed.md`.
-- **Hosted database reset to no content** on 2026-10-18 so the owner could test
-  the admin flow from scratch; the question bank was replaced again on
-  2026-11-10 (D59, see *Pending*).
 - **The owner's UI pass, 2026-10-19 to 21** (#100-#106, all merged and live):
   a mock keeps the paper's sections under either timing, with section minutes
   read from the paper (migration `20261019100000`, applied); last-question
@@ -204,7 +201,7 @@ roles and four modules:
 
 ## Active work
 
-No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -273,21 +270,24 @@ side.
   module; tests at module, subject and programme level; **progress per
   programme**; a topic's practice set is separate from the question bank.
   **Not designed, not built.** It replaces "add a test from the builder".
-- **The Client sends:** the topic list and the written topic flow; programme
-  setup is mostly from documents (the importer, after the design).
+- **The Client sent the written topic flow** (2026-11-12, *The Client's written
+  topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
+  view-only PDF; mocks a separate section. The syllabus is in Tab 2 of the
+  shared sheet, not yet read. Programme setup is mostly from documents.
 **Then, in order:**
 
 1. **Write the shared-modules design for the owner to agree** before any code:
    tables, the access rule, per-programme progress, admin and student screens.
-   Open with the owner: is the practice set in scope (raise with the Client?).
-2. **Owner:** merge #120; set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in`
+   The practice set looks covered by a topic test plus a protected PDF (the
+   flow above); the owner confirms.
+2. **Owner:** set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in`
    in Vercel and redeploy (it builds the link in the feedback email); say
    whether the feedback email arrived; one invitation or reset opened from an
    inbox on the new domain.
 3. **Owner:** publish and grant the seven MU mock drafts (the owner reported
    sitting one through on the call). **MU ARS stays on hold** (D57).
 4. **The owner's cleanup list** (private, `docs/cleanup-list.md` in the main
-   checkout): leftover draft copy removed on eight admin screens (fix/ui-copy, 2026-11-12); still open: the admin and ARS-import
+   checkout): leftover draft copy removed on eight admin screens (#121, 2026-11-12); still open: the admin and ARS-import
    flow, a question-health dashboard (later), the VdoCipher probe clip.
 5. **Chase the Client:** documents with metadata, analytics needs, a date for
    student access; Supabase Pro, Vercel Pro, Gemini billing (D49). Then re-run
