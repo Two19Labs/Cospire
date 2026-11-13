@@ -4,17 +4,15 @@ Status: **proposed, for the owner to agree.** No code or migration yet.
 Decision: D61 (owner, 2026-11-11). Inputs: *The programmes call, 2026-11-11* and
 *The Client's written topic flow, 2026-11-12* in `docs/context/meetings.md`.
 
-## Decisions needed
+## Decisions taken (owner, 2026-11-13)
 
-Details in section 8. The design below assumes each default.
-
-| # | Question | Proposed default | If the owner picks the other way |
-|---|---|---|---|
-| 1 | Quiz progress per programme | `attempts.course_id`, set by the server | No `attempts` change; any submitted attempt ticks the quiz in every programme (contradicts D61) |
-| 2 | Attempt limit on a shared quiz | One `max_attempts` per mock, shared | Count attempts per `course_id` in the attempt-start check (needs #1's column) |
-| 3 | Subjects | Free text per programme (section titles) | New org-wide `subjects` table; `sections` gains a `subject_id` FK |
-| 4 | Deleting a module | Refused while attached (FK restrict) | FK on delete cascade; the admin is warned with the "used in" list |
-| 5 | Practice set | None: quiz = mock, PDF = document | A new practice-set entity, designed separately; sections 4-5 grow |
+| # | Question | Decision |
+|---|---|---|
+| 1 | Quiz progress per programme | An attempt and its result belong to the programme it was taken in: `attempts.course_id`, server-set. A quiz done in Ashoka shows only there |
+| 2 | Attempt limit on a shared quiz | Per programme: `max_attempts` counts per student per programme, so the same mock in MU and Ashoka gives separate attempts and results |
+| 3 | Subjects | Typed freely per programme by the admin (section titles) |
+| 4 | Deleting an attached module | Allowed. The D54 three-step delete confirmation flags "attached to N programmes: ..."; deleting detaches it from every programme |
+| 5 | Practice set | None: a topic's practice = an unproctored quiz (mock) + a view-only PDF (document) |
 
 ## Shape
 
@@ -53,13 +51,13 @@ Deferred until a library of ~100 modules proves it needs filtering.
 | column | type | notes |
 |---|---|---|
 | section_id | bigint | FK `(section_id, org_id)` -> `sections`, on delete cascade |
-| module_id | bigint | FK `(module_id, org_id)` -> `modules`, on delete **restrict** |
+| module_id | bigint | FK `(module_id, org_id)` -> `modules`, on delete **cascade** |
 | org_id | bigint not null | keeps both ends in one organisation |
 | sort_order | integer not null default 0 | ties break on module_id |
 | PK | (section_id, module_id) | a module appears once per subject |
 
-Index `(module_id)` for the access lookup. Restrict on module delete: the admin
-detaches it first (the module page lists where it is used).
+Index `(module_id)` for the access lookup. Deleting a module removes it from
+every programme (decision 4); the delete flow names them first.
 
 **Changed: `curriculum_items`** gains `module_id bigint null`, FK
 `(module_id, org_id)` -> `modules`, on delete cascade. `section_id` becomes
@@ -127,8 +125,8 @@ Test items: completion stays derived from `attempts`, never stored. To make it
 per programme, `attempts` gains `course_id bigint null`, set by the server when an
 attempt starts from a programme page (from the URL, checked against the grant;
 never trusted from the client as-is). A test item counts as done in programme P
-only for a submitted attempt with `course_id = P`. An attempt started outside a
-programme carries null. See open question 1.
+only for a submitted attempt with `course_id = P` (decision 1). An attempt
+started outside a programme carries null. Results screens filter by it the same way.
 
 ## 4. Tests at three levels
 
@@ -142,8 +140,9 @@ new practice-set or quiz table: the 2026-11-12 flow maps onto what exists.
 | Full mock (programme) | the programme's `mocks` section | as today |
 
 `attempts.proctored` and `allow_mobile` behave exactly as now (manual §1.5).
-Attempt limits stay per mock, so a quiz shared by two programmes shares its
-`max_attempts` (open question 2).
+`max_attempts` is counted per student **per programme** (decision 2): the
+attempt-start check counts attempts with the same `(mock_id, student_id,
+course_id)`. Null-`course_id` attempts (direct grant) count together as today.
 
 ## 5. Screens
 
@@ -152,6 +151,8 @@ Attempt limits stay per mock, so a quiz shared by two programmes shares its
 - **Module library** (`/admin/modules`): paginated, title search, "used in"
   count. Module page = today's curriculum builder pointed at `module_id` (add
   video / document / test / text, reorder, remove), plus where it is used.
+- **Delete module**: the existing D54 three-step confirmation, with an
+  "attached to N programmes: ..." warning; its items and attachments go with it.
 - **Duplicate module** (to start a variation): one server action copying the row
   and its items. Cheap, and it is how variations will actually be made.
 - **Programme page**: subjects (today's sections, relabelled), each with ordered
@@ -181,16 +182,6 @@ until the owner moves it into a module. No data script.
 - Module tags / difficulty / subject; per-module grants; gating.
 - The "nobody got it right" and auto-difficulty dashboards (ideas only).
 
-## 8. Open questions for the owner
+## 8. Open questions
 
-1. **Quiz progress per programme.** Agree `attempts.course_id`, so a quiz done in
-   MU does not tick it in Ashoka? The alternative (any attempt counts everywhere,
-   no `attempts` change) contradicts D61's per-programme rule.
-2. **Attempt limits on a shared quiz**: shared `max_attempts` (default, no
-   change) or per programme?
-3. **Subjects**: free text per programme (default, today's section titles) or a
-   fixed org-wide list (QA, LR, DI, VA, CR, Maths)?
-4. **Deleting a module**: refuse while attached (proposed) or detach everywhere?
-5. **Practice set**: D61 calls a topic's question bank a separate practice set;
-   the 2026-11-12 flow reads as quiz (mock) + PDF (document). Confirm no new
-   practice-set entity is wanted.
+None; all five answered on 2026-11-13 (table at the top).
