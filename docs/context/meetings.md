@@ -3,6 +3,42 @@
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
 
+## The Client's written topic flow, 2026-11-12
+
+Not a call. The Client sent the LMS workflow and the Aptitude syllabus (a PDF
+kept privately in `Context/`; also Tab 2 of the shared Two19 x Cospire sheet).
+The syllabus is three topic tables, each with a question count or range per
+topic and a good-score target:
+
+- **Page 1, apparently MU** (three sections of 15, as the MU mocks): LR (blood
+  relations, directions, linear and ranking arrangement, comparisons,
+  syllogisms, matrix puzzles, misc. reasoning), QA (percentages, profit and
+  loss, discount, averages, ratio and proportion, mixtures and alligations,
+  time and work, time speed distance, permutation and combination), DI (tables,
+  pie chart, line graph, bar graph).
+- **Page 2, Ashoka** (links to Ashoka resources): LR, QA (adds mensuration,
+  geometry, functions, sequence and series, basic maths, number patterns) and
+  Critical Reasoning (passage based, misc. reasoning, problem based, explain
+  the reasoning).
+- **Page 3, "DSAI"** (owner, 2026-11-13; what DSAI stands for is not yet known, ask the Client): LR (adds coding-decoding, data sufficiency),
+  Mathematics (adds quadratic equations, matrices and determinants, limits,
+  differential equations, probability), DI.
+
+Many topics recur across the three papers, which is the case for shared
+modules (D61).
+
+- **One workflow for both MU and Ashoka.**
+- **Per topic** (e.g. Percentages): the student opens the topic, watches its
+  recorded class, then gets the topic's question bank in two forms: a **quiz**
+  attempted on the LMS, and a **PDF** read inside the LMS with **no download**.
+  Then the next topic (e.g. Profit and Loss), the same way.
+- **Mock tests are a separate section**, added when the academic plan calls for
+  them.
+- **For the design (D61):** the "practice set" maps onto what is already built:
+  the quiz is a topic test (an unproctored mock), the PDF a protected document.
+  No new practice-set feature is implied. Nothing says the steps are locked, so
+  gating stays off (manual §13.1).
+
 ## The programmes call, 2026-11-11
 
 The owner and the Client (transcript kept privately; parts were unclear).
