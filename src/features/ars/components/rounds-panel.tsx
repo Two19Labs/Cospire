@@ -209,10 +209,9 @@ export function RoundsPanel({
               rows={3}
             />
             <span className="field__hint">
-              Genuinely optional — leave it empty and build the form properly in{" "}
+              Anything typed here becomes the first page&apos;s questions. You can build the full form in{" "}
               <strong>Edit round</strong>, with pages, sections, a type for every
-              question and a preview of what the student sees. Anything typed here
-              becomes the first page&apos;s questions.
+              question and a preview of what the student sees.
             </span>
           </label>
 

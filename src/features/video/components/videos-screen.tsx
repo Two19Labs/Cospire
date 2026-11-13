@@ -151,8 +151,7 @@ export function VideosScreen({
           <div>
             <h2>Upload a video</h2>
             <p className="muted">
-              The file goes straight to VdoCipher; it never passes through this
-              application. VdoCipher then processes it, which takes a few minutes.
+              After upload, a video takes a few minutes to process before it plays.
             </p>
           </div>
         </div>

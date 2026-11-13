@@ -128,9 +128,6 @@ export function AdminProcesses({ error, notice, processes, profile, view }: Admi
               required
               type="text"
             />
-            <span className="field__hint">
-              The Client&apos;s convention is institution plus content type.
-            </span>
           </label>
 
           <SubmitButton variant="primary" pendingLabel="Adding…">

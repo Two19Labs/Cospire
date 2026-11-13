@@ -82,8 +82,7 @@ export function MockImportScreen() {
         <p className="muted">
           Question IDs come from the bank: every question shows one, such as{" "}
           <code>Q00042</code>, and the bank and each import offer the whole list
-          to copy. Write the mock in this shape and paste it below. Nothing here
-          calls a model, because an ID has to match exactly.
+          to copy. Write the mock in this shape and paste it below.
         </p>
         <div className="toolbar">
           <CopyButton label="Copy the template" text={mockDocumentTemplate} />

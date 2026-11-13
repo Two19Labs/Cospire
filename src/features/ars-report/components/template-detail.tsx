@@ -204,8 +204,7 @@ export function TemplateDetailScreen({
               <input name="templateId" type="hidden" value={template.id} />
               <h3>Weightages</h3>
               <p className="muted">
-                Change several at once. Swapping two values works here and would be refused
-                if they were edited one by one.
+                Change several at once, then save.
               </p>
               {template.components.map((component) => (
                 <div className="field-row" key={component.id}>
