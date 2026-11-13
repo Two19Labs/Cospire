@@ -4,6 +4,18 @@ Status: **proposed, for the owner to agree.** No code or migration yet.
 Decision: D61 (owner, 2026-11-11). Inputs: *The programmes call, 2026-11-11* and
 *The Client's written topic flow, 2026-11-12* in `docs/context/meetings.md`.
 
+## Decisions needed
+
+Details in section 8. The design below assumes each default.
+
+| # | Question | Proposed default | If the owner picks the other way |
+|---|---|---|---|
+| 1 | Quiz progress per programme | `attempts.course_id`, set by the server | No `attempts` change; any submitted attempt ticks the quiz in every programme (contradicts D61) |
+| 2 | Attempt limit on a shared quiz | One `max_attempts` per mock, shared | Count attempts per `course_id` in the attempt-start check (needs #1's column) |
+| 3 | Subjects | Free text per programme (section titles) | New org-wide `subjects` table; `sections` gains a `subject_id` FK |
+| 4 | Deleting a module | Refused while attached (FK restrict) | FK on delete cascade; the admin is warned with the "used in" list |
+| 5 | Practice set | None: quiz = mock, PDF = document | A new practice-set entity, designed separately; sections 4-5 grow |
+
 ## Shape
 
 ```
