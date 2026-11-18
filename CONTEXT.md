@@ -201,10 +201,7 @@ roles and four modules:
 
 ## Active work
 
-| Owner | Branch | Scope | Owns | Status |
-|---|---|---|---|---|
-| Claude | `feat/modules` | Shared modules Phase 1: the five migrations and `scripts/verify/modules.sql` | new `supabase/migrations/202611181*`, `scripts/verify/modules.sql`, `docs/context/branches/feat-modules.md` | PR #124 open, 2026-11-18; migrations **not applied** (the owner applies them) |
-Merged: #123 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -272,17 +269,18 @@ side.
   many programmes; programme > subject > module > items; a variation is its own
   module; tests at module, subject and programme level; **progress per
   programme**; a topic's practice set is separate from the question bank.
-  **Designed and agreed** (#123, `docs/design/shared-modules.md`); Phase 1, the
-  migration, is on `feat/modules`. It replaces "add a test from the builder".
+  **Designed and agreed** (#123, `docs/design/shared-modules.md`). **Phase 1, the
+  migrations, is applied and merged** (#124, 2026-11-18; *Shared modules, Phase 1* in `completed.md`). It replaces "add a test from the builder".
 - **The Client sent the written topic flow** (2026-11-12, *The Client's written
   topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
   view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
   Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
-1. **Shared modules Phase 1:** review the `feat/modules` migration, then the
-   owner applies it (`npm run db:migrate`) and runs `scripts/verify/modules.sql`;
-   Phase 2 (types, `record-progress.ts`, attempt start, screens) follows.
+1. **Shared modules Phase 2 (next):** app code writes `course_id` on progress and
+   attempts; the contract migration drops the legacy `(student_id, item_id)` key;
+   types regenerated; the delete preview counts by `course_id`. Module screens
+   wait for the contract step. Details in `completed.md`.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).
