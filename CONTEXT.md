@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-13 (Asia/Calcutta)
+Last updated: 2026-11-18 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -201,8 +201,10 @@ roles and four modules:
 
 ## Active work
 
-- Claude, `docs/modules-design`: D61 shared-modules design for the owner to agree; owns `docs/design/shared-modules.md`; PR open, not built; 2026-11-13.
-Merged: #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+| Owner | Branch | Scope | Owns | Status |
+|---|---|---|---|---|
+| Claude | `feat/modules` | Shared modules Phase 1: the five migrations and `scripts/verify/modules.sql` | new `supabase/migrations/202611181*`, `scripts/verify/modules.sql`, `docs/context/branches/feat-modules.md` | PR open, 2026-11-18; migrations **not applied** (the owner applies them) |
+Merged: #123 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -210,9 +212,9 @@ Merged: #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108
 The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
 not order** — the order changed on 2026-09-08. Only what is open is listed here.
 
-**The feedback board is live** at `/feedback/<code>` on `https://app.cospire.in` (#119): the owner logged a thought with a screenshot in a browser on 2026-11-11 (deleted after); the notification email is unconfirmed. The two codes are in Vercel only.
+**The feedback board is live** at `/feedback/<code>` on `https://app.cospire.in` (#119): the owner logged a thought with a screenshot in a browser on 2026-11-11 (deleted after); the notification email arrives (owner confirmed 2026-11-18); the board has no entries yet. The two codes are in Vercel only.
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
-**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mock 1 to 7 exist as drafts** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`); the owner reviews and publishes, no student holds one.
+**Question bank replaced** (owner, 2026-11-10; D59 in the owner's decisions file): all mocks, attempts and old questions deleted; 1,349 normalised questions loaded with **id = the document's Question ID** (sets 1350-1458), marks 1. **MU Mocks 1 to 7 are all published** (mock ids 1-7, built 2026-11-10; *MU mocks* in `completed.md`) and granted to the "Cospire Student" test account; 1 to 5 were published on 2026-11-18 by the main agent signed in as the owner's admin account.
 VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits deletion (*Upload from the curriculum builder* in `completed.md`).
 
 ### Owed in a real browser (owner)
@@ -270,27 +272,24 @@ side.
   many programmes; programme > subject > module > items; a variation is its own
   module; tests at module, subject and programme level; **progress per
   programme**; a topic's practice set is separate from the question bank.
-  **Not designed, not built.** It replaces "add a test from the builder".
+  **Designed and agreed** (#123, `docs/design/shared-modules.md`); Phase 1, the
+  migration, is on `feat/modules`. It replaces "add a test from the builder".
 - **The Client sent the written topic flow** (2026-11-12, *The Client's written
   topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
   view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
   Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
-1. **Write the shared-modules design for the owner to agree** before any code:
-   tables, the access rule, per-programme progress, admin and student screens.
-   The practice set looks covered by a topic test plus a protected PDF (the
-   flow above); the owner confirms.
-2. **Owner:** set `NEXT_PUBLIC_APP_URL` to `https://app.cospire.in`
-   in Vercel and redeploy (it builds the link in the feedback email); say
-   whether the feedback email arrived; one invitation or reset opened from an
-   inbox on the new domain.
-3. **Owner:** publish and grant the seven MU mock drafts (the owner reported
-   sitting one through on the call). **MU ARS stays on hold** (D57).
-4. **The owner's cleanup list** (private, `docs/cleanup-list.md` in the main
+1. **Shared modules Phase 1:** review the `feat/modules` migration, then the
+   owner applies it (`npm run db:migrate`) and runs `scripts/verify/modules.sql`;
+   Phase 2 (types, `record-progress.ts`, attempt start, screens) follows.
+2. **Owner:** one invitation or reset opened from an inbox on the new domain
+   (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
+   2026-11-18). **MU ARS stays on hold** (D57).
+3. **The owner's cleanup list** (private, `docs/cleanup-list.md` in the main
    checkout): leftover draft copy removed on eight admin screens (#121, 2026-11-12); still open: the admin and ARS-import
    flow, a question-health dashboard (later), the VdoCipher probe clip.
-5. **Chase the Client:** documents with metadata, analytics needs, a date for
+4. **Chase the Client:** documents with metadata, analytics needs, a date for
    student access; Supabase Pro, Vercel Pro, Gemini billing (D49). Then re-run
    `load-100.mjs` after Pro. N3 hosting stays deferred.
 
