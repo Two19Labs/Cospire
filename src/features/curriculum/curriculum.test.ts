@@ -11,6 +11,9 @@ import {
   parsePositiveId,
   planMove,
   progressByCourse,
+  splitSections,
+  summariseProgress,
+  uniqueItems,
   studentItemHref,
 } from "./curriculum";
 
@@ -157,5 +160,55 @@ describe("progressByCourse", () => {
   it("gives a programme with no rows nothing done", () => {
     expect(isItemComplete(pdf, progress(9))).toBe(false);
     expect(isItemComplete(quiz, progress(9))).toBe(false);
+  });
+});
+
+describe("module progress per programme", () => {
+  const items = [
+    { id: 1, refId: null, type: "text" as const },
+    { id: 2, refId: null, type: "video" as const },
+    { id: 3, refId: 50, type: "test" as const },
+  ];
+  const progress = progressByCourse(
+    [
+      { completed: true, course_id: 10, item_id: 1 },
+      { completed: true, course_id: 20, item_id: 1 },
+      { completed: true, course_id: 20, item_id: 2 },
+    ],
+    [
+      { course_id: 20, mock_id: 50 },
+      { course_id: null, mock_id: 50 },
+    ],
+  );
+
+  it("counts the same module independently in each programme", () => {
+    expect(summariseProgress(items, progress(10))).toEqual({ complete: 1, percent: 33, total: 3 });
+    expect(summariseProgress(items, progress(20))).toEqual({ complete: 3, percent: 100, total: 3 });
+    expect(summariseProgress(items, progress(30))).toEqual({ complete: 0, percent: 0, total: 3 });
+  });
+
+  it("counts an item reached twice once", () => {
+    expect(summariseProgress([...items, items[0]], progress(10)).total).toBe(3);
+    expect(uniqueItems([{ id: 1 }, { id: 1 }, { id: 2 }])).toHaveLength(2);
+  });
+
+  it("an empty module is 0 of 0", () => {
+    expect(summariseProgress([], progress(10))).toEqual({ complete: 0, percent: 0, total: 0 });
+  });
+});
+
+describe("splitSections", () => {
+  it("puts the mocks section apart, after the subjects, whatever its sort_order", () => {
+    const { mocks, subjects } = splitSections([
+      { id: 1, kind: "mocks", sortOrder: 0 },
+      { id: 3, kind: "subject", sortOrder: 2 },
+      { id: 2, kind: "subject", sortOrder: 1 },
+    ]);
+    expect(mocks?.id).toBe(1);
+    expect(subjects.map((s) => s.id)).toEqual([2, 3]);
+  });
+
+  it("has no mocks block when there is none", () => {
+    expect(splitSections([{ id: 1, kind: "subject", sortOrder: 0 }]).mocks).toBeNull();
   });
 });
