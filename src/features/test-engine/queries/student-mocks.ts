@@ -147,7 +147,6 @@ async function readMockAccess(studentId: string, mockId: number): Promise<{ dire
       .eq("ref_id", mockId)
       .limit(100),
   ]);
-  if ((grant.data ?? []).length > 0) return { directGrant: true, programmeIds: [] };
   const programmeIds: number[] = [];
   const moduleIds: number[] = [];
   for (const item of items.data ?? []) {
@@ -162,7 +161,7 @@ async function readMockAccess(studentId: string, mockId: number): Promise<{ dire
       if (section) programmeIds.push(section.course_id);
     }
   }
-  return { directGrant: false, programmeIds };
+  return { directGrant: (grant.data ?? []).length > 0, programmeIds };
 }
 
 export async function courseForPlainStart(studentId: string, mockId: number): Promise<AttemptCourse> {
