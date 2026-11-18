@@ -17,6 +17,8 @@ export interface CurriculumItem {
 
 export interface CurriculumSection {
   id: number;
+  // 'subject' or 'mocks' (shared modules: a programme's single full-mocks section).
+  kind: string;
   items: CurriculumItem[];
   sortOrder: number;
   title: string;
@@ -77,7 +79,7 @@ export async function getCurriculum(courseId: number): Promise<CurriculumSection
   // most of a programme page's half second.
   const { data: sections, error } = await supabase
     .from("sections")
-    .select("id, title, sort_order, curriculum_items(id, section_id, type, ref_id, title, body, sort_order)")
+    .select("id, title, kind, sort_order, curriculum_items(id, section_id, type, ref_id, title, body, sort_order)")
     .eq("course_id", courseId)
     .order("sort_order")
     .order("id")
@@ -93,6 +95,7 @@ export async function getCurriculum(courseId: number): Promise<CurriculumSection
 
   return sections.map((section) => ({
     id: section.id as number,
+    kind: section.kind as string,
     items: ((section.curriculum_items ?? []) as ItemRow[]).map((row) => ({
       body: row.body,
       id: row.id,

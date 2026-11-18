@@ -10,12 +10,17 @@ import {
 import { CourseAccessPanel, CourseMoveForm } from "./course-access-panel";
 import { CurriculumBuilder } from "./curriculum-builder";
 import type { CurriculumMessage } from "../curriculum";
+import type { AttachedModule } from "@/features/modules/attachments";
+import type { ModuleListPage } from "@/features/modules/queries/list-modules";
 import type { Course } from "../queries/get-course";
 import type { CurriculumSection } from "../queries/get-curriculum";
 import type { PickerPage } from "../queries/list-picker";
 import type { CourseAccessStudent } from "../queries/list-course-access";
 
 interface CourseDetailProps {
+  attached: Map<number, AttachedModule[]>;
+  modulePicker: ModuleListPage;
+  moduleSearch: string;
   course: Course;
   curriculum: CurriculumSection[];
   curriculumMessage: CurriculumMessage | null;
@@ -29,6 +34,9 @@ interface CourseDetailProps {
 }
 
 export function CourseDetail({
+  attached,
+  modulePicker,
+  moduleSearch,
   course,
   curriculum,
   curriculumMessage,
@@ -84,6 +92,9 @@ export function CourseDetail({
 
       {course.kind === "programme" ? (
         <CurriculumBuilder
+          attached={attached}
+          modulePicker={modulePicker}
+          moduleSearch={moduleSearch}
           courseId={course.id}
           documents={documents}
           message={curriculumMessage}

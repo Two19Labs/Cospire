@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/features/auth/guards";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { canHoldItem } from "@/features/modules/attachments";
+
 import { appendCurriculumItem } from "../append-item";
 import {
   nextSortOrder,
@@ -120,6 +122,18 @@ export async function addItemAction(formData: FormData): Promise<void> {
   const sectionId = parsePositiveId(formData.get("sectionId"));
   const type = parseItemType(formData.get("type"));
   if (sectionId === null || type === null) back(courseId, "item-failed");
+
+  // Friendly refusal before the database trigger has to: the full-mocks
+  // section holds tests only.
+  if (type !== "test") {
+    const { data: target } = await (await createServerSupabaseClient())
+      .from("sections")
+      .select("kind")
+      .eq("id", sectionId)
+      .eq("course_id", courseId)
+      .maybeSingle();
+    if (target && !canHoldItem(target, type)) back(courseId, "mocks-tests-only");
+  }
 
   let ok: boolean;
   if (type === "text") {
