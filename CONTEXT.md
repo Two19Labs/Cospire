@@ -203,7 +203,7 @@ roles and four modules:
 
 | Owner | Branch | Scope | Owns | Status |
 |---|---|---|---|---|
-| Claude | `feat/modules` | Shared modules Phase 1: the five migrations and `scripts/verify/modules.sql` | new `supabase/migrations/202611181*`, `scripts/verify/modules.sql`, `docs/context/branches/feat-modules.md` | PR open, 2026-11-18; migrations **not applied** (the owner applies them) |
+| Claude | `feat/modules` | Shared modules Phase 1: the five migrations and `scripts/verify/modules.sql` | new `supabase/migrations/202611181*`, `scripts/verify/modules.sql`, `docs/context/branches/feat-modules.md` | PR #124 open, 2026-11-18; migrations **not applied** (the owner applies them) |
 Merged: #123 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
