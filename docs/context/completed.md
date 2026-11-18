@@ -3089,3 +3089,14 @@ Branch `feat/modules-5`, no migration. The student programme page lists its subj
 ## Shared modules, slice 6 (polish and wrap-up), 2026-11-18
 
 Branch `feat/modules-6`, no migration. An item opened from a module page returns to it: the link carries `?module=<id>` (`studentItemHref`), the item page accepts it only as a positive integer naming a module attached to that programme (else the programme is the way back, no error), and the reading and video back links, the document-open and "Mark as read" forms (hidden `moduleId`, parsed with `parsePositiveId`) and their redirects (`studentReturnHref`, including `?progress=failed`, which the module page now shows) all go to `/student/programmes/[id]/modules/[moduleId]`. The module page is revalidated after a write. **Upload from a module page: not done.** The video and document upload actions, their client forms and ticket checks all take a `{courseId, sectionId}` placement validated by `sectionInCourse`; a module target is not a small change to them. Items still go into a module from the library pickers. `CONTEXT.md` now records the build as complete; still owed: the owner's browser click-through, the programme importer, sub-topics, the Client's DSAI answer and the ShareLane chunks.
+
+## Shared modules, audit fixes (slice 7), 2026-11-18
+
+Branch `fix/modules-audit`, no migration. The mock page with no `?course=` now resolves the programme as `startAttemptAction` does (`courseForPlainStart`, moved to `queries/student-mocks.ts`: a direct grant is the null bucket, else the single held programme), so a mock reached only through a programme shows that programme's attempts instead of "0 used". `mockPageHref` carries the latest attempt's `course_id`, open or submitted. The attempt count on the mock card and page counts within one programme bucket (`attemptsIn`, `attemptsCourse`), as the database guard does; before, the card summed all programmes ("2 of 1"). Detach and reorder of an attached module check the subject belongs to the programme in the URL (`sectionInCourse`, as attach does). Pure logic is unit-tested in `attempt-course.test.ts`.
+
+**Accepted limits** (whole-build audit):
+
+- Detaching a module keeps its progress rows; re-attaching restores them.
+- Deleting a programme moves its attempts to the null bucket.
+- Duplicating a module is not one transaction; a rare failure leaves an empty "(copy)".
+- The OR join in the grant helpers is not index-friendly: fine at 100 users, rewrite as a UNION if the library grows.

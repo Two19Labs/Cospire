@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { pageCourse, resolveAttemptCourse, type AttemptCourse } from "../attempt-course";
 import type { PaperSection } from "../paper";
 
 export interface AttemptSummary {
@@ -125,4 +126,52 @@ export async function getStudentMock(mockId: number, courseId: number | null = n
     })),
     title: mock.title,
   };
+}
+
+// The direct grant and the programmes holding this mock, read through RLS:
+// a student reads their own grants, and sections only of programmes they hold.
+async function readMockAccess(studentId: string, mockId: number): Promise<{ directGrant: boolean; programmeIds: number[] }> {
+  const supabase = await createServerSupabaseClient();
+  const [grant, items] = await Promise.all([
+    supabase
+      .from("content_access")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("resource_type", "mock")
+      .eq("resource_id", mockId)
+      .limit(1),
+    supabase
+      .from("curriculum_items")
+      .select("module_id, sections(course_id)")
+      .eq("type", "test")
+      .eq("ref_id", mockId)
+      .limit(100),
+  ]);
+  const programmeIds: number[] = [];
+  const moduleIds: number[] = [];
+  for (const item of items.data ?? []) {
+    const section = item.sections as unknown as { course_id: number } | null;
+    if (section) programmeIds.push(section.course_id);
+    if (item.module_id !== null) moduleIds.push(item.module_id);
+  }
+  if (moduleIds.length) {
+    const { data } = await supabase.from("section_modules").select("sections(course_id)").in("module_id", moduleIds).limit(100);
+    for (const row of data ?? []) {
+      const section = row.sections as unknown as { course_id: number } | null;
+      if (section) programmeIds.push(section.course_id);
+    }
+  }
+  return { directGrant: (grant.data ?? []).length > 0, programmeIds };
+}
+
+export async function courseForPlainStart(studentId: string, mockId: number): Promise<AttemptCourse> {
+  const access = await readMockAccess(studentId, mockId);
+  return resolveAttemptCourse(access.directGrant, access.programmeIds);
+}
+
+// The programme the mock page is for: the requested one when a programme the
+// student holds contains the mock, else the plain-start bucket.
+export async function courseForMockPage(studentId: string, mockId: number, requested: number | null): Promise<number | null> {
+  const access = await readMockAccess(studentId, mockId);
+  return pageCourse(requested, access.directGrant, access.programmeIds);
 }

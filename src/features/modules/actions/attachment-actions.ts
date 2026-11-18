@@ -33,6 +33,12 @@ async function start(formData: FormData) {
   return { admin, courseId, supabase: await createServerSupabaseClient() };
 }
 
+// The subject must belong to the programme in the URL (read through RLS).
+async function sectionInCourse(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, sectionId: number, courseId: number) {
+  const { data } = await supabase.from("sections").select("id").eq("id", sectionId).eq("course_id", courseId).maybeSingle();
+  return data !== null;
+}
+
 export async function attachModuleAction(formData: FormData): Promise<void> {
   const { admin, courseId, supabase } = await start(formData);
   const sectionId = parsePositiveId(formData.get("sectionId"));
@@ -70,6 +76,7 @@ export async function detachModuleAction(formData: FormData): Promise<void> {
   const sectionId = parsePositiveId(formData.get("sectionId"));
   const moduleId = parsePositiveId(formData.get("moduleId"));
   if (sectionId === null || moduleId === null) back(courseId, "change-failed");
+  if (!(await sectionInCourse(supabase, sectionId, courseId))) back(courseId, "change-failed");
 
   // Counting rows: RLS filtering a delete to nothing is not an error.
   const { data, error } = await supabase
@@ -87,6 +94,7 @@ export async function moveAttachedModuleAction(formData: FormData): Promise<void
   const moduleId = parsePositiveId(formData.get("moduleId"));
   const direction = parseDirection(formData.get("direction"));
   if (sectionId === null || moduleId === null || direction === null) back(courseId, "change-failed");
+  if (!(await sectionInCourse(supabase, sectionId, courseId))) back(courseId, "change-failed");
 
   const { data, error } = await supabase
     .from("section_modules")

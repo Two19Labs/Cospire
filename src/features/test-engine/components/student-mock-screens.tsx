@@ -6,7 +6,7 @@ import type { Profile } from "@/features/auth/types";
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
 import { startAttemptAction } from "../actions/attempt-actions";
-import { mockPageHref } from "../attempt-course";
+import { attemptsCourse, attemptsIn, mockPageHref } from "../attempt-course";
 import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
 import { ExamCard, ExamFrame } from "./exam-frame";
@@ -41,7 +41,7 @@ export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; p
             <Link className="course-card course-card--link" href={mockPageHref(mock.id, mock.attempts)} key={mock.id}>
               <h2>{mock.title}</h2>
               <p>
-                {mock.durationMinutes} min · {mock.attempts.length} of {mock.maxAttempts} attempt
+                {mock.durationMinutes} min · {attemptsIn(mock.attempts, attemptsCourse(mock.attempts)).length} of {mock.maxAttempts} attempt
                 {mock.maxAttempts === 1 ? "" : "s"} used
               </p>
               <span className="course-card__bottom">
@@ -64,14 +64,14 @@ const startErrors: Record<string, string> = {
 };
 
 // The paper at a glance, as the approved prototype sets it out.
-function MockFacts({ mock }: { mock: StudentMock }) {
+function MockFacts({ courseId, mock }: { courseId: number | null; mock: StudentMock }) {
   return (
     <ul aria-label="About this test" className="fact-chips">
       <li className="fact-chips__lead">{mock.durationMinutes} min</li>
       {mock.sections.length > 1 ? <li>{mock.sections.length} sections</li> : null}
       <li>{mock.negativeMarking > 0 ? `−${formatMarks(mock.negativeMarking)} per wrong answer` : "No negative marking"}</li>
       <li>
-        {mock.attempts.length} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
+        {attemptsIn(mock.attempts, courseId).length} of {mock.maxAttempts} attempt{mock.maxAttempts === 1 ? "" : "s"} used
       </li>
     </ul>
   );
@@ -98,7 +98,7 @@ export function StudentMockScreen({
   profile: Profile;
 }) {
   const open = mock.attempts.find((attempt) => attempt.status === "in_progress");
-  const used = mock.attempts.length;
+  const used = attemptsIn(mock.attempts, courseId).length;
 
   return (
     <RoleShell back={{ href: "/student/mocks", label: "Back to mock tests" }} profile={profile} title={mock.title}>
@@ -106,7 +106,7 @@ export function StudentMockScreen({
       {/* A short summary only: the instructions are on the page the button
           opens, and the clock starts from the Start button there. */}
       <section className="panel">
-        <MockFacts mock={mock} />
+        <MockFacts courseId={courseId} mock={mock} />
         <div className="toolbar">
           {open ? (
             <Link className="button button--primary" href={`/student/attempts/${open.id}`}>
@@ -170,7 +170,7 @@ export function MockInstructionsScreen({
   phone: boolean;
   profile: Profile;
 }) {
-  const used = mock.attempts.length;
+  const used = attemptsIn(mock.attempts, courseId).length;
   const sectional = mock.sections.some((section) => section.durationMinutes !== null);
 
   return (
@@ -178,7 +178,7 @@ export function MockInstructionsScreen({
       <ExamCard eyebrow="Instructions">
         <h2>{mock.title}</h2>
         {error && startErrors[error] ? <p className="notice notice--error">{startErrors[error]}</p> : null}
-        <MockFacts mock={mock} />
+        <MockFacts courseId={courseId} mock={mock} />
         {sectional ? (
           <Table>
             <TableHead>
