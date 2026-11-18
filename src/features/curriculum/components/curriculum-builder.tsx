@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+import { ModulePicker } from "@/features/modules/components/module-picker";
+import { addMocksSectionAction, detachModuleAction, moveAttachedModuleAction } from "@/features/modules/actions/attachment-actions";
+import { hasMocksSection, isMocksSection, type AttachedModule } from "@/features/modules/attachments";
+import type { ModuleListPage } from "@/features/modules/queries/list-modules";
+import { buildModuleHref } from "@/features/modules/modules";
 import { UploadForm } from "@/features/documents/components/upload-form";
 import { VideoUploadForm } from "@/features/video/components/video-upload-form";
 import { SubmitButton } from "@/shared/ui";
@@ -24,8 +29,11 @@ import { SectionField } from "./section-field";
 
 interface CurriculumBuilderProps {
   courseId: number;
+  attached: Map<number, AttachedModule[]>;
   documents: PickerPage;
   message: CurriculumMessage | null;
+  modulePicker: ModuleListPage;
+  moduleSearch: string;
   mocks: PickerPage;
   sections: CurriculumSection[];
   videos: PickerPage;
@@ -127,19 +135,78 @@ export function RefSelect({ label, page }: { label: string; page: PickerPage }) 
   );
 }
 
+function AttachedModules({
+  courseId,
+  modules,
+  sectionId,
+}: {
+  courseId: number;
+  modules: AttachedModule[];
+  sectionId: number;
+}) {
+  return (
+    <div className="stack-form">
+      <h3>Modules</h3>
+      {modules.length === 0 ? (
+        <p className="muted">No modules attached. Attach one from the library below.</p>
+      ) : (
+        <ol className="round-list">
+          {modules.map((module, index) => (
+            <li className="round-row" key={module.moduleId}>
+              <span aria-hidden="true" className="round-number">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div className="round-row__main">
+                <h3>
+                  <Link className="title-link" href={buildModuleHref(module.moduleId)}>
+                    {module.title}
+                  </Link>
+                </h3>
+                <p>
+                  {module.itemCount} item{module.itemCount === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="round-row__actions">
+                <MoveButtons
+                  action={moveAttachedModuleAction}
+                  fields={{ courseId, moduleId: module.moduleId, sectionId }}
+                  first={index === 0}
+                  last={index === modules.length - 1}
+                />
+                <form action={detachModuleAction}>
+                  <Hidden fields={{ courseId, moduleId: module.moduleId, sectionId }} />
+                  <SubmitButton compact pendingLabel="Detaching…" variant="danger">
+                    Detach
+                  </SubmitButton>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 export function CurriculumBuilder({
+  attached,
   courseId,
   documents,
   message,
+  modulePicker,
+  moduleSearch,
   mocks,
   sections,
   videos,
 }: CurriculumBuilderProps) {
   const notice = message ? curriculumMessages[message] : null;
   const pages = { documentsPage: documents.page, mocksPage: mocks.page, videosPage: videos.page };
+  // Videos, documents and readings go in subjects; the full-mocks section
+  // takes tests only (a database trigger enforces it).
+  const subjects = sections.filter((section) => !isMocksSection(section));
   const programme = {
     courseId,
-    sections: sections.map((section) => ({ id: section.id, title: section.title })),
+    sections: subjects.map((section) => ({ id: section.id, title: section.title })),
   };
 
   return (
@@ -147,7 +214,8 @@ export function CurriculumBuilder({
       <div className="section-heading" id="curriculum">
         <h2>Curriculum</h2>
         <p>
-          Sections in order, each holding videos, documents, tests and readings in order.
+          Subjects in order. Each holds modules from the library, in order, and
+          can hold tests of its own; the full mocks sit apart.
           Every item is open to a student on this programme: granting the
           programme grants everything in it.
         </p>
@@ -164,7 +232,7 @@ export function CurriculumBuilder({
 
       {sections.length === 0 ? (
         <section className="panel">
-          <p className="panel-empty">No sections yet. Add the first one below.</p>
+          <p className="panel-empty">No subjects yet. Add the first one below.</p>
         </section>
       ) : null}
 
@@ -174,8 +242,8 @@ export function CurriculumBuilder({
             <div>
               <h2>{section.title}</h2>
               <p className="muted">
-                Section {sectionIndex + 1} · {section.items.length} item
-                {section.items.length === 1 ? "" : "s"}
+                {isMocksSection(section) ? "Full mocks (tests only)" : `Subject ${sectionIndex + 1}`} ·{" "}
+                {section.items.length} item{section.items.length === 1 ? "" : "s"}
               </p>
             </div>
             <div className="round-row__actions">
@@ -188,13 +256,22 @@ export function CurriculumBuilder({
               <form action={removeSectionAction}>
                 <Hidden fields={{ courseId, sectionId: section.id }} />
                 <SubmitButton compact pendingLabel="Removing…" variant="danger">
-                  Remove section
+                  Remove {isMocksSection(section) ? "mocks" : "subject"}
                 </SubmitButton>
               </form>
             </div>
           </div>
+          {isMocksSection(section) ? null : (
+            <AttachedModules
+              courseId={courseId}
+              modules={attached.get(section.id) ?? []}
+              sectionId={section.id}
+            />
+          )}
           {section.items.length === 0 ? (
-            <p className="panel-empty">No items in this section yet.</p>
+            <p className="panel-empty">
+              {isMocksSection(section) ? "No full mocks yet." : "No tests or other items directly in this subject."}
+            </p>
           ) : (
             <ol className="round-list">
               {section.items.map((item, itemIndex) => (
@@ -231,17 +308,44 @@ export function CurriculumBuilder({
         </section>
       ))}
 
+      {subjects.length === 0 ? null : (
+        <ModulePicker
+          courseId={courseId}
+          pages={pages}
+          picker={modulePicker}
+          search={moduleSearch}
+          subjects={subjects}
+        />
+      )}
+
+      {hasMocksSection(sections) ? null : (
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <h2>Full mocks</h2>
+              <p className="muted">Full-length mocks shown separately from the subjects. One per programme; tests only.</p>
+            </div>
+            <form action={addMocksSectionAction}>
+              <Hidden fields={{ courseId }} />
+              <SubmitButton pendingLabel="Adding…" variant="secondary">
+                Add full mocks
+              </SubmitButton>
+            </form>
+          </div>
+        </section>
+      )}
+
       <section className="panel">
         <div className="panel__header">
-          <h2>Add a section</h2>
+          <h2>Add a subject</h2>
         </div>
         <form action={addSectionAction} className="stack-form">
           <Hidden fields={{ courseId }} />
           <label className="field">
-            <span className="field__label">Section title</span>
+            <span className="field__label">Subject title</span>
             <input className="input" maxLength={200} name="title" required type="text" />
           </label>
-          <SubmitButton pendingLabel="Adding…">Add section</SubmitButton>
+          <SubmitButton pendingLabel="Adding…">Add subject</SubmitButton>
         </form>
       </section>
 
@@ -263,7 +367,7 @@ export function CurriculumBuilder({
           <form action={addItemAction} className="stack-form">
             <h3>Video from the library</h3>
             <Hidden fields={{ courseId, type: "video" }} />
-            <SectionField sections={sections} />
+            <SectionField sections={subjects} />
             {videos.options.length === 0 ? (
               <p className="muted">No videos in the library yet. Upload one above.</p>
             ) : (
@@ -284,7 +388,7 @@ export function CurriculumBuilder({
           <form action={addItemAction} className="stack-form">
             <h3>Document from the library</h3>
             <Hidden fields={{ courseId, type: "document" }} />
-            <SectionField sections={sections} />
+            <SectionField sections={subjects} />
             {documents.options.length === 0 ? (
               <p className="muted">No documents in the library yet. Upload one above.</p>
             ) : (
@@ -324,7 +428,7 @@ export function CurriculumBuilder({
           <form action={addItemAction} className="stack-form">
             <h3>Reading</h3>
             <Hidden fields={{ courseId, type: "text" }} />
-            <SectionField sections={sections} />
+            <SectionField sections={subjects} />
             <label className="field">
               <span className="field__label">Title</span>
               <input className="input" maxLength={200} name="title" required type="text" />

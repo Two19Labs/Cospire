@@ -3069,3 +3069,16 @@ Branch `feat/modules-3`, to `docs/design/shared-modules.md` section 5 (admin). P
 - **Duplicate**: title plus " (copy)" (cut to 200) and all items in order; attachments are not copied; a failed item copy deletes the new module.
 - **Delete** (migration `20261118110000_delete_module.sql`, **not applied**): `content_delete_preview` and `delete_content` replaced with their live bodies plus kind `module`, same security settings and grants. Preview returns `attachedTo` (programme titles) beside the counts; allowed while attached (decision 4). Delete removes the module, its `section_modules` rows and items (and their progress) by cascade; library content stays. The screen shows "Attached to N programmes: ..." and the existing three steps and typed name apply.
 - **Verification:** `scripts/verify/modules-3.sql` 16/16 against the hosted database with the migration spliced in (rolled back); unspliced it fails at its first check. The `sections(course_id, courses(title))` embed was confirmed to resolve over REST. Typecheck, lint, 691 unit tests, `next build` pass. Not run in a browser or over HTTP as an admin.
+
+## Shared modules, slice 4 (programme page: attach modules), 2026-11-18
+
+Branch `feat/modules-4`, to `docs/design/shared-modules.md` section 5 (programme page). No migration: `20261118100000` already holds the unique key (`section_modules` PK), the partial unique index for one mocks section and the triggers.
+
+- **Subjects** are sections of kind `subject`: add, rename and add, remove and reorder unchanged; the builder relabels them "subject". Video, document and reading forms offer subjects only; `addItemAction` refuses a non-test item aimed at the mocks section with a sentence (`mocks-tests-only`) before the trigger has to.
+- **Attach** (`src/features/modules/actions/attachment-actions.ts`): a searchable (`?mq=`), paginated (`?mpage=`, 25) picker over the library, a subject select, attach to the end. A second attach of the same module to one subject is the PK violation (23505), shown as "already attached" (`attachFailure`). Detach and Up/Down reorder by `section_modules.sort_order` (`planMove`, sequential like the item builder).
+- **Each attached module** shows its title (link to `/admin/modules/[id]`) and item count (`modules(curriculum_items(count))` embed, `listAttachedModules`).
+- **Subject tests:** direct items in a subject work as before.
+- **Full mocks:** "Add full mocks" creates the single `mocks` section (second attempt: 23505 shown as "already has"); it takes test items only and no modules. Its page controls reuse the section move/remove.
+- **Not done:** the student side (subjects, modules, a Mocks tab) is a later slice; the student programme page still lists a mocks section as a plain section. Upload-from-builder offers subjects only.
+- **Verification:** `scripts/verify/modules-4.sql` 11/11 against the hosted database (rolled back). Typecheck, lint, tests, build pass. Not run over HTTP or in a browser as an admin.
+

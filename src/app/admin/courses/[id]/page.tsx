@@ -13,6 +13,9 @@ import { parseCurriculumMessage } from "@/features/curriculum/curriculum";
 import { getCourse } from "@/features/curriculum/queries/get-course";
 import { getCurriculum } from "@/features/curriculum/queries/get-curriculum";
 import { listPickerPage } from "@/features/curriculum/queries/list-picker";
+import { listAttachedModules } from "@/features/modules/queries/attached-modules";
+import { listModules } from "@/features/modules/queries/list-modules";
+import { parsePageNumber as parseModulePage, sanitizeModuleSearch } from "@/features/modules/modules";
 import { listCourseAccess } from "@/features/curriculum/queries/list-course-access";
 
 export const metadata: Metadata = { title: "Programme" };
@@ -42,18 +45,24 @@ export default async function AdminCoursePage({
   // Read alongside everything else rather than before it: the other reads are
   // scoped by RLS and harmless for a programme that turns out not to exist,
   // and waiting for this one first cost a whole round trip on every view.
-  const [course, students, curriculum, documents, mocks, videos] = await Promise.all([
+  const moduleSearch = sanitizeModuleSearch(firstValue(query.mq) ?? "");
+  const [course, students, curriculum, documents, mocks, videos, attached, modulePicker] = await Promise.all([
     getCourse(courseId),
     listCourseAccess(courseId),
     getCurriculum(courseId),
     listPickerPage("documents", parsePageNumber(firstValue(query.documentsPage))),
     listPickerPage("mocks", parsePageNumber(firstValue(query.mocksPage))),
     listPickerPage("videos", parsePageNumber(firstValue(query.videosPage))),
+    listAttachedModules(courseId),
+    listModules({ page: parseModulePage(firstValue(query.mpage)), search: moduleSearch }),
   ]);
   if (!course) notFound();
 
   return (
     <CourseDetail
+      attached={attached}
+      modulePicker={modulePicker}
+      moduleSearch={moduleSearch}
       course={course}
       curriculum={curriculum}
       curriculumMessage={parseCurriculumMessage(firstValue(query.curriculum))}
