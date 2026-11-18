@@ -32,6 +32,15 @@ const modules: Module[] = [
     title: "Programmes",
   },
   {
+    category: "Learning",
+    description: "Build topics once and attach them to any programme.",
+    href: "/admin/modules",
+    icon: "file",
+    linkLabel: "Manage modules",
+    title: "Modules",
+    tone: "sage",
+  },
+  {
     category: "Readiness",
     description: "Shape application journeys, rounds and student access.",
     href: "/admin/ars",

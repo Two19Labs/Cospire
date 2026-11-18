@@ -6,7 +6,7 @@ import { SubmitButton } from "@/shared/ui";
 
 import { deleteContentAction } from "../actions/delete-actions";
 import type { DeletePreview } from "../queries/delete-preview";
-import { describeDeletion, deleteTargets } from "../targets";
+import { describeAttached, describeDeletion, deleteTargets } from "../targets";
 
 const errors: Record<string, string> = {
   name: "That is not the name. Type it exactly as it appears above.",
@@ -21,9 +21,12 @@ const errors: Record<string, string> = {
 export function DeleteScreen({ error, preview, profile }: { error?: string; preview: DeletePreview; profile: Profile }) {
   const target = deleteTargets[preview.type];
   const parts = describeDeletion(preview.type, preview.counts);
+  const attached = describeAttached(preview.attachedTo);
   const kept =
     preview.type === "mock"
       ? "The questions themselves stay in the question bank, and the record of any past rescore stays with them."
+      : preview.type === "module"
+        ? "The videos, documents and mock tests this module's items pointed at are not deleted: they stay in their own libraries. The programmes it was attached to stay, without it."
       : preview.type === "programme"
         ? "The documents, videos and mock tests this programme pointed at are not deleted: they stay in their own libraries."
         : null;
@@ -48,6 +51,7 @@ export function DeleteScreen({ error, preview, profile }: { error?: string; prev
             <li key={part}>{part}</li>
           ))}
         </ul>
+        {attached ? <p className="notice notice--error">{attached}. Deleting removes it from every one of them.</p> : null}
         {kept ? <p className="notice">{kept}</p> : null}
         {preview.blockedBy !== null ? (
           <p className="notice notice--error">

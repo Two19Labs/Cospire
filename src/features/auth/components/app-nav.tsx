@@ -48,6 +48,7 @@ const navByRole: Record<AppRole, NavGroup[]> = {
       title: "Learning & assessment",
       items: [
         { href: "/admin/courses", icon: "book", label: "Programmes", eyebrow: "Learning" },
+        { href: "/admin/modules", icon: "file", label: "Modules", eyebrow: "Learning" },
         { href: "/admin/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
         { href: "/admin/ars-submissions", icon: "queue", label: "ARS submissions", eyebrow: "Admission readiness" },
         { href: "/admin/questions", icon: "question", label: "Question bank", eyebrow: "Assessment" },

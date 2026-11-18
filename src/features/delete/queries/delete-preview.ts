@@ -13,6 +13,8 @@ export interface DeletePreview {
   // Set when something outside this feature would be left pointing at nothing:
   // an ARS round linked to the mock. The delete is refused until it is unlinked.
   blockedBy: string | null;
+  // Modules only: the programmes it is attached to (a warning, never a block).
+  attachedTo: string[];
 }
 
 function toCounts(raw: unknown): Record<string, number> {
@@ -40,13 +42,14 @@ export async function getDeletePreview(type: DeleteTargetType, id: number): Prom
     if (error.code === "P0002") return null;
     throw new Error(`Unable to read what deleting this would remove: ${error.message}`);
   }
-  const row = data as { label?: unknown; counts?: unknown; blockedBy?: unknown } | null;
+  const row = data as { label?: unknown; counts?: unknown; blockedBy?: unknown; attachedTo?: unknown } | null;
   if (!row || typeof row.label !== "string") return null;
   return {
     id,
     type,
     label: row.label,
     counts: toCounts(row.counts),
+    attachedTo: Array.isArray(row.attachedTo) ? row.attachedTo.filter((name): name is string => typeof name === "string") : [],
     blockedBy: typeof row.blockedBy === "string" && row.blockedBy.length > 0 ? row.blockedBy : null,
   };
 }

@@ -32,6 +32,37 @@ interface ItemRow {
   type: CurriculumItemType;
 }
 
+type Client = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+
+// The title of each document, mock and video the items point at, keyed
+// `type:refId`. Shared with the module page, whose items are the same rows.
+export async function loadItemTitles(
+  supabase: Client,
+  rows: { ref_id: number | null; type: CurriculumItemType }[],
+): Promise<Map<string, string>> {
+  const refIds = (type: CurriculumItemType) =>
+    rows.filter((row) => row.type === type && row.ref_id !== null).map((row) => row.ref_id as number);
+
+  const titles = new Map<string, string>();
+  const documentIds = refIds("document");
+  const mockIds = refIds("test");
+  const videoIds = refIds("video");
+
+  // The title lookups depend only on the items, not on each other.
+  const [documents, mocks, videos] = await Promise.all([
+    documentIds.length > 0 ? supabase.from("documents").select("id, title").in("id", documentIds) : null,
+    mockIds.length > 0 ? supabase.from("mocks").select("id, title").in("id", mockIds) : null,
+    videoIds.length > 0 ? supabase.from("videos").select("id, title").in("id", videoIds) : null,
+  ]);
+  if (documents?.error) throw new Error(`Unable to load document titles: ${documents.error.message}`);
+  if (mocks?.error) throw new Error(`Unable to load mock titles: ${mocks.error.message}`);
+  if (videos?.error) throw new Error(`Unable to load video titles: ${videos.error.message}`);
+  for (const row of documents?.data ?? []) titles.set(`document:${row.id}`, row.title as string);
+  for (const row of mocks?.data ?? []) titles.set(`test:${row.id}`, row.title as string);
+  for (const row of videos?.data ?? []) titles.set(`video:${row.id}`, row.title as string);
+  return titles;
+}
+
 // One programme's curriculum, in order. Serves the admin builder and the
 // student page alike: `sections_select_authorized` and
 // `curriculum_items_select_authorized` decide what each caller sees, and the
@@ -58,26 +89,7 @@ export async function getCurriculum(courseId: number): Promise<CurriculumSection
   if (!sections || sections.length === 0) return [];
 
   const rows = sections.flatMap((section) => (section.curriculum_items ?? []) as ItemRow[]);
-  const refIds = (type: CurriculumItemType) =>
-    rows.filter((row) => row.type === type && row.ref_id !== null).map((row) => row.ref_id as number);
-
-  const titles = new Map<string, string>();
-  const documentIds = refIds("document");
-  const mockIds = refIds("test");
-  const videoIds = refIds("video");
-
-  // The title lookups depend only on the items, not on each other.
-  const [documents, mocks, videos] = await Promise.all([
-    documentIds.length > 0 ? supabase.from("documents").select("id, title").in("id", documentIds) : null,
-    mockIds.length > 0 ? supabase.from("mocks").select("id, title").in("id", mockIds) : null,
-    videoIds.length > 0 ? supabase.from("videos").select("id, title").in("id", videoIds) : null,
-  ]);
-  if (documents?.error) throw new Error(`Unable to load document titles: ${documents.error.message}`);
-  if (mocks?.error) throw new Error(`Unable to load mock titles: ${mocks.error.message}`);
-  if (videos?.error) throw new Error(`Unable to load video titles: ${videos.error.message}`);
-  for (const row of documents?.data ?? []) titles.set(`document:${row.id}`, row.title as string);
-  for (const row of mocks?.data ?? []) titles.set(`test:${row.id}`, row.title as string);
-  for (const row of videos?.data ?? []) titles.set(`video:${row.id}`, row.title as string);
+  const titles = await loadItemTitles(supabase, rows);
 
   return sections.map((section) => ({
     id: section.id as number,
