@@ -309,6 +309,7 @@ export function StudentReadingScreen({
           <form action={markTextReadAction}>
             <input name="courseId" type="hidden" value={courseId} />
             <input name="itemId" type="hidden" value={item.id} />
+            {moduleId === null ? null : <input name="moduleId" type="hidden" value={moduleId} />}
             <SubmitButton pendingLabel="Saving…">Mark as read</SubmitButton>
           </form>
         )}

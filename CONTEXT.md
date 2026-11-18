@@ -26,7 +26,7 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-10
 
-- **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 are #124-#128, plus the final polish (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`.
+- **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 (#124-#128) are live; slice 6 (#129) adds module return links (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`.
 - **Deployed** at `https://app.cospire.in`, from `main` (the Client's domain, since 2026-11-11; `https://cospire-roan.vercel.app` still serves the same deployment). **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
   (after 2026-10-21, until 2026-11-06), and Vercel then blocked six deployments
@@ -272,7 +272,7 @@ side.
   Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
-1. **Shared modules: the build is complete** (slices 1-6, #124-#128 and `feat/modules-6`). Still owed: the **owner's real-browser click-through** of the admin module screens and the student module pages (none has been seen in a browser); the **programme importer** (later); **sub-topics** (later); the **Client's DSAI answer**; and the **ShareLane chunks** for the module work (the ShareLane server was unavailable to the coordinator). *Shared modules* in `completed.md`.
+1. **Shared modules: the build is complete** (slices 1-5, #124-#128, live; slice 6, #129, adds module return links). Still owed: the **owner's real-browser click-through** of the admin module screens and the student module pages (none has been seen in a browser); the **programme importer** (later); **sub-topics** (later); the **Client's DSAI answer**; and the **ShareLane chunks** for the module work (the ShareLane server was unavailable to the coordinator). *Shared modules* in `completed.md`.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).
