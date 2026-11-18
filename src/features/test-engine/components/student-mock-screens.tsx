@@ -6,6 +6,7 @@ import type { Profile } from "@/features/auth/types";
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
 import { startAttemptAction } from "../actions/attempt-actions";
+import { mockPageHref } from "../attempt-course";
 import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
 import { ExamCard, ExamFrame } from "./exam-frame";
@@ -37,7 +38,7 @@ export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; p
       ) : (
         <div className="card-grid card-grid--wide">
           {mocks.map((mock) => (
-            <Link className="course-card course-card--link" href={`/student/mocks/${mock.id}`} key={mock.id}>
+            <Link className="course-card course-card--link" href={mockPageHref(mock.id, mock.attempts)} key={mock.id}>
               <h2>{mock.title}</h2>
               <p>
                 {mock.durationMinutes} min · {mock.attempts.length} of {mock.maxAttempts} attempt
@@ -56,6 +57,7 @@ export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; p
 }
 
 const startErrors: Record<string, string> = {
+  choose: "This test is in more than one of your programmes. Open it from the programme you are studying.",
   failed: "The test could not be started. Try again.",
   limit: "You have used every attempt this mock allows.",
   phone: "This mock cannot be taken on a phone. Open it on a laptop or desktop.",
@@ -75,14 +77,22 @@ function MockFacts({ mock }: { mock: StudentMock }) {
   );
 }
 
+// `?course=` carried from page to page, so an attempt started from a programme
+// belongs to it.
+function courseQuery(courseId: number | null | undefined): string {
+  return courseId ? `?course=${courseId}` : "";
+}
+
 export function StudentMockScreen({
   analytics = null,
+  courseId = null,
   mock,
   phone,
   profile,
 }: {
   // The latest submitted attempt's analytics, drawn by the analytics feature.
   analytics?: React.ReactNode;
+  courseId?: number | null;
   mock: StudentMock;
   phone: boolean;
   profile: Profile;
@@ -107,7 +117,7 @@ export function StudentMockScreen({
           ) : used >= mock.maxAttempts ? (
             <p className="muted">{startErrors.limit}</p>
           ) : (
-            <AttemptLink href={`/student/mocks/${mock.id}/start`}>{used === 0 ? "Attempt mock" : "Attempt again"}</AttemptLink>
+            <AttemptLink href={`/student/mocks/${mock.id}/start${courseQuery(courseId)}`}>{used === 0 ? "Attempt mock" : "Attempt again"}</AttemptLink>
           )}
         </div>
       </section>
@@ -148,11 +158,13 @@ export function StudentMockScreen({
 // The mock's instructions, in the exam's own frame: what "Attempt mock" opens.
 // Nothing is written until Start is pressed, so reading this costs no time.
 export function MockInstructionsScreen({
+  courseId = null,
   error,
   mock,
   phone,
   profile,
 }: {
+  courseId?: number | null;
   error?: string;
   mock: StudentMock;
   phone: boolean;
@@ -215,12 +227,13 @@ export function MockInstructionsScreen({
           ) : (
             <form action={startAttemptAction}>
               <input name="mockId" type="hidden" value={mock.id} />
+              {courseId ? <input name="courseId" type="hidden" value={courseId} /> : null}
               <TouchFlag />
               <FullscreenOnSubmit />
               <SubmitButton pendingLabel="Starting…">Start test</SubmitButton>
             </form>
           )}
-          <Link className="button button--secondary" href={`/student/mocks/${mock.id}`}>
+          <Link className="button button--secondary" href={`/student/mocks/${mock.id}${courseQuery(courseId)}`}>
             Not now
           </Link>
         </div>

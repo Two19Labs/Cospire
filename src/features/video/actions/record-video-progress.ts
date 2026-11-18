@@ -5,12 +5,18 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { planVideoProgress } from "../video";
 
-// The player reports its position every few seconds. `item_progress_insert_own`
-// and `_update_own` are the gate: the row must be the caller's, for a video item
-// in a programme they hold. The length comes from `videos`, read through RLS,
+// The player reports its position every few seconds, for the programme the
+// video was opened from. `item_progress_insert_own` and `_update_own` are the
+// gate: the row must be the caller's, for a video item in that programme, which
+// they hold. The length comes from `videos`, read through RLS,
 // so the browser cannot claim a percent; it can only report a position.
-export async function recordVideoProgressAction(itemId: number, positionSeconds: number): Promise<void> {
+export async function recordVideoProgressAction(
+  courseId: number,
+  itemId: number,
+  positionSeconds: number,
+): Promise<void> {
   const student = await requireRole("student");
+  if (!Number.isSafeInteger(courseId) || courseId <= 0) return;
   if (!Number.isSafeInteger(itemId) || itemId <= 0 || !Number.isFinite(positionSeconds)) return;
 
   const supabase = await createServerSupabaseClient();
@@ -28,6 +34,7 @@ export async function recordVideoProgressAction(itemId: number, positionSeconds:
       .from("item_progress")
       .select("percent, completed, completed_at")
       .eq("student_id", student.id)
+      .eq("course_id", courseId)
       .eq("item_id", itemId)
       .maybeSingle(),
   ]);
@@ -43,12 +50,13 @@ export async function recordVideoProgressAction(itemId: number, positionSeconds:
       completed: next.completed,
       // The first completion time is the one worth keeping.
       completed_at: next.completed ? ((existing?.completed_at as string | null) ?? new Date().toISOString()) : null,
+      course_id: courseId,
       item_id: itemId,
       last_position: next.lastPosition,
       org_id: student.orgId,
       percent: next.percent,
       student_id: student.id,
     },
-    { onConflict: "student_id,item_id" },
+    { onConflict: "student_id,course_id,item_id" },
   );
 }

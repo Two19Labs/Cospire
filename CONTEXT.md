@@ -277,10 +277,11 @@ side.
   Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
-1. **Shared modules Phase 2 (next):** app code writes `course_id` on progress and
-   attempts; the contract migration drops the legacy `(student_id, item_id)` key;
-   types regenerated; the delete preview counts by `course_id`. Module screens
-   wait for the contract step. Details in `completed.md`.
+1. **Shared modules Phase 2: awaiting apply and merge** (`feat/modules-2`): app
+   code writes and reads `course_id` on progress and attempts; migrations
+   `20261118100500` to `20261118100700` (contract, delete preview, attempt-limit fix) are **not applied**;
+   apply them immediately before merging (old code's progress saves fail until the
+   merge deploys). Then the module screens. *Shared modules, Phase 2* in `completed.md`.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).

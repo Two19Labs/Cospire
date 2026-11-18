@@ -10,6 +10,7 @@ import {
   parsePlacement,
   parsePositiveId,
   planMove,
+  progressByCourse,
   studentItemHref,
 } from "./curriculum";
 
@@ -118,7 +119,7 @@ describe("progress", () => {
   });
 
   it("links a test to the mock and text to the item page; documents open by form", () => {
-    expect(studentItemHref(4, { id: 1, refId: 9, type: "test" })).toBe("/student/mocks/9");
+    expect(studentItemHref(4, { id: 1, refId: 9, type: "test" })).toBe("/student/mocks/9?course=4");
     expect(studentItemHref(4, { id: 2, refId: null, type: "text" })).toBe(
       "/student/programmes/4/items/2",
     );
@@ -126,5 +127,35 @@ describe("progress", () => {
     expect(studentItemHref(4, { id: 6, refId: 5, type: "video" })).toBe(
       "/student/programmes/4/items/6",
     );
+  });
+});
+
+describe("progressByCourse", () => {
+  const pdf = { id: 7, refId: 3, type: "document" as const };
+  const quiz = { id: 8, refId: 5, type: "test" as const };
+  const progress = progressByCourse(
+    [
+      { completed: true, course_id: 1, item_id: 7 },
+      { completed: false, course_id: 2, item_id: 7 },
+    ],
+    [
+      { course_id: 2, mock_id: 5 },
+      { course_id: null, mock_id: 5 },
+    ],
+  );
+
+  it("counts a shared item only in the programme its row was made in", () => {
+    expect(isItemComplete(pdf, progress(1))).toBe(true);
+    expect(isItemComplete(pdf, progress(2))).toBe(false);
+  });
+
+  it("counts a test only for an attempt taken from that programme", () => {
+    expect(isItemComplete(quiz, progress(2))).toBe(true);
+    expect(isItemComplete(quiz, progress(1))).toBe(false);
+  });
+
+  it("gives a programme with no rows nothing done", () => {
+    expect(isItemComplete(pdf, progress(9))).toBe(false);
+    expect(isItemComplete(quiz, progress(9))).toBe(false);
   });
 });

@@ -14,7 +14,7 @@ export function StudentVideoScreen({
   backHref: string;
   backLabel: string;
   profile: Profile;
-  progress: { itemId: number; resumeAt: number };
+  progress: { courseId: number; itemId: number; resumeAt: number };
   view: VideoPlayback;
 }) {
   return (

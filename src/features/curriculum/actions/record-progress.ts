@@ -8,9 +8,10 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
 import { parsePositiveId } from "../curriculum";
 
-// A student's progress on a document or text item. `item_progress_insert_own`
-// is the gate: the row must be the caller's own, in a programme they hold, and
-// of a type whose progress is stored. Test items are never written; their
+// A student's progress on a document or text item, in the programme it was
+// opened from. `item_progress_insert_own` is the gate: the row must be the
+// caller's own, the item must sit in that programme, the student must hold it,
+// and the type must be one whose progress is stored. Test items are never written; their
 // completion is derived from attempts.
 //
 // ON CONFLICT DO NOTHING rather than an update: completion is one-way, and the
@@ -30,12 +31,13 @@ async function recordComplete(courseId: number, itemId: number) {
     {
       completed: true,
       completed_at: new Date().toISOString(),
+      course_id: courseId,
       item_id: itemId,
       org_id: student.orgId,
       percent: 100,
       student_id: student.id,
     },
-    { ignoreDuplicates: true, onConflict: "student_id,item_id" },
+    { ignoreDuplicates: true, onConflict: "student_id,course_id,item_id" },
   );
 
   revalidatePath(`/student/programmes/${courseId}`);

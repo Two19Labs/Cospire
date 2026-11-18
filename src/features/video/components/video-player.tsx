@@ -10,7 +10,7 @@ export function VideoPlayer({
   progress,
   view,
 }: {
-  progress?: { itemId: number; resumeAt: number };
+  progress?: { courseId: number; itemId: number; resumeAt: number };
   view: VideoPlayback;
 }) {
   if (!view.playback) {
@@ -31,6 +31,7 @@ export function VideoPlayer({
     <div style={{ aspectRatio: "16 / 9", width: "100%" }}>
       {progress ? (
         <TrackedVideoFrame
+          courseId={progress.courseId}
           itemId={progress.itemId}
           resumeAt={progress.resumeAt}
           src={src}

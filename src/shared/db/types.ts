@@ -708,6 +708,7 @@ export type Database = {
       }
       attempts: {
         Row: {
+          course_id: number | null
           created_at: string
           id: number
           mock_id: number
@@ -722,6 +723,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          course_id?: number | null
           created_at?: string
           id?: never
           mock_id: number
@@ -736,6 +738,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          course_id?: number | null
           created_at?: string
           id?: never
           mock_id?: number
@@ -750,6 +753,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "attempts_course_fk"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
           {
             foreignKeyName: "attempts_mock_fk"
             columns: ["mock_id", "org_id"]
@@ -869,9 +879,10 @@ export type Database = {
           created_at: string
           gating: string
           id: number
+          module_id: number | null
           org_id: number
           ref_id: number | null
-          section_id: number
+          section_id: number | null
           sort_order: number
           title: string | null
           type: string
@@ -882,9 +893,10 @@ export type Database = {
           created_at?: string
           gating?: string
           id?: never
+          module_id?: number | null
           org_id: number
           ref_id?: number | null
-          section_id: number
+          section_id?: number | null
           sort_order?: number
           title?: string | null
           type: string
@@ -895,15 +907,23 @@ export type Database = {
           created_at?: string
           gating?: string
           id?: never
+          module_id?: number | null
           org_id?: number
           ref_id?: number | null
-          section_id?: number
+          section_id?: number | null
           sort_order?: number
           title?: string | null
           type?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "curriculum_items_module_fk"
+            columns: ["module_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id", "org_id"]
+          },
           {
             foreignKeyName: "curriculum_items_section_fk"
             columns: ["section_id", "org_id"]
@@ -1077,10 +1097,50 @@ export type Database = {
           },
         ]
       }
+      feedback_thoughts: {
+        Row: {
+          author_name: string | null
+          body: string
+          created_at: string
+          id: number
+          replied_at: string | null
+          reply: string | null
+          screenshots: string[]
+          status: string
+          title: string
+          urgent: boolean
+        }
+        Insert: {
+          author_name?: string | null
+          body: string
+          created_at?: string
+          id?: never
+          replied_at?: string | null
+          reply?: string | null
+          screenshots?: string[]
+          status?: string
+          title: string
+          urgent?: boolean
+        }
+        Update: {
+          author_name?: string | null
+          body?: string
+          created_at?: string
+          id?: never
+          replied_at?: string | null
+          reply?: string | null
+          screenshots?: string[]
+          status?: string
+          title?: string
+          urgent?: boolean
+        }
+        Relationships: []
+      }
       item_progress: {
         Row: {
           completed: boolean
           completed_at: string | null
+          course_id: number
           created_at: string
           item_id: number
           last_position: number | null
@@ -1092,6 +1152,7 @@ export type Database = {
         Insert: {
           completed?: boolean
           completed_at?: string | null
+          course_id: number
           created_at?: string
           item_id: number
           last_position?: number | null
@@ -1103,6 +1164,7 @@ export type Database = {
         Update: {
           completed?: boolean
           completed_at?: string | null
+          course_id?: number
           created_at?: string
           item_id?: number
           last_position?: number | null
@@ -1112,6 +1174,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "item_progress_course_fk"
+            columns: ["course_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id", "org_id"]
+          },
           {
             foreignKeyName: "item_progress_item_id_fkey"
             columns: ["item_id"]
@@ -1343,6 +1412,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          created_at: string
+          id: number
+          org_id: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          org_id: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          org_id?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1751,11 +1852,51 @@ export type Database = {
           },
         ]
       }
+      section_modules: {
+        Row: {
+          created_at: string
+          module_id: number
+          org_id: number
+          section_id: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          module_id: number
+          org_id: number
+          section_id: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          module_id?: number
+          org_id?: number
+          section_id?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_modules_module_fk"
+            columns: ["module_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "section_modules_section_fk"
+            columns: ["section_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       sections: {
         Row: {
           course_id: number
           created_at: string
           id: number
+          kind: string
           org_id: number
           sort_order: number
           title: string
@@ -1765,6 +1906,7 @@ export type Database = {
           course_id: number
           created_at?: string
           id?: never
+          kind?: string
           org_id: number
           sort_order?: number
           title: string
@@ -1774,6 +1916,7 @@ export type Database = {
           course_id?: number
           created_at?: string
           id?: never
+          kind?: string
           org_id?: number
           sort_order?: number
           title?: string
