@@ -6,6 +6,7 @@ import type { Profile } from "@/features/auth/types";
 import { SubmitButton, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/shared/ui";
 
 import { startAttemptAction } from "../actions/attempt-actions";
+import { mockPageHref } from "../attempt-course";
 import { formatMarks } from "../marks";
 import type { AttemptSummary, StudentMock } from "../queries/student-mocks";
 import { ExamCard, ExamFrame } from "./exam-frame";
@@ -37,7 +38,7 @@ export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; p
       ) : (
         <div className="card-grid card-grid--wide">
           {mocks.map((mock) => (
-            <Link className="course-card course-card--link" href={`/student/mocks/${mock.id}`} key={mock.id}>
+            <Link className="course-card course-card--link" href={mockPageHref(mock.id, mock.attempts)} key={mock.id}>
               <h2>{mock.title}</h2>
               <p>
                 {mock.durationMinutes} min · {mock.attempts.length} of {mock.maxAttempts} attempt
@@ -56,6 +57,7 @@ export function StudentMocksScreen({ mocks, profile }: { mocks: StudentMock[]; p
 }
 
 const startErrors: Record<string, string> = {
+  choose: "This test is in more than one of your programmes. Open it from the programme you are studying.",
   failed: "The test could not be started. Try again.",
   limit: "You have used every attempt this mock allows.",
   phone: "This mock cannot be taken on a phone. Open it on a laptop or desktop.",

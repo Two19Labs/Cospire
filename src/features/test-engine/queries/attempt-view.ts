@@ -95,7 +95,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
   const [attemptResult, enteredResult, responseResult, outline] = await Promise.all([
     supabase
       .from("attempts")
-      .select("id, mock_id, proctored, score, started_at, status, submitted_at, submitted_by")
+      .select("id, mock_id, course_id, proctored, score, started_at, status, submitted_at, submitted_by")
       .eq("id", attemptId)
       .maybeSingle(),
     supabase.from("attempt_sections").select("mock_section_id, started_at, submitted_at").eq("attempt_id", attemptId),
@@ -205,6 +205,7 @@ export async function getAttemptView(attemptId: number): Promise<AttemptView | n
 
   return {
     attempt: {
+      courseId: attempt.course_id,
       id: attempt.id,
       mockId: attempt.mock_id,
       proctored: attempt.proctored,

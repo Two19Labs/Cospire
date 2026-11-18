@@ -11,6 +11,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import type { QuestionType } from "@/features/question-bank/question-input";
 
 import { readAnswer } from "../answer";
+import { resolveAttemptCourse, type AttemptCourse } from "../attempt-course";
 import { attemptDeadline } from "../clock";
 import { isPhone } from "../device";
 import { nextSection, paperState } from "../paper";
@@ -33,7 +34,7 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
   // Started from a programme page: the attempt belongs to that programme.
   // `guard_attempt_write` refuses a programme that does not hold this mock or
   // that the student does not hold, so the id is checked, not trusted.
-  const courseId = idFrom(formData, "courseId");
+  let courseId = idFrom(formData, "courseId");
 
   const phone = isPhone((await headers()).get("user-agent"), formData.get("touchDesktop") === "1");
   const supabase = await createServerSupabaseClient();
@@ -47,6 +48,15 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
     .eq("status", "in_progress")
     .maybeSingle();
   if (open) redirect(`/student/attempts/${open.id}`);
+
+  // Started from the plain mock page (the Mock tests list keeps programme
+  // tests too): with no direct grant the attempt belongs to the one programme
+  // that holds the mock, as `guard_attempt_write` requires.
+  if (courseId === null) {
+    const resolved = await courseForPlainStart(supabase, student.id, mockId);
+    if (resolved.kind !== "ok") redirect(`/student/mocks/${mockId}/start?error=${resolved.kind === "choose" ? "choose" : "failed"}`);
+    courseId = resolved.courseId;
+  }
 
   const { data, error } = await supabase
     .from("attempts")
@@ -72,7 +82,9 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
       ? "phone"
       : message.startsWith("this mock allows")
         ? "limit"
-        : "failed";
+        : message.startsWith("start this test from its programme")
+          ? "choose"
+          : "failed";
     redirect(`/student/mocks/${mockId}/start?error=${reason}${courseId ? `&course=${courseId}` : ""}`);
   }
 
@@ -86,6 +98,46 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
     }
   }
   redirect(`/student/attempts/${data.id}`);
+}
+
+// The direct grant and the programmes holding this mock, read through RLS:
+// a student reads their own grants, and sections only of programmes they hold.
+async function courseForPlainStart(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  studentId: string,
+  mockId: number,
+): Promise<AttemptCourse> {
+  const [grant, items] = await Promise.all([
+    supabase
+      .from("content_access")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("resource_type", "mock")
+      .eq("resource_id", mockId)
+      .limit(1),
+    supabase
+      .from("curriculum_items")
+      .select("module_id, sections(course_id)")
+      .eq("type", "test")
+      .eq("ref_id", mockId)
+      .limit(100),
+  ]);
+  if ((grant.data ?? []).length > 0) return resolveAttemptCourse(true, []);
+  const programmeIds: number[] = [];
+  const moduleIds: number[] = [];
+  for (const item of items.data ?? []) {
+    const section = item.sections as unknown as { course_id: number } | null;
+    if (section) programmeIds.push(section.course_id);
+    if (item.module_id !== null) moduleIds.push(item.module_id);
+  }
+  if (moduleIds.length) {
+    const { data } = await supabase.from("section_modules").select("sections(course_id)").in("module_id", moduleIds).limit(100);
+    for (const row of data ?? []) {
+      const section = row.sections as unknown as { course_id: number } | null;
+      if (section) programmeIds.push(section.course_id);
+    }
+  }
+  return resolveAttemptCourse(false, programmeIds);
 }
 
 // Save the answer on screen, then move. Every navigation button posts through

@@ -3,17 +3,18 @@
 -- (20261118100600). Proves that a shared module's item now holds a separate
 -- progress row per programme, written the way the Phase 2 actions write it
 -- (upsert on student, programme and item), that a row without a programme is
--- refused, that the old upsert fails, and that the programme delete preview
--- counts module-item progress.
+-- refused, that the old upsert fails, that the programme delete preview
+-- counts module-item progress, and that an attempt outside any programme needs
+-- a direct grant of the mock (20261118100700).
 --
--- Run it AFTER both migrations are applied:
+-- Run it AFTER the three migrations are applied:
 --
 --   npx supabase db query --linked -f scripts/verify/modules-2.sql
 --
 -- Or before, with them spliced in after `begin;`, as `modules.sql` describes:
 --
 --   { sed -n '1,/^begin;$/p' scripts/verify/modules-2.sql
---     for f in supabase/migrations/2026111810050*.sql supabase/migrations/2026111810060*.sql; do sed '/^begin;$/d;/^commit;$/d' "$f"; done
+--     for f in supabase/migrations/2026111810050*.sql supabase/migrations/2026111810060*.sql supabase/migrations/2026111810070*.sql; do sed '/^begin;$/d;/^commit;$/d' "$f"; done
 --     sed -n '/^begin;$/,$p' scripts/verify/modules-2.sql | tail -n +2
 --   } > coverage/modules-2-spliced.sql
 --   npx supabase db query --linked -f coverage/modules-2-spliced.sql
@@ -125,6 +126,25 @@ select pg_temp.refused(format('insert into public.item_progress(student_id,item_
   '42P10', 'the pre-Phase 2 upsert on (student, item) now fails, saving nothing');
 
 -- ---------------------------------------------------------------------------
+-- An attempt outside any programme needs a direct grant (20261118100700)
+-- ---------------------------------------------------------------------------
+select pg_temp.as_user('admin');
+insert into public.question_sections(org_id,name) values(1,'Modules 2 probe '||txid_current()) returning set_config('probe.qsection',id::text,true);
+select set_config('probe.q1', public.save_question(null,'mcq','Modules 2 probe question','[{"id":"a","text":"A"},{"id":"b","text":"B"}]','[]',null,pg_temp.v('qsection'),'Probe','easy',1,'{"options":["a"]}',null)::text,true);
+select set_config('probe.mock', public.save_mock(null,'Modules 2 probe topic test','',30,0,array['mcq'],1,true,false,
+  jsonb_build_array(jsonb_build_object('title','All questions','durationMinutes',null,'questions',jsonb_build_array(pg_temp.v('q1')))))::text,true);
+update public.mocks set status='published' where id=pg_temp.v('mock');
+insert into public.curriculum_items(org_id,module_id,type,ref_id,sort_order) values (1,pg_temp.v('m'),'test',pg_temp.v('mock'),1);
+select pg_temp.as_user('s1');
+select pg_temp.refused(format('insert into public.attempts(org_id,mock_id,student_id) values (1,%s,%L)', pg_temp.v('mock'), pg_temp.u('s1')),
+  '42501', 'reaching the mock only through a programme, s1 cannot start it outside any programme');
+select pg_temp.as_user('admin');
+insert into public.content_access(org_id,student_id,resource_type,resource_id,granted_by) values (1,pg_temp.u('s1'),'mock',pg_temp.v('mock'),pg_temp.u('admin'));
+select pg_temp.as_user('s1');
+insert into public.attempts(org_id,mock_id,student_id) values (1,pg_temp.v('mock'),pg_temp.u('s1')) returning set_config('probe.a0',id::text,true);
+select pg_temp.ok((select course_id is null from public.attempts where id=pg_temp.v('a0')), 'with a direct grant of the mock, the same start is accepted, outside any programme');
+
+-- ---------------------------------------------------------------------------
 -- The programme delete preview counts progress by programme
 -- ---------------------------------------------------------------------------
 select pg_temp.as_user('admin');
@@ -141,5 +161,5 @@ select pg_temp.ok((select count(*)=0 from public.item_progress where course_id=p
   and (select count(*)=1 from public.item_progress where course_id=pg_temp.v('p2')),
   'deleting MU removes exactly the rows its preview counted, and Ashoka''s row stays');
 
-select pg_temp.ok(current_setting('probe.passes')::int=14, current_setting('probe.passes')||' modules-2 database checks passed, expected 14');
+select pg_temp.ok(current_setting('probe.passes')::int=16, current_setting('probe.passes')||' modules-2 database checks passed, expected 16');
 rollback;

@@ -278,8 +278,8 @@ side.
 **Then, in order:**
 
 1. **Shared modules Phase 2: awaiting apply and merge** (`feat/modules-2`): app
-   code writes and reads `course_id` on progress and attempts; contract migration
-   `20261118100500` and delete-preview fix `20261118100600` are **not applied**;
+   code writes and reads `course_id` on progress and attempts; migrations
+   `20261118100500` to `20261118100700` (contract, delete preview, attempt-limit fix) are **not applied**;
    apply them immediately before merging (old code's progress saves fail until the
    merge deploys). Then the module screens. *Shared modules, Phase 2* in `completed.md`.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain

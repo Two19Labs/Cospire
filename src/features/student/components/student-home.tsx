@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { mockPageHref } from "@/features/test-engine/attempt-course";
 import { StudentReports } from "@/features/ars-report/components/student-reports";
 import type { StudentReportPage } from "@/features/ars-report/queries/list-reports";
 import type { StudentProcess } from "@/features/ars/queries/student-process";
@@ -38,7 +39,7 @@ function nextUp(mocks: StudentMock[], processes: StudentProcess[]): NextUp[] {
   // A test already started comes first: its clock is running.
   for (const mock of mocks) {
     if (mock.attempts.some((attempt) => attempt.status === "in_progress")) {
-      items.push({ action: "Continue", detail: "In progress · the clock is running", href: `/student/mocks/${mock.id}`, key: `m${mock.id}`, title: mock.title });
+      items.push({ action: "Continue", detail: "In progress · the clock is running", href: mockPageHref(mock.id, mock.attempts), key: `m${mock.id}`, title: mock.title });
     }
   }
   for (const process of processes) {

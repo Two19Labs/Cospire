@@ -6,7 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
-| 2026-11-18 | **Shared modules, Phase 2: the backend contract step** (`feat/modules-2`, D61) | Progress actions send `course_id` and upsert on `(student_id, course_id, item_id)`; a test started from a programme page carries `course_id`; progress and results read per programme. Contract migration `20261118100500` and delete-preview fix `20261118100600`, **written, not applied: the coordinator applies them immediately before merging**. `scripts/verify/modules-2.sql` **14/14** spliced and rolled back. See *Shared modules, Phase 2 (contract step), 2026-11-18* |
+| 2026-11-18 | **Shared modules, Phase 2: the backend contract step** (`feat/modules-2`, D61) | Progress actions send `course_id` and upsert on `(student_id, course_id, item_id)`; a test started from a programme page carries `course_id`; progress and results read per programme. Contract migration `20261118100500`, delete-preview fix `20261118100600` and `20261118100700` (a null-programme attempt needs a direct mock grant, from review), **written, not applied: the coordinator applies them immediately before merging**. `scripts/verify/modules-2.sql` **16/16** spliced and rolled back. See *Shared modules, Phase 2 (contract step), 2026-11-18* |
 | 2026-11-18 | **Shared modules, Phase 1: the migrations** (`feat/modules`, #124, D61) | Five migrations applied to the hosted database on 2026-11-18 with `supabase db push`, after an independent Opus review approved #124. `scripts/verify/modules.sql` **69/69**, rolled back. Phase 2 (app code, contract step, types, screens) is next. See *Shared modules, Phase 1 (migrations), 2026-11-18* |
 | 2026-10-20 | **Admin sections open on option cards** (`feat/section-landings`, owner) | Videos, Documents, Programmes, ARS, Report templates, Users, Question bank and Mock tests open on cards for their jobs (e.g. View videos / Upload a video / Add from VdoCipher); each view, including the existing separate pages (new user, new question, import, sections, new mock, import a paper, build from IDs, import a template), carries them as tabs. `?view=` picks the view; any other parameter (a save's notice, a search, a page) shows the list, so redirects and searches land where they did. Back links and post-save redirects point at the list; the sidebar and home open the cards. A mentor's question bank is unchanged. The stale "Video curriculums: not built yet" panel on Programmes is gone. ARS has two cards: there is no import of a new process (its importer works inside one). Verify scripts that read a landing for a form or list now ask for the view. 654 tests (4 new for `pickView`), typecheck, lint, build; `coverage/sl/probe.mjs` 31/31 on a local production build against the hosted database. Loading skeletons were not reshaped for the cards |
 | 2026-10-20 | **Delete confirmation spacing** (`fix/delete-confirm-spacing`) | The final delete step's form takes `stack-form`, so "Keep it" and "Delete this…" sit apart from the name input instead of against it. Markup only; typecheck, lint, tests, build |
@@ -2989,7 +2989,7 @@ and the expand-step scaffolding from Phase 1 is removed. No screens.
 
 ### State
 
-Branch `feat/modules-2`. Migrations `20261118100500` and `20261118100600` are
+Branch `feat/modules-2`. Migrations `20261118100500` to `20261118100700` are
 **written, not applied**: the coordinator applies them right before merging.
 `src/shared/db/types.ts` regenerated from the live schema (Phase 1 applied; the
 two new migrations change no column, so the types hold after them).
@@ -3012,6 +3012,18 @@ two new migrations change no column, so the types hold after them).
 - `attempts_one_open_idx` kept per student per mock (Phase 1 left it to Phase 2):
   an open attempt from another context is resumed by `startAttemptAction`'s
   existing open-attempt lookup rather than a second paper being started.
+- **Review fixes (#125).** (1) Attempt-limit bypass: a student reaching a mock only
+  through programme P could use P's attempts, then start it from the plain mock
+  page into the null bucket. `20261118100700` makes `guard_attempt_write` refuse
+  a null `course_id` from an untrusted writer without a direct `content_access`
+  mock grant; `startAttemptAction` with no `?course` uses null for a direct grant,
+  else the one held programme containing the mock (`resolveAttemptCourse`, pure,
+  unit tested), else refuses with "open it from the programme". (2) Hidden running
+  attempt: `getStudentMock` always includes the open attempt whatever its
+  programme, and the home "Continue" and Mock tests links carry `?course=` of the
+  open attempt (`mockPageHref`).
+- `scripts/verify/modules.sql` is a Phase 1 snapshot: after the contract step its
+  legacy-key and null-attempt probes no longer hold. `modules-2.sql` supersedes it.
 
 ### Migrations
 
@@ -3019,6 +3031,7 @@ two new migrations change no column, so the types hold after them).
 |---|---|
 | `20261118100500_item_progress_contract.sql` | Drops `item_progress_student_item_legacy_key`, the `item_progress_fill_course` trigger and its function, and the 2-arg `student_may_record_progress` |
 | `20261118100600_delete_preview_progress_by_course.sql` | Replaces `content_delete_preview`: a programme's `progressRows` = `item_progress where course_id = p_id` (was a join through `sections`, which misses module items). Otherwise the 20261017110000 body |
+| `20261118100700_attempts_null_course_needs_direct_grant.sql` | `guard_attempt_write`: a `course_id` null attempt from an untrusted writer needs a direct mock grant. Otherwise the 20261118100400 body |
 
 ### The window between apply and merge
 
@@ -3027,13 +3040,17 @@ and no `course_id`. Once `20261118100500` is applied that upsert fails (42P10, n
 matching unique index) and saves nothing until the merge deploys: opening a
 document still opens it (the error is ignored), "Mark as read" returns to the
 programme with `?progress=failed`, and video position reports fail silently.
-Nothing else changes: reads, documents, videos, attempts and the delete flow work.
+After `20261118100700`, the old start action (no `course_id`) is refused for a
+mock reached only through a programme ("could not be started"); direct-grant
+mocks, every mock students sit today, are unaffected. Nothing else changes:
+reads, documents, videos and the delete flow work.
 The new code works against the database before or after the apply.
 
 ### Verification
 
-`scripts/verify/modules-2.sql`: 14/14, spliced and rolled back, against the hosted
-database; fails unspliced at its first check. See the verification log, 2026-11-18.
+`scripts/verify/modules-2.sql`: 16/16, spliced and rolled back, against the hosted
+database; fails unspliced at its first check, and without `20261118100700` at the
+null-programme probe. See the verification log, 2026-11-18.
 Not run over HTTP or in a browser.
 
 ### Next
