@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-11-18 | **Shared modules, Phase 1: the migrations** (`feat/modules`, #124, D61) | Five migrations applied to the hosted database on 2026-11-18 with `supabase db push`, after an independent Opus review approved #124. `scripts/verify/modules.sql` **69/69**, rolled back. Phase 2 (app code, contract step, types, screens) is next. See *Shared modules, Phase 1 (migrations), 2026-11-18* |
 | 2026-10-20 | **Admin sections open on option cards** (`feat/section-landings`, owner) | Videos, Documents, Programmes, ARS, Report templates, Users, Question bank and Mock tests open on cards for their jobs (e.g. View videos / Upload a video / Add from VdoCipher); each view, including the existing separate pages (new user, new question, import, sections, new mock, import a paper, build from IDs, import a template), carries them as tabs. `?view=` picks the view; any other parameter (a save's notice, a search, a page) shows the list, so redirects and searches land where they did. Back links and post-save redirects point at the list; the sidebar and home open the cards. A mentor's question bank is unchanged. The stale "Video curriculums: not built yet" panel on Programmes is gone. ARS has two cards: there is no import of a new process (its importer works inside one). Verify scripts that read a landing for a form or list now ask for the view. 654 tests (4 new for `pickView`), typecheck, lint, build; `coverage/sl/probe.mjs` 31/31 on a local production build against the hosted database. Loading skeletons were not reshaped for the cards |
 | 2026-10-20 | **Delete confirmation spacing** (`fix/delete-confirm-spacing`) | The final delete step's form takes `stack-form`, so "Keep it" and "Delete this…" sit apart from the name input instead of against it. Markup only; typecheck, lint, tests, build |
 | 2026-10-20 | **A close DI set is the admin's call** (`feat/di-set-duplicates`, owner-approved) | Paper A was imported twice; the second import's set (Q791, in the owner's mock) had lost its "Directions for Q9 to Q11:" line, so its passage did not equal Q772's and `judgePaper` made it a new set with only a note. Now a set whose passage resembles a bank set (trigram match) with as many sub-questions, each matching its counterpart in order, is `possible`: the review screen offers "Same set — link to Q…" (links each sub-question to the bank set's in id order, then the passage; a retry skips ones already linked) or "Approve as a different set". "Corrected version" is not offered for a set, and the action refuses it: correcting only the passage would leave the sub-questions to be added to the existing set. A flagged set and its sub-questions are not counted clean or bulk-approved. Any other resemblance stays new with the note. `find-duplicates` now also reads sets a passage only resembles. The import prompt tells the model to leave a "Directions for questions N to M:" line out of `passage`. No migration, no policy change. Q772 and its three sub-questions were archived the same day through an admin session; **the throwaway admin used for that (`archive-772-…@example.com`) could not be deleted**, because the archive stamped it as `questions.updated_by` on 772-775 (FK `questions_updated_by_fk`), and resetting the stamp or disabling the account was refused by the agent's permission guard. The owner decides: disable it, or restore the stamp and delete it |
@@ -2916,3 +2917,66 @@ The owner set `FEEDBACK_CLIENT_CODE`, `FEEDBACK_OWNER_CODE` and
 `FEEDBACK_NOTIFY_EMAIL` in Vercel. `scripts/verify/feedback.mjs` 18/18 on a
 local build. **Not verified:** the notification email, and anything in a
 browser (pasting a screenshot, the form itself).
+
+## Shared modules, Phase 1 (migrations), 2026-11-18
+
+Shared modules (D61), **Phase 1 only: the migrations**, built to
+`docs/design/shared-modules.md` (agreed, #123, decisions of 2026-11-13). Merged
+in #124 on 2026-11-18, after an independent Opus review approved it.
+
+### State
+
+The five migrations were **applied 2026-11-18** to the hosted database by the
+coordinating agent with `supabase db push`, after that review. Then
+`scripts/verify/modules.sql` ran against the hosted database: **69/69 checks
+passed**, rolled back, no rows left (`modules` 0, `section_modules` 0). Postgres
+17.6. `src/shared/db/types.ts` is not regenerated in Phase 1; it needs the
+Phase 2 code and is regenerated there.
+
+- Owner: Claude, 2026-11-18. Owned files: `supabase/migrations/202611181*`,
+  `scripts/verify/modules.sql`.
+
+### Migrations
+
+| File | Does |
+|---|---|
+| `20261118100000_modules.sql` | `modules`, `section_modules` (RLS forced, admin 4 verbs, student SELECT); `sections.kind` + one mocks section per programme; `curriculum_items.module_id`, `section_id` nullable, exactly-one-parent check; mocks-section triggers; `private.student_reaches_module`; `student_has_programme_item` and the `curriculum_items` SELECT policy gain the module path |
+| `20261118100100_item_progress_course.sql` | `item_progress.course_id` (FK, on delete cascade), backfill, fill trigger, NOT NULL |
+| `20261118100200_item_progress_course_key.sql` | PK becomes `(student_id, course_id, item_id)`; legacy unique `(student_id, item_id)` kept |
+| `20261118100300_item_progress_course_policies.sql` | `private.course_has_item`, 3-arg `student_may_record_progress`; insert/update policies use it |
+| `20261118100400_attempts_course.sql` | `attempts.course_id` (FK, on delete set null (course_id)); `guard_attempt_write` checks the programme, counts `max_attempts` per programme, fixes `course_id` |
+
+### Departures from the design (all for expand and contract)
+
+- **Fill trigger on `item_progress`:** the deployed actions send no `course_id`;
+  the trigger fills it from `item -> section -> course` so NOT NULL holds.
+  Dropped in the contract step.
+- **Legacy unique `(student_id, item_id)` kept** beside the new PK: the deployed
+  upserts use `onConflict: "student_id,item_id"`, which errors without it. So,
+  until the contract step drops it, one progress row per student per item: true
+  per-programme rows for a shared item start only then. `modules.sql` simulates
+  that drop inside its rollback.
+- `attempts_one_open_idx` (one open attempt per student per mock) left as is;
+  Phase 2 decides.
+- `delete_content` (D54) not extended to modules. Its programme preview does not
+  count module-item progress (the course FK cascade does delete it). Phase 2.
+
+### Verification
+
+- All six files parse with `libpg-query` (PostgreSQL 17 grammar); PL/pgSQL bodies
+  not parsed, before the apply. The hosted database is 17.6 (read-only check),
+  with 0 `item_progress` rows at that time.
+- `scripts/verify/modules.sql`: 69/69 against the hosted database after the apply,
+  rolled back. See `docs/context/verification-log.md`, 2026-11-18.
+
+### Phase 2 (next)
+
+Module screens must not ship before the contract step.
+
+- App code writes `course_id` on `item_progress` and attempts.
+- Types regenerated (`npm run db:types`).
+- The contract migration drops `item_progress_student_item_legacy_key`,
+  `item_progress_fill_course` and the 2-arg `student_may_record_progress`.
+- The delete preview's `progressRows` (`supabase/migrations/20261017110000_delete.sql`,
+  line 215) counts by `course_id`. Its join through `sections` misses module items,
+  which have no section.
