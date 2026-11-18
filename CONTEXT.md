@@ -26,7 +26,7 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-10
 
-- **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 (#124-#128) are live; slice 6 (#129) adds module return links (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`.
+- **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 (#124-#128) are live; slice 6 (#129) adds module return links (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`. Accepted limits (detach keeps progress, programme delete nulls attempts, duplicate is not atomic, OR-join grants fine at 100 users) are listed in *Shared modules, audit fixes*.
 - **Deployed** at `https://app.cospire.in`, from `main` (the Client's domain, since 2026-11-11; `https://cospire-roan.vercel.app` still serves the same deployment). **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
   (after 2026-10-21, until 2026-11-06), and Vercel then blocked six deployments

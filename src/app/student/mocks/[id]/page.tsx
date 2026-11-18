@@ -7,7 +7,7 @@ import { requireRole } from "@/features/auth/guards";
 import { parseId } from "@/features/question-bank/list-params";
 import { StudentMockScreen } from "@/features/test-engine/components/student-mock-screens";
 import { isPhone } from "@/features/test-engine/device";
-import { getStudentMock } from "@/features/test-engine/queries/student-mocks";
+import { courseForPlainStart, getStudentMock } from "@/features/test-engine/queries/student-mocks";
 
 export default async function StudentMockPage({
   params,
@@ -21,7 +21,13 @@ export default async function StudentMockPage({
   if (mockId === null) notFound();
   // Opened from a programme: its attempts and results are that programme's.
   const course = (await searchParams).course;
-  const courseId = parseId(typeof course === "string" ? course : undefined);
+  let courseId = parseId(typeof course === "string" ? course : undefined);
+  // Plain page: the programme a plain start would use, so results taken
+  // through the one programme that holds the mock show up here.
+  if (courseId === null) {
+    const resolved = await courseForPlainStart(profile.id, mockId);
+    if (resolved.kind === "ok") courseId = resolved.courseId;
+  }
   // Null when the student holds no grant: RLS hides the mock entirely.
   const mock = await getStudentMock(mockId, courseId);
   if (!mock) notFound();

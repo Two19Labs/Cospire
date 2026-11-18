@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 
+import { resolveAttemptCourse, type AttemptCourse } from "../attempt-course";
 import type { PaperSection } from "../paper";
 
 export interface AttemptSummary {
@@ -125,4 +126,41 @@ export async function getStudentMock(mockId: number, courseId: number | null = n
     })),
     title: mock.title,
   };
+}
+
+// The direct grant and the programmes holding this mock, read through RLS:
+// a student reads their own grants, and sections only of programmes they hold.
+export async function courseForPlainStart(studentId: string, mockId: number): Promise<AttemptCourse> {
+  const supabase = await createServerSupabaseClient();
+  const [grant, items] = await Promise.all([
+    supabase
+      .from("content_access")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("resource_type", "mock")
+      .eq("resource_id", mockId)
+      .limit(1),
+    supabase
+      .from("curriculum_items")
+      .select("module_id, sections(course_id)")
+      .eq("type", "test")
+      .eq("ref_id", mockId)
+      .limit(100),
+  ]);
+  if ((grant.data ?? []).length > 0) return resolveAttemptCourse(true, []);
+  const programmeIds: number[] = [];
+  const moduleIds: number[] = [];
+  for (const item of items.data ?? []) {
+    const section = item.sections as unknown as { course_id: number } | null;
+    if (section) programmeIds.push(section.course_id);
+    if (item.module_id !== null) moduleIds.push(item.module_id);
+  }
+  if (moduleIds.length) {
+    const { data } = await supabase.from("section_modules").select("sections(course_id)").in("module_id", moduleIds).limit(100);
+    for (const row of data ?? []) {
+      const section = row.sections as unknown as { course_id: number } | null;
+      if (section) programmeIds.push(section.course_id);
+    }
+  }
+  return resolveAttemptCourse(false, programmeIds);
 }
