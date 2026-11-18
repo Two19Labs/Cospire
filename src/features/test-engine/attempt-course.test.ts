@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { attemptsCourse, attemptsIn, mockPageHref, resolveAttemptCourse } from "./attempt-course";
+import { attemptsCourse, attemptsIn, mockPageHref, pageCourse, resolveAttemptCourse } from "./attempt-course";
 
 describe("resolveAttemptCourse", () => {
   it("uses no programme when the mock is granted directly", () => {
@@ -38,5 +38,20 @@ describe("attempt buckets", () => {
   it("takes the newest attempt's bucket", () => {
     expect(attemptsCourse(attempts)).toBe(5);
     expect(attemptsCourse([])).toBeNull();
+  });
+});
+
+describe("pageCourse", () => {
+  it("keeps a requested programme that holds the mock", () => {
+    expect(pageCourse(4, true, [4])).toBe(4);
+  });
+  it("falls back to the direct grant when the programme no longer holds it", () => {
+    expect(pageCourse(4, true, [])).toBeNull();
+    expect(pageCourse(4, true, [5])).toBeNull();
+  });
+  it("falls back to the single held programme, or none", () => {
+    expect(pageCourse(4, false, [5])).toBe(5);
+    expect(pageCourse(4, false, [5, 6])).toBeNull();
+    expect(pageCourse(null, false, [5])).toBe(5);
   });
 });

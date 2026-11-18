@@ -11,6 +11,14 @@ export function resolveAttemptCourse(directGrant: boolean, programmeIds: number[
   return { kind: distinct.length === 0 ? "none" : "choose" };
 }
 
+// The programme bucket a mock page opens in: the requested one when a held
+// programme contains the mock, otherwise what a plain start would use.
+export function pageCourse(requested: number | null, directGrant: boolean, programmeIds: number[]): number | null {
+  if (requested !== null && programmeIds.includes(requested)) return requested;
+  const resolved = resolveAttemptCourse(directGrant, programmeIds);
+  return resolved.kind === "ok" ? resolved.courseId : null;
+}
+
 // The mock page for a mock in a list, opened in the programme of the latest
 // attempt (newest first) so its result, count and Resume are that programme's.
 export function mockPageHref(mockId: number, attempts: { courseId: number | null; status: string }[]): string {
