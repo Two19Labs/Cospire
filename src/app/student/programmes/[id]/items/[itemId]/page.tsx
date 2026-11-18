@@ -33,7 +33,7 @@ export default async function StudentProgrammeItemPage({
     // The OTP is minted only if `videos_select_authorized` returns the row.
     const [playback, resumeAt] = await Promise.all([
       item.refId === null ? null : getVideoPlayback({ videoId: item.refId, viewer: profile }),
-      getResumePosition(item.id),
+      getResumePosition(courseId, item.id),
     ]);
     if (!playback) notFound();
     return (
@@ -41,7 +41,7 @@ export default async function StudentProgrammeItemPage({
         backHref={`/student/programmes/${courseId}`}
         backLabel={`Back to ${view.programme.title}`}
         profile={profile}
-        progress={{ itemId: item.id, resumeAt }}
+        progress={{ courseId, itemId: item.id, resumeAt }}
         view={playback}
       />
     );

@@ -81,17 +81,21 @@ export async function listStudentMocks(): Promise<StudentMock[]> {
 }
 
 // One mock with its sections and this student's attempts, or null when the
-// student holds no grant for it.
-export async function getStudentMock(mockId: number): Promise<StudentMock | null> {
+// student holds no grant for it. The attempts are those taken in `courseId`'s
+// programme, or outside any programme when it is null (shared modules,
+// decisions 1 and 2): the database counts `max_attempts` the same way.
+export async function getStudentMock(mockId: number, courseId: number | null = null): Promise<StudentMock | null> {
   const supabase = await createServerSupabaseClient();
+  const attemptQuery = supabase
+    .from("attempts")
+    .select("id, proctored, score, started_at, status, submitted_at, submitted_by")
+    .eq("mock_id", mockId);
   const [mockResult, sectionResult, attemptResult] = await Promise.all([
     supabase.from("mocks").select(mockColumns).eq("id", mockId).maybeSingle(),
     supabase.from("mock_sections").select("id, title, duration_minutes, sort_order").eq("mock_id", mockId).order("sort_order"),
-    supabase
-      .from("attempts")
-      .select("id, proctored, score, started_at, status, submitted_at, submitted_by")
-      .eq("mock_id", mockId)
-      .order("started_at", { ascending: false }),
+    (courseId === null ? attemptQuery.is("course_id", null) : attemptQuery.eq("course_id", courseId)).order("started_at", {
+      ascending: false,
+    }),
   ]);
   if (mockResult.error) throw new Error(`Unable to read the mock: ${mockResult.error.message}`);
   if (!mockResult.data) return null;

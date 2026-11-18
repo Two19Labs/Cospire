@@ -17,15 +17,19 @@ export default async function StudentMockStartPage({
   const profile = await requireRole("student");
   const mockId = parseId((await params).id);
   if (mockId === null) notFound();
+  const query = await searchParams;
+  // Started from a programme: the attempt belongs to it (checked by the database).
+  const courseId = parseId(typeof query.course === "string" ? query.course : undefined);
   // Null when the student holds no grant: RLS hides the mock entirely.
-  const mock = await getStudentMock(mockId);
+  const mock = await getStudentMock(mockId, courseId);
   if (!mock) notFound();
   // A sitting already under way has its clock running: straight back into it.
   const open = mock.attempts.find((attempt) => attempt.status === "in_progress");
   if (open) redirect(`/student/attempts/${open.id}`);
-  const error = (await searchParams).error;
+  const error = query.error;
   return (
     <MockInstructionsScreen
+      courseId={courseId}
       error={typeof error === "string" ? error : undefined}
       mock={mock}
       phone={isPhone((await headers()).get("user-agent"))}

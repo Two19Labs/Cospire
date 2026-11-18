@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 import {
   completionPercent,
   isItemComplete,
+  progressByCourse,
   type CurriculumItemType,
   type ProgressInput,
 } from "../curriculum";
@@ -31,19 +32,23 @@ interface EmbeddedItem {
 }
 
 // This student's progress rows and submitted attempts, read once for a whole
-// page of programmes. Their own rows only, so small and bounded.
-async function readProgress(studentId: string): Promise<ProgressInput> {
+// page of programmes and split by the programme each was made in. Their own
+// rows only, so small and bounded.
+async function readProgress(studentId: string): Promise<(courseId: number) => ProgressInput> {
   const supabase = await createServerSupabaseClient();
   const [stored, attempts] = await Promise.all([
-    supabase.from("item_progress").select("item_id, completed").eq("student_id", studentId).limit(5000),
-    supabase.from("attempts").select("mock_id").eq("student_id", studentId).eq("status", "submitted").limit(5000),
+    supabase.from("item_progress").select("item_id, course_id, completed").eq("student_id", studentId).limit(5000),
+    supabase
+      .from("attempts")
+      .select("mock_id, course_id")
+      .eq("student_id", studentId)
+      .eq("status", "submitted")
+      .not("course_id", "is", null)
+      .limit(5000),
   ]);
   if (stored.error) throw new Error(`Unable to load progress: ${stored.error.message}`);
   if (attempts.error) throw new Error(`Unable to load attempts: ${attempts.error.message}`);
-  return {
-    stored: new Map((stored.data ?? []).map((row) => [row.item_id as number, row.completed === true])),
-    submittedMocks: new Set((attempts.data ?? []).map((row) => row.mock_id as number)),
-  };
+  return progressByCourse(stored.data ?? [], attempts.data ?? []);
 }
 
 // The programmes this student holds, with progress, in one round trip of
@@ -81,7 +86,7 @@ export async function listStudentProgrammes(
         (section) => section.curriculum_items ?? [],
       );
       const complete = items.filter((item) =>
-        isItemComplete({ id: item.id, refId: item.ref_id, type: item.type }, progress),
+        isItemComplete({ id: item.id, refId: item.ref_id, type: item.type }, progress(row.id as number)),
       ).length;
       return {
         complete,
@@ -114,7 +119,7 @@ export async function getStudentProgramme(
   // these reads, and the course row still decides whether the page exists.
   // The progress and attempt reads are this student's own rows across the
   // platform, filtered to this programme's items below -- small, and bounded.
-  const [courseResult, sections, progress] = await Promise.all([
+  const [courseResult, sections, progressFor] = await Promise.all([
     supabase.from("courses").select("id, title").eq("id", courseId).eq("kind", "programme").maybeSingle(),
     getCurriculum(courseId),
     readProgress(studentId),
@@ -123,9 +128,10 @@ export async function getStudentProgramme(
   const course = courseResult.data;
   if (!course) return null;
 
-  // Progress rows belong to items and tests by id, so rows from the student's
-  // other programmes simply match nothing here. A test is complete once the
-  // student has submitted an attempt on it.
+  // Only rows and attempts made in this programme count: a shared module's
+  // item done in another programme is not done here. A test is complete once
+  // the student has submitted an attempt on it from this programme.
+  const progress = progressFor(courseId);
   const items = sections.flatMap((section) => section.items);
   const complete = new Set(items.filter((item) => isItemComplete(item, progress)).map((item) => item.id));
 

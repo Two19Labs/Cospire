@@ -6,6 +6,7 @@ The log of finished work and the detailed write-ups behind it. Moved out of `CON
 
 | Date | Work | Result / verification |
 |---|---|---|
+| 2026-11-18 | **Shared modules, Phase 2: the backend contract step** (`feat/modules-2`, D61) | Progress actions send `course_id` and upsert on `(student_id, course_id, item_id)`; a test started from a programme page carries `course_id`; progress and results read per programme. Contract migration `20261118100500` and delete-preview fix `20261118100600`, **written, not applied: the coordinator applies them immediately before merging**. `scripts/verify/modules-2.sql` **14/14** spliced and rolled back. See *Shared modules, Phase 2 (contract step), 2026-11-18* |
 | 2026-11-18 | **Shared modules, Phase 1: the migrations** (`feat/modules`, #124, D61) | Five migrations applied to the hosted database on 2026-11-18 with `supabase db push`, after an independent Opus review approved #124. `scripts/verify/modules.sql` **69/69**, rolled back. Phase 2 (app code, contract step, types, screens) is next. See *Shared modules, Phase 1 (migrations), 2026-11-18* |
 | 2026-10-20 | **Admin sections open on option cards** (`feat/section-landings`, owner) | Videos, Documents, Programmes, ARS, Report templates, Users, Question bank and Mock tests open on cards for their jobs (e.g. View videos / Upload a video / Add from VdoCipher); each view, including the existing separate pages (new user, new question, import, sections, new mock, import a paper, build from IDs, import a template), carries them as tabs. `?view=` picks the view; any other parameter (a save's notice, a search, a page) shows the list, so redirects and searches land where they did. Back links and post-save redirects point at the list; the sidebar and home open the cards. A mentor's question bank is unchanged. The stale "Video curriculums: not built yet" panel on Programmes is gone. ARS has two cards: there is no import of a new process (its importer works inside one). Verify scripts that read a landing for a form or list now ask for the view. 654 tests (4 new for `pickView`), typecheck, lint, build; `coverage/sl/probe.mjs` 31/31 on a local production build against the hosted database. Loading skeletons were not reshaped for the cards |
 | 2026-10-20 | **Delete confirmation spacing** (`fix/delete-confirm-spacing`) | The final delete step's form takes `stack-form`, so "Keep it" and "Delete this…" sit apart from the name input instead of against it. Markup only; typecheck, lint, tests, build |
@@ -2980,3 +2981,62 @@ Module screens must not ship before the contract step.
 - The delete preview's `progressRows` (`supabase/migrations/20261017110000_delete.sql`,
   line 215) counts by `course_id`. Its join through `sections` misses module items,
   which have no section.
+
+## Shared modules, Phase 2 (contract step), 2026-11-18
+
+Shared modules (D61), Phase 2: the app writes and reads progress per programme,
+and the expand-step scaffolding from Phase 1 is removed. No screens.
+
+### State
+
+Branch `feat/modules-2`. Migrations `20261118100500` and `20261118100600` are
+**written, not applied**: the coordinator applies them right before merging.
+`src/shared/db/types.ts` regenerated from the live schema (Phase 1 applied; the
+two new migrations change no column, so the types hold after them).
+
+### Code
+
+- `record-progress.ts` and `record-video-progress.ts` send `course_id` and upsert
+  on `student_id,course_id,item_id`; the video action takes `courseId` first, passed
+  down from the programme item page through `VideoPlayer` and `TrackedVideoFrame`.
+  `getResumePosition(courseId, itemId)`.
+- `readProgress` reads `course_id` on progress rows and submitted attempts and splits
+  them with `progressByCourse` (pure, unit tested): a row counts only in its own
+  programme, a test only for an attempt with that `course_id`. Attempts with a null
+  `course_id` (direct grants, every attempt before this) count in no programme.
+- A test item links to `/student/mocks/<id>?course=<programme>`; the mock page,
+  its start page and the start form carry it; `startAttemptAction` inserts
+  `course_id` (checked by `guard_attempt_write`, never trusted). Without `?course`
+  an attempt is a direct-grant one, `course_id` null. `getStudentMock` lists only
+  the attempts of that context, matching how the database counts `max_attempts`.
+- `attempts_one_open_idx` kept per student per mock (Phase 1 left it to Phase 2):
+  an open attempt from another context is resumed by `startAttemptAction`'s
+  existing open-attempt lookup rather than a second paper being started.
+
+### Migrations
+
+| File | Does |
+|---|---|
+| `20261118100500_item_progress_contract.sql` | Drops `item_progress_student_item_legacy_key`, the `item_progress_fill_course` trigger and its function, and the 2-arg `student_may_record_progress` |
+| `20261118100600_delete_preview_progress_by_course.sql` | Replaces `content_delete_preview`: a programme's `progressRows` = `item_progress where course_id = p_id` (was a join through `sections`, which misses module items). Otherwise the 20261017110000 body |
+
+### The window between apply and merge
+
+The old code still deployed upserts progress with `onConflict: "student_id,item_id"`
+and no `course_id`. Once `20261118100500` is applied that upsert fails (42P10, no
+matching unique index) and saves nothing until the merge deploys: opening a
+document still opens it (the error is ignored), "Mark as read" returns to the
+programme with `?progress=failed`, and video position reports fail silently.
+Nothing else changes: reads, documents, videos, attempts and the delete flow work.
+The new code works against the database before or after the apply.
+
+### Verification
+
+`scripts/verify/modules-2.sql`: 14/14, spliced and rolled back, against the hosted
+database; fails unspliced at its first check. See the verification log, 2026-11-18.
+Not run over HTTP or in a browser.
+
+### Next
+
+Module screens (library, module page, programme page with subjects and attached
+modules, student module pages); `getCurriculum` does not yet read module items.

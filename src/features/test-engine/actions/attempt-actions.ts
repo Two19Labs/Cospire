@@ -30,6 +30,10 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
   const student = await requireRole("student");
   const mockId = idFrom(formData, "mockId");
   if (mockId === null) redirect("/student/mocks");
+  // Started from a programme page: the attempt belongs to that programme.
+  // `guard_attempt_write` refuses a programme that does not hold this mock or
+  // that the student does not hold, so the id is checked, not trusted.
+  const courseId = idFrom(formData, "courseId");
 
   const phone = isPhone((await headers()).get("user-agent"), formData.get("touchDesktop") === "1");
   const supabase = await createServerSupabaseClient();
@@ -46,7 +50,7 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
 
   const { data, error } = await supabase
     .from("attempts")
-    .insert({ mock_id: mockId, org_id: student.orgId, proctored: !phone, student_id: student.id })
+    .insert({ course_id: courseId, mock_id: mockId, org_id: student.orgId, proctored: !phone, student_id: student.id })
     .select("id")
     .single();
 
@@ -69,7 +73,7 @@ export async function startAttemptAction(formData: FormData): Promise<void> {
       : message.startsWith("this mock allows")
         ? "limit"
         : "failed";
-    redirect(`/student/mocks/${mockId}/start?error=${reason}`);
+    redirect(`/student/mocks/${mockId}/start?error=${reason}${courseId ? `&course=${courseId}` : ""}`);
   }
 
   // A sectioned paper opens on its first section straight away, so the first

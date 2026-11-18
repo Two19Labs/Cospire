@@ -95,6 +95,25 @@ export function isItemComplete(
   return progress.stored.get(item.id) === true;
 }
 
+// Progress per programme (shared modules, decision 1): a stored row counts only
+// in the programme it was made in, and a test only for an attempt taken from
+// that programme. An attempt outside any programme (course_id null) counts in
+// none.
+export function progressByCourse(
+  stored: { completed: boolean | null; course_id: number; item_id: number }[],
+  attempts: { course_id: number | null; mock_id: number }[],
+): (courseId: number) => ProgressInput {
+  const byCourse = new Map<number, ProgressInput>();
+  const entry = (courseId: number) => {
+    let found = byCourse.get(courseId);
+    if (!found) byCourse.set(courseId, (found = { stored: new Map(), submittedMocks: new Set() }));
+    return found;
+  };
+  for (const row of stored) entry(row.course_id).stored.set(row.item_id, row.completed === true);
+  for (const row of attempts) if (row.course_id !== null) entry(row.course_id).submittedMocks.add(row.mock_id);
+  return (courseId) => byCourse.get(courseId) ?? { stored: new Map(), submittedMocks: new Set() };
+}
+
 export function completionPercent(done: number, total: number): number {
   return total === 0 ? 0 : Math.round((done / total) * 100);
 }
@@ -106,7 +125,8 @@ export function studentItemHref(
   courseId: number,
   item: { id: number; refId: number | null; type: CurriculumItemType },
 ): string | null {
-  if (item.type === "test") return item.refId === null ? null : `/student/mocks/${item.refId}`;
+  // The programme rides along so an attempt started from here belongs to it.
+  if (item.type === "test") return item.refId === null ? null : `/student/mocks/${item.refId}?course=${courseId}`;
   if (item.type === "text" || item.type === "video") {
     return `/student/programmes/${courseId}/items/${item.id}`;
   }

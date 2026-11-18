@@ -9,12 +9,21 @@ import { StudentMockScreen } from "@/features/test-engine/components/student-moc
 import { isPhone } from "@/features/test-engine/device";
 import { getStudentMock } from "@/features/test-engine/queries/student-mocks";
 
-export default async function StudentMockPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function StudentMockPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const profile = await requireRole("student");
   const mockId = parseId((await params).id);
   if (mockId === null) notFound();
+  // Opened from a programme: its attempts and results are that programme's.
+  const course = (await searchParams).course;
+  const courseId = parseId(typeof course === "string" ? course : undefined);
   // Null when the student holds no grant: RLS hides the mock entirely.
-  const mock = await getStudentMock(mockId);
+  const mock = await getStudentMock(mockId, courseId);
   if (!mock) notFound();
   const phone = isPhone((await headers()).get("user-agent"));
   // Once sat, the mock's page carries the latest result's analytics (owner,
@@ -24,6 +33,7 @@ export default async function StudentMockPage({ params }: { params: Promise<{ id
   return (
     <StudentMockScreen
       analytics={analytics ? <AttemptAnalyticsBody data={analytics} /> : null}
+      courseId={courseId}
       mock={mock}
       phone={phone}
       profile={profile}

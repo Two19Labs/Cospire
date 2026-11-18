@@ -37,11 +37,13 @@ function loadApi(): Promise<void> {
 // where they left off, restored on load. Playback works without any of this;
 // if the API script fails, only progress is lost.
 export function TrackedVideoFrame({
+  courseId,
   itemId,
   resumeAt,
   src,
   title,
 }: {
+  courseId: number;
   itemId: number;
   resumeAt: number;
   src: string;
@@ -60,7 +62,7 @@ export function TrackedVideoFrame({
         const { video } = window.VdoPlayer.getInstance(frame);
         const report = () => {
           lastReport = Date.now();
-          void recordVideoProgressAction(itemId, video.currentTime).catch(() => undefined);
+          void recordVideoProgressAction(courseId, itemId, video.currentTime).catch(() => undefined);
         };
         video.addEventListener("loadedmetadata", () => {
           if (resumeAt > 0) video.currentTime = resumeAt;
@@ -76,7 +78,7 @@ export function TrackedVideoFrame({
     return () => {
       cancelled = true;
     };
-  }, [itemId, resumeAt]);
+  }, [courseId, itemId, resumeAt]);
 
   return (
     <iframe
