@@ -24,8 +24,8 @@ export default async function StudentProgrammeItemPage({
   if (courseId === null || parsedItemId === null) notFound();
 
   const view = await getStudentProgramme(courseId, profile.id);
-  const item = view?.sections
-    .flatMap((section) => section.items)
+  // A subject's own item, or an item inside a module attached to one of its subjects.
+  const item = [...(view?.sections.flatMap((section) => section.items) ?? []), ...(view ? [...view.modules.values()].flat().flatMap((m) => m.items) : [])]
     .find((entry) => entry.id === parsedItemId && (entry.type === "text" || entry.type === "video"));
   if (!view || !item) notFound();
 

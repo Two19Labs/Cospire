@@ -114,6 +114,33 @@ export function progressByCourse(
   return (courseId) => byCourse.get(courseId) ?? { stored: new Map(), submittedMocks: new Set() };
 }
 
+// The same item reached twice (a module attached to two subjects of one
+// programme) is one item in that programme's count.
+export function uniqueItems<T extends { id: number }>(items: T[]): T[] {
+  return [...new Map(items.map((item) => [item.id, item])).values()];
+}
+
+export function summariseProgress(
+  items: { id: number; refId: number | null; type: CurriculumItemType }[],
+  progress: ProgressInput,
+): { complete: number; percent: number; total: number } {
+  const unique = uniqueItems(items);
+  const complete = unique.filter((item) => isItemComplete(item, progress)).length;
+  return { complete, percent: completionPercent(complete, unique.length), total: unique.length };
+}
+
+// A programme's subjects in order, and its full mocks apart: the mocks section
+// is shown after the subjects whatever its sort_order.
+export function splitSections<T extends { id: number; kind: string; sortOrder: number }>(
+  sections: T[],
+): { mocks: T | null; subjects: T[] } {
+  const ordered = [...sections].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+  return {
+    mocks: ordered.find((section) => section.kind === "mocks") ?? null,
+    subjects: ordered.filter((section) => section.kind !== "mocks"),
+  };
+}
+
 export function completionPercent(done: number, total: number): number {
   return total === 0 ? 0 : Math.round((done / total) * 100);
 }
