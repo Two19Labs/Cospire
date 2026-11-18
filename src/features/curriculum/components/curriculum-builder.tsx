@@ -31,7 +31,7 @@ interface CurriculumBuilderProps {
   videos: PickerPage;
 }
 
-function Hidden({ fields }: { fields: Record<string, string | number> }) {
+export function Hidden({ fields }: { fields: Record<string, string | number> }) {
   return (
     <>
       {Object.entries(fields).map(([name, value]) => (
@@ -41,7 +41,7 @@ function Hidden({ fields }: { fields: Record<string, string | number> }) {
   );
 }
 
-function MoveButtons({
+export function MoveButtons({
   action,
   fields,
   first,
@@ -112,7 +112,7 @@ function PickerPager({
   );
 }
 
-function RefSelect({ label, page }: { label: string; page: PickerPage }) {
+export function RefSelect({ label, page }: { label: string; page: PickerPage }) {
   return (
     <label className="field">
       <span className="field__label">{label}</span>

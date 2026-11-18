@@ -4,7 +4,7 @@
 // Pure, so the confirmation sentence is unit-tested: it is the only thing
 // standing between a click and rows that cannot come back.
 
-export type DeleteTargetType = "document" | "mock" | "programme" | "video";
+export type DeleteTargetType = "document" | "mock" | "module" | "programme" | "video";
 
 export interface DeleteTarget {
   noun: string;
@@ -25,6 +25,12 @@ export const deleteTargets: Record<DeleteTargetType, DeleteTarget> = {
     listHref: "/admin/mocks",
     listLabel: "Mock tests",
     detailHref: (id) => `/admin/mocks/${id}`,
+  },
+  module: {
+    noun: "module",
+    listHref: "/admin/modules",
+    listLabel: "Modules",
+    detailHref: (id) => `/admin/modules/${id}`,
   },
   programme: {
     noun: "programme",
@@ -58,6 +64,8 @@ const countWords: Array<[string, string, string]> = [
   ["progressRows", "student progress record", "student progress records"],
   ["grants", "student access grant", "student access grants"],
   ["sections", "curriculum section", "curriculum sections"],
+  ["attachments", "attachment to a programme subject", "attachments to programme subjects"],
+  ["moduleItems", "item in this module", "items in this module"],
   ["curriculumItems", "place in a programme curriculum", "places in a programme curriculum"],
   ["paperSections", "section of the paper", "sections of the paper"],
   ["paperQuestions", "question placed in the paper", "questions placed in the paper"],
@@ -82,4 +90,11 @@ export function describeDeletion(type: DeleteTargetType, counts: Record<string, 
 // database accepts. Both have to agree or the refusal is unexplainable.
 export function collapseName(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().replace(/\s+/g, " ") : "";
+}
+
+// "Attached to 2 programmes: MU, Ashoka". Null when nothing uses the module.
+// Deleting is allowed regardless (decision 4); this is the warning.
+export function describeAttached(programmes: string[]): string | null {
+  if (programmes.length === 0) return null;
+  return `Attached to ${programmes.length} programme${programmes.length === 1 ? "" : "s"}: ${programmes.join(", ")}`;
 }

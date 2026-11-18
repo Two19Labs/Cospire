@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import { deleteVideo } from "@/features/video/vdocipher";
 
-import { collapseName, describeDeletion, parseDeleteTargetType } from "./targets";
+import { collapseName, describeAttached, describeDeletion, parseDeleteTargetType } from "./targets";
 
 // The confirmation sentence is the only thing between a click and rows that
 // cannot come back, so it is pinned here.
@@ -95,5 +95,22 @@ describe("deleteVideo", () => {
 
   it("refuses anything that is not a VdoCipher id before calling out", async () => {
     await expect(deleteVideo("not-an-id")).rejects.toThrow("Not a VdoCipher video id.");
+  });
+});
+
+describe("modules", () => {
+  it("is a deletable kind", () => expect(parseDeleteTargetType("module")).toBe("module"));
+  it("states what a module delete removes", () => {
+    expect(describeDeletion("module", { moduleItems: 3, attachments: 2, progressRows: 1 })).toEqual([
+      "this module",
+      "1 student progress record",
+      "2 attachments to programme subjects",
+      "3 items in this module",
+    ]);
+  });
+  it("names the programmes it is attached to, and nothing when it is not", () => {
+    expect(describeAttached(["MU", "Ashoka"])).toBe("Attached to 2 programmes: MU, Ashoka");
+    expect(describeAttached(["MU"])).toBe("Attached to 1 programme: MU");
+    expect(describeAttached([])).toBeNull();
   });
 });

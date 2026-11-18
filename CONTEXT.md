@@ -281,7 +281,8 @@ side.
    code writes and reads `course_id` on progress and attempts; migrations
    `20261118100500` to `20261118100700` (contract, delete preview, attempt-limit fix) are **not applied**;
    apply them immediately before merging (old code's progress saves fail until the
-   merge deploys). Then the module screens. *Shared modules, Phase 2* in `completed.md`.
+   merge deploys). *Shared modules, Phase 2* in `completed.md`.
+   **Slice 3, the admin module library, is awaiting review and merge** (`feat/modules-3`): `/admin/modules`, the module page, duplicate, delete; migration `20261118110000` (module delete) is **not applied**, apply it before merging (`modules-3.sql` 16/16 spliced). *Shared modules, slice 3* in `completed.md`. Slice 4 (programme page: attach modules) is next.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).
