@@ -8,7 +8,13 @@ import { getStudentModule } from "@/features/curriculum/queries/student-programm
 
 export const metadata: Metadata = { title: "Module" };
 
-export default async function StudentModulePage({ params }: { params: Promise<{ id: string; moduleId: string }> }) {
+export default async function StudentModulePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string; moduleId: string }>;
+  searchParams: Promise<{ progress?: string }>;
+}) {
   const profile = await requireRole("student");
   const { id, moduleId } = await params;
   const courseId = parsePositiveId(id);
@@ -19,5 +25,5 @@ export default async function StudentModulePage({ params }: { params: Promise<{ 
   const view = await getStudentModule(courseId, parsedModuleId, profile.id);
   if (!view) notFound();
 
-  return <StudentModuleScreen profile={profile} view={view} />;
+  return <StudentModuleScreen profile={profile} progressFailed={(await searchParams).progress === "failed"} view={view} />;
 }

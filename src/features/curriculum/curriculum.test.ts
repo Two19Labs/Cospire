@@ -15,6 +15,7 @@ import {
   summariseProgress,
   uniqueItems,
   studentItemHref,
+  studentReturnHref,
 } from "./curriculum";
 
 describe("parsePlacement", () => {
@@ -129,6 +130,17 @@ describe("progress", () => {
     expect(studentItemHref(4, { id: 3, refId: 5, type: "document" })).toBeNull();
     expect(studentItemHref(4, { id: 6, refId: 5, type: "video" })).toBe(
       "/student/programmes/4/items/6",
+    );
+  });
+
+  it("carries the module an item was opened from, and returns to it", () => {
+    expect(studentItemHref(4, { id: 2, refId: null, type: "text" }, 7)).toBe(
+      "/student/programmes/4/items/2?module=7",
+    );
+    expect(studentReturnHref(4, null)).toBe("/student/programmes/4");
+    expect(studentReturnHref(4, 7)).toBe("/student/programmes/4/modules/7");
+    expect(studentReturnHref(4, 7, "?progress=failed")).toBe(
+      "/student/programmes/4/modules/7?progress=failed",
     );
   });
 });

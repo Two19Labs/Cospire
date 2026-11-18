@@ -151,13 +151,20 @@ export function completionPercent(done: number, total: number): number {
 export function studentItemHref(
   courseId: number,
   item: { id: number; refId: number | null; type: CurriculumItemType },
+  moduleId: number | null = null,
 ): string | null {
   // The programme rides along so an attempt started from here belongs to it.
   if (item.type === "test") return item.refId === null ? null : `/student/mocks/${item.refId}?course=${courseId}`;
   if (item.type === "text" || item.type === "video") {
-    return `/student/programmes/${courseId}/items/${item.id}`;
+    return `/student/programmes/${courseId}/items/${item.id}${moduleId === null ? "" : `?module=${moduleId}`}`;
   }
   return null;
+}
+
+// Where a student returns to after an item: the module page when they came
+// from one (`moduleId` is a validated positive integer), else the programme.
+export function studentReturnHref(courseId: number, moduleId: number | null, query = ""): string {
+  return `/student/programmes/${courseId}${moduleId === null ? "" : `/modules/${moduleId}`}${query}`;
 }
 
 // The builder's outcomes, carried back on `?curriculum=` as a closed set so a
