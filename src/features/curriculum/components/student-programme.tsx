@@ -6,7 +6,7 @@ import type { Profile } from "@/features/auth/types";
 import { SubmitButton } from "@/shared/ui";
 
 import { markTextReadAction, openDocumentItemAction } from "../actions/record-progress";
-import { itemTypeLabels, splitSections, studentItemHref, type CurriculumItemType } from "../curriculum";
+import { itemTypeLabels, splitSections, studentItemHref, studentReturnHref, type CurriculumItemType } from "../curriculum";
 import type { CurriculumSection } from "../queries/get-curriculum";
 import type { ModuleView, ProgrammeView, StudentProgrammeRow } from "../queries/student-programmes";
 
@@ -77,19 +77,20 @@ interface ActionItem {
   type: CurriculumItemType;
 }
 
-function ItemAction({ courseId, done, item }: { courseId: number; done: boolean; item: ActionItem }) {
+function ItemAction({ courseId, done, item, moduleId }: { courseId: number; done: boolean; item: ActionItem; moduleId: number | null }) {
   if (item.type === "document") {
     return (
       <form action={openDocumentItemAction}>
         <input name="courseId" type="hidden" value={courseId} />
         <input name="itemId" type="hidden" value={item.id} />
+        {moduleId === null ? null : <input name="moduleId" type="hidden" value={moduleId} />}
         <SubmitButton compact pendingLabel="Opening…" variant={done ? "secondary" : "primary"}>
           {done ? "Open again" : "Open"}
         </SubmitButton>
       </form>
     );
   }
-  const href = studentItemHref(courseId, item);
+  const href = studentItemHref(courseId, item, moduleId);
   if (!href) return null;
   return (
     <Link
@@ -109,10 +110,12 @@ function ItemRows({
   complete,
   courseId,
   items,
+  moduleId = null,
 }: {
   complete: Set<number>;
   courseId: number;
   items: (ActionItem & { title: string })[];
+  moduleId?: number | null;
 }) {
   return (
     <ol className="round-list">
@@ -132,7 +135,7 @@ function ItemRows({
               </p>
             </div>
             <div className="round-row__actions">
-              <ItemAction courseId={courseId} done={done} item={item} />
+              <ItemAction courseId={courseId} done={done} item={item} moduleId={moduleId} />
             </div>
           </li>
         );
@@ -241,7 +244,7 @@ export function StudentProgrammeScreen({
   );
 }
 
-export function StudentModuleScreen({ profile, view }: { profile: Profile; view: ModuleView }) {
+export function StudentModuleScreen({ profile, progressFailed = false, view }: { profile: Profile; progressFailed?: boolean; view: ModuleView }) {
   const courseId = view.programme.id;
   return (
     <RoleShell
@@ -250,6 +253,11 @@ export function StudentModuleScreen({ profile, view }: { profile: Profile; view:
       profile={profile}
       title={view.module.title}
     >
+      {progressFailed ? (
+        <p className="notice notice--error" role="alert">
+          Your progress could not be saved. Try again.
+        </p>
+      ) : null}
       <section aria-label="Your progress in this programme" className="panel panel--strip">
         <ProgressMeter complete={view.complete.size} percent={view.percent} total={view.total} />
         <p className="muted">{view.percent}% complete in {view.programme.title}</p>
@@ -258,7 +266,7 @@ export function StudentModuleScreen({ profile, view }: { profile: Profile; view:
         {view.items.length === 0 ? (
           <p className="panel-empty">Nothing has been added to this module yet.</p>
         ) : (
-          <ItemRows complete={view.complete} courseId={courseId} items={view.items} />
+          <ItemRows complete={view.complete} courseId={courseId} items={view.items} moduleId={view.module.id} />
         )}
       </section>
     </RoleShell>
@@ -269,18 +277,22 @@ export function StudentReadingScreen({
   courseId,
   done,
   item,
+  moduleId = null,
+  moduleTitle = null,
   profile,
   programmeTitle,
 }: {
   courseId: number;
   done: boolean;
   item: { body: string | null; id: number; title: string | null };
+  moduleId?: number | null;
+  moduleTitle?: string | null;
   profile: Profile;
   programmeTitle: string;
 }) {
   return (
     <RoleShell
-      back={{ href: `/student/programmes/${courseId}`, label: `Back to ${programmeTitle}` }}
+      back={{ href: studentReturnHref(courseId, moduleId), label: `Back to ${moduleId === null ? programmeTitle : (moduleTitle ?? "the module")}` }}
       description="Reading"
       profile={profile}
       title={item.title ?? "Reading"}

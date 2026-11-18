@@ -26,6 +26,7 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-10
 
+- **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 are #124-#128, plus the final polish (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`.
 - **Deployed** at `https://app.cospire.in`, from `main` (the Client's domain, since 2026-11-11; `https://cospire-roan.vercel.app` still serves the same deployment). **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
   (after 2026-10-21, until 2026-11-06), and Vercel then blocked six deployments
@@ -264,25 +265,14 @@ side.
 **From the Client call on programmes, 2026-11-11** (*The programmes call* in
 `docs/context/meetings.md`; the 2026-10-22 metadata call is below it):
 
-- **Programmes are to be rebuilt from shared modules** (owner, D61 in the
-  private decisions file): a module (Time and Work) built once and attached to
-  many programmes; programme > subject > module > items; a variation is its own
-  module; tests at module, subject and programme level; **progress per
-  programme**; a topic's practice set is separate from the question bank.
-  **Designed and agreed** (#123, `docs/design/shared-modules.md`). **Phase 1, the
-  migrations, is applied and merged** (#124, 2026-11-18; *Shared modules, Phase 1* in `completed.md`). It replaces "add a test from the builder".
+- **Shared modules (D61) are built and live** (see Status); `docs/design/shared-modules.md` is the design. The build is complete.
 - **The Client sent the written topic flow** (2026-11-12, *The Client's written
   topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
   view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
   Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
 **Then, in order:**
 
-1. **Shared modules Phase 2: awaiting apply and merge** (`feat/modules-2`): app
-   code writes and reads `course_id` on progress and attempts; migrations
-   `20261118100500` to `20261118100700` (contract, delete preview, attempt-limit fix) are **not applied**;
-   apply them immediately before merging (old code's progress saves fail until the
-   merge deploys). *Shared modules, Phase 2* in `completed.md`.
-   **Slice 3, the admin module library, is awaiting review and merge** (`feat/modules-3`): `/admin/modules`, the module page, duplicate, delete; migration `20261118110000` (module delete) is **not applied**, apply it before merging (`modules-3.sql` 16/16 spliced). *Shared modules, slice 3* in `completed.md`. **Slice 4, the programme page (attach, detach, reorder modules per subject; the Mocks section), is awaiting review and merge** (`feat/modules-4`, no migration; `modules-4.sql` 11/11). *Shared modules, slice 4* in `completed.md`. **Slice 5, the student side (subjects, modules with per-programme progress, the module page, the full mocks block), is awaiting review and merge** (`feat/modules-5`, no migration; `scripts/verify/modules-5.mjs` 12/12). *Shared modules, slice 5* in `completed.md`.
+1. **Shared modules: the build is complete** (slices 1-6, #124-#128 and `feat/modules-6`). Still owed: the **owner's real-browser click-through** of the admin module screens and the student module pages (none has been seen in a browser); the **programme importer** (later); **sub-topics** (later); the **Client's DSAI answer**; and the **ShareLane chunks** for the module work (the ShareLane server was unavailable to the coordinator). *Shared modules* in `completed.md`.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).
