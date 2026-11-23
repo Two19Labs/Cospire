@@ -276,7 +276,7 @@ the 2026-11-12 topic flow are below it):
    (slice 1) are built in PR #133; still pending: practice mode (embedded topic questions with instant feedback, and the
    Practice bank), bookmarks and Revise, the course sidebar, one review queue
    for help tickets and question reports, the recommended schedule (the
-   End-to-End bundle grant is built). Open questions N20-N24 go to the Client. Also owed: a
+   End-to-End bundle grant is built in PR #135). Open questions N20-N24 go to the Client. Also owed: a
    real-browser look at the module screens, and DSAI.
 1a. **Mock results rework and foundation check:** design for the owner to
    agree once Rahul's HTML mock-up and screenshots arrive; check the
