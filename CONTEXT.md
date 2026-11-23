@@ -1,6 +1,6 @@
 # Cospire LMS - Shared Project Context
 
-Last updated: 2026-11-18 (Asia/Calcutta)
+Last updated: 2026-11-23 (Asia/Calcutta)
 
 This file holds what is true **now**: status, decisions, active work, pending
 work, blockers and the next actions. Read it in full; it is kept under 300
@@ -207,8 +207,7 @@ No branch is claimed (add a row: owner, branch, scope, owned files, status, date
 
 ## Pending
 
-The full route is in `docs/implementation-plan.md`. **Phase numbers name scope,
-not order** — the order changed on 2026-09-08. Only what is open is listed here.
+Only what is open is listed here; the route is in `docs/implementation-plan.md`.
 
 **The feedback board is live** at `/feedback/<code>` on `https://app.cospire.in` (#119): the owner logged a thought with a screenshot in a browser on 2026-11-11 (deleted after); the notification email arrives (owner confirmed 2026-11-18); the board has no entries yet. The two codes are in Vercel only.
 **Masters' Union ARS: on hold** (owner, 2026-11-10, D57); #115 merged, R1 import private in `Context/`.
@@ -217,11 +216,9 @@ VdoCipher answered 423 "write actions paused" on 2026-11-10: a probe clip awaits
 
 ### Owed in a real browser (owner)
 
-Headless Chrome covered everything else; these need a person. **The exam**
-(#70, #80, #87): a sitting on desktop then a phone, moving between questions,
-"All answers saved", full screen, the countdown reaching zero, the mock opening
-in its own window. **Essays** (#84): author, sit and mark one. (Video, #86:
-passed in the owner's check, reported 2026-11-06.)
+**The exam** (#70, #80, #87): desktop then phone, moving between questions,
+"All answers saved", full screen, the countdown reaching zero, the own window.
+**Essays** (#84): author, sit and mark one. (Video, #86: passed, 2026-11-06.)
 **Since 2026-10-19:** sit a mock with several untimed sections, and one Gemini
 import of a paper that states section times (`sections` read back).
 
@@ -262,17 +259,31 @@ side.
 
 ## Next recommended action
 
-**From the Client call on programmes, 2026-11-11** (*The programmes call* in
-`docs/context/meetings.md`; the 2026-10-22 metadata call is below it):
+**From the Client call on mocks and content, 2026-11-23** (*The mocks and
+content call* in `docs/context/meetings.md`; the 2026-11-11 programmes call and
+the 2026-11-12 topic flow are below it):
 
-- **Shared modules (D61) are built and live** (see Status); `docs/design/shared-modules.md` is the design. The build is complete.
-- **The Client sent the written topic flow** (2026-11-12, *The Client's written
-  topic flow* in `meetings.md`): per topic a recorded class, then a quiz and a
-  view-only PDF; mocks a separate section. Syllabus: three topic tables (MU,
-  Ashoka, DSAI) in the same PDF. Setup is mostly from documents.
+- **Shared modules (D61) are built and live** (#124-#130); `docs/design/shared-modules.md` is the design.
+- **The Client's videos are ready**; the **aptitude course** is the first
+  programme to build on modules, from their "Aptitude course" document.
+- **Mock results rework, asked for on the call (not designed, not built):**
+  attempts listed with number and date, each with analytics and solutions; one
+  results page (summary and analytics together); topic-wise detail; a score
+  graph across attempts; no PDF download (none exists today). **New:** a
+  **foundation check**, easy questions per topic marked in each mock, a wrong
+  one flagging the topic to revisit. **Scope:** clause 3 covers analytics and
+  review; the foundation check is new, so the owner says whether it is quoted
+  (clause 12) or free.
 **Then, in order:**
 
-1. **Shared modules: the build is complete** (slices 1-5, #124-#128, live; slice 6, #129, adds module return links). Still owed: the **owner's real-browser click-through** of the admin module screens and the student module pages (none has been seen in a browser); the **programme importer** (later); **sub-topics** (later); the **Client's DSAI answer**; and the **ShareLane chunks** for the module work (the ShareLane server was unavailable to the coordinator). *Shared modules* in `completed.md`.
+1. **Owner:** read the Client's "Home page" and "Aptitude course" documents
+   (Tab 2 of the shared sheet; owed since before the 2026-11-23 call), then
+   upload the videos and build the aptitude course from modules. Also owed: a
+   real-browser click-through of the module screens (none seen in a browser),
+   and the Client's answer on DSAI. Importer and sub-topics come later.
+1a. **Mock results rework and foundation check:** design for the owner to
+   agree once Rahul's HTML mock-up and screenshots arrive; check the
+   instructions page content (#118) against what the Client wants.
 2. **Owner:** one invitation or reset opened from an inbox on the new domain
    (`NEXT_PUBLIC_APP_URL` is set to `https://app.cospire.in` in Vercel, owner,
    2026-11-18). **MU ARS stays on hold** (D57).
