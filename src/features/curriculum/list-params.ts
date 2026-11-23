@@ -185,6 +185,7 @@ export const courseNotices = {
   moved: "Moved. You will find it in the other section.",
   created: "Programme created.",
   granted: "Access granted.",
+  "bundle-granted": "Programme and ARS process granted together.",
   revoked: "Access removed.",
 } as const;
 

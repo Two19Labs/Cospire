@@ -17,6 +17,7 @@ import { listAttachedModules } from "@/features/modules/queries/attached-modules
 import { listModules } from "@/features/modules/queries/list-modules";
 import { parsePageNumber as parseModulePage, sanitizeModuleSearch } from "@/features/modules/modules";
 import { listCourseAccess } from "@/features/curriculum/queries/list-course-access";
+import { listCourses } from "@/features/curriculum/queries/list-courses";
 
 export const metadata: Metadata = { title: "Programme" };
 
@@ -46,7 +47,7 @@ export default async function AdminCoursePage({
   // scoped by RLS and harmless for a programme that turns out not to exist,
   // and waiting for this one first cost a whole round trip on every view.
   const moduleSearch = sanitizeModuleSearch(firstValue(query.mq) ?? "");
-  const [course, students, curriculum, documents, mocks, videos, attached, modulePicker] = await Promise.all([
+  const [course, students, curriculum, documents, mocks, videos, attached, modulePicker, processes] = await Promise.all([
     getCourse(courseId),
     listCourseAccess(courseId),
     getCurriculum(courseId),
@@ -55,6 +56,8 @@ export default async function AdminCoursePage({
     listPickerPage("videos", parsePageNumber(firstValue(query.videosPage))),
     listAttachedModules(courseId),
     listModules({ page: parseModulePage(firstValue(query.mpage)), search: moduleSearch }),
+    // The ARS processes an End-to-End enrolment can pair this programme with.
+    listCourses({ kind: "ars_process", page: 1, search: "" }),
   ]);
   if (!course) notFound();
 
@@ -71,6 +74,7 @@ export default async function AdminCoursePage({
       videos={videos}
       error={parseCourseListError(firstValue(query.error))}
       notice={parseCourseNotice(firstValue(query.notice))}
+      processes={processes.rows}
       profile={profile}
       students={students}
     />

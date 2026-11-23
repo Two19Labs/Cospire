@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/features/auth/guards";
 import { createAdminSupabaseClient } from "@/shared/db/supabase/admin";
 import { createServerSupabaseClient } from "@/shared/db/supabase/server";
+import { parseCourseId, type CourseKind } from "@/features/curriculum/list-params";
 
 import { readStudentSheet } from "../bulk-students";
 import type { BulkCreateStudentsState } from "./bulk-create-students-state";
@@ -44,6 +45,30 @@ export async function bulkCreateStudentsAction(
   // nothing (Technical Brief 5.3).
   const { problems, rows } = readStudentSheet(await file.text());
   if (problems.length > 0) return { created: 0, error: null, problems };
+
+  // The optional End-to-End enrolment (D62): a programme, an ARS process, or
+  // both, granted to every student on the sheet. Checked before any invitation
+  // goes out: an id that is not a course of that kind in the admin's own
+  // organisation (RLS hides any other) refuses the whole upload.
+  const courses: { id: number; kind: CourseKind }[] = [];
+  for (const [field, kind] of [["programmeId", "programme"], ["processId", "ars_process"]] as const) {
+    const raw = formData.get(field);
+    if (raw === null || raw === "") continue;
+    const id = parseCourseId(typeof raw === "string" ? raw : undefined);
+    if (id === null) return failed("That programme or ARS process was not valid. Nothing was created.");
+    courses.push({ id, kind });
+  }
+  if (courses.length > 0) {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("id, kind")
+      .in("id", courses.map((course) => course.id));
+    const kindOf = new Map((data ?? []).map((course) => [course.id, course.kind]));
+    if (error || courses.some((course) => kindOf.get(course.id) !== course.kind)) {
+      return failed("That programme or ARS process was not found. Nothing was created.");
+    }
+  }
 
   const createdIds: string[] = [];
   let failure: string | null = null;
@@ -108,6 +133,23 @@ export async function bulkCreateStudentsAction(
       );
       if (profileError) {
         failure = `The student profiles could not be saved: ${profileError.message}`;
+      } else if (courses.length > 0) {
+        // One statement for every grant, so a refusal writes none of them and
+        // falls into the same undo as a failed invitation below.
+        const { error: grantError } = await supabase.from("content_access").insert(
+          rows.flatMap((row) =>
+            courses.map((course) => ({
+              granted_by: admin.id,
+              org_id: admin.orgId,
+              resource_id: course.id,
+              resource_type: "course",
+              student_id: idByEmail.get(row.email) as string,
+            })),
+          ),
+        );
+        if (grantError) {
+          failure = `The programme and ARS access could not be granted: ${grantError.message}`;
+        }
       }
     }
   } catch (cause) {

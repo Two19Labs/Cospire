@@ -3114,3 +3114,27 @@ slice makes it a ticket form); ARS appears in the rail only with an ARS grant
 module "Recommended next". VdoCipher iframe passes only otp and playbackInfo, so
 no speed control is disabled by us; the player's own menu is expected to offer
 it, not verified in a browser. No migration.
+
+## End-to-End bundle grant (D62), 2026-11-23
+
+Branch `feat/bundle`, no migration and no new table. An End-to-End enrolment is
+the two existing `content_access` grants (`resource_type = 'course'`), the
+programme's and the ARS process's, written as **one** INSERT statement, so both
+land or neither does. `grantBundleAction` (in
+`src/features/curriculum/actions/set-course-access.ts`) runs as the signed-in
+admin's own client, so `content_access_insert_admin`, the role trigger and the
+organisation check apply to both rows; it also reads both courses and refuses
+unless one is a `programme` and the other an `ars_process` (the database checks
+the organisation, not the kind). It writes `on conflict do nothing`, which needs
+no UPDATE grant, so a grant the student already holds is skipped and the other
+still written. The form ("End-to-End enrolment", student + ARS process, "Grant
+both") is on a programme's page only. Revoking stays per grant, on each list.
+
+**Bulk student creation** takes an optional programme and/or ARS process for the
+whole class: the ids and kinds are checked before any invitation goes out, the
+grants for every student go in one statement after the profiles, and a refusal
+falls into the existing undo (every invited account deleted). No service key is
+added: the admin client was already used there, for Auth only.
+
+Not built: a stored bundle definition (nobody needs a named bundle; two selects
+cover it). Not seen in a browser.
