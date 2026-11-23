@@ -38,8 +38,8 @@ export function formatDuration(seconds: number | null): string {
 }
 
 // A video counts as watched 45 seconds before the end (Client, 2026-11-23): the
-// closing seconds are credits. A video of 90 seconds or less keeps 90%, since
-// minus 45 s would be half of it.
+// closing seconds are credits. A video of 90 seconds or less keeps 90% (the
+// owner's rule; minus 45 s is not sensible that short).
 export const watchedBeforeEndSeconds = 45;
 
 export function isWatched(positionSeconds: number, durationSeconds: number): boolean {

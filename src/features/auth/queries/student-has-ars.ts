@@ -10,6 +10,7 @@ import { createServerSupabaseClient } from "@/shared/db/supabase/server";
 export const studentHasArs = cache(async (): Promise<boolean> => {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.from("courses").select("id").eq("kind", "ars_process").limit(1);
-  if (error) throw new Error(`Unable to check ARS access: ${error.message}`);
-  return (data ?? []).length > 0;
+  // A failed read hides the ARS link rather than breaking every student screen;
+  // /student/ars is guarded by RLS on its own.
+  return !error && (data ?? []).length > 0;
 });
