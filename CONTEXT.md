@@ -202,7 +202,9 @@ roles and four modules:
 
 ## Active work
 
-No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+- `feat/bundle` (agent, 2026-11-23): End-to-End bundle grant (D62), programme + ARS process in one admin action; owns `src/features/curriculum/actions/grant-bundle*`, the programme page's access panel, `scripts/verify/bundle.sql`. **Handed off** at the 7% rule: `docs/handoff/feat-bundle.md`; notes `docs/context/branches/feat-bundle.md`.
+
+Otherwise no branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending

@@ -7,7 +7,7 @@ import {
   type CourseListError,
   type CourseNotice,
 } from "../list-params";
-import { CourseAccessPanel, CourseMoveForm } from "./course-access-panel";
+import { BundleGrantForm, CourseAccessPanel, CourseMoveForm } from "./course-access-panel";
 import { CurriculumBuilder } from "./curriculum-builder";
 import type { CurriculumMessage } from "../curriculum";
 import type { AttachedModule } from "@/features/modules/attachments";
@@ -29,6 +29,7 @@ interface CourseDetailProps {
   videos: PickerPage;
   error: CourseListError | null;
   notice: CourseNotice | null;
+  processes: { id: number; title: string }[];
   profile: Profile;
   students: CourseAccessStudent[];
 }
@@ -45,6 +46,7 @@ export function CourseDetail({
   videos,
   error,
   notice,
+  processes,
   profile,
   students,
 }: CourseDetailProps) {
@@ -89,6 +91,10 @@ export function CourseDetail({
       </div>
 
       <CourseAccessPanel courseId={course.id} kind="programme" students={students} />
+
+      {course.kind === "programme" ? (
+        <BundleGrantForm courseId={course.id} processes={processes} students={students} />
+      ) : null}
 
       {course.kind === "programme" ? (
         <CurriculumBuilder

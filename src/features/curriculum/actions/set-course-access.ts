@@ -105,3 +105,76 @@ export async function setCourseAccessAction(formData: FormData): Promise<void> {
     }),
   );
 }
+
+// The End-to-End enrolment (D62): a programme and an ARS process granted to one
+// student together, posted from the programme's page.
+//
+// Not a stored bundle: it is the two `course` grants above, written as ONE
+// INSERT statement, so Postgres commits both rows or neither and a student is
+// never left half-enrolled. Every rule the single grant relies on (who may
+// grant, an active student of the same organisation, a course of the same
+// organisation) is enforced by the database on both rows. Revoking stays per
+// grant, on each screen's own list.
+export async function grantBundleAction(formData: FormData): Promise<void> {
+  const admin = await requireRole("admin");
+
+  const rawCourseId = formData.get("courseId");
+  const programmeId = parseCourseId(
+    typeof rawCourseId === "string" ? rawCourseId : undefined,
+  );
+  if (programmeId === null) redirect("/admin/courses?error=invalid-request");
+
+  const rawProcessId = formData.get("processId");
+  const processId = parseCourseId(
+    typeof rawProcessId === "string" ? rawProcessId : undefined,
+  );
+  const studentId = formData.get("studentId");
+  const back = (error: "invalid-request" | "access-change-failed") =>
+    buildKindCourseHref({ courseId: programmeId, kind: "programme", error });
+
+  if (processId === null || typeof studentId !== "string" || !uuidPattern.test(studentId)) {
+    redirect(back("invalid-request"));
+  }
+
+  const supabase = await createServerSupabaseClient();
+
+  // The database checks the organisation but not the kind, and the kind is the
+  // whole point here: two programmes posted as a bundle is a mistake, not an
+  // End-to-End enrolment. Read through the admin's own client, so a course of
+  // another organisation is simply missing.
+  const { data: courses, error: readError } = await supabase
+    .from("courses")
+    .select("id, kind")
+    .in("id", [programmeId, processId]);
+  const kindOf = new Map((courses ?? []).map((course) => [course.id, course.kind]));
+  if (
+    readError ||
+    kindOf.get(programmeId) !== "programme" ||
+    kindOf.get(processId) !== "ars_process"
+  ) {
+    redirect(back("invalid-request"));
+  }
+
+  // ON CONFLICT DO NOTHING, unlike a plain upsert, needs no UPDATE grant: a
+  // grant the student already holds is skipped, the other is still written.
+  const grant = (resourceId: number) => ({
+    granted_by: admin.id,
+    org_id: admin.orgId,
+    resource_id: resourceId,
+    resource_type: "course",
+    student_id: studentId,
+  });
+  const { error } = await supabase
+    .from("content_access")
+    .upsert([grant(programmeId), grant(processId)], {
+      ignoreDuplicates: true,
+      onConflict: "student_id,resource_type,resource_id",
+    });
+  if (error) redirect(back("access-change-failed"));
+
+  revalidatePath(`/admin/courses/${programmeId}`);
+  revalidatePath(`/admin/ars/${processId}`);
+  redirect(
+    buildKindCourseHref({ courseId: programmeId, kind: "programme", notice: "bundle-granted" }),
+  );
+}

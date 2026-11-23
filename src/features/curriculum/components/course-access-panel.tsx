@@ -10,7 +10,7 @@ import {
 
 import { PersonCell } from "@/features/auth/components/person-cell";
 
-import { setCourseAccessAction } from "../actions/set-course-access";
+import { grantBundleAction, setCourseAccessAction } from "../actions/set-course-access";
 import { setCourseKindAction } from "../actions/set-course-kind";
 import { courseKindLabels, type CourseKind } from "../list-params";
 import type { CourseAccessStudent } from "../queries/list-course-access";
@@ -102,6 +102,60 @@ export function CourseAccessPanel({ courseId, kind, students }: CourseAccessPane
           </TableBody>
         </Table>
       )}
+    </section>
+  );
+}
+
+// The End-to-End enrolment (D62): this programme and an ARS process, granted to
+// one student in one step. Shown on a programme's page only.
+export function BundleGrantForm({
+  courseId,
+  processes,
+  students,
+}: {
+  courseId: number;
+  processes: { id: number; title: string }[];
+  students: CourseAccessStudent[];
+}) {
+  if (processes.length === 0 || students.length === 0) return null;
+
+  return (
+    <section className="panel" id="bundle">
+      <div className="panel__header">
+        <div>
+          <h2>End-to-End enrolment</h2>
+          <p className="muted">
+            Grant this programme and an ARS process together. Both are granted
+            or neither is; remove each one from its own list.
+          </p>
+        </div>
+      </div>
+      <form action={grantBundleAction} className="row-form">
+        <input name="courseId" type="hidden" value={courseId} />
+        <label className="field">
+          <span className="field__label">Student</span>
+          <select className="input" name="studentId" required>
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {`${student.name} (${student.email})`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field__label">ARS process</span>
+          <select className="input" name="processId" required>
+            {processes.map((process) => (
+              <option key={process.id} value={process.id}>
+                {process.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <SubmitButton compact pendingLabel="Granting…">
+          Grant both
+        </SubmitButton>
+      </form>
     </section>
   );
 }
