@@ -264,6 +264,7 @@ content call* in `docs/context/meetings.md`; the 2026-11-11 programmes call and
 the 2026-11-12 topic flow are below it):
 
 - **Shared modules (D61) are built and live** (#124-#130); `docs/design/shared-modules.md` is the design.
+- **Practice mode is designed, for the owner to agree:** `docs/design/practice-mode.md` (D66).
 - **The Client's videos are ready**; the **aptitude course** is the first
   programme to build on modules, from their "Aptitude course" document.
 - **Mock results rework and a foundation check** were asked for on the call
