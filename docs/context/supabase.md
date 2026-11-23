@@ -37,6 +37,12 @@ additive and nothing deployed read `courses` in the meantime. A migration that
 changed or removed an existing column must not be applied ahead of its merge this
 way, because Vercel deploys on merge while migrations are applied by hand.
 
+### Written, not yet applied
+
+| Version | File | State |
+|---|---|---|
+| `20261123100000` | `supabase/migrations/20261123100000_support_reports.sql` | **Written 2026-11-23, not applied** (`feat/review-queue`, D65). One new table, `support_reports`, RLS enabled and forced, column-level grants, one trigger. Additive; nothing deployed reads it. Proven 33/33 by `scripts/verify/review-queue.sql`, spliced and rolled back. The coordinator applies it after review, then regenerates types |
+
 ### The project was not clean
 
 The foundation migration had already been run once from the SQL Editor at

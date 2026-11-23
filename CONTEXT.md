@@ -203,11 +203,7 @@ roles and four modules:
 
 ## Active work
 
-| Owner | Branch | Scope | Owned files | Status |
-|---|---|---|---|---|
-| Claude (slice 2) | `feat/review-queue` | One review queue for help tickets and question reports (D65) | `src/features/support/**`, `src/app/admin/support/**`, `src/app/student/help/**`, `supabase/migrations/20261123100000_support_reports.sql`, `scripts/verify/review-queue.sql`, role shell and nav | In progress, 2026-11-23; notes in `docs/context/branches/feat-review-queue.md` |
-
-Other branches: none claimed here. Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -277,10 +273,11 @@ the 2026-11-12 topic flow are below it):
 
 1. **Plan the Client's home page and aptitude course review** (2026-11-23,
    in `meetings.md`; decisions D62-D66, all built free): the home fixes
-   (slice 1) are built in PR #133; still pending: practice mode (embedded topic questions with instant feedback, and the
-   Practice bank), bookmarks and Revise, the course sidebar, one review queue
-   for help tickets and question reports, the recommended schedule (the
-   End-to-End bundle grant is built in PR #135). Open questions N20-N24 go to the Client. Also owed: a
+   (slice 1) are built in PR #133 and the End-to-End bundle grant in PR #135; the one review
+   queue (slice 2, `feat/review-queue`, migration `20261123100000` **written, not applied**;
+   *One review queue* in `completed.md`) is in its PR; still pending: practice mode (embedded topic questions with instant feedback, and the
+   Practice bank), bookmarks and Revise, the course sidebar, the recommended
+   schedule. Open questions N20-N24 go to the Client. Also owed: a
    real-browser look at the module screens, and DSAI.
 1a. **Mock results rework and foundation check:** design for the owner to
    agree once Rahul's HTML mock-up and screenshots arrive; check the

@@ -9,6 +9,7 @@ import type { AppRole, Profile } from "../types";
 import { AppNav, PageEyebrow } from "./app-nav";
 import { Icon } from "./icon";
 import { ActionBoundary, SubmitButton } from "@/shared/ui";
+import { ReportButton } from "@/features/support/components/report-button";
 
 // The application shell, in the shape of the approved admin workspace
 // prototype: an ink rail on the left with grouped navigation and the account
@@ -172,6 +173,8 @@ export async function RoleShell({
           </ActionBoundary>
         </main>
       </div>
+      {/* Students only (D65): the exam window draws its own frame, not this shell. */}
+      {profile.role === "student" ? <ReportButton /> : null}
     </div>
   );
 }

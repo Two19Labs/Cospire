@@ -1,9 +1,12 @@
-import { ShellSkeleton, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
+import { ShellSkeleton, SkeletonForm, SkeletonPanel } from "@/features/auth/components/shell-skeleton";
 
+// One panel holding the ticket form.
 export default function Loading() {
   return (
     <ShellSkeleton role="student" title="Help">
-      <SkeletonPanel lines={1} title={false} />
+      <SkeletonPanel>
+        <SkeletonForm fields={1} />
+      </SkeletonPanel>
     </ShellSkeleton>
   );
 }
