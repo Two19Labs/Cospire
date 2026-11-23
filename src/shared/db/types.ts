@@ -1932,6 +1932,70 @@ export type Database = {
           },
         ]
       }
+      support_reports: {
+        Row: {
+          comment: string
+          created_at: string
+          id: number
+          kind: string
+          org_id: number
+          page: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: never
+          kind: string
+          org_id: number
+          page: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: never
+          kind?: string
+          org_id?: number
+          page?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_reports_reporter_org_fkey"
+            columns: ["reporter_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "support_reports_resolver_org_fkey"
+            columns: ["resolved_by", "org_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           created_at: string

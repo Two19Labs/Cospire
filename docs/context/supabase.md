@@ -41,7 +41,7 @@ way, because Vercel deploys on merge while migrations are applied by hand.
 
 | Version | File | State |
 |---|---|---|
-| `20261123100000` | `supabase/migrations/20261123100000_support_reports.sql` | **Written 2026-11-23, not applied** (`feat/review-queue`, D65). One new table, `support_reports`, RLS enabled and forced, column-level grants, one trigger. Additive; nothing deployed reads it. Proven 35/35 by `scripts/verify/review-queue.sql`, spliced and rolled back. The coordinator applies it after review, then regenerates types |
+| — | — | None. `20261123100000_support_reports.sql` (D65) was **applied 2026-11-23** by the coordinator from the `feat/review-queue` worktree after the Opus approval, immediately before merging #136; `scripts/verify/review-queue.sql` then passed **35/35** unspliced |
 
 ### The project was not clean
 

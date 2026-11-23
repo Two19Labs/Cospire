@@ -274,7 +274,7 @@ the 2026-11-12 topic flow are below it):
 1. **Plan the Client's home page and aptitude course review** (2026-11-23,
    in `meetings.md`; decisions D62-D66, all built free): the home fixes
    (slice 1) are built in PR #133 and the End-to-End bundle grant in PR #135; the one review
-   queue (slice 2, `feat/review-queue`, migration `20261123100000` **written, not applied**;
+   queue (slice 2, `feat/review-queue`, migration `20261123100000` applied 2026-11-23;
    *One review queue* in `completed.md`) is in its PR; still pending: practice mode (embedded topic questions with instant feedback, and the
    Practice bank), bookmarks and Revise, the course sidebar, the recommended
    schedule. Open questions N20-N24 go to the Client. Also owed: a
