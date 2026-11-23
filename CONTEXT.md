@@ -248,7 +248,7 @@ side.
 | Severity | Finding | Required mitigation |
 |---|---|---|
 | Critical | Historical mocks can change if attempts reference mutable live questions/configuration | **Decided 2026-09-21: questions stay editable** and a past attempt's review shows the current question. Phase 4 must rescore every attempt affected by a change to a key, option set or marks value, and record it in `rescore_events`. See *The question bank* (`docs/context/completed.md`) |
-| Critical | Answer keys share the proposed question row students need to read | **Designed out 2026-09-21:** keys live in `question_keys`, which has no student policy. Phase 4 adds a read only after the student's own attempt is submitted |
+| Critical | Answer keys share the proposed question row students need to read | **Designed out 2026-09-21:** keys live in `question_keys`; its one student policy, `question_keys_select_student` (Phase 4), opens a key only after the student's own attempt is submitted |
 | Critical | Supabase database backups exclude Storage objects | Design and test a separate file backup/restore process |
 | High | Vercel Functions have small request/response payload limits | Use direct authorized uploads/downloads; never proxy media |
 | High | Vercel Cron can overlap or deliver more than once | Durable job records, locks, and idempotency are required |
@@ -264,6 +264,7 @@ content call* in `docs/context/meetings.md`; the 2026-11-11 programmes call and
 the 2026-11-12 topic flow are below it):
 
 - **Shared modules (D61) are built and live** (#124-#130); `docs/design/shared-modules.md` is the design.
+- **Practice mode is designed, for the owner to agree:** `docs/design/practice-mode.md` (D66).
 - **The Client's videos are ready**; the **aptitude course** is the first
   programme to build on modules, from their "Aptitude course" document.
 - **Mock results rework and a foundation check** were asked for on the call
