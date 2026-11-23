@@ -3,6 +3,54 @@
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
 
+## The mocks and content call, 2026-11-23
+
+The owner and the Client's team. Rahul walked through the mocks. The transcript
+is kept privately in `Context/` (machine-transcribed, partly unclear).
+
+- **Owed to the Client, by the owner:** reading the two documents they added to
+  the shared Two19 x Cospire sheet, "Home page" (five points on the student
+  home page) and "Aptitude course" (the course's flow, the main programme to
+  build). Not yet read on the call.
+- **Working relationship:** Two19 Labs thinks through the flows as well as
+  building them, but the final flow is the Client's call.
+- **Videos are recorded and ready** (in a Drive folder). Upload starts now, and
+  the aptitude course is then built on the shared modules (D61, live since
+  #124-#130). Other courses, such as a group-discussion course of about two
+  videos, follow later with the same features.
+- **The student mock screen is broadly done**; the admin flow behind it needs
+  work. The instructions page before a mock (#118) exists, but its content
+  needs checking.
+- **Mocks, as Rahul proposed** (reference: the Client's old prototype, other
+  test-prep platforms, and an HTML mock-up he made with an AI tool, which he
+  will send):
+  - The mock card shows attempted or not; clicking it opens a page to
+    re-attempt or view solutions.
+  - **Each attempt listed with its number and date**, each with two options:
+    analytics and solutions.
+  - **One results page** with summary and analytics together, not three tabs.
+  - **No PDF download of solutions** (piracy). Solutions and the question
+    review, showing where the student went right and wrong, stay on the
+    portal. The live app offers no download today.
+  - **Analytics:** the basic table and progress, plus a detailed topic-wise
+    view (e.g. 2 of 2 right per topic). "Strongest section" and "needs
+    improvement" are not needed. One graph: **score across attempts**
+    (first, second, third). Other graphs only if they add something; tables
+    are preferred.
+  - **New: a "foundation check" in each mock.** A few easy questions per
+    topic (four or five) are marked as foundation; getting one wrong flags the
+    topic as a concept to revisit, not a careless slip ("do this first"). The
+    owner agreed to add it, including the admin side for marking questions.
+    The name is not final.
+  - Layout clean; visual polish is Two19's.
+- **Design approach:** references first, then an AI-assisted flow, then an
+  HTML mock-up. Aditya to send a voice note on it.
+- **The Client sends:** Rahul's HTML mock-up and screenshots, possibly a
+  written note, and a public link to the old prototype (it currently asks for
+  a login).
+- **Timeline:** set once the Client's content and information are in; fixes
+  are quick once they are.
+
 ## The Client's written topic flow, 2026-11-12
 
 Not a call. The Client sent the LMS workflow and the Aptitude syllabus (a PDF
