@@ -3100,3 +3100,17 @@ Branch `fix/modules-audit`, no migration. The mock page with no `?course=` now r
 - Deleting a programme moves its attempts to the null bucket.
 - Duplicating a module is not one transaction; a rare failure leaves an empty "(copy)".
 - The OR join in the grant helpers is not index-friendly: fine at 100 users, rewrite as a UNION if the library grows.
+
+## Student home fixes, feat/home, 2026-11-23 (D62-D66)
+
+Home drops the "Student" eyebrow and "Next up"; lists every programme and each
+ARS process the student holds as cards, with Documents, Mock tests and Analytics
+as small links (the sidebar no longer has them). Sidebar: Home, Explore other
+courses (placeholder, N20 open), Help pinned at the foot (placeholder; next
+slice makes it a ticket form); ARS appears in the rail only with an ARS grant
+(`studentHasArs`, session-read, RLS decides). Video completes at length minus
+45 s (90% when 90 s or shorter), in `isWatched`, applied only by
+`planVideoProgress` on the server. Programme page marks the first incomplete
+module "Recommended next". VdoCipher iframe passes only otp and playbackInfo, so
+no speed control is disabled by us; the player's own menu is expected to offer
+it, not verified in a browser. No migration.

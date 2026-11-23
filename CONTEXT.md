@@ -271,8 +271,8 @@ the 2026-11-12 topic flow are below it):
 **Then, in order:**
 
 1. **Plan the Client's home page and aptitude course review** (2026-11-23,
-   in `meetings.md`; decisions D62-D66, all built free): small home fixes,
-   practice mode (embedded topic questions with instant feedback, and the
+   in `meetings.md`; decisions D62-D66, all built free): the home fixes
+   (slice 1) are built in PR #133; still pending: practice mode (embedded topic questions with instant feedback, and the
    Practice bank), bookmarks and Revise, the course sidebar, one review queue
    for help tickets and question reports, the End-to-End bundle grant, the
    recommended schedule. Open questions N20-N24 go to the Client. Also owed: a

@@ -205,6 +205,8 @@ export function ShellSkeleton({
 
         <div className="app-sidebar__spacer" />
 
+        {role === "student" ? <AppNav pinned role="student" /> : null}
+
         <div className="app-account">
           <span aria-hidden="true" className="app-avatar" />
           <div className="app-account__who skeleton-lines">

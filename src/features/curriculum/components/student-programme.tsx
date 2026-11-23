@@ -147,10 +147,12 @@ function ItemRows({
 function SectionPanel({
   courseId,
   modules,
+  recommendedId,
   section,
   view,
 }: {
   courseId: number;
+  recommendedId: number | null;
   modules: ProgrammeView["modules"] extends Map<number, infer M> ? M : never;
   section: CurriculumSection;
   view: ProgrammeView;
@@ -173,6 +175,7 @@ function SectionPanel({
           {modules.map((module) => (
             <Link className="course-card course-card--link" href={`/student/programmes/${courseId}/modules/${module.id}`} key={module.id}>
               <h3>{module.title}</h3>
+              {module.id === recommendedId ? <span className="pill pill--active">Recommended next</span> : null}
               <ProgressMeter complete={module.complete} percent={module.percent} total={module.total} />
               <span className="course-card__bottom">
                 <span>{module.percent}% complete</span>
@@ -198,6 +201,10 @@ export function StudentProgrammeScreen({
 }) {
   const courseId = view.programme.id;
   const { mocks, subjects } = splitSections(view.sections);
+  // The first module, in programme order, not yet complete here. Every module
+  // stays open; this only points at one.
+  const recommendedId =
+    subjects.flatMap((section) => view.modules.get(section.id) ?? []).find((module) => module.complete < module.total)?.id ?? null;
 
   return (
     <RoleShell
@@ -224,7 +231,7 @@ export function StudentProgrammeScreen({
       ) : null}
 
       {subjects.map((section) => (
-        <SectionPanel courseId={courseId} key={section.id} modules={view.modules.get(section.id) ?? []} section={section} view={view} />
+        <SectionPanel courseId={courseId} key={section.id} recommendedId={recommendedId} modules={view.modules.get(section.id) ?? []} section={section} view={view} />
       ))}
 
       {mocks ? (

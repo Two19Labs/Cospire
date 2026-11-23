@@ -130,10 +130,18 @@ describe("createUploadCredentials", () => {
 });
 
 describe("planVideoProgress", () => {
-  it("computes percent from the stored length and completes at 90%", async () => {
+  it("computes percent from the stored length and reports percent", async () => {
     const { planVideoProgress } = await import("./video");
     expect(planVideoProgress(null, 30, 100)).toEqual({ completed: false, lastPosition: 30, percent: 30 });
     expect(planVideoProgress(null, 95, 100)).toEqual({ completed: true, lastPosition: 95, percent: 95 });
+  });
+
+  it("completes at the length minus 45 s, or 90% for a video of 90 s or less", async () => {
+    const { planVideoProgress } = await import("./video");
+    expect(planVideoProgress(null, 2354, 2400).completed).toBe(false);
+    expect(planVideoProgress(null, 2355, 2400).completed).toBe(true);
+    expect(planVideoProgress(null, 80, 90).completed).toBe(false);
+    expect(planVideoProgress(null, 81, 90).completed).toBe(true);
   });
 
   it("never lowers percent or undoes completion, and clamps a position past the end", async () => {
