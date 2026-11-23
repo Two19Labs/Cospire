@@ -203,7 +203,11 @@ roles and four modules:
 
 ## Active work
 
-No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+| Owner | Branch | Scope | Owned files | Status |
+|---|---|---|---|---|
+| Claude (slice 2) | `feat/review-queue` | One review queue for help tickets and question reports (D65) | `src/features/support/**`, `src/app/admin/support/**`, `src/app/student/help/**`, `supabase/migrations/20261123100000_support_reports.sql`, `scripts/verify/review-queue.sql`, role shell and nav | In progress, 2026-11-23; notes in `docs/context/branches/feat-review-queue.md` |
+
+Other branches: none claimed here. Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
