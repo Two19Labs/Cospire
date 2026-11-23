@@ -31,7 +31,11 @@ interface NavItem {
   exact?: boolean;
   href: string;
   icon: IconName;
+  // Not drawn in the rail: still a real route, kept so its eyebrow is right.
+  hidden?: boolean;
   label: string;
+  // Drawn at the foot of the rail, under the spacer, instead of with the rest.
+  pinned?: boolean;
 }
 
 // Groups follow the workspace prototype: the overview on its own, then the
@@ -81,12 +85,15 @@ const navByRole: Record<AppRole, NavGroup[]> = {
     {
       title: "Student",
       items: [
-        { href: "/student", icon: "home", label: "Home", exact: true, eyebrow: "Student" },
-        { href: "/student/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness" },
-        { href: "/student/programmes", icon: "book", label: "Programmes", eyebrow: "Learning" },
-        { href: "/student/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
-        { href: "/student/mocks", icon: "test", label: "Mock tests", eyebrow: "Assessment" },
-        { href: "/student/analytics", icon: "grid", label: "Analytics", eyebrow: "Assessment" },
+        { href: "/student", icon: "home", label: "Home", exact: true, eyebrow: "" },
+        { href: "/student/explore", icon: "book", label: "Explore other courses", eyebrow: "Courses" },
+        { href: "/student/help", icon: "question", label: "Help", eyebrow: "Support", pinned: true },
+        // Reached from Home, not the rail (Client's review, 2026-11-23).
+        { href: "/student/ars", icon: "grid", label: "ARS", eyebrow: "Admission readiness", hidden: true },
+        { href: "/student/programmes", icon: "book", label: "Programmes", eyebrow: "Learning", hidden: true },
+        { href: "/student/documents", icon: "file", label: "Documents", eyebrow: "Resources", hidden: true },
+        { href: "/student/mocks", icon: "test", label: "Mock tests", eyebrow: "Assessment", hidden: true },
+        { href: "/student/analytics", icon: "grid", label: "Analytics", eyebrow: "Assessment", hidden: true },
       ],
     },
   ],
@@ -105,34 +112,43 @@ function isActive(item: NavItem, pathname: string): boolean {
 export function PageEyebrow({ role }: { role: AppRole }) {
   const pathname = usePathname() ?? "";
   const item = navByRole[role].flatMap((group) => group.items).find((entry) => isActive(entry, pathname));
-  return <p className="eyebrow">{item?.eyebrow ?? navByRole[role][0].title}</p>;
+  const eyebrow = item ? item.eyebrow : navByRole[role][0].title;
+  return eyebrow ? <p className="eyebrow">{eyebrow}</p> : null;
 }
 
-export function AppNav({ role }: { role: AppRole }) {
+// `hasArs`: the ARS entry shows only for a student holding an ARS grant,
+// decided by the caller from what the student's own session can read.
+export function AppNav({ hasArs = false, pinned = false, role }: { hasArs?: boolean; pinned?: boolean; role: AppRole }) {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav aria-label="Sections" className="app-nav">
-      {navByRole[role].map((group) => (
-        <Fragment key={group.title}>
-          <p className="app-nav__group">{group.title}</p>
-          {group.items.map((item) => {
-            const active = isActive(item, pathname);
+    <nav aria-label={pinned ? "Support" : "Sections"} className="app-nav">
+      {navByRole[role].map((group) => {
+        const items = group.items.filter(
+          (item) => Boolean(item.pinned) === pinned && (!item.hidden || (item.href === "/student/ars" && hasArs && !pinned)),
+        );
+        if (items.length === 0) return null;
+        return (
+          <Fragment key={group.title}>
+            {pinned ? null : <p className="app-nav__group">{group.title}</p>}
+            {items.map((item) => {
+              const active = isActive(item, pathname);
 
-            return (
-              <Link
-                aria-current={active ? "page" : undefined}
-                className={`app-nav__link${active ? " app-nav__link--active" : ""}`}
-                href={item.href}
-                key={item.href}
-              >
-                <Icon name={item.icon} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </Fragment>
-      ))}
+              return (
+                <Link
+                  aria-current={active ? "page" : undefined}
+                  className={`app-nav__link${active ? " app-nav__link--active" : ""}`}
+                  href={item.href}
+                  key={item.href}
+                >
+                  <Icon name={item.icon} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </Fragment>
+        );
+      })}
     </nav>
   );
 }

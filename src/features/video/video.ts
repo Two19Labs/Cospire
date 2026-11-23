@@ -37,8 +37,16 @@ export function formatDuration(seconds: number | null): string {
   return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
 }
 
-// A video counts as watched at 90%: the closing seconds are usually credits.
-export const watchedPercent = 90;
+// A video counts as watched 45 seconds before the end (Client, 2026-11-23): the
+// closing seconds are credits. A video of 90 seconds or less keeps 90%, since
+// minus 45 s would be half of it.
+export const watchedBeforeEndSeconds = 45;
+
+export function isWatched(positionSeconds: number, durationSeconds: number): boolean {
+  return durationSeconds <= 2 * watchedBeforeEndSeconds
+    ? positionSeconds >= durationSeconds * 0.9
+    : positionSeconds >= durationSeconds - watchedBeforeEndSeconds;
+}
 
 // The next item_progress values from a reported position. Percent never goes
 // down, so rewatching the opening does not undo progress, and completion is
@@ -53,5 +61,6 @@ export function planVideoProgress(
   const lastPosition = durationSeconds ? Math.min(position, durationSeconds) : position;
   const reported = durationSeconds ? Math.min(100, Math.floor((lastPosition / durationSeconds) * 100)) : 0;
   const percent = Math.max(existing?.percent ?? 0, reported);
-  return { completed: existing?.completed === true || percent >= watchedPercent, lastPosition, percent };
+  const watched = durationSeconds ? isWatched(lastPosition, durationSeconds) : false;
+  return { completed: existing?.completed === true || watched, lastPosition, percent };
 }

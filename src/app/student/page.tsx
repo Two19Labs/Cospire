@@ -6,7 +6,6 @@ import { parsePage } from "@/features/ars-report/list-params";
 import { listStudentReports } from "@/features/ars-report/queries/list-reports";
 import { listStudentProgrammes } from "@/features/curriculum/queries/student-programmes";
 import { StudentHome } from "@/features/student/components/student-home";
-import { listStudentMocks } from "@/features/test-engine/queries/student-mocks";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -17,12 +16,11 @@ export default async function StudentPage({
 }) {
   const profile = await requireRole("student");
   const page = parsePage((await searchParams).page);
-  // Four independent reads, side by side.
-  const [reports, programmes, mocks, processes] = await Promise.all([
+  // Three independent reads, side by side.
+  const [reports, programmes, processes] = await Promise.all([
     listStudentReports({ page }),
-    listStudentProgrammes(1, profile.id, 5),
-    listStudentMocks(),
+    listStudentProgrammes(1, profile.id),
     listStudentProcesses(),
   ]);
-  return <StudentHome mocks={mocks} processes={processes} profile={profile} programmes={programmes} reports={reports} />;
+  return <StudentHome processes={processes} profile={profile} programmes={programmes} reports={reports} />;
 }

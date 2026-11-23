@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { logoutAction } from "../actions/logout";
+import { studentHasArs } from "../queries/student-has-ars";
 import type { AppRole, Profile } from "../types";
 
 import { AppNav, PageEyebrow } from "./app-nav";
@@ -65,7 +66,7 @@ interface RoleShellProps {
   title: string;
 }
 
-export function RoleShell({
+export async function RoleShell({
   actions,
   back,
   children,
@@ -77,6 +78,7 @@ export function RoleShell({
   // The account's own initial, for the circles. Falls back to the email when a
   // name is somehow blank, so a circle is never empty.
   const initial = initialOf(profile.name, profile.email);
+  const hasArs = profile.role === "student" && (await studentHasArs());
 
   return (
     <div className="app-shell">
@@ -92,7 +94,7 @@ export function RoleShell({
           <Image alt="" className="app-brand__logo" height={57} priority src="/cospire-wordmark.png" width={158} />
         </Link>
 
-        <AppNav role={profile.role} />
+        <AppNav hasArs={hasArs} role={profile.role} />
 
         {/*
           Pushed to the bottom by the spacer, as in the prototype, which ends its
@@ -104,6 +106,8 @@ export function RoleShell({
           is deliberately not here.
         */}
         <div className="app-sidebar__spacer" />
+
+        {profile.role === "student" ? <AppNav pinned role="student" /> : null}
 
         <div className="app-account">
           <span aria-hidden="true" className="app-avatar">
