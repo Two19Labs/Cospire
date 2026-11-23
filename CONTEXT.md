@@ -26,6 +26,7 @@ credentials, student data or anyone's personal data here.
 
 ## Status, 2026-11-10
 
+- **End-to-End bundle grant (D62)**: a programme page grants a student that programme plus an ARS process in one step, and bulk creation can enrol a class on either or both; no migration. *End-to-End bundle grant* in `completed.md`.
 - **Shared modules (D61) are built and live**: a module is built once and attached to many programmes (programme > subject > module > items), progress is per programme, with the admin library and programme page and the student module pages. Slices 1-5 (#124-#128) are live; slice 6 (#129) adds module return links (items return to the module they were opened from). Write-ups: *Shared modules* in `docs/context/completed.md`. Accepted limits (detach keeps progress, programme delete nulls attempts, duplicate is not atomic, OR-join grants fine at 100 users) are listed in *Shared modules, audit fixes*.
 - **Deployed** at `https://app.cospire.in`, from `main` (the Client's domain, since 2026-11-11; `https://cospire-roan.vercel.app` still serves the same deployment). **The
   repository must stay public while Vercel is on Hobby:** it was briefly private
@@ -202,9 +203,7 @@ roles and four modules:
 
 ## Active work
 
-- `feat/bundle` (agent, 2026-11-23): End-to-End bundle grant (D62), programme + ARS process in one admin action; owns `src/features/curriculum/actions/grant-bundle*`, the programme page's access panel, `scripts/verify/bundle.sql`. **Handed off** at the 7% rule: `docs/handoff/feat-bundle.md`; notes `docs/context/branches/feat-bundle.md`.
-
-Otherwise no branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
+No branch is claimed (add a row: owner, branch, scope, owned files, status, date). Merged: #123, #124 (2026-11-18); #120, #121 (2026-11-12); #119 (2026-11-11); #115-#118 (2026-11-10); #108-#114 (2026-11-06); #100-#106 (10-19 to 21); #80, #81, #84-#92 (10-16 to 18);
 #69-#75, #77-#79, #82, #83, #88 earlier; #76 closed (in #77). Write-ups: `docs/context/completed.md`.
 
 ## Pending
@@ -276,8 +275,8 @@ the 2026-11-12 topic flow are below it):
    in `meetings.md`; decisions D62-D66, all built free): the home fixes
    (slice 1) are built in PR #133; still pending: practice mode (embedded topic questions with instant feedback, and the
    Practice bank), bookmarks and Revise, the course sidebar, one review queue
-   for help tickets and question reports, the End-to-End bundle grant, the
-   recommended schedule. Open questions N20-N24 go to the Client. Also owed: a
+   for help tickets and question reports, the recommended schedule (the
+   End-to-End bundle grant is built). Open questions N20-N24 go to the Client. Also owed: a
    real-browser look at the module screens, and DSAI.
 1a. **Mock results rework and foundation check:** design for the owner to
    agree once Rahul's HTML mock-up and screenshots arrive; check the

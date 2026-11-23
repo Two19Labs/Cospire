@@ -9,7 +9,35 @@ import { bulkCreateStudentsAction } from "../actions/bulk-create-students";
 import { initialBulkCreateStudentsState } from "../actions/bulk-create-students-state";
 import { bulkRowLimit } from "../bulk-students";
 
-export function BulkStudentsForm() {
+interface CourseOption {
+  id: number;
+  title: string;
+}
+
+function CourseSelect({ label, name, options }: { label: string; name: string; options: CourseOption[] }) {
+  if (options.length === 0) return null;
+  return (
+    <label className="field">
+      <span className="field__label">{label}</span>
+      <select className="input" defaultValue="" name={name}>
+        <option value="">None</option>
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.title}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function BulkStudentsForm({
+  processes,
+  programmes,
+}: {
+  processes: CourseOption[];
+  programmes: CourseOption[];
+}) {
   const [state, action, pending] = useActionState(
     bulkCreateStudentsAction,
     initialBulkCreateStudentsState,
@@ -28,6 +56,12 @@ export function BulkStudentsForm() {
         A first row naming the columns <strong>name</strong> and{" "}
         <strong>email</strong>, then one student per row, up to {bulkRowLimit}.
         In Excel or Google Sheets, save or download it as CSV.
+      </p>
+      <CourseSelect label="Programme for the whole class (optional)" name="programmeId" options={programmes} />
+      <CourseSelect label="ARS process for the whole class (optional)" name="processId" options={processes} />
+      <p className="field__hint">
+        Choose both for an End-to-End enrolment. Access is granted with the
+        accounts: if it cannot be, nobody is created.
       </p>
       <p className="notice">
         Every row is checked first. If any row has a problem, nobody is created
