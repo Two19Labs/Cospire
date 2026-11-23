@@ -26,12 +26,14 @@ export interface InboxPage {
   total: number;
 }
 
-export async function listReports(filters: InboxFilters): Promise<InboxPage> {
+export async function listReports(orgId: number, filters: InboxFilters): Promise<InboxPage> {
   const supabase = await createServerSupabaseClient();
   const from = (filters.page - 1) * inboxPageSize;
   let query = supabase
     .from("support_reports")
     .select("id, page, comment, status, reporter_id, resolved_at, created_at", { count: "exact" })
+    // Restated so the planner can use the inbox index; RLS still decides.
+    .eq("org_id", orgId)
     .eq("kind", filters.kind)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })

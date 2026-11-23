@@ -1,13 +1,12 @@
-import { ShellSkeleton, SkeletonPanel, SkeletonTable } from "@/features/auth/components/shell-skeleton";
+import { ShellSkeleton, SkeletonCards } from "@/features/auth/components/shell-skeleton";
 import { supportTitle } from "@/features/support/components/inbox-screen";
 
-// A status filter over a paginated table of reports.
+// The sidebar opens the landing: two option cards (Help tickets, Reported
+// mistakes), as the other admin sections' landings are drawn.
 export default function Loading() {
   return (
     <ShellSkeleton role="admin" title={supportTitle}>
-      <SkeletonPanel title={false}>
-        <SkeletonTable columns={5} rows={8} />
-      </SkeletonPanel>
+      <SkeletonCards items={2} />
     </ShellSkeleton>
   );
 }

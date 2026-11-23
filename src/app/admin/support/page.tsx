@@ -17,7 +17,7 @@ export default async function AdminSupportPage({
   const params = await searchParams;
   const view = pickView(params, supportViews, "ticket") as ReportKind | null;
   const filters = view ? parseInboxFilters(view, params) : null;
-  const list = filters ? await listReports(filters) : null;
+  const list = filters ? await listReports(profile.orgId, filters) : null;
   const notice = typeof params.notice === "string" ? params.notice : undefined;
   return <SupportScreen filters={filters} list={list} notice={notice} profile={profile} />;
 }

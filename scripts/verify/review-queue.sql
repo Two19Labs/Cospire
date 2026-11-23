@@ -17,7 +17,8 @@
 --   npx supabase db query --linked -f coverage/review-queue-spliced.sql
 --
 -- The whole thing rolls back, so it writes nothing. It needs, in org 1, one
--- active admin, one active mentor and two active students.
+-- active admin, one active mentor and two active students, and an active admin
+-- of another organisation (the audit org).
 begin;
 
 create or replace function pg_temp.ok(value boolean, message text) returns void language plpgsql as $$
@@ -67,9 +68,11 @@ select set_config('probe.admin', id::text, true) from public.profiles where org_
 select set_config('probe.mentor', id::text, true) from public.profiles where org_id=1 and role='mentor' and status='active' order by id limit 1;
 select set_config('probe.student', id::text, true) from public.profiles where org_id=1 and role='student' and status='active' order by id limit 1;
 select set_config('probe.other', id::text, true) from public.profiles where org_id=1 and role='student' and status='active' order by id offset 1 limit 1;
+select set_config('probe.rival', id::text, true) from public.profiles where org_id<>1 and role='admin' and status='active' order by id limit 1;
 select pg_temp.ok(current_setting('probe.admin', true) <> '' and current_setting('probe.mentor', true) <> ''
-  and current_setting('probe.student', true) <> '' and current_setting('probe.other', true) <> '',
-  'fixtures: an admin, a mentor and two students in org 1');
+  and current_setting('probe.student', true) <> '' and current_setting('probe.other', true) <> ''
+  and current_setting('probe.rival', true) <> '',
+  'fixtures: an admin, a mentor and two students in org 1, and an admin of another org');
 
 set local role authenticated;
 
@@ -127,6 +130,12 @@ select pg_temp.ok((select count(*)=0 from public.support_reports), 'a mentor rea
 select pg_temp.refused($q$insert into public.support_reports (org_id, kind, page, comment) values (1, 'ticket', '/mentor', 'Mentor ticket')$q$,
   '42501', 'and cannot file one');
 
+select pg_temp.as_user('rival');
+select pg_temp.ok((select count(*)=0 from public.support_reports where id in (pg_temp.v('mine'), pg_temp.v('ticket'))),
+  'an admin of another organisation reads none of them');
+select pg_temp.ok(pg_temp.affected(format($q$update public.support_reports set status='resolved' where id=%s$q$, pg_temp.v('mine'))) = 0,
+  'and cannot resolve them');
+
 -- ---------------------------------------------------------------------------
 -- The admin
 -- ---------------------------------------------------------------------------
@@ -168,5 +177,5 @@ set local role anon;
 select pg_temp.refused('select count(*) from public.support_reports', '42501', 'anon is refused outright');
 reset role;
 
-select pg_temp.ok(current_setting('probe.passes')::int=33, current_setting('probe.passes')||' review queue database checks passed, expected 33');
+select pg_temp.ok(current_setting('probe.passes')::int=35, current_setting('probe.passes')||' review queue database checks passed, expected 35');
 rollback;
