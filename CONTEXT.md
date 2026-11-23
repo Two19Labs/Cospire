@@ -266,21 +266,17 @@ the 2026-11-12 topic flow are below it):
 - **Shared modules (D61) are built and live** (#124-#130); `docs/design/shared-modules.md` is the design.
 - **The Client's videos are ready**; the **aptitude course** is the first
   programme to build on modules, from their "Aptitude course" document.
-- **Mock results rework, asked for on the call (not designed, not built):**
-  attempts listed with number and date, each with analytics and solutions; one
-  results page (summary and analytics together); topic-wise detail; a score
-  graph across attempts; no PDF download (none exists today). **New:** a
-  **foundation check**, easy questions per topic marked in each mock, a wrong
-  one flagging the topic to revisit. **Scope:** clause 3 covers analytics and
-  review; the foundation check is new, so the owner says whether it is quoted
-  (clause 12) or free.
+- **Mock results rework and a foundation check** were asked for on the call
+  (detail in `meetings.md`; built free, D63); design after Rahul's mock-up.
 **Then, in order:**
 
-1. **Owner:** read the Client's "Home page" and "Aptitude course" documents
-   (Tab 2 of the shared sheet; owed since before the 2026-11-23 call), then
-   upload the videos and build the aptitude course from modules. Also owed: a
-   real-browser click-through of the module screens (none seen in a browser),
-   and the Client's answer on DSAI. Importer and sub-topics come later.
+1. **Plan the Client's home page and aptitude course review** (2026-11-23,
+   in `meetings.md`; decisions D62-D66, all built free): small home fixes,
+   practice mode (embedded topic questions with instant feedback, and the
+   Practice bank), bookmarks and Revise, the course sidebar, one review queue
+   for help tickets and question reports, the End-to-End bundle grant, the
+   recommended schedule. Open questions N20-N24 go to the Client. Also owed: a
+   real-browser look at the module screens, and DSAI.
 1a. **Mock results rework and foundation check:** design for the owner to
    agree once Rahul's HTML mock-up and screenshots arrive; check the
    instructions page content (#118) against what the Client wants.

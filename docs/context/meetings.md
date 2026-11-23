@@ -3,6 +3,51 @@
 Records of calls with the Client and the decisions they produced, newest first. Moved out of `CONTEXT.md` on 2026-09-22; the text is unchanged.
 
 
+## The Client's review of the home page and aptitude course, 2026-11-23
+
+Written, from Tab 2 of the shared sheet (verbatim copy kept privately in
+`Context/`). Owner's decisions D62-D66 and open questions N20-N24 are in the
+private decisions file.
+
+**Home page.** Sidebar: Home, Explore other courses, and Help at the bottom
+(Help raises a ticket for a technical issue). Remove the "Student" label above
+"Welcome back" and the "Next up" block. Home lists every course the student is
+enrolled in; an End-to-End enrolment (e.g. MU) unlocks its courses together:
+Application, Video Essay, Aptitude, Group Discussion, Interview. ARS appears
+only for the students who use it.
+
+**Aptitude course.** One course per college (MU, Ashoka, MESA), each with its
+own syllabus; a video or question is uploaded once and tagged to several
+colleges. Course > sections (QA, LR, DI, VA/CR) > topics. Entering a course
+switches the sidebar to Videos (default), Practice, Mocks, Analytics, Revise,
+Schedule, plus Back to Home. A topic page holds one video (30-40 min; resume,
+speed control, complete at full length minus 45 s) and 20-25 embedded practice
+questions with instant right/wrong and a worked solution, then a link to the
+Practice bank; **no PDFs**. Free roaming with a recommended next topic.
+Practice: the question bank by section and topic, difficulty filter, 15/30/45
+questions, untimed, feedback and solutions, bookmarks into Revise. A
+recommended schedule per student or cohort (done / next / behind). A "Report a
+Question" button on every page feeding an admin review queue. Analytics: the
+Client will add.
+
+**Owner's decisions (23 Nov):**
+- Application, Video Essay, GD and Interview are ARS rounds; only Aptitude is a
+  module course; an End-to-End enrolment grants both (a bundle).
+- All of it is built at no charge.
+- ARS shows automatically to students holding an ARS process grant.
+- Help tickets and question reports share one admin queue.
+- The topic loop has no PDFs: embedded practice questions replace "quiz +
+  view-only PDF" (13 Nov).
+
+**Already in place:** per-college courses sharing content (shared modules,
+#124-#130), the course > section > topic shape, free roaming, video resume, no
+PDF download.
+
+**Open (Client, then owner):** what "Explore other courses" does (no payments,
+Annexure B); the schedule's cohorts and "behind" rule; the practice picker and
+difficulty filter (needs difficulty on every question); tagging questions to
+colleges; where "Back to Home" sits; analytics content; MESA's syllabus.
+
 ## The mocks and content call, 2026-11-23
 
 The owner and the Client's team. Rahul walked through the mocks. The transcript
