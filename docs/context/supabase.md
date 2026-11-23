@@ -37,6 +37,12 @@ additive and nothing deployed read `courses` in the meantime. A migration that
 changed or removed an existing column must not be applied ahead of its merge this
 way, because Vercel deploys on merge while migrations are applied by hand.
 
+### Written, not yet applied
+
+| Version | File | State |
+|---|---|---|
+| — | — | None. `20261123100000_support_reports.sql` (D65) was **applied 2026-11-23** by the coordinator from the `feat/review-queue` worktree after the Opus approval, immediately before merging #136; `scripts/verify/review-queue.sql` then passed **35/35** unspliced |
+
 ### The project was not clean
 
 The foundation migration had already been run once from the SQL Editor at

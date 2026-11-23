@@ -1,0 +1,16 @@
+/* Bottom right, above the content and below a dialog. The content area keeps
+   4-5rem of bottom padding, so the last row of any screen can still be
+   scrolled clear of it. */
+.fab {
+  bottom: 1.25rem;
+  box-shadow: 0 8px 24px rgb(24 43 80 / 18%);
+  position: fixed;
+  right: 1.25rem;
+  z-index: 40;
+}
+
+@media print {
+  .fab {
+    display: none;
+  }
+}

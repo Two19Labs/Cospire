@@ -65,6 +65,7 @@ const navByRole: Record<AppRole, NavGroup[]> = {
       items: [
         { href: "/admin/users", icon: "users", label: "Users", eyebrow: "People" },
         { href: "/admin/activity", icon: "queue", label: "Activity log", eyebrow: "People" },
+        { href: "/admin/support", icon: "question", label: "Help & reports", eyebrow: "Support" },
         { href: "/admin/documents", icon: "file", label: "Documents", eyebrow: "Resources" },
         { href: "/admin/videos", icon: "play", label: "Videos", eyebrow: "Resources" },
         { href: "/admin/report-templates", icon: "template", label: "Report templates", eyebrow: "Reporting" },
