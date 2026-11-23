@@ -38,14 +38,6 @@ $$;
 create or replace function pg_temp.u(key text) returns uuid language sql as $$
   select current_setting('probe.'||key)::uuid
 $$;
-create or replace function pg_temp.refused_any(statement text, message text) returns void language plpgsql as $$
-begin
-  begin execute statement; raise exception 'accepted' using errcode='P0099';
-  exception when others then
-    if sqlstate='P0099' then raise exception 'PROBE FAILED (accepted): %', message; end if;
-  end;
-  perform pg_temp.ok(true, message);
-end $$;
 create or replace function pg_temp.bundle(other bigint) returns void language sql as $$
   insert into public.content_access(org_id,student_id,resource_type,resource_id,granted_by) values
     (1,pg_temp.u('s1'),'course',pg_temp.v('p'),pg_temp.u('admin')),
@@ -56,7 +48,7 @@ create or replace function pg_temp.held() returns bigint language sql as $$
   select count(*) from public.content_access
   where student_id=pg_temp.u('s1') and resource_type='course' and resource_id in (pg_temp.v('p'), pg_temp.v('a'))
 $$;
-grant execute on function pg_temp.ok(boolean,text), pg_temp.refused(text,text,text), pg_temp.refused_any(text,text),
+grant execute on function pg_temp.ok(boolean,text), pg_temp.refused(text,text,text),
   pg_temp.as_user(text), pg_temp.v(text), pg_temp.u(text), pg_temp.bundle(bigint), pg_temp.held() to authenticated;
 
 select set_config('probe.admin', id::text, true) from public.profiles where org_id=1 and role='admin' and status='active' order by id limit 1;
@@ -77,8 +69,11 @@ select pg_temp.refused(format('select pg_temp.bundle(%s)', pg_temp.v('a')), '425
 select pg_temp.as_user('admin');
 select pg_temp.ok(pg_temp.held()=0, 'and nothing was written');
 
--- Atomicity: the second row is refused (no such course), so the first is not kept.
-select pg_temp.refused_any('select pg_temp.bundle(2147483000)', 'a bundle whose process does not exist is refused');
+-- Atomicity: the second row is refused (no such course: the resource check
+-- raises P0001), so the first is not kept. This proves a single statement is
+-- atomic, nothing more; that the action sends both grants as one statement is
+-- pinned by src/features/curriculum/grant-bundle.test.ts.
+select pg_temp.refused('select pg_temp.bundle(2147483000)', 'P0001', 'a bundle whose process does not exist is refused (P0001)');
 select pg_temp.ok(pg_temp.held()=0, 'and the programme grant was not kept either');
 
 -- The action's write, as the admin.

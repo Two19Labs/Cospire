@@ -134,7 +134,8 @@ export function BundleGrantForm({
         <input name="courseId" type="hidden" value={courseId} />
         <label className="field">
           <span className="field__label">Student</span>
-          <select className="input" name="studentId" required>
+          <select className="input" defaultValue="" name="studentId" required>
+            <option value="">Choose a student</option>
             {students.map((student) => (
               <option key={student.id} value={student.id}>
                 {`${student.name} (${student.email})`}
