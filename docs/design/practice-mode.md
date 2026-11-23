@@ -71,6 +71,16 @@ other place in the error. Draft and archived mocks count. The mock builder and
 mock-first import then surface that error as a refused question. This is what
 keeps section 2's key and question reads from leaking a mock in progress.
 
+Both triggers fire on `insert or update of question_id` and take
+`pg_advisory_xact_lock(root)` first, so two concurrent saves cannot each pass
+the check and both land. A root can also change under them: `save_question`
+updates `parent_id`, moving a question into another DI set. So
+`guard_question_write` gains an arm, on a `parent_id` change, that refuses when
+the moved question is itself in `practice_questions`, or when its old and new
+roots end up on opposite sides (one in a mock, the other on a practice set). The
+same guard refuses changing a question's `type` to `essay` while it is on a
+practice set.
+
 ## 2. Instant feedback without leaking keys
 
 The check is a server action, `checkPracticeAnswer(courseId, itemId,
@@ -97,7 +107,10 @@ questionId, values)`:
 `question_keys_select_student`, opening a key only after the student's own
 submitted attempt. This design adds a **second permissive policy**,
 `question_keys_select_practice`: a student reads the key of a question for
-which they hold their own `practice_answers` row. Permissive policies are
+which they hold their own `practice_answers` row **and** which is still on a
+practice set they reach (`student_reaches_practice_question(question_id)`). The
+second condition matters: an admin may take Q off a set and later put it in a
+mock, and the old answer row alone would then open Q's key mid-mock. Permissive policies are
 OR-ed, so the second one is safe only because no practice question can be in a
 mock (section 1): there is no mock question whose key it could open. Nothing
 is revealed before that student has answered that question, and the key is
@@ -125,7 +138,7 @@ answer row.
 | column | type | notes |
 |---|---|---|
 | student_id | uuid | FK `(student_id, org_id)` -> `profiles`, on delete restrict |
-| course_id | bigint | FK `(course_id, org_id)` -> `courses`; per programme (D61 decision 1) |
+| course_id | bigint | FK `(course_id, org_id)` -> `courses`, on delete cascade (as `item_progress_course_fk`); per programme (D61 decision 1) |
 | question_id | bigint | FK `(question_id, org_id)` -> `questions`, on delete restrict |
 | org_id | bigint not null | |
 | answer | jsonb not null | the latest, as `readAnswer` stored it |
@@ -155,10 +168,10 @@ writes the same rows.
   options)`;
 - on insert, sets `first_answer = answer` and both timestamps, and refuses a
   non-null verdict or a `tries` other than 1 from an untrusted writer;
-- on update by an untrusted writer, refuses any change to `first_answer`,
-  `first_answered_at`, `first_is_correct` or `tries`, and **nulls `is_correct`
-  whenever `answer` changes**, so a stale verdict never stands beside a new
-  answer;
+- on update by an untrusted writer, refuses any change to `is_correct`,
+  `first_is_correct`, `first_answer`, `first_answered_at`, `answered_at` or
+  `tries`, and **nulls `is_correct` and stamps `answered_at` whenever `answer`
+  changes**, so a stale verdict never stands beside a new answer;
 - the trusted writer (`private.is_trusted_writer()`, which includes the
   `cospire.system_write` flag the rescore sets) may change the verdicts and
   `tries`; nobody changes `first_answer` once written.
@@ -188,6 +201,9 @@ re-scores attempts whose score is null. Practice joins that path in two places:
   and the question type with the server key, recomputes `is_correct` from
   `answer` and `first_is_correct` from `first_answer` with `isAnswerCorrect`,
   and writes both. A row left null meanwhile reads as "being re-checked".
+  The module page also calls it with `after()` when it loads a null verdict, as
+  `test-engine/queries/mock-attempts.ts` does for `rescoreAwaiting`, so a pass
+  cut short is finished by the next visit.
 
 Partial index `practice_answers (org_id) where is_correct is null` keeps the
 pass cheap.
@@ -210,7 +226,8 @@ DEFINER`, `search_path = ''`, `(select auth.uid())`, execute to
   `student_may_practise`; no DELETE. Admin SELECT for the organisation; mentor
   SELECT via `is_assigned_mentor(student_id)`. Verdicts as in the guard above.
 - `question_keys`: new policy `question_keys_select_practice`, `exists` an own
-  `practice_answers` row for that `question_id`.
+  `practice_answers` row for that `question_id` **and**
+  `student_reaches_practice_question(question_id)`.
 - `questions`: new policy `questions_select_practice`, using
   `student_reaches_practice_question(id)`.
 
@@ -221,10 +238,13 @@ reads, and the partial index above. The PKs cover the student reads.
 **Migrations (expand only; nothing is replaced, so no contract step):**
 
 1. `curriculum_items`: `unique (id, org_id)`, the type and shape checks gain
-   `practice`. `practice_questions` with RLS, its trigger, its index, and the
-   overlap triggers on both `practice_questions` and `mock_questions`.
+   `practice`. `practice_questions` with RLS, its trigger, its index, the
+   overlap triggers on both `practice_questions` and `mock_questions`, and the
+   `parent_id` and essay arms in `guard_question_write`.
 2. `practice_answers` with RLS, the guard trigger and indexes; the two helpers;
-   `mark_for_rescore` redefined.
+   `mark_for_rescore` redefined; `content_delete_preview` redefined so a
+   programme's delete preview also counts its `practice_answers` rows (the
+   delete itself cascades through the FK).
 3. `question_keys_select_practice` and `questions_select_practice`.
 
 Applied before the code merges. The deployed code never meets a practice item,
@@ -235,7 +255,9 @@ reads no key, an unanswered question's key is unreadable, a student cannot set
 `is_correct`, `first_is_correct` or `first_answer`, a changed answer nulls
 `is_correct`, a student cannot insert an answer for another student or for a
 programme they do not hold, a stimulus or essay answer is refused, a question
-already in a mock cannot join a practice set (and the reverse), a key
+already in a mock cannot join a practice set (and the reverse, and not by a
+`parent_id` move either), a practised question taken off its set opens no key,
+deleting a programme removes its practice answers, a key
 correction nulls both verdicts, and `0.50` against a `1/2` key is right.
 
 ## 4. What the same path gives the later features
