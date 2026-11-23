@@ -21,13 +21,28 @@ bottom points to the Practice bank (later, see section 4).
 |---|---|
 | Reuse a mock (`type = 'test'`, unproctored) | **No.** A mock is an attempt with a clock, sections, a submit and `max_attempts`, and its keys open only after submit (`private.student_may_read_key`). Instant per-question feedback fights every one of those |
 | An id array on the item (`question_ids bigint[]`) | **No.** No foreign key, no index on the question, so archive checks, rescoring and "where is Q01234 used" become scans |
-| **A new item type `practice`, with a join table** | **Recommended.** It is ordered among the module's items like any other, gets `item_progress` for free, and is shared across programmes because the module is (D61) |
+| **A new item type `practice`, with a join table** | **Recommended.** It is ordered among the module's items like any other, sits in the existing module meters, and is shared across programmes because the module is (D61) |
 
-**Changed: `curriculum_items`.** `type` check gains `'practice'`; the shape check
-gains one arm: a practice item has `ref_id`, `body` null and an optional `title`
-(default shown: "Practice"). Every existing row passes both checks.
-`validate_curriculum_item_parent` already keeps non-test items out of a `mocks`
-section.
+**Changed: `curriculum_items`.**
+
+- `type` check gains `'practice'`.
+- The shape check gains one arm: a practice item has `ref_id is null and body
+  is null`, and an optional `title` (trimmed, not blank, at most 200; the screen
+  shows "Practice" when it is null). Its questions are found through
+  `practice_questions.item_id`, never through `ref_id`.
+- `unique (id, org_id)`, added before the composite FK below needs it.
+
+Every existing row passes. `validate_curriculum_item_parent` already keeps
+non-test items out of a `mocks` section. `curriculum_items_ref_idx` is partial
+(`where ref_id is not null`), so it simply skips practice rows.
+
+**Code that branches on `ref_id` must learn the new type**, in the same change:
+`loadItemTitles` in `curriculum/queries/get-curriculum.ts` (a practice item
+would otherwise be titled "Unavailable"), `record-progress.ts` (practice records
+nothing, see section 3), the student programme meters in
+`curriculum/queries/student-programmes.ts`, and **Duplicate module** in
+`modules/actions/module-actions.ts`, which copies `type, ref_id, title, body`
+and must also copy the item's `practice_questions` rows.
 
 **New: `practice_questions`** (the questions on one practice item, ordered)
 
@@ -39,12 +54,22 @@ section.
 | sort_order | integer not null default 0 | ties break on question_id |
 | PK | (item_id, question_id) | a question appears once per set |
 
-Index `(question_id)` for the reach check, rescoring and "used in". A trigger
-refuses an item whose type is not `practice`, an essay (it cannot be checked
-instantly), and a DI sub-question placed on its own: a DI set is placed by its
-stimulus and its children come with it, exactly as `mock_questions` works.
+Index `(question_id)` for the reach check and "used in". A trigger refuses an
+item whose type is not `practice`, an essay (it cannot be checked instantly),
+and a DI sub-question placed on its own: a DI set is placed by its stimulus and
+its children come with it. A set's size counts **answerable** questions, so a DI
+set of four counts four toward the 20 to 25, and its stimulus counts nothing.
 
 One practice item per module is the expected use; nothing enforces it.
+
+**No question is both practice and mock** (until the Client answers open
+question 3). A question's *root* is `coalesce(parent_id, id)`, so a DI set and
+its children share one. A trigger on `practice_questions` refuses a question
+whose root is already placed in any `mock_questions` row; a trigger on
+`mock_questions` refuses one whose root is on any practice set. Both name the
+other place in the error. Draft and archived mocks count. The mock builder and
+mock-first import then surface that error as a refused question. This is what
+keeps section 2's key and question reads from leaking a mock in progress.
 
 ## 2. Instant feedback without leaking keys
 
@@ -55,40 +80,43 @@ questionId, values)`:
    returns it only if the student reaches a practice set holding it (below).
 2. Parses the post with the test engine's `readAnswer` (`test-engine/answer.ts`):
    unknown option ids and a second option on a single MCQ are refused, a typed
-   value is kept as typed.
+   value is kept as typed. A stimulus or an essay is refused.
 3. Upserts the student's `practice_answers` row through their session (RLS
-   checks reach and ownership).
+   checks reach and ownership; the guard trigger checks the answer's shape).
 4. Reads the key and solution through the student's session; the row written in
    step 3 is what opens it (below).
 5. Decides with `isAnswerCorrect` from `test-engine/scoring.ts`, unchanged. That
    is the same numerical normalisation (`question-bank/numerical.ts`: `0.5`,
    `1/2`, `.50`, tolerance) and the same all-or-nothing set rule for
    `mcq_multi`, so a practice verdict and a mock verdict can never disagree.
-6. Writes the verdict with the server key (verdict columns are trusted-writer
-   only, as on `attempt_responses`), records `item_progress`, and returns
-   verdict, key and solution to the page.
+6. Writes the verdict, and `tries`, with the server key (trusted-writer only,
+   as on `attempt_responses`), and returns verdict, key and solution to the
+   page.
 
-**Keys.** CONTEXT.md's finding reads as though `question_keys` has no student
-policy; since Phase 4 it has one, `question_keys_select_student`, opening a key
-only after the student's own submitted attempt. This design adds a **second,
-separate policy**: a student reads the key of a question **for which they hold
-a `practice_answers` row**. Nothing is revealed before that student has answered
-that question. The key is never sent to the browser before Check, never in page
-props, never in the question query.
+**Keys.** `question_keys` already has one student policy,
+`question_keys_select_student`, opening a key only after the student's own
+submitted attempt. This design adds a **second permissive policy**,
+`question_keys_select_practice`: a student reads the key of a question for
+which they hold their own `practice_answers` row. Permissive policies are
+OR-ed, so the second one is safe only because no practice question can be in a
+mock (section 1): there is no mock question whose key it could open. Nothing
+is revealed before that student has answered that question, and the key is
+never in page props or the question query.
 
-**Questions.** `questions_select_student` today opens a question only through an
-attempt. One more policy arm: the question, or its DI parent, is on a practice
-item the student reaches (`private.student_reaches_practice_question`, below).
-`questions` holds no key column, so this exposes nothing new.
+**If overlap is ever allowed**, both the new key policy and the check action
+must also carry `student_may_read_key`'s `not exists` clause (no
+`in_progress` attempt by this student on a mock holding the question), and the
+questions read below must too. Until then the triggers make that unnecessary.
+
+**Questions.** `questions_select_student` is left as it is. A separate
+permissive policy, `questions_select_practice`, opens a question when it, or its
+DI parent, is on a practice item the student reaches
+(`private.student_reaches_practice_question`). `questions` holds no key column,
+and no practice question is a mock question, so this shows no mock early.
 
 **DI sets.** The stimulus is shown once with its children under it; each child
 is checked on its own and has its own key and solution. The stimulus has no
 answer row.
-
-**The crib risk (needs the Client).** Once checked, the key is visible. If a
-practice question is also in a published mock, practising it gives away the
-mock answer. Recommended: practice sets draw on questions that are not in any
-mock, and the admin picker warns when one is.
 
 ## 3. Storing answers
 
@@ -101,32 +129,68 @@ mock, and the admin picker warns when one is.
 | question_id | bigint | FK `(question_id, org_id)` -> `questions`, on delete restrict |
 | org_id | bigint not null | |
 | answer | jsonb not null | the latest, as `readAnswer` stored it |
+| first_answer | jsonb not null | the first try, written once |
 | is_correct | boolean | latest verdict; trusted writer only |
-| first_is_correct | boolean | verdict of the first try, never overwritten; trusted writer only |
-| tries | integer not null default 1 | |
-| first_answered_at, answered_at | timestamptz | |
+| first_is_correct | boolean | verdict of `first_answer`; trusted writer only |
+| tries | integer not null default 1 | trusted writer only |
+| first_answered_at, answered_at | timestamptz | set by the trigger |
 | PK | (student_id, course_id, question_id) | |
 
 **Re-attempts: one row, overwritten, not a history.** "Try again" clears the
-card and the next Check overwrites `answer` and `is_correct` and bumps `tries`.
-`first_is_correct` is the honest number for analytics and Revise, because every
-later try was made after the solution was on screen. A history table is
-deferred until someone asks what the third try was.
+card and the next Check overwrites `answer` and `is_correct`. `first_answer`
+and `first_is_correct` are the honest record for analytics and Revise, because
+every later try was made after the solution was on screen. Keeping
+`first_answer` is what lets a key correction recompute `first_is_correct`.
+A history table is deferred until someone asks what the third try was.
 
 The row is keyed by `question_id`, not by item: the same question answered in
 two modules of one programme is one answer, and the Practice bank (section 4)
 writes the same rows.
 
-**Module progress.** The practice item's `item_progress` row (already per
-`(student_id, course_id, item_id)`): `percent` = questions answered / questions
-on the set, `completed` when all are answered, right or wrong. A score target
-would be a gating rule, which §13.1 and Annexure B keep out.
-`student_may_record_progress` gains `'practice'` in its type list.
+**The guard trigger** on `practice_answers` (`SECURITY DEFINER`), modelled on
+`private.guard_attempt_response_write`:
 
-**Key corrections.** No score exists, so there is no `rescore_events` row. The
-existing rescore path, after it rescored the attempts, re-runs `isAnswerCorrect`
-over `practice_answers` for that question and updates `is_correct` and
-`first_is_correct` (server key). One extra query, same code.
+- refuses a `di_stimulus` or `essay` question;
+- refuses an `answer` that fails `private.answer_fits_question(answer, type,
+  options)`;
+- on insert, sets `first_answer = answer` and both timestamps, and refuses a
+  non-null verdict or a `tries` other than 1 from an untrusted writer;
+- on update by an untrusted writer, refuses any change to `first_answer`,
+  `first_answered_at`, `first_is_correct` or `tries`, and **nulls `is_correct`
+  whenever `answer` changes**, so a stale verdict never stands beside a new
+  answer;
+- the trusted writer (`private.is_trusted_writer()`, which includes the
+  `cospire.system_write` flag the rescore sets) may change the verdicts and
+  `tries`; nobody changes `first_answer` once written.
+
+**Module progress is derived, never stored**, the way a test item's comes from
+`attempts`. For a practice item in programme P: answered = the student's
+`practice_answers` rows with `course_id = P` for the set's answerable questions
+(standalone questions plus DI children); total = the count of those questions.
+Done when answered = total, right or wrong. Adding questions to a set lowers the
+figure honestly, with no stale row. No `item_progress` row is written for a
+practice item and `student_may_record_progress` is unchanged. A score target
+would be a gating rule, which §13.1 and Annexure B keep out.
+
+**Key corrections.** The real path today: the triggers `question_keys_rescore`
+and `questions_rescore` call `private.mark_for_rescore(question_id, change)`,
+which sets `attempts.score = null` on affected submitted attempts under
+`cospire.system_write` and writes a `rescore_events` row; then
+`rescoreAwaiting(orgId)`, called with `after()` from the question save,
+re-scores attempts whose score is null. Practice joins that path in two places:
+
+- `mark_for_rescore` (redefined, its body otherwise unchanged) also sets
+  `is_correct = null, first_is_correct = null` on `practice_answers` for that
+  question, inside the same `system_write` window. `rescore_events` stays about
+  attempts.
+- `rescorePracticeAwaiting(orgId)` in `test-engine/rescore-awaiting.ts`, called
+  beside `rescoreAwaiting`: bounded, it reads rows with a null verdict, the key
+  and the question type with the server key, recomputes `is_correct` from
+  `answer` and `first_is_correct` from `first_answer` with `isAnswerCorrect`,
+  and writes both. A row left null meanwhile reads as "being re-checked".
+
+Partial index `practice_answers (org_id) where is_correct is null` keeps the
+pass cheap.
 
 **RLS** (enabled and forced in the creating migration; helpers `STABLE SECURITY
 DEFINER`, `search_path = ''`, `(select auth.uid())`, execute to
@@ -143,42 +207,44 @@ DEFINER`, `search_path = ''`, `(select auth.uid())`, execute to
   `is_admin_of_org(org_id)`; student SELECT when the item is reached. No student
   writes.
 - `practice_answers`: student SELECT own; student INSERT and UPDATE own with
-  `student_may_practise`; no DELETE. A guard trigger refuses any change to
-  `is_correct`, `first_is_correct`, `tries` or the timestamps unless
-  `private.is_trusted_writer()`, as on `attempt_responses`. Admin SELECT for the
-  organisation; mentor SELECT via `is_assigned_mentor(student_id)`.
+  `student_may_practise`; no DELETE. Admin SELECT for the organisation; mentor
+  SELECT via `is_assigned_mentor(student_id)`. Verdicts as in the guard above.
 - `question_keys`: new policy `question_keys_select_practice`, `exists` an own
   `practice_answers` row for that `question_id`.
-- `questions`: `questions_select_student` gains the
-  `student_reaches_practice_question(id)` arm.
+- `questions`: new policy `questions_select_practice`, using
+  `student_reaches_practice_question(id)`.
 
 **Indexes.** `practice_questions (question_id)`; `practice_answers (question_id)`
-for rescoring, `(course_id, org_id)` for the foreign key and per-programme
-reads. The PKs cover the student reads.
+for the rescore, `(course_id, org_id)` for the foreign key and per-programme
+reads, and the partial index above. The PKs cover the student reads.
 
 **Migrations (expand only; nothing is replaced, so no contract step):**
 
-1. `curriculum_items` checks gain `practice`; `practice_questions` with RLS,
-   trigger and index.
-2. `practice_answers` with RLS, guard trigger and indexes; the two helpers;
-   `student_may_record_progress` redefined with `'practice'`.
-3. The new arms on `questions` and `question_keys`.
+1. `curriculum_items`: `unique (id, org_id)`, the type and shape checks gain
+   `practice`. `practice_questions` with RLS, its trigger, its index, and the
+   overlap triggers on both `practice_questions` and `mock_questions`.
+2. `practice_answers` with RLS, the guard trigger and indexes; the two helpers;
+   `mark_for_rescore` redefined.
+3. `question_keys_select_practice` and `questions_select_practice`.
 
 Applied before the code merges. The deployed code never meets a practice item,
 because none can exist until the new admin screen does.
 
 `scripts/verify/practice.sql` (rolled back) asserts at least: a wrong student
 reads no key, an unanswered question's key is unreadable, a student cannot set
+`is_correct`, `first_is_correct` or `first_answer`, a changed answer nulls
 `is_correct`, a student cannot insert an answer for another student or for a
-programme they do not hold, and `0.50` against a `1/2` key is right.
+programme they do not hold, a stimulus or essay answer is refused, a question
+already in a mock cannot join a practice set (and the reverse), a key
+correction nulls both verdicts, and `0.50` against a `1/2` key is right.
 
 ## 4. What the same path gives the later features
 
 | Later feature | Free from this design | Left for later |
 |---|---|---|
-| **Practice bank** (section/topic, difficulty, 15/30/45, untimed) | The check action, `practice_answers` (same rows, same `course_id`), the key policy, the question card | Which questions a course's bank holds (Client: tagging questions to colleges); one more arm on `student_may_practise` and `student_reaches_practice_question` for "in this course's bank"; the picker screen. `questions.difficulty` is already NOT NULL |
+| **Practice bank** (section/topic, difficulty, 15/30/45, untimed) | The check action, `practice_answers` (same rows, same `course_id`), the key policy, the question card | Which questions a course's bank holds (Client: tagging questions to colleges); one more arm on `student_may_practise` and `student_reaches_practice_question` for "in this course's bank", and the same no-overlap rule for bank questions; the picker screen. `questions.difficulty` is already NOT NULL |
 | **Bookmarks and Revise** (N22) | Revise's "got it wrong" list is `practice_answers where first_is_correct = false` | A `practice_bookmarks (student_id, course_id, question_id)` table, own-row RLS; the Revise screen |
-| **Recommended schedule** (N21) | Done / next reads `item_progress`, which practice now writes | All of it; nothing here constrains it |
+| **Recommended schedule** (N21) | Done / next can derive practice completion from `practice_answers` as above | All of it; nothing here constrains it |
 | **Report a Question** | The card knows its question id, so the report can carry it | The shared review queue (D65) |
 
 ## 5. Admin side
@@ -192,8 +258,8 @@ item; its editor offers two ways in, both writing the same ordered list:
   topic and difficulty filters, paginated, "Add" per row or per DI set.
 
 The editor shows the count (a "20 to 25" hint, not a constraint), reorders and
-removes, and flags a question that is archived, an essay (refused), or already
-in a published mock (warned). Saving is one SQL function, `save_practice_set`,
+removes, and flags a question that is archived (warned), an essay (refused),
+or already in a mock (refused by the database, section 1). Saving is one SQL function, `save_practice_set`,
 replacing the item's rows in one transaction, as `save_mock` does. Delete is
 the item's existing remove.
 
@@ -214,6 +280,8 @@ the item's existing remove.
   attempt, so §1.5 does not apply; there is nothing to mark unproctored.
 - **Skeleton**: no new route, so no new `loading.tsx`; the module page's
   existing one gains a block of question-card placeholders below the items.
+- **Progress**: the practice heading and the module meter read the derived
+  figure from section 3.
 
 ## 7. Deferred, and open questions
 
@@ -228,7 +296,7 @@ Client is to say what they want); the video "complete at length minus 45 s" rule
 |---|---|---|---|
 | 1 | May a student retry a question after seeing the solution? | Yes, with `first_is_correct` kept | Owner |
 | 2 | Does the practice set count toward the module meter by "answered" or by "right"? | Answered | Owner |
-| 3 | Are practice questions kept out of mocks (the crib risk in section 2)? | Yes; picker warns | Client |
+| 3 | May a practice question ever also be in a mock? Once checked its key is visible, so practising it gives the mock answer away | No; the database refuses it today (section 1) | Client |
 | 4 | Where do the 20 to 25 per topic come from: the existing 1,349-question bank or new questions? | Client says | Client |
 | 5 | Are `difficulty` values on the loaded bank real or defaulted? (Matters for the bank's filter) | Check before the bank | Owner, then Client |
 | 6 | Which questions a course's Practice bank holds (tagging to colleges) | Blocks the bank only | Client |
